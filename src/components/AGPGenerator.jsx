@@ -162,10 +162,11 @@ export default function AGPGenerator() {
       events: metricsResult.events,
       startDate: formatDate(startDate),
       endDate: formatDate(endDate),
-      dayNightMetrics: dayNightEnabled ? {
+      // ALWAYS include day/night metrics in export (independent of UI toggle)
+      dayNightMetrics: {
         day: metricsResult.dayMetrics,
         night: metricsResult.nightMetrics
-      } : null,
+      },
       workdaySplit: workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics ? {
         workday: metricsResult.workdayMetrics,
         restday: metricsResult.restdayMetrics,
