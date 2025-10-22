@@ -55,6 +55,15 @@ export function useCSVData() {
   }, []);
 
   /**
+   * Load already-parsed CSV data (for storage restore)
+   */
+  const loadParsedData = useCallback((data, dateRange) => {
+    setError(null);
+    setCsvData(data);
+    setDateRange(dateRange);
+  }, []);
+
+  /**
    * Clear loaded CSV data
    */
   const clearCSV = useCallback(() => {
@@ -67,6 +76,7 @@ export function useCSVData() {
     csvData,
     dateRange,
     loadCSV,
+    loadParsedData,
     clearCSV,
     error,
   };

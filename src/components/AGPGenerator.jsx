@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Download, ChevronDown, AlertCircle } from 'lucide-react';
+import { Activity, Download, ChevronDown, AlertCircle, Save } from 'lucide-react';
 
 // Custom hooks
 import { useCSVData } from '../hooks/useCSVData';
 import { useMetrics } from '../hooks/useMetrics';
 import { useComparison } from '../hooks/useComparison';
+import { useUploadStorage } from '../hooks/useUploadStorage';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
@@ -18,6 +19,7 @@ import AGPChart from './AGPChart';
 import ComparisonView from './ComparisonView';
 import DayNightSplit from './DayNightSplit';
 import WorkdaySplit from './WorkdaySplit';
+import SavedUploadsList from './SavedUploadsList';
 
 /**
  * AGPGenerator - Main application container
@@ -36,7 +38,19 @@ export default function AGPGenerator() {
   // HOOKS: Data Management
   // ============================================
   
-  const { csvData, dateRange, loadCSV, error: csvError } = useCSVData();
+  const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
+  
+  // Upload storage management
+  const {
+    savedUploads,
+    activeUploadId,
+    storageInfo,
+    saveUpload,
+    loadUpload,
+    toggleLock,
+    deleteUpload,
+    renameUpload
+  } = useUploadStorage();
 
   // ============================================
   // STATE: Period Selection
@@ -184,6 +198,57 @@ export default function AGPGenerator() {
   };
 
   // ============================================
+  // EVENT HANDLERS: Upload Storage
+  // ============================================
+
+  /**
+   * Save current upload to storage
+   */
+  const handleSaveUpload = () => {
+    if (!csvData || !dateRange) {
+      alert('No data to save. Load CSV first.');
+      return;
+    }
+
+    try {
+      saveUpload({
+        csvData,
+        dateRange,
+        proTimeData: workdays
+      });
+      alert('✅ Upload saved successfully!');
+    } catch (err) {
+      alert(`Failed to save: ${err.message}`);
+    }
+  };
+
+  /**
+   * Load saved upload
+   */
+  const handleLoadSavedUpload = (id) => {
+    try {
+      const upload = loadUpload(id);
+      if (!upload) return;
+
+      // Load CSV data (already parsed, skip parsing)
+      loadParsedData(upload.csvData, upload.dateRange);
+
+      // Load ProTime data if present
+      if (upload.proTimeData) {
+        setWorkdays(upload.proTimeData);
+      } else {
+        setWorkdays(null);
+      }
+
+      // Reset period selection
+      setStartDate(null);
+      setEndDate(null);
+    } catch (err) {
+      alert(`Failed to load upload: ${err.message}`);
+    }
+  };
+
+  // ============================================
   // RENDER: Main UI
   // ============================================
 
@@ -294,19 +359,37 @@ export default function AGPGenerator() {
               />
             </button>
 
-            {/* 2. Export Button - Only when data available */}
-            {metricsResult && startDate && endDate ? (
-              <button
-                onClick={handleExportHTML}
-                className="btn btn-primary flex items-center gap-2"
-                style={{
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-            ) : <div />}
+            {/* 2. Save + Export Buttons - Only when data available */}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {csvData && dateRange && (
+                <button
+                  onClick={handleSaveUpload}
+                  className="btn flex items-center gap-2"
+                  style={{
+                    whiteSpace: 'nowrap',
+                    border: '2px solid var(--border-primary)',
+                    background: 'var(--bg-secondary)'
+                  }}
+                  title="Save current upload to storage"
+                >
+                  <Save className="w-4 h-4" />
+                  Save
+                </button>
+              )}
+              
+              {metricsResult && startDate && endDate && (
+                <button
+                  onClick={handleExportHTML}
+                  className="btn btn-primary flex items-center gap-2"
+                  style={{
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  Export
+                </button>
+              )}
+            </div>
 
             {/* 3. Period Selector - Takes remaining space */}
             {csvData && dateRange ? (
@@ -328,6 +411,7 @@ export default function AGPGenerator() {
               borderRadius: '4px',
               padding: '1rem'
             }}>
+              {/* File Upload Section */}
               <FileUpload
                 onCSVLoad={handleCSVLoad}
                 onProTimeLoad={handleProTimeLoad}
@@ -335,6 +419,7 @@ export default function AGPGenerator() {
                 proTimeLoaded={!!workdays}
               />
               
+              {/* CSV Error Display */}
               {csvError && (
                 <div className="card mt-4" style={{ 
                   background: 'rgba(220, 38, 38, 0.1)', 
@@ -355,6 +440,35 @@ export default function AGPGenerator() {
                         Please ensure you're uploading a valid CareLink CSV export.
                       </p>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Saved Uploads List */}
+              {savedUploads.length > 0 && (
+                <div style={{ marginTop: '1.5rem' }}>
+                  <h3 style={{
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.75rem',
+                    paddingBottom: '0.5rem',
+                    borderBottom: '2px solid var(--border-primary)'
+                  }}>
+                    Saved Uploads
+                  </h3>
+                  <SavedUploadsList
+                    uploads={savedUploads}
+                    activeId={activeUploadId}
+                    storageInfo={storageInfo}
+                    onLoad={handleLoadSavedUpload}
+                    onToggleLock={toggleLock}
+                    onDelete={deleteUpload}
+                    onRename={renameUpload}
+                  />
+                </div>
+              )}
                   </div>
                 </div>
               )}
