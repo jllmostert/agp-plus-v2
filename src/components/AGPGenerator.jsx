@@ -45,6 +45,8 @@ export default function AGPGenerator() {
     savedUploads,
     activeUploadId,
     storageInfo,
+    isLoading: storageLoading,
+    migrationStatus,
     saveUpload,
     loadUpload,
     toggleLock,
@@ -113,9 +115,9 @@ export default function AGPGenerator() {
   };
 
   /**
-   * Handle ProTime data import (PDF text or JSON)
+   * Handle ProTime data import (PDF text or JSON) - async!
    */
-  const handleProTimeLoad = (text) => {
+  const handleProTimeLoad = async (text) => {
     try {
       const workdayDates = parseProTime(text);
       
@@ -128,10 +130,10 @@ export default function AGPGenerator() {
       const workdaySet = new Set(workdayDates);
       setWorkdays(workdaySet);
       
-      // If there's an active upload, update it with this ProTime data
+      // If there's an active upload, update it with this ProTime data (async!)
       if (activeUploadId) {
         try {
-          updateProTimeData(activeUploadId, workdaySet);
+          await updateProTimeData(activeUploadId, workdaySet);
           console.log('✅ ProTime data added to saved upload');
         } catch (err) {
           console.error('Failed to update saved upload with ProTime:', err);
@@ -213,16 +215,16 @@ export default function AGPGenerator() {
   // ============================================
 
   /**
-   * Save current upload to storage
+   * Save current upload to storage (async!)
    */
-  const handleSaveUpload = () => {
+  const handleSaveUpload = async () => {
     if (!csvData || !dateRange) {
       alert('No data to save. Load CSV first.');
       return;
     }
 
     try {
-      saveUpload({
+      await saveUpload({
         csvData,
         dateRange,
         proTimeData: workdays
@@ -234,11 +236,11 @@ export default function AGPGenerator() {
   };
 
   /**
-   * Load saved upload
+   * Load saved upload (async!)
    */
-  const handleLoadSavedUpload = (id) => {
+  const handleLoadSavedUpload = async (id) => {
     try {
-      const upload = loadUpload(id);
+      const upload = await loadUpload(id);
       if (!upload) return;
 
       // Load CSV data (already parsed, skip parsing)
@@ -266,6 +268,21 @@ export default function AGPGenerator() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       <div className="app-container">
+        
+        {/* Migration Notice (if applicable) */}
+        {migrationStatus && (
+          <div style={{
+            padding: '1rem',
+            marginBottom: '1rem',
+            background: 'var(--color-green)',
+            color: '#000',
+            fontWeight: 600,
+            borderRadius: '4px',
+            textAlign: 'center'
+          }}>
+            ✅ {migrationStatus} - Now using IndexedDB for unlimited storage!
+          </div>
+        )}
         
         {/* Header */}
         <header className="section">

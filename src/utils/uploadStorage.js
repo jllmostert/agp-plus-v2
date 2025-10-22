@@ -1,302 +1,294 @@
 /**
- * AGP+ Upload Storage Manager
+ * IndexedDB Storage Manager for AGP+ Uploads
  * 
- * Manages persistent storage of CSV uploads using browser LocalStorage.
- * Uploads can be locked (read-only) or unlocked (deletable).
+ * Handles large datasets (5+ years of ProTime data) efficiently.
+ * Replaces LocalStorage with IndexedDB for better capacity (50MB+).
  * 
- * Features:
- * - Persist multiple uploads
- * - Lock/unlock mechanism (slotje)
- * - Switch between saved uploads
- * - Auto-naming or custom labels
- * - Only limited by browser LocalStorage capacity (~5-10MB)
- * 
- * @version 1.0.0
+ * Database: 'agp-plus-db'
+ * Stores:
+ *   - 'uploads': {id, timestamp, name, csvData, dateRange, proTimeData, locked}
+ *   - 'settings': {key, value} - for activeUploadId
  */
 
-const STORAGE_KEY = 'agp_uploads';
+const DB_NAME = 'agp-plus-db';
+const DB_VERSION = 1;
+const UPLOAD_STORE = 'uploads';
+const SETTINGS_STORE = 'settings';
 
 /**
- * Generate unique ID for upload
+ * Open IndexedDB connection
  */
-const generateId = () => {
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      
+      // Create uploads store
+      if (!db.objectStoreNames.contains(UPLOAD_STORE)) {
+        const uploadStore = db.createObjectStore(UPLOAD_STORE, { keyPath: 'id' });
+        uploadStore.createIndex('timestamp', 'timestamp', { unique: false });
+        uploadStore.createIndex('locked', 'locked', { unique: false });
+      }
+      
+      // Create settings store
+      if (!db.objectStoreNames.contains(SETTINGS_STORE)) {
+        db.createObjectStore(SETTINGS_STORE, { keyPath: 'key' });
+      }
+    };
+  });
+}
+
+/**
+ * Generate unique ID
+ */
+function generateId() {
   return `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-};
+}
 
 /**
- * Generate auto-name from date range
+ * Auto-generate upload name from date range
  */
-const autoGenerateName = (dateRange) => {
+function autoGenerateName(dateRange) {
   if (!dateRange) return 'Unnamed Upload';
   
-  const start = dateRange.min;
-  const end = dateRange.max;
+  const start = new Date(dateRange.min);
+  const end = new Date(dateRange.max);
   
-  const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 
-                      'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+  const formatDate = (d) => {
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
   
-  const startMonth = monthNames[start.getMonth()];
-  const endMonth = monthNames[end.getMonth()];
-  const year = start.getFullYear();
-  
-  if (startMonth === endMonth) {
-    return `${startMonth} ${year}`;
-  }
-  
-  return `${startMonth}-${endMonth} ${year}`;
-};
+  return `${formatDate(start)} - ${formatDate(end)}`;
+}
 
 /**
  * Storage Manager
+ * 
+ * MIGRATION NOTE: This replaces the old LocalStorage implementation with IndexedDB.
+ * Old data is automatically migrated on first load. Export name kept as 'uploadStorage'
+ * for backwards compatibility with existing components.
  */
 export const uploadStorage = {
-  
   /**
-   * Get all uploads from storage
-   * @returns {Array} Array of upload objects
+   * Get all uploads
    */
-  getAll() {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch (err) {
-      console.error('Failed to load uploads:', err);
-      return [];
-    }
+  async getAll() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(UPLOAD_STORE, 'readonly');
+      const store = transaction.objectStore(UPLOAD_STORE);
+      const request = store.getAll();
+      
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
   },
-  
+
   /**
-   * Get active upload ID
-   * @returns {string|null}
+   * Get single upload by ID
    */
-  getActiveId() {
-    try {
-      return localStorage.getItem('agp_active_upload');
-    } catch (err) {
-      return null;
-    }
+  async get(id) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(UPLOAD_STORE, 'readonly');
+      const store = transaction.objectStore(UPLOAD_STORE);
+      const request = store.get(id);
+      
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
   },
-  
-  /**
-   * Set active upload
-   * @param {string} id
-   */
-  setActive(id) {
-    try {
-      localStorage.setItem('agp_active_upload', id);
-    } catch (err) {
-      console.error('Failed to set active upload:', err);
-    }
-  },
-  
+
   /**
    * Save new upload
-   * @param {Object} data - {csvData, dateRange, proTimeData, name}
-   * @returns {string} Upload ID
-   * @throws {Error} If storage quota exceeded
    */
-  save(data) {
-    try {
-      const uploads = this.getAll();
-      
-      const upload = {
-        id: generateId(),
-        timestamp: new Date().toISOString(),
-        name: data.name || autoGenerateName(data.dateRange),
-        csvData: data.csvData,
-        dateRange: data.dateRange ? {
-          min: data.dateRange.min.toISOString(),
-          max: data.dateRange.max.toISOString()
-        } : null,
-        proTimeData: data.proTimeData ? Array.from(data.proTimeData) : null,
-        locked: true  // Lock by default
-      };
-      
-      uploads.push(upload);
-      
-      // Try to save - browser will throw QuotaExceededError if full
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
-      } catch (quotaErr) {
-        if (quotaErr.name === 'QuotaExceededError') {
-          throw new Error('Storage full! Delete some unlocked uploads to free space.');
-        }
-        throw quotaErr;
-      }
-      
-      this.setActive(upload.id);
-      
-      return upload.id;
-    } catch (err) {
-      console.error('Failed to save upload:', err);
-      throw err;
-    }
-  },
-  
-  /**
-   * Get upload by ID
-   * @param {string} id
-   * @returns {Object|null}
-   */
-  get(id) {
-    const uploads = this.getAll();
-    const upload = uploads.find(u => u.id === id);
+  async save(data) {
+    const db = await openDB();
     
-    if (!upload) return null;
-    
-    // Deserialize dates
-    return {
-      ...upload,
-      dateRange: upload.dateRange ? {
-        min: new Date(upload.dateRange.min),
-        max: new Date(upload.dateRange.max)
+    const upload = {
+      id: generateId(),
+      timestamp: new Date().toISOString(),
+      name: data.name || autoGenerateName(data.dateRange),
+      csvData: data.csvData,
+      dateRange: data.dateRange ? {
+        min: data.dateRange.min.toISOString(),
+        max: data.dateRange.max.toISOString()
       } : null,
-      proTimeData: upload.proTimeData ? new Set(upload.proTimeData) : null
+      proTimeData: data.proTimeData ? Array.from(data.proTimeData) : null,
+      locked: true  // Lock by default
     };
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(UPLOAD_STORE, 'readwrite');
+      const store = transaction.objectStore(UPLOAD_STORE);
+      const request = store.add(upload);
+      
+      request.onsuccess = async () => {
+        await this.setActive(upload.id);
+        resolve(upload.id);
+      };
+      request.onerror = () => reject(request.error);
+    });
   },
-  
+
   /**
-   * Update upload name
-   * @param {string} id
-   * @param {string} name
+   * Update existing upload
    */
-  rename(id, name) {
-    try {
-      const uploads = this.getAll();
-      const upload = uploads.find(u => u.id === id);
+  async update(id, updates) {
+    const db = await openDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(UPLOAD_STORE, 'readwrite');
+      const store = transaction.objectStore(UPLOAD_STORE);
+      const getRequest = store.get(id);
       
-      if (!upload) throw new Error('Upload not found');
-      if (upload.locked) throw new Error('Cannot rename locked upload');
-      
-      upload.name = name;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
-    } catch (err) {
-      console.error('Failed to rename upload:', err);
-      throw err;
-    }
+      getRequest.onsuccess = () => {
+        const upload = getRequest.result;
+        if (!upload) {
+          reject(new Error('Upload not found'));
+          return;
+        }
+        
+        Object.assign(upload, updates);
+        const updateRequest = store.put(upload);
+        
+        updateRequest.onsuccess = () => resolve(upload);
+        updateRequest.onerror = () => reject(updateRequest.error);
+      };
+      getRequest.onerror = () => reject(getRequest.error);
+    });
   },
-  
+
   /**
-   * Update ProTime data for existing upload
-   * @param {string} id - Upload ID
-   * @param {Set<string>} proTimeData - Set of workday dates
+   * Delete upload
    */
-  updateProTimeData(id, proTimeData) {
-    try {
-      const uploads = this.getAll();
-      const upload = uploads.find(u => u.id === id);
+  async delete(id) {
+    const db = await openDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(UPLOAD_STORE, 'readwrite');
+      const store = transaction.objectStore(UPLOAD_STORE);
+      const request = store.delete(id);
       
-      if (!upload) throw new Error('Upload not found');
-      
-      // Allow updating ProTime even if locked (it's supplementary data)
-      upload.proTimeData = proTimeData ? Array.from(proTimeData) : null;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
-    } catch (err) {
-      console.error('Failed to update ProTime data:', err);
-      throw err;
-    }
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   },
-  
+
   /**
-   * Lock upload (make read-only)
-   * @param {string} id
+   * Set active upload ID
    */
-  lock(id) {
-    try {
-      const uploads = this.getAll();
-      const upload = uploads.find(u => u.id === id);
+  async setActive(id) {
+    const db = await openDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(SETTINGS_STORE, 'readwrite');
+      const store = transaction.objectStore(SETTINGS_STORE);
+      const request = store.put({ key: 'activeUploadId', value: id });
       
-      if (!upload) throw new Error('Upload not found');
-      
-      upload.locked = true;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
-    } catch (err) {
-      console.error('Failed to lock upload:', err);
-      throw err;
-    }
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   },
-  
+
   /**
-   * Unlock upload (make deletable)
-   * @param {string} id
+   * Get active upload ID
    */
-  unlock(id) {
-    try {
-      const uploads = this.getAll();
-      const upload = uploads.find(u => u.id === id);
+  async getActive() {
+    const db = await openDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(SETTINGS_STORE, 'readonly');
+      const store = transaction.objectStore(SETTINGS_STORE);
+      const request = store.get('activeUploadId');
       
-      if (!upload) throw new Error('Upload not found');
-      
-      upload.locked = false;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
-    } catch (err) {
-      console.error('Failed to unlock upload:', err);
-      throw err;
-    }
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.value : null);
+      };
+      request.onerror = () => reject(request.error);
+    });
   },
-  
+
   /**
-   * Delete upload (only if unlocked)
-   * @param {string} id
+   * Migrate from LocalStorage to IndexedDB
+   * Returns number of uploads migrated
    */
-  delete(id) {
-    try {
-      const uploads = this.getAll();
-      const upload = uploads.find(u => u.id === id);
-      
-      if (!upload) throw new Error('Upload not found');
-      if (upload.locked) throw new Error('Cannot delete locked upload. Unlock first.');
-      
-      const filtered = uploads.filter(u => u.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-      
-      // If deleted active, clear active
-      if (this.getActiveId() === id) {
-        localStorage.removeItem('agp_active_upload');
-      }
-    } catch (err) {
-      console.error('Failed to delete upload:', err);
-      throw err;
-    }
-  },
-  
-  /**
-   * Clear all uploads (dangerous!)
-   * @param {boolean} force - Must be true to confirm
-   */
-  clearAll(force = false) {
-    if (!force) {
-      throw new Error('Must pass force=true to clear all uploads');
-    }
+  async migrateFromLocalStorage() {
+    const OLD_KEY = 'agp_uploads';
+    const OLD_ACTIVE_KEY = 'agp_active_upload';
     
     try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem('agp_active_upload');
+      const oldData = localStorage.getItem(OLD_KEY);
+      if (!oldData) return 0;
+      
+      const uploads = JSON.parse(oldData);
+      if (!Array.isArray(uploads) || uploads.length === 0) return 0;
+      
+      const db = await openDB();
+      
+      // Migrate uploads
+      const transaction = db.transaction(UPLOAD_STORE, 'readwrite');
+      const store = transaction.objectStore(UPLOAD_STORE);
+      
+      for (const upload of uploads) {
+        store.add(upload);
+      }
+      
+      await new Promise((resolve, reject) => {
+        transaction.oncomplete = resolve;
+        transaction.onerror = () => reject(transaction.error);
+      });
+      
+      // Migrate active upload ID
+      const oldActive = localStorage.getItem(OLD_ACTIVE_KEY);
+      if (oldActive) {
+        await this.setActive(oldActive);
+      }
+      
+      // Clear old LocalStorage
+      localStorage.removeItem(OLD_KEY);
+      localStorage.removeItem(OLD_ACTIVE_KEY);
+      
+      console.log(`✅ Migrated ${uploads.length} uploads from LocalStorage to IndexedDB`);
+      return uploads.length;
+      
     } catch (err) {
-      console.error('Failed to clear uploads:', err);
+      console.error('Migration failed:', err);
       throw err;
     }
   },
-  
+
   /**
-   * Get storage usage info
-   * @returns {Object} {used, total, percentage}
+   * Get storage info (for debugging)
    */
-  getStorageInfo() {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      const used = data ? new Blob([data]).size : 0;
-      const total = 5 * 1024 * 1024; // ~5MB estimate
-      
-      return {
-        used,
-        total,
-        percentage: Math.round((used / total) * 100),
-        usedMB: (used / 1024 / 1024).toFixed(2),
-        totalMB: (total / 1024 / 1024).toFixed(0)
-      };
-    } catch (err) {
-      return {used: 0, total: 0, percentage: 0, usedMB: '0', totalMB: '5'};
-    }
+  async getStorageInfo() {
+    const uploads = await this.getAll();
+    
+    // Calculate approximate size
+    const totalSize = uploads.reduce((sum, upload) => {
+      const size = JSON.stringify(upload).length;
+      return sum + size;
+    }, 0);
+    
+    return {
+      uploadCount: uploads.length,
+      approximateSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+      uploads: uploads.map(u => ({
+        id: u.id,
+        name: u.name,
+        timestamp: u.timestamp,
+        locked: u.locked,
+        sizeMB: (JSON.stringify(u).length / (1024 * 1024)).toFixed(2)
+      }))
+    };
   }
 };

@@ -4,45 +4,75 @@ import { uploadStorage } from '../utils/uploadStorage';
 /**
  * useUploadStorage - Custom hook for managing saved uploads
  * 
+ * NOW USING INDEXEDDB - All operations are async!
+ * 
  * Provides state and handlers for upload persistence with lock/unlock.
+ * Automatically migrates old LocalStorage data on first load.
  * 
  * @returns {Object} Storage state and handlers
- * @version 1.0.0
+ * @version 2.0.0 - IndexedDB migration
  */
 export function useUploadStorage() {
   const [savedUploads, setSavedUploads] = useState([]);
   const [activeUploadId, setActiveUploadId] = useState(null);
   const [storageInfo, setStorageInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [migrationStatus, setMigrationStatus] = useState(null);
 
   /**
-   * Refresh uploads list from storage
+   * Refresh uploads list from storage (async!)
    */
-  const refreshUploads = useCallback(() => {
-    const uploads = uploadStorage.getAll();
-    const activeId = uploadStorage.getActiveId();
-    const info = uploadStorage.getStorageInfo();
-    
-    setSavedUploads(uploads);
-    setActiveUploadId(activeId);
-    setStorageInfo(info);
+  const refreshUploads = useCallback(async () => {
+    try {
+      const uploads = await uploadStorage.getAll();
+      const activeId = await uploadStorage.getActive();
+      const info = await uploadStorage.getStorageInfo();
+      
+      setSavedUploads(uploads);
+      setActiveUploadId(activeId);
+      setStorageInfo(info);
+    } catch (err) {
+      console.error('Failed to refresh uploads:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   /**
-   * Load saved uploads on mount
+   * Load saved uploads on mount + attempt migration
    */
   useEffect(() => {
-    refreshUploads();
+    const initStorage = async () => {
+      try {
+        // Attempt migration from LocalStorage
+        const migratedCount = await uploadStorage.migrateFromLocalStorage();
+        
+        if (migratedCount > 0) {
+          setMigrationStatus(`Migrated ${migratedCount} uploads to new storage`);
+          console.log(`✅ Successfully migrated ${migratedCount} uploads from LocalStorage`);
+        }
+        
+        // Load current data
+        await refreshUploads();
+        
+      } catch (err) {
+        console.error('Failed to initialize storage:', err);
+        setIsLoading(false);
+      }
+    };
+    
+    initStorage();
   }, [refreshUploads]);
 
   /**
-   * Save current data as new upload
+   * Save current data as new upload (async!)
    * @param {Object} data - {csvData, dateRange, proTimeData, name}
-   * @returns {string} Upload ID
+   * @returns {Promise<string>} Upload ID
    */
-  const saveUpload = useCallback((data) => {
+  const saveUpload = useCallback(async (data) => {
     try {
-      const id = uploadStorage.save(data);
-      refreshUploads();
+      const id = await uploadStorage.save(data);
+      await refreshUploads();
       return id;
     } catch (err) {
       console.error('Failed to save upload:', err);
@@ -51,18 +81,28 @@ export function useUploadStorage() {
   }, [refreshUploads]);
 
   /**
-   * Load upload by ID
+   * Load upload by ID (async!)
    * @param {string} id
-   * @returns {Object|null} Upload data
+   * @returns {Promise<Object|null>} Upload data
    */
-  const loadUpload = useCallback((id) => {
+  const loadUpload = useCallback(async (id) => {
     try {
-      const upload = uploadStorage.get(id);
+      const upload = await uploadStorage.get(id);
       if (upload) {
-        uploadStorage.setActive(id);
+        await uploadStorage.setActive(id);
         setActiveUploadId(id);
+        
+        // Deserialize dates and proTimeData
+        return {
+          ...upload,
+          dateRange: upload.dateRange ? {
+            min: new Date(upload.dateRange.min),
+            max: new Date(upload.dateRange.max)
+          } : null,
+          proTimeData: upload.proTimeData ? new Set(upload.proTimeData) : null
+        };
       }
-      return upload;
+      return null;
     } catch (err) {
       console.error('Failed to load upload:', err);
       return null;
@@ -70,21 +110,16 @@ export function useUploadStorage() {
   }, []);
 
   /**
-   * Toggle lock status
+   * Toggle lock status (async!)
    * @param {string} id
    */
-  const toggleLock = useCallback((id) => {
+  const toggleLock = useCallback(async (id) => {
     try {
       const upload = savedUploads.find(u => u.id === id);
       if (!upload) return;
       
-      if (upload.locked) {
-        uploadStorage.unlock(id);
-      } else {
-        uploadStorage.lock(id);
-      }
-      
-      refreshUploads();
+      await uploadStorage.update(id, { locked: !upload.locked });
+      await refreshUploads();
     } catch (err) {
       console.error('Failed to toggle lock:', err);
       throw err;
@@ -92,43 +127,55 @@ export function useUploadStorage() {
   }, [savedUploads, refreshUploads]);
 
   /**
-   * Delete upload (only if unlocked)
+   * Delete upload (async!)
    * @param {string} id
    */
-  const deleteUpload = useCallback((id) => {
+  const deleteUpload = useCallback(async (id) => {
     try {
-      uploadStorage.delete(id);
-      refreshUploads();
+      const upload = savedUploads.find(u => u.id === id);
+      if (upload?.locked) {
+        throw new Error('Cannot delete locked upload. Unlock first.');
+      }
+      
+      await uploadStorage.delete(id);
+      await refreshUploads();
     } catch (err) {
       console.error('Failed to delete upload:', err);
       throw err;
     }
-  }, [refreshUploads]);
+  }, [savedUploads, refreshUploads]);
 
   /**
-   * Rename upload (only if unlocked)
+   * Rename upload (async!)
    * @param {string} id
    * @param {string} name
    */
-  const renameUpload = useCallback((id, name) => {
+  const renameUpload = useCallback(async (id, name) => {
     try {
-      uploadStorage.rename(id, name);
-      refreshUploads();
+      const upload = savedUploads.find(u => u.id === id);
+      if (upload?.locked) {
+        throw new Error('Cannot rename locked upload');
+      }
+      
+      await uploadStorage.update(id, { name });
+      await refreshUploads();
     } catch (err) {
       console.error('Failed to rename upload:', err);
       throw err;
     }
-  }, [refreshUploads]);
+  }, [savedUploads, refreshUploads]);
 
   /**
-   * Update ProTime data for upload
+   * Update ProTime data for upload (async!)
    * @param {string} id
    * @param {Set<string>} proTimeData
    */
-  const updateProTimeData = useCallback((id, proTimeData) => {
+  const updateProTimeData = useCallback(async (id, proTimeData) => {
     try {
-      uploadStorage.updateProTimeData(id, proTimeData);
-      refreshUploads();
+      await uploadStorage.update(id, { 
+        proTimeData: proTimeData ? Array.from(proTimeData) : null 
+      });
+      await refreshUploads();
     } catch (err) {
       console.error('Failed to update ProTime data:', err);
       throw err;
@@ -140,8 +187,10 @@ export function useUploadStorage() {
     savedUploads,
     activeUploadId,
     storageInfo,
+    isLoading,
+    migrationStatus,
     
-    // Actions
+    // Actions (all async now!)
     saveUpload,
     loadUpload,
     toggleLock,
