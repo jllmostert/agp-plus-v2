@@ -120,6 +120,21 @@ export function useUploadStorage() {
     }
   }, [refreshUploads]);
 
+  /**
+   * Update ProTime data for upload
+   * @param {string} id
+   * @param {Set<string>} proTimeData
+   */
+  const updateProTimeData = useCallback((id, proTimeData) => {
+    try {
+      uploadStorage.updateProTimeData(id, proTimeData);
+      refreshUploads();
+    } catch (err) {
+      console.error('Failed to update ProTime data:', err);
+      throw err;
+    }
+  }, [refreshUploads]);
+
   return {
     // State
     savedUploads,
@@ -132,6 +147,7 @@ export function useUploadStorage() {
     toggleLock,
     deleteUpload,
     renameUpload,
+    updateProTimeData,
     refreshUploads
   };
 }

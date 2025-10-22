@@ -233,6 +233,9 @@ export default function SavedUploadsList({
                     {upload.dateRange && (
                       <> · {formatDate(upload.dateRange.min)} → {formatDate(upload.dateRange.max)}</>
                     )}
+                    {upload.proTimeData && (
+                      <> · 📊 {upload.proTimeData.length} workdays</>
+                    )}
                   </div>
                 </div>
               )}

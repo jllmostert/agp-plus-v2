@@ -178,6 +178,27 @@ export const uploadStorage = {
   },
   
   /**
+   * Update ProTime data for existing upload
+   * @param {string} id - Upload ID
+   * @param {Set<string>} proTimeData - Set of workday dates
+   */
+  updateProTimeData(id, proTimeData) {
+    try {
+      const uploads = this.getAll();
+      const upload = uploads.find(u => u.id === id);
+      
+      if (!upload) throw new Error('Upload not found');
+      
+      // Allow updating ProTime even if locked (it's supplementary data)
+      upload.proTimeData = proTimeData ? Array.from(proTimeData) : null;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
+    } catch (err) {
+      console.error('Failed to update ProTime data:', err);
+      throw err;
+    }
+  },
+  
+  /**
    * Lock upload (make read-only)
    * @param {string} id
    */

@@ -49,7 +49,8 @@ export default function AGPGenerator() {
     loadUpload,
     toggleLock,
     deleteUpload,
-    renameUpload
+    renameUpload,
+    updateProTimeData
   } = useUploadStorage();
 
   // ============================================
@@ -126,6 +127,16 @@ export default function AGPGenerator() {
       // Convert array to Set for fast lookups
       const workdaySet = new Set(workdayDates);
       setWorkdays(workdaySet);
+      
+      // If there's an active upload, update it with this ProTime data
+      if (activeUploadId) {
+        try {
+          updateProTimeData(activeUploadId, workdaySet);
+          console.log('✅ ProTime data added to saved upload');
+        } catch (err) {
+          console.error('Failed to update saved upload with ProTime:', err);
+        }
+      }
       
     } catch (err) {
       console.error('ProTime parsing failed:', err);
