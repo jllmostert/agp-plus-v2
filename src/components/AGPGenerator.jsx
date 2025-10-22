@@ -480,9 +480,6 @@ export default function AGPGenerator() {
                   />
                 </div>
               )}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </section>
