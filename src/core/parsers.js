@@ -18,20 +18,60 @@ import { CONFIG, utils } from './metrics-engine.js';
  */
 export const parseCSV = (text) => {
   try {
-    // Skip header lines (first 6 lines are metadata)
-    const lines = text.split('\n').slice(CONFIG.CSV_SKIP_LINES);
+    // Validate input
+    if (!text || text.trim().length === 0) {
+      throw new Error('CSV file is empty');
+    }
     
-    const data = lines
+    const lines = text.split('\n');
+    
+    // Check minimum line count
+    if (lines.length < CONFIG.CSV_SKIP_LINES + 10) {
+      throw new Error(`CSV file too short. Expected at least ${CONFIG.CSV_SKIP_LINES + 10} lines, got ${lines.length}`);
+    }
+    
+    // Skip header lines (first 6 lines are metadata)
+    const dataLines = lines.slice(CONFIG.CSV_SKIP_LINES);
+    
+    // Validate CSV structure by checking first data line
+    const firstDataLine = dataLines.find(line => line.trim());
+    if (!firstDataLine) {
+      throw new Error('No data rows found in CSV after header');
+    }
+    
+    const sampleParts = firstDataLine.split(';');
+    if (sampleParts.length < 35) {
+      throw new Error(`Invalid CSV format. Expected at least 35 columns, found ${sampleParts.length}. Is this a CareLink export?`);
+    }
+    
+    // Parse data rows
+    let validRows = 0;
+    let skippedRows = 0;
+    
+    const data = dataLines
       .filter(line => line.trim())
-      .map(line => {
+      .map((line, index) => {
         const parts = line.split(';');
         
         // Validate column count
-        if (parts.length < 35) return null;
+        if (parts.length < 35) {
+          skippedRows++;
+          return null;
+        }
         
         // Parse glucose value (required)
         const glucose = utils.parseDecimal(parts[34]);
-        if (isNaN(glucose)) return null;
+        if (isNaN(glucose)) {
+          skippedRows++;
+          return null;
+        }
+        
+        // Validate glucose range (40-400 mg/dL is reasonable)
+        if (glucose < 40 || glucose > 400) {
+          console.warn(`Suspicious glucose value at row ${index + CONFIG.CSV_SKIP_LINES}: ${glucose} mg/dL`);
+        }
+        
+        validRows++;
         
         // Parse optional fields
         return {
@@ -46,13 +86,26 @@ export const parseCSV = (text) => {
       .filter(row => row !== null);
     
     if (data.length === 0) {
-      throw new Error('No valid glucose data found in CSV');
+      throw new Error(`No valid glucose data found. Checked ${dataLines.length} rows, all were invalid.`);
+    }
+    
+    // Calculate coverage
+    const coverage = (validRows / (validRows + skippedRows) * 100).toFixed(1);
+    console.info(`CSV parsed successfully: ${validRows} valid rows (${coverage}% coverage), ${skippedRows} skipped`);
+    
+    // Warn if coverage is low
+    if (coverage < 70) {
+      console.warn(`⚠️ Low data coverage: ${coverage}%. Metrics may be unreliable.`);
     }
     
     return data;
     
   } catch (err) {
-    throw new Error(`CSV parsing failed: ${err.message}`);
+    // Provide helpful error messages
+    if (err.message.includes('CSV')) {
+      throw err; // Already a helpful error
+    }
+    throw new Error(`CSV parsing failed: ${err.message}. Please ensure this is a valid CareLink export.`);
   }
 };
 

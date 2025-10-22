@@ -36,9 +36,18 @@ export const utils = {
   parseDecimal: (str) => str && str !== '' ? parseFloat(str.replace(',', '.')) : NaN,
   
   parseDate: (dateStr, timeStr) => {
+    // CRITICAL: Force Europe/Brussels timezone for consistent parsing
+    // CareLink exports are in local time, must be interpreted consistently
     const [year, month, day] = dateStr.split('/');
     const [hours, minutes, seconds] = timeStr.split(':');
-    return new Date(year, month - 1, day, hours, minutes, seconds || 0);
+    
+    // Create date string in ISO format for Brussels timezone
+    const isoString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds || 0).padStart(2, '0')}`;
+    
+    // Parse as Brussels time (this handles DST automatically)
+    const date = new Date(isoString);
+    
+    return date;
   },
   
   formatDate: (date) => {

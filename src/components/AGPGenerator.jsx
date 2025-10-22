@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Download, ChevronDown } from 'lucide-react';
+import { Activity, Download, ChevronDown, AlertCircle } from 'lucide-react';
 
 // Custom hooks
 import { useCSVData } from '../hooks/useCSVData';
@@ -336,13 +336,25 @@ export default function AGPGenerator() {
               
               {csvError && (
                 <div className="card mt-4" style={{ 
-                  background: 'var(--color-red)', 
-                  color: 'var(--color-white)',
-                  border: '2px solid var(--color-red)'
+                  background: 'rgba(220, 38, 38, 0.1)', 
+                  color: 'var(--color-red)',
+                  border: '2px solid var(--color-red)',
+                  padding: '1rem'
                 }}>
-                  <p style={{ fontSize: '0.875rem', fontWeight: 700, letterSpacing: '0.05em' }}>
-                    <strong>ERROR:</strong> {csvError}
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-red)' }} />
+                    <div>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                        CSV Import Error
+                      </p>
+                      <p style={{ fontSize: '0.875rem', lineHeight: '1.5' }}>
+                        {csvError}
+                      </p>
+                      <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.8 }}>
+                        Please ensure you're uploading a valid CareLink CSV export.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
