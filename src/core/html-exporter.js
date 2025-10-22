@@ -74,6 +74,12 @@ export const generateHTML = (options) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AGP+ Report - ${startDate} to ${endDate}</title>
   <style>
+    /* ===================================================================
+       AGP+ HTML EXPORT - BRUTALIST PRINT DESIGN
+       Matches screen version: Monospace, uppercase, massive borders
+       Optimized for: B/W printing, high contrast, information density
+       =================================================================== */
+    
     * {
       margin: 0;
       padding: 0;
@@ -81,12 +87,15 @@ export const generateHTML = (options) => {
     }
     
     body {
-      font-family: "Courier New", "Courier", monospace;
-      font-size: 10pt;
-      line-height: 1.3;
+      font-family: "SF Mono", "Monaco", "Courier New", "Courier", monospace;
+      font-size: 9pt;
+      line-height: 1.4;
       color: #000;
       background: #fff;
       padding: 8mm;
+      /* Sharp edges, no smoothing */
+      -webkit-font-smoothing: none;
+      -moz-osx-font-smoothing: grayscale;
     }
     
     @media print {
@@ -104,89 +113,109 @@ export const generateHTML = (options) => {
       }
     }
     
-    /* Header */
+    /* Header - Brutalist */
     .header {
-      border-bottom: 3px solid #000;
-      padding-bottom: 4mm;
-      margin-bottom: 4mm;
+      border: 3px solid #000;
+      padding: 4mm;
+      margin-bottom: 5mm;
+      background: #000;
+      color: #fff;
     }
     
     h1 {
       font-size: 18pt;
-      font-weight: bold;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
       margin-bottom: 2mm;
     }
     
     .subtitle {
-      font-size: 9pt;
-      color: #333;
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.8;
     }
     
     /* Section spacing */
     .section {
-      margin-bottom: 5mm;
+      margin-bottom: 6mm;
     }
     
     h2 {
-      font-size: 13pt;
-      font-weight: bold;
-      margin-bottom: 2mm;
-      padding-bottom: 1mm;
-      border-bottom: 2px solid #000;
+      font-size: 11pt;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 3mm;
+      padding: 2mm;
+      border: 2px solid #000;
+      background: #000;
+      color: #fff;
     }
     
-    /* Metrics Grid - Compact 4-column */
+    /* Metrics Grid - Compact 4-column, BRUTALIST borders */
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 3mm;
-      margin-bottom: 3mm;
+      margin-bottom: 4mm;
     }
     
     .metric-card {
-      border: 2px solid #000;
-      padding: 2mm;
+      border: 3px solid #000;
+      padding: 3mm;
     }
     
     .metric-label {
-      font-size: 8pt;
-      font-weight: bold;
-      margin-bottom: 1mm;
+      font-size: 7pt;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 2mm;
     }
     
     .metric-value {
       font-size: 20pt;
-      font-weight: bold;
+      font-weight: 700;
       line-height: 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
     }
     
     .metric-subtitle {
-      font-size: 7pt;
-      margin-top: 1mm;
+      font-size: 6pt;
+      margin-top: 2mm;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.7;
     }
     
-    /* TIR Bar - High contrast */
+    /* TIR Bar - High contrast, BRUTALIST */
     .tir-bar {
       display: flex;
-      height: 8mm;
-      border: 2px solid #000;
-      margin-bottom: 2mm;
+      height: 10mm;
+      border: 3px solid #000;
+      margin-bottom: 3mm;
     }
     
     .tir-segment {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 9pt;
-      font-weight: bold;
-      border-right: 1px solid #000;
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-right: 2px solid #000;
     }
     
     .tir-segment:last-child {
       border-right: none;
     }
     
-    /* Patterns for print clarity */
+    /* Patterns for print clarity - AGGRESSIVE CONTRAST */
     .tir-tbr { 
       background: repeating-linear-gradient(
         45deg,
@@ -196,42 +225,50 @@ export const generateHTML = (options) => {
         #000 4px
       );
     }
-    .tir-tir { background: #000; color: #fff; }
-    .tir-tar { background: #ddd; }
+    .tir-tir { 
+      background: #000; 
+      color: #fff; 
+    }
+    .tir-tar { 
+      background: #ddd; 
+    }
     
     .tir-legend {
       display: flex;
       justify-content: space-between;
-      font-size: 8pt;
-      margin-bottom: 3mm;
+      font-size: 7pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4mm;
     }
     
-    /* SVG - High contrast for print */
+    /* SVG - BRUTALIST borders */
     svg {
-      border: 2px solid #000;
+      border: 3px solid #000;
       background: #fff;
-      margin-bottom: 3mm;
+      margin-bottom: 4mm;
     }
     
-    /* Details Grid - Compact 2-column */
+    /* Details Grid - Compact 2-column, BRUTALIST */
     .details-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 3mm;
-      margin-bottom: 3mm;
+      margin-bottom: 4mm;
     }
     
     .details-card {
-      border: 2px solid #000;
-      padding: 2mm;
+      border: 3px solid #000;
+      padding: 3mm;
     }
     
     .detail-row {
       display: flex;
       justify-content: space-between;
-      padding: 1mm 0;
-      border-bottom: 1px solid #ccc;
-      font-size: 9pt;
+      padding: 2mm 0;
+      border-bottom: 1px solid #000;
+      font-size: 8pt;
     }
     
     .detail-row:last-child {
@@ -239,54 +276,62 @@ export const generateHTML = (options) => {
     }
     
     .detail-label {
-      font-weight: normal;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     
     .detail-value {
-      font-weight: bold;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
     
-    /* Event Summary - Inline compact */
+    /* Event Summary - BRUTALIST style */
     .event-summary {
       display: flex;
       gap: 3mm;
-      margin-top: 3mm;
+      margin-top: 4mm;
     }
     
     .event-card {
       flex: 1;
-      border: 2px solid #000;
-      padding: 2mm;
+      border: 3px solid #000;
+      padding: 3mm;
       text-align: center;
     }
     
     .event-label {
-      font-size: 8pt;
-      font-weight: bold;
-      margin-bottom: 1mm;
+      font-size: 7pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 2mm;
     }
     
     .event-count {
       font-size: 18pt;
-      font-weight: bold;
+      font-weight: 700;
+      line-height: 1;
     }
     
-    /* Comparison Grid - 3 columns */
+    /* Comparison Grid - BRUTALIST 3 columns */
     .comparison-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 3mm;
-      margin-top: 3mm;
+      margin-top: 4mm;
     }
     
     .comparison-card {
-      border: 2px solid #000;
-      padding: 2mm;
+      border: 3px solid #000;
+      padding: 3mm;
     }
     
     .comparison-label {
-      font-size: 8pt;
-      font-weight: bold;
+      font-size: 7pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
       margin-bottom: 2mm;
     }
     
@@ -294,73 +339,85 @@ export const generateHTML = (options) => {
       display: flex;
       align-items: baseline;
       gap: 2mm;
-      font-size: 11pt;
+      font-size: 10pt;
       margin-bottom: 1mm;
     }
     
     .comparison-old {
       color: #666;
+      font-variant-numeric: tabular-nums;
     }
     
     .comparison-arrow {
-      font-weight: bold;
+      font-weight: 700;
     }
     
     .comparison-new {
       font-size: 16pt;
-      font-weight: bold;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
     
     .comparison-delta {
-      font-size: 9pt;
-      font-weight: bold;
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
     }
     
-    /* Split Grid - 2 columns */
+    /* Split Grid - BRUTALIST 2 columns */
     .split-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 3mm;
-      margin-top: 3mm;
+      margin-top: 4mm;
     }
     
     .split-card {
-      border: 2px solid #000;
-      padding: 2mm;
+      border: 3px solid #000;
+      padding: 3mm;
     }
     
     .split-header {
-      font-size: 10pt;
-      font-weight: bold;
+      font-size: 9pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
       margin-bottom: 2mm;
-      padding-bottom: 1mm;
-      border-bottom: 1px solid #000;
+      padding-bottom: 2mm;
+      border-bottom: 2px solid #000;
     }
     
     .split-info {
-      font-size: 8pt;
-      color: #666;
+      font-size: 7pt;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.7;
       margin-bottom: 2mm;
     }
     
-    /* Footer */
+    /* Footer - BRUTALIST */
     .footer {
-      margin-top: 5mm;
-      padding-top: 2mm;
-      border-top: 1px solid #000;
-      font-size: 7pt;
+      margin-top: 6mm;
+      padding: 3mm;
+      border: 3px solid #000;
+      background: #000;
+      color: #fff;
+      font-size: 6pt;
+      font-weight: 700;
       text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>AGP+ Report</h1>
-    <div class="subtitle">Medtronic 780G | ${startDate} to ${endDate} (${metrics.days} days) | Generated: ${new Date().toLocaleDateString()}</div>
+    <h1>AGP+ V2.1</h1>
+    <div class="subtitle">AMBULATORY GLUCOSE PROFILE | ${startDate} → ${endDate} (${metrics.days} DAYS) | GENERATED: ${new Date().toLocaleDateString('nl-NL').toUpperCase()}</div>
   </div>
 
   <div class="section">
-    <h2>Glucose Metrics</h2>
+    <h2>GLUCOSE METRICS</h2>
     
     <div class="metrics-grid">
       <div class="metric-card">
@@ -426,7 +483,7 @@ export const generateHTML = (options) => {
   </div>
 
   <div class="section">
-    <h2>Ambulatory Glucose Profile</h2>
+    <h2>AMBULATORY GLUCOSE PROFILE</h2>
     
     <div class="tir-bar">
       <div class="tir-segment tir-tbr" style="width: ${metrics.tbr}%">
@@ -526,7 +583,7 @@ export const generateHTML = (options) => {
 
   ${comparison ? `
   <div class="section page-break">
-    <h2>Period Comparison</h2>
+    <h2>PERIOD COMPARISON</h2>
     <div class="split-info">
       Previous: ${comparison.prevStart} to ${comparison.prevEnd} | Current: ${startDate} to ${endDate}
     </div>
@@ -574,7 +631,7 @@ export const generateHTML = (options) => {
 
   ${dayNightMetrics ? `
   <div class="section">
-    <h2>Day vs Night Analysis</h2>
+    <h2>DAY VS NIGHT ANALYSIS</h2>
     <div class="split-info">Night: 00:00-06:00 (6h) | Day: 06:00-00:00 (18h)</div>
     
     <div class="split-grid">
@@ -622,7 +679,7 @@ export const generateHTML = (options) => {
 
   ${workdaySplit ? `
   <div class="section">
-    <h2>Workday vs Rest Day Analysis</h2>
+    <h2>WORKDAY VS REST DAY ANALYSIS</h2>
     <div class="split-info">Workdays: ${workdaySplit.workdayCount} | Rest days: ${workdaySplit.restdayCount}</div>
     
     <div class="split-grid">
@@ -669,7 +726,7 @@ export const generateHTML = (options) => {
   ` : ''}
 
   <div class="footer">
-    AGP+ Generator v2.1 | Medtronic MiniMed 780G + Guardian Sensor 4 | International Consensus 2023
+    AGP+ V2.1 | MINIMED 780G + GUARDIAN 4 | ADA/ATTD 2019 GUIDELINES | PRINT-OPTIMIZED BRUTALIST DESIGN
   </div>
 </body>
 </html>`;
