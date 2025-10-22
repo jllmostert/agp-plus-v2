@@ -1,0 +1,352 @@
+/**
+ * ARTIFACT-01: Metrics Engine
+ * Pure calculation functions for glucose metrics
+ * 
+ * Exports:
+ * - CONFIG: Configuration constants
+ * - utils: Utility functions (parseDecimal, parseDate, formatDate, isInTimePeriod)
+ * - calculateMetrics: Main metrics calculation
+ * - calculateAGP: Ambulatory Glucose Profile percentiles
+ * - detectEvents: Hypo/hyper event detection
+ */
+
+export const CONFIG = {
+  GLUCOSE: {
+    LOW: 70,
+    HIGH: 180,
+    CRITICAL_LOW: 54,
+    CRITICAL_HIGH: 250,
+    MAX: 400
+  },
+  AGP_BINS: 288,
+  HYPO_MIN_DURATION: 15,
+  HYPER_MIN_DURATION: 120,
+  MODD_COVERAGE_THRESHOLD: 0.7,
+  COMPARISON_DAYS: 14,
+  CSV_SKIP_LINES: 6,
+  TIME_SPLIT: {
+    NIGHT_START: 0,
+    NIGHT_END: 6,
+    DAY_START: 6,
+    DAY_END: 24
+  }
+};
+
+export const utils = {
+  parseDecimal: (str) => str && str !== '' ? parseFloat(str.replace(',', '.')) : NaN,
+  
+  parseDate: (dateStr, timeStr) => {
+    const [year, month, day] = dateStr.split('/');
+    const [hours, minutes, seconds] = timeStr.split(':');
+    return new Date(year, month - 1, day, hours, minutes, seconds || 0);
+  },
+  
+  formatDate: (date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  },
+  
+  isInTimePeriod: (hour, period) => {
+    if (period === 'night') {
+      return hour >= CONFIG.TIME_SPLIT.NIGHT_START && hour < CONFIG.TIME_SPLIT.NIGHT_END;
+    }
+    if (period === 'day') {
+      return hour >= CONFIG.TIME_SPLIT.DAY_START && hour < CONFIG.TIME_SPLIT.DAY_END;
+    }
+    return true;
+  }
+};
+
+/**
+ * Calculate glucose metrics for a given period
+ * @param {Array} data - Array of glucose data objects {date, time, glucose}
+ * @param {string} startDate - Start date in YYYY/MM/DD format
+ * @param {string} endDate - End date in YYYY/MM/DD format
+ * @param {Set} filterDates - Optional set of dates to include (for workday filtering)
+ * @param {Object} timeFilter - Optional time filter {type: 'day_night', value: 'day'|'night'}
+ * @returns {Object} Metrics object with TIR, CV, MAGE, MODD, etc.
+ */
+export const calculateMetrics = (data, startDate, endDate, filterDates = null, timeFilter = null) => {
+  // Filter data by date range and optional filters
+  const filtered = data.filter(row => {
+    const dt = utils.parseDate(row.date, row.time);
+    const startDt = utils.parseDate(startDate, '00:00:00');
+    const endDt = utils.parseDate(endDate, '23:59:59');
+    const inRange = dt >= startDt && dt <= endDt;
+    
+    if (filterDates && !filterDates.has(row.date)) return false;
+    
+    if (timeFilter && timeFilter.type === 'day_night') {
+      const hour = dt.getHours();
+      if (!utils.isInTimePeriod(hour, timeFilter.value)) return false;
+    }
+    
+    return inRange;
+  });
+
+  if (filtered.length === 0) return null;
+
+  // Basic statistics
+  const values = filtered.map(r => r.glucose);
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / (values.length - 1);
+  const sd = Math.sqrt(variance);
+  const cv = (sd / mean) * 100;
+  const gmi = 3.31 + (0.02392 * mean);
+
+  // Time in ranges
+  const tir = (values.filter(v => v >= 70 && v <= 180).length / values.length) * 100;
+  const tar = (values.filter(v => v > 180).length / values.length) * 100;
+  const tbr = (values.filter(v => v < 70).length / values.length) * 100;
+
+  // MAGE - Mean Amplitude of Glycemic Excursions
+  const byDay = {};
+  filtered.forEach(r => {
+    if (!byDay[r.date]) byDay[r.date] = [];
+    byDay[r.date].push({ t: utils.parseDate(r.date, r.time), g: r.glucose });
+  });
+  
+  const dailyMAGE = [];
+  Object.values(byDay).forEach(dayData => {
+    const daySeries = dayData.sort((a, b) => a.t - b.t).map(x => x.g);
+    if (daySeries.length < 3) return;
+    
+    // Find extrema (local minima and maxima)
+    const dayExtrema = [];
+    for (let i = 1; i < daySeries.length - 1; i++) {
+      const prev = daySeries[i - 1];
+      const curr = daySeries[i];
+      const next = daySeries[i + 1];
+      if ((curr > prev && curr > next) || (curr < prev && curr < next)) {
+        dayExtrema.push({ value: curr, isPeak: curr > prev });
+      }
+    }
+    
+    // Calculate excursions between alternating peaks/troughs
+    const dayExcursions = [];
+    for (let k = 1; k < dayExtrema.length; k++) {
+      const e1 = dayExtrema[k - 1];
+      const e2 = dayExtrema[k];
+      if (e1.isPeak === e2.isPeak) continue; // Skip same-type extrema
+      const amp = Math.abs(e2.value - e1.value);
+      if (amp >= sd - 1e-9) { // Only count excursions >= 1 SD
+        dayExcursions.push(amp);
+      }
+    }
+    
+    if (dayExcursions.length > 0) {
+      const dayMAGE = dayExcursions.reduce((sum, e) => sum + e, 0) / dayExcursions.length;
+      dailyMAGE.push(dayMAGE);
+    }
+  });
+  
+  const mage = dailyMAGE.length > 0 
+    ? dailyMAGE.reduce((sum, m) => sum + m, 0) / dailyMAGE.length 
+    : 0;
+
+  // MODD - Mean Of Daily Differences
+  const MODD_BINS = CONFIG.AGP_BINS;
+  const dayBins = new Map();
+  
+  const ensureDay = (date) => {
+    if (!dayBins.has(date)) {
+      dayBins.set(date, {
+        sum: new Float64Array(MODD_BINS),
+        count: new Uint16Array(MODD_BINS),
+        filled: Array(MODD_BINS).fill(false)
+      });
+    }
+    return dayBins.get(date);
+  };
+  
+  // Bin glucose values by time of day
+  filtered.forEach(row => {
+    const dt = utils.parseDate(row.date, row.time);
+    const minuteOfDay = dt.getHours() * 60 + dt.getMinutes();
+    const binIdx = Math.floor(minuteOfDay / 5);
+    if (binIdx < 0 || binIdx >= MODD_BINS) return;
+    
+    const dayData = ensureDay(row.date);
+    dayData.sum[binIdx] += row.glucose;
+    dayData.count[binIdx] += 1;
+    dayData.filled[binIdx] = true;
+  });
+  
+  // Check if a day has sufficient coverage
+  const dayHasCoverage = (date) => {
+    const dayData = dayBins.get(date);
+    if (!dayData) return false;
+    const filledCount = dayData.filled.reduce((sum, filled) => sum + (filled ? 1 : 0), 0);
+    return filledCount >= Math.round(CONFIG.MODD_COVERAGE_THRESHOLD * MODD_BINS);
+  };
+  
+  // Calculate MODD between consecutive days
+  const sortedDates = Array.from(dayBins.keys()).sort();
+  let moddSum = 0;
+  let moddCount = 0;
+  
+  for (let d = 0; d < sortedDates.length - 1; d++) {
+    const date1 = sortedDates[d];
+    const date2 = sortedDates[d + 1];
+    
+    if (!dayHasCoverage(date1) || !dayHasCoverage(date2)) continue;
+    
+    const day1 = dayBins.get(date1);
+    const day2 = dayBins.get(date2);
+    
+    for (let bin = 0; bin < MODD_BINS; bin++) {
+      if (day1.count[bin] > 0 && day2.count[bin] > 0) {
+        const val1 = day1.sum[bin] / day1.count[bin];
+        const val2 = day2.sum[bin] / day2.count[bin];
+        moddSum += Math.abs(val2 - val1);
+        moddCount++;
+      }
+    }
+  }
+  
+  const modd = moddCount > 0 ? moddSum / moddCount : 0;
+  const uniqueDays = new Set(filtered.map(r => r.date)).size;
+
+  return {
+    mean: Math.round(mean),
+    sd: sd.toFixed(1),
+    cv: cv.toFixed(1),
+    tir: tir.toFixed(1),
+    tar: tar.toFixed(1),
+    tbr: tbr.toFixed(1),
+    gmi: gmi.toFixed(1),
+    mage: mage.toFixed(1),
+    modd: modd.toFixed(1),
+    min: Math.min(...values),
+    max: Math.max(...values),
+    days: uniqueDays,
+    readingCount: filtered.length
+  };
+};
+
+/**
+ * Calculate Ambulatory Glucose Profile (AGP) percentiles
+ * @param {Array} data - Array of glucose data objects
+ * @param {string} startDate - Start date in YYYY/MM/DD format
+ * @param {string} endDate - End date in YYYY/MM/DD format
+ * @returns {Array} Array of 288 objects with p5, p25, p50, p75, p95, mean
+ */
+export const calculateAGP = (data, startDate, endDate) => {
+  const filtered = data.filter(row => {
+    const dt = utils.parseDate(row.date, row.time);
+    const startDt = utils.parseDate(startDate, '00:00:00');
+    const endDt = utils.parseDate(endDate, '23:59:59');
+    return dt >= startDt && dt <= endDt;
+  });
+
+  const bins = Array(CONFIG.AGP_BINS).fill(null).map(() => []);
+  
+  // Bin glucose values by time of day
+  filtered.forEach(row => {
+    const dt = utils.parseDate(row.date, row.time);
+    const minuteOfDay = dt.getHours() * 60 + dt.getMinutes();
+    const binIdx = Math.floor((minuteOfDay / 1440) * CONFIG.AGP_BINS);
+    if (binIdx >= 0 && binIdx < CONFIG.AGP_BINS) {
+      bins[binIdx].push(row.glucose);
+    }
+  });
+
+  // Calculate percentiles for each bin
+  return bins.map(bin => {
+    if (bin.length === 0) return { p5: 0, p25: 0, p50: 0, p75: 0, p95: 0, mean: 0 };
+    
+    const sorted = [...bin].sort((a, b) => a - b);
+    const mean = bin.reduce((a, b) => a + b, 0) / bin.length;
+    
+    return {
+      p5: sorted[Math.floor(bin.length * 0.05)] || sorted[0],
+      p25: sorted[Math.floor(bin.length * 0.25)],
+      p50: sorted[Math.floor(bin.length * 0.50)],
+      p75: sorted[Math.floor(bin.length * 0.75)],
+      p95: sorted[Math.floor(bin.length * 0.95)] || sorted[sorted.length - 1],
+      mean
+    };
+  });
+};
+
+/**
+ * Detect hypoglycemic and hyperglycemic events
+ * @param {Array} data - Array of glucose data objects
+ * @param {string} startDate - Start date in YYYY/MM/DD format
+ * @param {string} endDate - End date in YYYY/MM/DD format
+ * @returns {Object} Object with hypoL1, hypoL2, hyper event counts and details
+ */
+export const detectEvents = (data, startDate, endDate) => {
+  const filtered = data.filter(row => {
+    const dt = utils.parseDate(row.date, row.time);
+    const startDt = utils.parseDate(startDate, '00:00:00');
+    const endDt = utils.parseDate(endDate, '23:59:59');
+    return dt >= startDt && dt <= endDt;
+  }).sort((a, b) => utils.parseDate(a.date, a.time) - utils.parseDate(b.date, b.time));
+
+  const hypoL1 = [];
+  const hypoL2 = [];
+  const hyper = [];
+  let currentEvent = null;
+
+  filtered.forEach(row => {
+    const glucose = row.glucose;
+    const timestamp = utils.parseDate(row.date, row.time);
+    const minuteOfDay = timestamp.getHours() * 60 + timestamp.getMinutes();
+
+    if (glucose < CONFIG.GLUCOSE.CRITICAL_LOW) {
+      // Level 2 hypoglycemia (<54 mg/dL)
+      if (!currentEvent || currentEvent.type !== 'hypoL2') {
+        currentEvent = { type: 'hypoL2', start: timestamp, minuteOfDay, startGlucose: glucose };
+      }
+    } else if (glucose < CONFIG.GLUCOSE.LOW) {
+      // Level 1 hypoglycemia (54-69 mg/dL)
+      if (currentEvent?.type === 'hypoL2') {
+        const duration = Math.round((timestamp - currentEvent.start) / 60000);
+        if (duration >= CONFIG.HYPO_MIN_DURATION) {
+          hypoL2.push({ ...currentEvent, end: timestamp, duration });
+        }
+      }
+      if (!currentEvent || currentEvent.type !== 'hypoL1') {
+        currentEvent = { type: 'hypoL1', start: timestamp, minuteOfDay, startGlucose: glucose };
+      }
+    } else if (glucose > CONFIG.GLUCOSE.CRITICAL_HIGH) {
+      // Hyperglycemia (>250 mg/dL)
+      if (currentEvent?.type.startsWith('hypo')) {
+        const duration = Math.round((timestamp - currentEvent.start) / 60000);
+        if (duration >= CONFIG.HYPO_MIN_DURATION) {
+          if (currentEvent.type === 'hypoL2') hypoL2.push({ ...currentEvent, end: timestamp, duration });
+          if (currentEvent.type === 'hypoL1') hypoL1.push({ ...currentEvent, end: timestamp, duration });
+        }
+        currentEvent = null;
+      }
+      if (!currentEvent || currentEvent.type !== 'hyper') {
+        currentEvent = { type: 'hyper', start: timestamp, minuteOfDay, startGlucose: glucose };
+      }
+    } else {
+      // In range - close any open events
+      if (currentEvent) {
+        const duration = Math.round((timestamp - currentEvent.start) / 60000);
+        if (currentEvent.type === 'hypoL2' && duration >= CONFIG.HYPO_MIN_DURATION) {
+          hypoL2.push({ ...currentEvent, end: timestamp, duration });
+        }
+        if (currentEvent.type === 'hypoL1' && duration >= CONFIG.HYPO_MIN_DURATION) {
+          hypoL1.push({ ...currentEvent, end: timestamp, duration });
+        }
+        if (currentEvent.type === 'hyper' && duration >= CONFIG.HYPER_MIN_DURATION) {
+          hyper.push({ ...currentEvent, end: timestamp, duration });
+        }
+        currentEvent = null;
+      }
+    }
+  });
+
+  return {
+    hypoL1: { count: hypoL1.length, events: hypoL1 },
+    hypoL2: { count: hypoL2.length, events: hypoL2 },
+    hyper: { count: hyper.length, events: hyper },
+    totalHypo: hypoL1.length + hypoL2.length
+  };
+};
