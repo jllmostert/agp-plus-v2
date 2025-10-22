@@ -9,13 +9,12 @@
  * - Lock/unlock mechanism (slotje)
  * - Switch between saved uploads
  * - Auto-naming or custom labels
- * - ~5-10MB storage limit (browser dependent)
+ * - Only limited by browser LocalStorage capacity (~5-10MB)
  * 
  * @version 1.0.0
  */
 
 const STORAGE_KEY = 'agp_uploads';
-const MAX_UPLOADS = 20; // Reasonable limit
 
 /**
  * Generate unique ID for upload
@@ -94,21 +93,11 @@ export const uploadStorage = {
    * Save new upload
    * @param {Object} data - {csvData, dateRange, proTimeData, name}
    * @returns {string} Upload ID
+   * @throws {Error} If storage quota exceeded
    */
   save(data) {
     try {
       const uploads = this.getAll();
-      
-      // Check limit
-      if (uploads.length >= MAX_UPLOADS) {
-        // Remove oldest unlocked upload
-        const unlocked = uploads.filter(u => !u.locked);
-        if (unlocked.length === 0) {
-          throw new Error(`Maximum ${MAX_UPLOADS} uploads reached. Unlock some to add more.`);
-        }
-        unlocked.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        this.delete(unlocked[0].id);
-      }
       
       const upload = {
         id: generateId(),
@@ -124,7 +113,17 @@ export const uploadStorage = {
       };
       
       uploads.push(upload);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
+      
+      // Try to save - browser will throw QuotaExceededError if full
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
+      } catch (quotaErr) {
+        if (quotaErr.name === 'QuotaExceededError') {
+          throw new Error('Storage full! Delete some unlocked uploads to free space.');
+        }
+        throw quotaErr;
+      }
+      
       this.setActive(upload.id);
       
       return upload.id;
