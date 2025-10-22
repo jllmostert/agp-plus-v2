@@ -1,197 +1,300 @@
-# AGP+ v2.1 - Ambulatory Glucose Profile Generator
+# AGP+ v2.1 - Ambulatory Glucose Profile Analyzer
 
-**Modern web application for analyzing Medtronic 780G CGM data with clinical metrics and visualization.**
+> **Professional diabetes data analysis tool following ADA/ATTD 2019 clinical guidelines**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![React](https://img.shields.io/badge/React-18.3-blue)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF)](https://vitejs.dev/)
+## Overview
 
----
+AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, and period-over-period comparison following international clinical standards.
 
-## 🎯 Features
-
-### Core Functionality
-- **CSV Import**: Direct upload of Medtronic CareLink CSV exports
-- **ProTime Integration**: Work schedule parsing for workday/rest-day analysis
-- **Flexible Period Selection**: Preset periods (14/30/90 days) or custom date ranges
-- **Automated Period Comparison**: Side-by-side metrics for current vs. previous periods
-- **HTML Export**: Standalone, shareable AGP reports
-
-### Clinical Metrics (Aligned with ADA/ATTD Consensus)
-- **Time in Ranges**: TIR (70-180 mg/dL), TAR (>180/250 mg/dL), TBR (<70/54 mg/dL)
-- **Glycemic Variability**: Coefficient of Variation (CV%), Standard Deviation (SD)
-- **Mean Glucose & GMI**: Glucose Management Indicator (estimated HbA1c)
-- **Advanced Metrics**: MAGE (per-day glycemic excursions), MODD (day-to-day variability)
-- **Event Detection**: Hypo L1/L2 and hyperglycemia episodes with duration tracking
-
-### Visualization
-- **AGP Curve**: Median glucose with 5th-95th percentile bands across 24 hours
-- **Event Markers**: Visual indicators for detected glycemic events
-- **Comparison Overlay**: Optional period-over-period AGP comparison
-- **Day/Night Split**: Separate analysis for daytime (06:00-00:00) and nighttime (00:00-06:00)
-- **Workday Analysis**: ProTime-based workday vs. rest-day metrics comparison
+**Version:** 2.1.0  
+**Status:** Production Ready  
+**Last Updated:** October 2025
 
 ---
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ and npm
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-
-### Installation
+## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/jllmostert/agp-plus-v2.git
-cd agp-plus-v2
+# Clone repository
+git clone https://github.com/[your-username]/agp-plus.git
+cd agp-plus
 
 # Install dependencies
 npm install
 
 # Start development server
 npm run dev
+
+# Open browser
+http://localhost:3001
 ```
-
-The app will open automatically at `http://localhost:3000`
-
-### Build for Production
-
-```bash
-# Create optimized production build
-npm run build
-
-# Preview production build locally
-npm run preview
-```
-
-The production files will be in the `dist/` directory.
 
 ---
 
-## 📖 Usage
+## Core Features
 
-### 1. Export Data from CareLink
-1. Log in to [Medtronic CareLink](https://carelink.minimed.eu/)
-2. Navigate to: **Reports** → **Device Data** → **Export**
-3. Select date range and download CSV file
+### Data Import
+- ✅ Medtronic CareLink CSV upload
+- ✅ ProTime workday data integration (PDF/JSON)
+- ✅ Automatic data validation & error handling
 
-### 2. Upload to AGP+
-1. Click **"Upload CSV"** button in AGP+
-2. Select your exported CareLink CSV file
-3. Data is processed locally in your browser (no server upload)
+### Clinical Analysis
+- ✅ **8 Core Metrics**: TIR, TAR, TBR, CV, GMI, Mean Glucose, MAGE, MODD
+- ✅ **AGP Visualization**: Percentile bands (10th, 25th, 50th, 75th, 90th)
+- ✅ **Event Detection**: Hypoglycemia (L1/L2), hyperglycemia alerts
+- ✅ **Period Comparison**: Auto-comparison for 14/30/90-day periods
+- ✅ **Day/Night Analysis**: Separate metrics for 06:00-22:00 vs 22:00-06:00
+- ✅ **Workday Split**: Compare workdays vs rest days (ProTime integration)
 
-### 3. Select Analysis Period
-- Use preset buttons: **14 days**, **30 days**, or **90 days**
-- Or manually select custom start/end dates
-- Metrics update automatically
-
-### 4. Optional: ProTime Work Schedule
-1. Click **"Import ProTime"** button
-2. Upload ProTime PDF or JSON export
-3. Workday/rest-day split analysis appears automatically
-
-### 5. Export Report
-- Click **"Export HTML"** to download a standalone AGP report
-- Share with healthcare providers or save for records
+### User Experience
+- ✅ Preset period buttons (14/30/90 days)
+- ✅ Custom date range picker
+- ✅ Toggle-able analysis modes
+- ✅ Dark theme optimized interface
+- ✅ Responsive design (desktop/tablet/mobile)
+- ✅ HTML report export
 
 ---
 
-## 🏗️ Project Structure
+## Architecture
 
+### Technology Stack
+- **React 18** - Component framework
+- **Vite** - Build tool & dev server
+- **Tailwind CSS** - Styling system
+- **Lucide React** - Icon library
+
+### Project Structure
 ```
 agp-plus/
 ├── src/
-│   ├── main.jsx                # Application entry point
-│   ├── core/                   # Pure JavaScript logic (no React)
-│   │   ├── metrics-engine.js   # Clinical metrics calculations
-│   │   ├── parsers.js          # CSV & ProTime data parsing
-│   │   └── html-exporter.js    # HTML report generation
-│   ├── components/             # React UI components
-│   │   ├── AGPGenerator.jsx    # Main container component
-│   │   ├── FileUpload.jsx      # File upload UI
-│   │   ├── PeriodSelector.jsx  # Date range selector
-│   │   ├── MetricsDisplay.jsx  # Metrics cards grid
-│   │   ├── AGPChart.jsx        # AGP visualization (SVG)
-│   │   ├── ComparisonView.jsx  # Period comparison cards
-│   │   ├── DayNightSplit.jsx   # Day/night analysis
-│   │   └── WorkdaySplit.jsx    # Workday analysis
-│   ├── hooks/                  # Custom React hooks
-│   │   ├── useCSVData.js       # CSV data management
-│   │   ├── useMetrics.js       # Metrics calculation wrapper
-│   │   └── useComparison.js    # Comparison logic
-│   └── styles/
-│       └── globals.css         # Global styles (dark theme)
-├── docs/                       # Documentation
-│   ├── USER_GUIDE.md           # End-user instructions
-│   ├── DEVELOPER_GUIDE.md      # Architecture & development guide
-│   └── METRICS_REFERENCE.md    # Clinical metrics documentation
-├── public/                     # Static assets
-├── package.json                # Dependencies & scripts
-├── vite.config.js              # Build configuration
-└── index.html                  # HTML entry point
+│   ├── components/        # 8 React UI components
+│   │   ├── AGPGenerator.jsx
+│   │   ├── FileUpload.jsx
+│   │   ├── PeriodSelector.jsx
+│   │   ├── MetricsDisplay.jsx
+│   │   ├── AGPChart.jsx
+│   │   ├── ComparisonView.jsx
+│   │   ├── DayNightSplit.jsx
+│   │   └── WorkdaySplit.jsx
+│   │
+│   ├── hooks/             # 3 Custom React hooks
+│   │   ├── useCSVData.js
+│   │   ├── useMetrics.js
+│   │   └── useComparison.js
+│   │
+│   ├── core/              # 3 Calculation engines
+│   │   ├── metrics-engine.js
+│   │   ├── parsers.js
+│   │   └── html-exporter.js
+│   │
+│   └── styles/            # Tailwind CSS
+│
+├── public/                # Static assets
+├── package.json
+├── vite.config.js
+└── index.html
+```
+
+### Data Flow
+```
+CSV Upload → Parse Data → Select Period → Calculate Metrics → Render UI
+     ↓            ↓             ↓              ↓              ↓
+FileUpload → useCSVData → AGPGenerator → useMetrics → Display Components
+                                    ↓
+                              useComparison
+                                    ↓
+                            ComparisonView
 ```
 
 ---
 
-## 🔬 Clinical Validation
+## Clinical Standards
 
-AGP+ implements metrics and visualizations aligned with:
-- **ADA/ATTD Consensus Report** (2019) - International Consensus on Time in Range
-- **Medtronic 780G Clinical Guidelines** - Device-specific thresholds
-- **AGP Standard v1.0** - Ambulatory Glucose Profile standardized format
+AGP+ follows international guidelines for CGM data analysis:
 
-See [`docs/METRICS_REFERENCE.md`](docs/METRICS_REFERENCE.md) for detailed metric definitions and clinical interpretations.
+- **ADA/ATTD 2019** - Core CGM metrics definitions
+- **International Consensus 2017** - AGP methodology
+- **FDA Guidance 2016** - AGP visualization standards
+
+### Target Ranges (Type 1 Diabetes)
+| Metric | Target | Range |
+|--------|--------|-------|
+| **TIR** | ≥70% | 70-180 mg/dL |
+| **TAR** | ≤25% | >180 mg/dL |
+| **TBR** | <4% | <70 mg/dL |
+| **CV** | ≤36% | Glycemic variability |
+| **GMI** | <7.0% | Glucose Management Indicator |
 
 ---
 
-## 🛠️ Development
+## Documentation
 
-### Tech Stack
-- **Frontend**: React 18 (functional components, hooks)
-- **Build Tool**: Vite 5 (fast HMR, optimized builds)
-- **Styling**: Tailwind CSS utility classes (inline)
-- **Icons**: Lucide React
-- **Data Processing**: Pure JavaScript (no external analytics libraries)
+### Essential Reading
 
-### Code Philosophy
-- **Separation of Concerns**: Core logic (`/src/core/`) is pure JS, independent of React
-- **Testability**: Business logic functions are unit-testable without UI
-- **Reusability**: Components are modular and composable
-- **Performance**: Memoized calculations, optimized re-renders
+1. **[PROJECT BRIEFING](./AGP_PLUS_v2.1_PROJECT_BRIEFING.md)** ⭐ Start here
+   - Complete technical documentation
+   - Architecture & component details
+   - Algorithm explanations
+   - Known limitations
+
+2. **[DESIGN SYSTEM](./DESIGN_SYSTEM_QUICK_REF.md)**
+   - UI/UX guidelines
+   - Color schemes & typography
+   - Component patterns
+
+3. **[METRIC DEFINITIONS](./metric_definitions.md)**
+   - Clinical metric explanations
+   - Calculation formulas
+   - Target ranges & interpretation
+
+4. **[MINIMED 780G REFERENCE](./minimed_780g_ref.md)**
+   - Device specifications
+   - CareLink data format
+   - SmartGuard algorithm notes
+
+### Code Reference
+
+The `/docs/artifacts/` folder contains reference implementations:
+- `ARTIFACT-01__metrics-engine_js.txt` - Calculation engine
+- `ARTIFACT-02__parsers_js.txt` - CSV parsing logic
+- `ARTIFACT-03__html-exporter_js.txt` - Report generation
+
+---
+
+## Development
+
+### Prerequisites
+- Node.js 18+
+- npm 9+
+- Git
+
+### Commands
+```bash
+# Development
+npm run dev              # Start dev server (port 3001)
+
+# Build
+npm run build            # Production build → dist/
+npm run preview          # Preview production build
+
+# Code Quality
+npm run lint             # ESLint (if configured)
+```
+
+### Testing Workflow
+1. Upload sample CareLink CSV
+2. Select 30-day period
+3. Verify all metrics display correctly
+4. Check AGP chart renders
+5. Test comparison view (if historical data available)
+6. Toggle day/night analysis
+7. Import ProTime data (if available)
+8. Export HTML report
+
+---
+
+## Known Limitations
+
+### Basal Rate Data
+⚠️ **CareLink CSV exports do NOT include SmartGuard auto-adjustments**
+
+The CSV contains only the *programmed* basal pattern, not actual delivery. This makes Total Daily Dose (TDD) calculations unreliable (-26% to -1% error).
+
+**Solution:** Use Medtronic PDF reports (Therapy Management Dashboard) for accurate TDD data.
+
+**Design Decision:** We don't calculate metrics we can't trust. Honesty > features.
+
+### Data Requirements
+- Minimum 7 days of CGM data
+- At least 70% CGM coverage for reliable metrics
+- Date ranges must be within available data
+
+---
+
+## Deployment
+
+### Netlify (Recommended)
+```bash
+npm run build
+# Upload dist/ folder to Netlify
+# Or connect GitHub for auto-deploy
+```
+
+### Vercel
+```bash
+npm i -g vercel
+vercel
+```
+
+### GitHub Pages
+```bash
+# Update vite.config.js base path
+npm run build
+npx gh-pages -d dist
+```
+
+---
+
+## Future Enhancements
+
+### Planned Features
+- [ ] PDF export (in addition to HTML)
+- [ ] Save/load sessions (localStorage)
+- [ ] Multiple CSV comparison
+- [ ] Custom target ranges
+- [ ] A1C correlation tracking
+
+### Under Consideration
+- [ ] Backend API integration
+- [ ] User accounts & cloud storage
+- [ ] Mobile app (React Native)
+- [ ] Real-time CGM integration
+
+---
+
+## Support
+
+### Issues & Questions
+- **GitHub Issues**: [Report bugs or request features](https://github.com/[your-username]/agp-plus/issues)
+- **Documentation**: Review project briefing for detailed explanations
+- **Clinical Questions**: Consult with healthcare provider
 
 ### Contributing
 Contributions welcome! Please:
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create feature branch
+3. Follow existing code style
+4. Test thoroughly
+5. Submit pull request with clear description
 
 ---
 
-## 📄 License
+## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **Medtronic** - For the 780G Auto Mode CGM system
-- **ADA/ATTD Consensus Group** - For standardized metrics definitions
-- **International Diabetes Community** - For feedback and testing
+[Add your license here - e.g., MIT, GPL, etc.]
 
 ---
 
-## 📞 Support
+## Acknowledgments
 
-- **Issues**: [GitHub Issues](https://github.com/jllmostert/agp-plus-v2/issues)
-- **Documentation**: See [`docs/`](docs/) folder
-- **Email**: jllmostert@gmail.com
+Built following clinical guidelines from:
+- American Diabetes Association (ADA)
+- Advanced Technologies & Treatments for Diabetes (ATTD)
+- International Consensus on CGM Data
+
+Data format based on:
+- Medtronic CareLink export specifications
+- Medtronic MiniMed 780G system
 
 ---
 
-**Built with ❤️ for better diabetes management**
+## Contact
 
-*Version 2.1.0 - October 2025*
+**Project Maintainer**: [Your name]  
+**Email**: [Your email]  
+**Repository**: [GitHub URL]
+
+---
+
+*Made with ❤️ for better diabetes management*

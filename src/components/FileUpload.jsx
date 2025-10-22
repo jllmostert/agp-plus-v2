@@ -154,29 +154,69 @@ function ProTimeButton({ onClick, isLoaded }) {
       `}
     >
       <Calendar className="w-4 h-4" />
-      {isLoaded ? 'ProTime Loaded ✓' : 'Import ProTime'}
+      {isLoaded ? 'ProTime Loaded ✓' : 'Import ProTime (Optional)'}
     </button>
   );
 }
 
 /**
- * ProTimeModal - Modal for ProTime data import (PDF text or JSON)
+ * ProTimeModal - Modal for ProTime data import (PDF upload, PDF text, or JSON)
  */
 function ProTimeModal({ onClose, onLoad, setError }) {
-  const [activeTab, setActiveTab] = useState('pdf'); // 'pdf' or 'json'
+  const [activeTab, setActiveTab] = useState('pdf-upload'); // 'pdf-upload', 'pdf-text', or 'json'
   const [pdfText, setPdfText] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const pdfFileInputRef = useRef(null);
   const jsonFileInputRef = useRef(null);
+
+  const handlePDFUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    // Validate all files are PDFs
+    const nonPdfFiles = files.filter(f => !f.name.endsWith('.pdf'));
+    if (nonPdfFiles.length > 0) {
+      setError('Please upload only PDF files');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // Import PDF parser
+      const { extractTextFromPDF, extractTextFromMultiplePDFs } = await import('../utils/pdfParser');
+      
+      // Extract text from PDFs
+      let extractedText;
+      if (files.length === 1) {
+        extractedText = await extractTextFromPDF(files[0]);
+      } else {
+        extractedText = await extractTextFromMultiplePDFs(files);
+      }
+
+      // Validate extracted text has ProTime content
+      if (!extractedText.includes('Datum') && !extractedText.includes('Week')) {
+        setError('PDF does not appear to contain ProTime timecard data');
+        setIsProcessing(false);
+        return;
+      }
+
+      onLoad(extractedText);
+      onClose();
+    } catch (err) {
+      console.error('PDF processing error:', err);
+      setError(`Failed to process PDF: ${err.message}`);
+      setIsProcessing(false);
+    }
+
+    // Reset input
+    event.target.value = '';
+  };
 
   const handlePDFTextSubmit = () => {
     if (!pdfText.trim()) {
       setError('Please paste ProTime PDF text');
-      return;
-    }
-
-    // Basic validation: check for expected ProTime content
-    if (!pdfText.includes('ProTime') && !pdfText.includes('werkdag')) {
-      setError('This does not appear to be ProTime data');
       return;
     }
 
@@ -197,9 +237,21 @@ function ProTimeModal({ onClose, onLoad, setError }) {
       const text = await file.text();
       const data = JSON.parse(text);
 
-      // Validate JSON structure
-      if (!Array.isArray(data) || data.length === 0) {
-        setError('Invalid ProTime JSON format');
+      // Validate JSON structure - accept multiple formats:
+      // 1. Direct array: ["2025/10/01", ...]
+      // 2. Object with workdays array: {workdays: ["2025/10/01", ...]}
+      // 3. Object with workdays object array: {workdays: [{date: "2025/10/01", is_workday: true}, ...]}
+      
+      let isValid = false;
+      
+      if (Array.isArray(data) && data.length > 0) {
+        isValid = true;
+      } else if (data && data.workdays && Array.isArray(data.workdays) && data.workdays.length > 0) {
+        isValid = true;
+      }
+      
+      if (!isValid) {
+        setError('Invalid ProTime JSON format. Expected array of dates or object with workdays property.');
         return;
       }
 
@@ -232,16 +284,28 @@ function ProTimeModal({ onClose, onLoad, setError }) {
         {/* Tabs */}
         <div className="flex border-b border-gray-700">
           <button
-            onClick={() => setActiveTab('pdf')}
+            onClick={() => setActiveTab('pdf-upload')}
             className={`
               flex-1 px-4 py-3 text-sm font-medium transition-colors
-              ${activeTab === 'pdf'
+              ${activeTab === 'pdf-upload'
                 ? 'bg-gray-700 text-blue-400 border-b-2 border-blue-400'
                 : 'text-gray-400 hover:text-gray-300'
               }
             `}
           >
-            PDF Text
+            📄 PDF Upload
+          </button>
+          <button
+            onClick={() => setActiveTab('pdf-text')}
+            className={`
+              flex-1 px-4 py-3 text-sm font-medium transition-colors
+              ${activeTab === 'pdf-text'
+                ? 'bg-gray-700 text-blue-400 border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-gray-300'
+              }
+            `}
+          >
+            📋 PDF Text
           </button>
           <button
             onClick={() => setActiveTab('json')}
@@ -253,13 +317,19 @@ function ProTimeModal({ onClose, onLoad, setError }) {
               }
             `}
           >
-            JSON File
+            📊 JSON File
           </button>
         </div>
 
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {activeTab === 'pdf' ? (
+          {activeTab === 'pdf-upload' ? (
+            <PDFUploadTab 
+              fileInputRef={pdfFileInputRef}
+              onUpload={handlePDFUpload}
+              isProcessing={isProcessing}
+            />
+          ) : activeTab === 'pdf-text' ? (
             <PDFTextTab 
               pdfText={pdfText}
               setPdfText={setPdfText}
@@ -272,6 +342,76 @@ function ProTimeModal({ onClose, onLoad, setError }) {
             />
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * PDFUploadTab - Tab for uploading ProTime PDF files directly
+ */
+function PDFUploadTab({ fileInputRef, onUpload, isProcessing }) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Upload ProTime PDF(s)
+        </label>
+        <p className="text-xs text-gray-500 mb-3">
+          Select one or more ProTime PDF exports. Multiple PDFs will be combined automatically.
+        </p>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf"
+          multiple
+          onChange={onUpload}
+          disabled={isProcessing}
+          className="hidden"
+        />
+        
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isProcessing}
+          className="w-full px-4 py-8 border-2 border-dashed border-gray-600 rounded-lg
+                     bg-gray-900/50 hover:bg-gray-900 hover:border-blue-500
+                     transition-colors text-gray-400 hover:text-gray-300
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <div className="flex flex-col items-center gap-2">
+            {isProcessing ? (
+              <>
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm">Processing PDF...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-8 h-8" />
+                <span className="text-sm font-medium">Click to select PDF file(s)</span>
+                <span className="text-xs text-gray-500">or drag and drop here</span>
+              </>
+            )}
+          </div>
+        </button>
+      </div>
+
+      <div className="bg-green-900/20 border border-green-700 rounded-lg p-3 space-y-2">
+        <p className="text-xs text-green-300">
+          <strong>✨ Easy way:</strong> Just upload your ProTime PDF(s)!
+        </p>
+        <ul className="text-xs text-green-300 list-disc list-inside space-y-1">
+          <li>Automatic text extraction</li>
+          <li>Multiple PDFs supported (for multi-month analysis)</li>
+          <li>No copy-paste needed</li>
+        </ul>
+      </div>
+
+      <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-3">
+        <p className="text-xs text-blue-300">
+          <strong>Tip:</strong> To analyze multiple months, select all ProTime PDFs at once 
+          (hold Cmd/Ctrl while clicking files).
+        </p>
       </div>
     </div>
   );

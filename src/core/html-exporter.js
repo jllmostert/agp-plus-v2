@@ -52,12 +52,20 @@ const generateAGPBand = (agpData, topPercentile, bottomPercentile) => {
 export const generateHTML = (options) => {
   const {
     metrics,
+    agpData,
+    events,
     startDate,
     endDate,
     dayNightMetrics = null,
     workdaySplit = null,
     comparison = null
   } = options;
+
+  // Validate required data
+  if (!metrics || !agpData || !startDate || !endDate) {
+    console.error('generateHTML: Missing required data', { metrics: !!metrics, agpData: !!agpData, startDate: !!startDate, endDate: !!endDate });
+    throw new Error('Missing required data for HTML generation');
+  }
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -469,14 +477,14 @@ export const generateHTML = (options) => {
       <text x="450" y="395" font-size="11" font-weight="bold" text-anchor="middle">Time of Day</text>
       
       <!-- AGP bands - higher contrast -->
-      <path d="${generateAGPBand(metrics.agp, 'p5', 'p95')}" fill="#ddd" />
-      <path d="${generateAGPBand(metrics.agp, 'p25', 'p75')}" fill="#aaa" />
+      <path d="${generateAGPBand(agpData, 'p5', 'p95')}" fill="#ddd" />
+      <path d="${generateAGPBand(agpData, 'p25', 'p75')}" fill="#aaa" />
       
       <!-- Median line - thick black -->
-      <path d="${generateAGPPath(metrics.agp, 'p50')}" stroke="#000" stroke-width="3" fill="none" />
+      <path d="${generateAGPPath(agpData, 'p50')}" stroke="#000" stroke-width="3" fill="none" />
       
       <!-- Mean line - dashed -->
-      <path d="${generateAGPPath(metrics.agp, 'mean')}" stroke="#666" stroke-width="2" stroke-dasharray="6,3" fill="none" />
+      <path d="${generateAGPPath(agpData, 'mean')}" stroke="#666" stroke-width="2" stroke-dasharray="6,3" fill="none" />
       
       ${comparison ? `
       <!-- Comparison median - dotted -->
@@ -503,22 +511,22 @@ export const generateHTML = (options) => {
     <div class="event-summary">
       <div class="event-card">
         <div class="event-label">HYPO L2 (&lt;54)</div>
-        <div class="event-count">${metrics.events.hypoL2.count}</div>
+        <div class="event-count">${events.hypoL2.count}</div>
       </div>
       <div class="event-card">
         <div class="event-label">HYPO L1 (54-69)</div>
-        <div class="event-count">${metrics.events.hypoL1.count}</div>
+        <div class="event-count">${events.hypoL1.count}</div>
       </div>
       <div class="event-card">
         <div class="event-label">HYPER (&gt;250)</div>
-        <div class="event-count">${metrics.events.hyper.count}</div>
+        <div class="event-count">${events.hyper.count}</div>
       </div>
     </div>
   </div>
 
   ${comparison ? `
   <div class="section page-break">
-    <h2>14-Day Period Comparison</h2>
+    <h2>Period Comparison</h2>
     <div class="split-info">
       Previous: ${comparison.prevStart} to ${comparison.prevEnd} | Current: ${startDate} to ${endDate}
     </div>
@@ -527,37 +535,37 @@ export const generateHTML = (options) => {
       <div class="comparison-card">
         <div class="comparison-label">TIME IN RANGE</div>
         <div class="comparison-values">
-          <span class="comparison-old">${comparison.comparison.tir}%</span>
+          <span class="comparison-old">${comparison.previous.tir}%</span>
           <span class="comparison-arrow">→</span>
           <span class="comparison-new">${metrics.tir}%</span>
         </div>
         <div class="comparison-delta">
-          ${(parseFloat(metrics.tir) - parseFloat(comparison.comparison.tir)) > 0 ? '▲' : '▼'} 
-          ${Math.abs(parseFloat(metrics.tir) - parseFloat(comparison.comparison.tir)).toFixed(1)}%
+          ${(parseFloat(metrics.tir) - parseFloat(comparison.previous.tir)) > 0 ? '▲' : '▼'} 
+          ${Math.abs(parseFloat(metrics.tir) - parseFloat(comparison.previous.tir)).toFixed(1)}%
         </div>
       </div>
       <div class="comparison-card">
         <div class="comparison-label">MEAN ± SD</div>
         <div class="comparison-values">
-          <span class="comparison-old">${comparison.comparison.mean}±${comparison.comparison.sd}</span>
+          <span class="comparison-old">${comparison.previous.mean}±${comparison.previous.sd}</span>
           <span class="comparison-arrow">→</span>
           <span class="comparison-new">${metrics.mean}±${metrics.sd}</span>
         </div>
         <div class="comparison-delta">
-          ${metrics.mean - comparison.comparison.mean > 0 ? '▲' : '▼'} 
-          ${Math.abs(metrics.mean - comparison.comparison.mean)} mg/dL
+          ${metrics.mean - comparison.previous.mean > 0 ? '▲' : '▼'} 
+          ${Math.abs(metrics.mean - comparison.previous.mean)} mg/dL
         </div>
       </div>
       <div class="comparison-card">
         <div class="comparison-label">CV (VARIABILITY)</div>
         <div class="comparison-values">
-          <span class="comparison-old">${comparison.comparison.cv}%</span>
+          <span class="comparison-old">${comparison.previous.cv}%</span>
           <span class="comparison-arrow">→</span>
           <span class="comparison-new">${metrics.cv}%</span>
         </div>
         <div class="comparison-delta">
-          ${(parseFloat(metrics.cv) - parseFloat(comparison.comparison.cv)) > 0 ? '▲' : '▼'} 
-          ${Math.abs(parseFloat(metrics.cv) - parseFloat(comparison.comparison.cv)).toFixed(1)}%
+          ${(parseFloat(metrics.cv) - parseFloat(comparison.previous.cv)) > 0 ? '▲' : '▼'} 
+          ${Math.abs(parseFloat(metrics.cv) - parseFloat(comparison.previous.cv)).toFixed(1)}%
         </div>
       </div>
     </div>

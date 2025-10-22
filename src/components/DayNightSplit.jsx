@@ -1,340 +1,93 @@
-import React, { useState } from 'react';
-import { Sun, Moon, ToggleLeft, ToggleRight } from 'lucide-react';
+import React from 'react';
 
-/**
- * DayNightSplit - Day/Night analysis component
- * 
- * Displays glucose metrics split by day (06:00-00:00) and night (00:00-06:00)
- * with toggle to enable/disable the analysis.
- * 
- * @param {Object} props.dayMetrics - Metrics for daytime period (06:00-00:00)
- * @param {Object} props.nightMetrics - Metrics for nighttime period (00:00-06:00)
- * @param {boolean} props.enabled - Whether day/night split is enabled
- * @param {Function} props.onToggle - Callback when toggle is clicked
- * 
- * @version 2.1.0
- */
-export default function DayNightSplit({ dayMetrics, nightMetrics, enabled, onToggle }) {
-  if (!dayMetrics || !nightMetrics) {
-    return null;
-  }
+const safeFormat = (val, decimals = 0) => {
+  const num = Number(val);
+  if (isNaN(num) || !isFinite(num)) return 'N/A';
+  return num.toFixed(decimals);
+};
 
-  return (
-    <div className="space-y-4">
-      {/* Header with Toggle */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-100">
-          Day/Night Analysis
-        </h3>
-        
-        {/* Toggle Button */}
-        <button
-          onClick={onToggle}
-          className={`
-            flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all
-            ${enabled 
-              ? 'bg-blue-600 text-white border-2 border-blue-400' 
-              : 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:bg-gray-600'
-            }
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900
-          `}
-        >
-          {enabled ? (
-            <>
-              <ToggleRight className="w-5 h-5" />
-              <span>Enabled</span>
-            </>
-          ) : (
-            <>
-              <ToggleLeft className="w-5 h-5" />
-              <span>Disabled</span>
-            </>
-          )}
-        </button>
-      </div>
+export default function DayNightSplit({ dayMetrics, nightMetrics }) {
+  if (!dayMetrics || !nightMetrics) return null;
 
-      {/* Only show cards when enabled */}
-      {enabled && (
-        <>
-          {/* Time Period Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Sun className="w-4 h-4 text-blue-400" />
-              <span>Day: 06:00 - 00:00 (18 hours)</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Moon className="w-4 h-4 text-indigo-400" />
-              <span>Night: 00:00 - 06:00 (6 hours)</span>
-            </div>
-          </div>
-
-          {/* Side-by-side Metrics Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Day Card */}
-            <DayNightCard
-              type="day"
-              metrics={dayMetrics}
-              compareMetrics={nightMetrics}
-            />
-
-            {/* Night Card */}
-            <DayNightCard
-              type="night"
-              metrics={nightMetrics}
-              compareMetrics={dayMetrics}
-            />
-          </div>
-
-          {/* Insights */}
-          <DayNightInsights dayMetrics={dayMetrics} nightMetrics={nightMetrics} />
-        </>
-      )}
-
-      {/* Disabled State Message */}
-      {!enabled && (
-        <div className="card bg-gray-800/50 border-gray-700">
-          <p className="text-sm text-gray-400 text-center">
-            Click "Disabled" above to enable day/night split analysis
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * DayNightCard - Individual card for day or night metrics
- */
-function DayNightCard({ type, metrics, compareMetrics }) {
-  const isDay = type === 'day';
-  const themeColor = isDay ? 'blue' : 'indigo';
-  const Icon = isDay ? Sun : Moon;
-  const label = isDay ? 'Day' : 'Night';
-  const timeRange = isDay ? '06:00 - 00:00' : '00:00 - 06:00';
-
-  // Calculate deltas (current - compare)
-  const deltas = {
-    tir: metrics.tir - compareMetrics.tir,
-    tar: metrics.tar - compareMetrics.tar,
-    tbr: metrics.tbr - compareMetrics.tbr,
-    mean: metrics.mean - compareMetrics.mean,
-    cv: metrics.cv - compareMetrics.cv,
-  };
-
-  const metricItems = [
-    {
-      label: 'TIR (70-180)',
-      value: metrics.tir,
-      unit: '%',
-      format: (v) => v.toFixed(1),
-      delta: deltas.tir,
-      betterIfHigher: true,
-    },
-    {
-      label: 'TAR (>180)',
-      value: metrics.tar,
-      unit: '%',
-      format: (v) => v.toFixed(1),
-      delta: deltas.tar,
-      betterIfLower: true,
-    },
-    {
-      label: 'TBR (<70)',
-      value: metrics.tbr,
-      unit: '%',
-      format: (v) => v.toFixed(1),
-      delta: deltas.tbr,
-      betterIfLower: true,
-    },
-    {
-      label: 'Mean',
-      value: metrics.mean,
-      unit: 'mg/dL',
-      format: (v) => v.toFixed(0),
-      subtitle: `± ${metrics.sd.toFixed(0)} SD`,
-      delta: deltas.mean,
-    },
-    {
-      label: 'CV',
-      value: metrics.cv,
-      unit: '%',
-      format: (v) => v.toFixed(1),
-      delta: deltas.cv,
-      betterIfLower: true,
-    },
-    {
-      label: 'Min',
-      value: metrics.min,
-      unit: 'mg/dL',
-      format: (v) => v.toFixed(0),
-    },
-    {
-      label: 'Max',
-      value: metrics.max,
-      unit: 'mg/dL',
-      format: (v) => v.toFixed(0),
-    },
-    {
-      label: 'Readings',
-      value: metrics.readingCount,
-      unit: '',
-      format: (v) => v.toLocaleString(),
-    },
+  const comparisons = [
+    { id: 'tir', label: 'Time in Range', sublabel: '70-180 mg/dL', day: dayMetrics.tir, night: nightMetrics.tir, unit: '%', format: (v) => safeFormat(v, 1), betterIfHigher: true, showDuration: true },
+    { id: 'mean', label: 'Mean Glucose', day: dayMetrics.mean, night: nightMetrics.mean, unit: 'mg/dL', format: (v) => safeFormat(v, 0), daySD: dayMetrics.sd, nightSD: nightMetrics.sd },
+    { id: 'cv', label: 'Coefficient Variation', day: dayMetrics.cv, night: nightMetrics.cv, unit: '%', format: (v) => safeFormat(v, 1), betterIfLower: true },
   ];
 
   return (
-    <div className={`card border-2 border-${themeColor}-600/50`}>
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-700">
-        <Icon className={`w-5 h-5 text-${themeColor}-400`} />
-        <div className="flex-1">
-          <h4 className={`text-lg font-semibold text-${themeColor}-400`}>{label}</h4>
-          <p className="text-xs text-gray-500">{timeRange}</p>
+    <div className="card" style={{ padding: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Day/Night Analysis</h3>
+        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>06:00-00:00 vs 00:00-06:00</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr 1fr', gap: '1rem', alignItems: 'stretch' }}>
+        {comparisons.map((comp) => (<DayNightRow key={comp.id} {...comp} />))}
+      </div>
+    </div>
+  );
+}
+
+function DayNightRow({ label, sublabel, day, night, unit, format, daySD, nightSD, betterIfHigher, betterIfLower, showDuration }) {
+  const delta = day - night;
+  const deltaFormatted = format(Math.abs(delta));
+  let trendIcon = '→', trendColor = '#6b7280';
+  if (Math.abs(delta) > 0.5) {
+    if (betterIfHigher) { trendIcon = delta > 0 ? '↑' : '↓'; trendColor = delta > 0 ? '#10b981' : '#ef4444'; }
+    else if (betterIfLower) { trendIcon = delta > 0 ? '↑' : '↓'; trendColor = delta < 0 ? '#10b981' : '#ef4444'; }
+    else { trendIcon = delta > 0 ? '↑' : '↓'; }
+  }
+  
+  return (
+    <>
+      {/* Label */}
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.25rem' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{label}</div>
+        {sublabel && <div style={{ fontSize: '0.625rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{sublabel}</div>}
+      </div>
+      
+      {/* Day Card */}
+      <div style={{ backgroundColor: '#111827', color: 'white', padding: '1.25rem', borderRadius: '4px', border: '2px solid #1f2937' }}>
+        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: '#9ca3af' }}>
+          Day (06:00-00:00)
+        </div>
+        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: '#f9fafb', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+          {format(day)}
+          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#d1d5db' }}>{unit}</span>
+        </div>
+        {daySD != null && (
+          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: '#d1d5db' }}>
+            ± {safeFormat(daySD, 0)} SD
+          </div>
+        )}
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.25rem', color: trendColor }}>{trendIcon}</span>
+          <span style={{ fontSize: '0.875rem', color: trendColor, fontWeight: 600 }}>
+            {delta > 0 ? '+' : ''}{deltaFormatted} {unit} vs night
+          </span>
         </div>
       </div>
-
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {metricItems.map((item, idx) => (
-          <MetricItem key={idx} {...item} themeColor={themeColor} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * MetricItem - Individual metric display within day/night card
- */
-function MetricItem({ label, value, unit, format, subtitle, delta, betterIfHigher, betterIfLower, themeColor }) {
-  const formattedValue = format ? format(value) : value;
-
-  // Determine delta color
-  let deltaColor = 'text-gray-600';
-  if (delta !== undefined && Math.abs(delta) > 0.5) {
-    if (betterIfHigher) {
-      deltaColor = delta > 0 ? 'text-green-400' : 'text-red-400';
-    } else if (betterIfLower) {
-      deltaColor = delta < 0 ? 'text-green-400' : 'text-red-400';
-    }
-  }
-
-  return (
-    <div className="text-left">
-      <div className="text-xs text-gray-500 mb-1">{label}</div>
-      <div className="flex items-baseline gap-1">
-        <span className={`text-lg font-semibold text-${themeColor}-400`}>
-          {formattedValue}
-        </span>
-        {unit && <span className="text-xs text-gray-600">{unit}</span>}
-      </div>
-      {subtitle && (
-        <div className="text-xs text-gray-600 mt-0.5">{subtitle}</div>
-      )}
-      {delta !== undefined && Math.abs(delta) > 0.5 && (
-        <div className={`text-xs ${deltaColor} mt-0.5`}>
-          {delta > 0 ? '+' : ''}{format ? format(delta) : delta.toFixed(1)}
+      
+      {/* Night Card */}
+      <div style={{ backgroundColor: '#111827', color: 'white', padding: '1.25rem', borderRadius: '4px', border: '2px solid #1f2937' }}>
+        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: '#9ca3af' }}>
+          Night (00:00-06:00)
         </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * DayNightInsights - Automatic insights based on day/night differences
- */
-function DayNightInsights({ dayMetrics, nightMetrics }) {
-  const insights = [];
-
-  // TIR comparison
-  const tirDiff = dayMetrics.tir - nightMetrics.tir;
-  if (Math.abs(tirDiff) > 5) {
-    const betterPeriod = tirDiff > 0 ? 'daytime' : 'nighttime';
-    const worsePeriod = tirDiff > 0 ? 'nighttime' : 'daytime';
-    insights.push({
-      type: 'info',
-      message: `Time in Range is ${Math.abs(tirDiff).toFixed(1)}% higher during ${betterPeriod}`,
-      suggestion: tirDiff < 0 
-        ? 'Consider adjusting daytime insulin or meal timing'
-        : 'Review nighttime basal rates if control is suboptimal',
-    });
-  }
-
-  // TBR nighttime warning
-  if (nightMetrics.tbr > 4) {
-    insights.push({
-      type: 'warning',
-      message: `Nighttime TBR is ${nightMetrics.tbr.toFixed(1)}% (target: <4%)`,
-      suggestion: 'Consider reducing nighttime basal rates to prevent nocturnal hypoglycemia',
-    });
-  }
-
-  // TAR nighttime issue
-  if (nightMetrics.tar > 25) {
-    insights.push({
-      type: 'warning',
-      message: `Nighttime TAR is ${nightMetrics.tar.toFixed(1)}% (target: <25%)`,
-      suggestion: 'Review nighttime basal rates or evening meal timing',
-    });
-  }
-
-  // CV comparison
-  const cvDiff = dayMetrics.cv - nightMetrics.cv;
-  if (Math.abs(cvDiff) > 5) {
-    const morePeriod = cvDiff > 0 ? 'daytime' : 'nighttime';
-    insights.push({
-      type: 'info',
-      message: `Glucose variability is ${Math.abs(cvDiff).toFixed(1)}% higher during ${morePeriod}`,
-      suggestion: morePeriod === 'daytime'
-        ? 'Daytime variability may be related to meals or activity'
-        : 'Consider more stable nighttime basal rates',
-    });
-  }
-
-  // No major differences
-  if (insights.length === 0) {
-    insights.push({
-      type: 'positive',
-      message: 'Glucose control is well-balanced between day and night periods',
-      suggestion: null,
-    });
-  }
-
-  return (
-    <div className="space-y-2">
-      {insights.map((insight, idx) => (
-        <InsightCard key={idx} {...insight} />
-      ))}
-    </div>
-  );
-}
-
-/**
- * InsightCard - Individual insight/recommendation card
- */
-function InsightCard({ type, message, suggestion }) {
-  const styles = {
-    positive: 'bg-green-900/20 border-green-700 text-green-300',
-    info: 'bg-blue-900/20 border-blue-700 text-blue-300',
-    warning: 'bg-yellow-900/20 border-yellow-700 text-yellow-300',
-  };
-
-  const icons = {
-    positive: '✓',
-    info: 'ℹ',
-    warning: '⚠',
-  };
-
-  return (
-    <div className={`card ${styles[type]}`}>
-      <p className="text-sm">
-        {icons[type]} {message}
-      </p>
-      {suggestion && (
-        <p className="text-xs mt-2 opacity-80">
-          💡 {suggestion}
-        </p>
-      )}
-    </div>
+        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: '#9ca3af', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+          {format(night)}
+          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#6b7280' }}>{unit}</span>
+        </div>
+        {nightSD != null && (
+          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: '#9ca3af' }}>
+            ± {safeFormat(nightSD, 0)} SD
+          </div>
+        )}
+        {showDuration && (
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #374151', fontSize: '0.6875rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            6 hours
+          </div>
+        )}
+      </div>
+    </>
   );
 }

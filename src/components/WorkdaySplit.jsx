@@ -1,264 +1,94 @@
 import React from 'react';
-import { Briefcase, Home, TrendingUp, Activity } from 'lucide-react';
 
-/**
- * WorkdaySplit - Workday vs. Rest-day Analysis Component
- * 
- * Displays side-by-side comparison of glucose metrics for workdays vs. rest days.
- * Uses ProTime data to classify days as work or rest.
- * 
- * @param {Object} props.workdayMetrics - Metrics calculated for workdays only
- * @param {Object} props.restdayMetrics - Metrics calculated for rest days only
- * @param {number} props.workdayCount - Number of workdays in period
- * @param {number} props.restdayCount - Number of rest days in period
- * 
- * @version 2.1.0
- */
-export default function WorkdaySplit({ 
-  workdayMetrics, 
-  restdayMetrics, 
-  workdayCount, 
-  restdayCount 
-}) {
-  if (!workdayMetrics || !restdayMetrics) {
-    return null;
-  }
+const safeFormat = (val, decimals = 0) => {
+  const num = Number(val);
+  if (isNaN(num) || !isFinite(num)) return 'N/A';
+  return num.toFixed(decimals);
+};
 
-  // Calculate deltas (workday - restday)
-  const deltas = {
-    tir: workdayMetrics.tir - restdayMetrics.tir,
-    mean: workdayMetrics.mean - restdayMetrics.mean,
-    cv: workdayMetrics.cv - restdayMetrics.cv,
-    mage: workdayMetrics.mage - restdayMetrics.mage,
-  };
+export default function WorkdaySplit({ workdayMetrics, restdayMetrics }) {
+  if (!workdayMetrics || !restdayMetrics) return null;
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-100">
-          Work Schedule Analysis
-        </h3>
-        <div className="text-sm text-gray-400">
-          ProTime-based split
-        </div>
-      </div>
+  const workdayCount = workdayMetrics.days || 0;
+  const restdayCount = restdayMetrics.days || 0;
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="card">
-          <div className="flex items-center gap-2 mb-2">
-            <Briefcase className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm font-medium text-gray-300">Workdays</span>
-          </div>
-          <div className="text-2xl font-bold text-yellow-400">{workdayCount}</div>
-          <div className="text-xs text-gray-500 mt-1">
-            {((workdayCount / (workdayCount + restdayCount)) * 100).toFixed(0)}% of period
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center gap-2 mb-2">
-            <Home className="w-4 h-4 text-green-400" />
-            <span className="text-sm font-medium text-gray-300">Rest Days</span>
-          </div>
-          <div className="text-2xl font-bold text-green-400">{restdayCount}</div>
-          <div className="text-xs text-gray-500 mt-1">
-            {((restdayCount / (workdayCount + restdayCount)) * 100).toFixed(0)}% of period
-          </div>
-        </div>
-      </div>
-
-      {/* Side-by-side Metrics Comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Workday Card */}
-        <WorkdayCard
-          type="workday"
-          metrics={workdayMetrics}
-          dayCount={workdayCount}
-          deltas={deltas}
-        />
-
-        {/* Rest Day Card */}
-        <WorkdayCard
-          type="restday"
-          metrics={restdayMetrics}
-          dayCount={restdayCount}
-          deltas={deltas}
-        />
-      </div>
-
-      {/* Insights */}
-      <WorkdayInsights deltas={deltas} />
-    </div>
-  );
-}
-
-/**
- * WorkdayCard - Individual card for workday or rest-day metrics
- */
-function WorkdayCard({ type, metrics, dayCount, deltas }) {
-  const isWorkday = type === 'workday';
-  const themeColor = isWorkday ? 'yellow' : 'green';
-  const Icon = isWorkday ? Briefcase : Home;
-  const label = isWorkday ? 'Workdays' : 'Rest Days';
-
-  const metricItems = [
-    {
-      label: 'Time in Range',
-      value: metrics.tir,
-      unit: '%',
-      format: (v) => v.toFixed(1),
-      delta: isWorkday ? deltas.tir : -deltas.tir,
-      betterIfHigher: true,
-    },
-    {
-      label: 'Mean Glucose',
-      value: metrics.mean,
-      unit: 'mg/dL',
-      format: (v) => v.toFixed(0),
-      subtitle: `± ${metrics.sd.toFixed(0)} SD`,
-      delta: isWorkday ? deltas.mean : -deltas.mean,
-      betterIfLower: true,
-    },
-    {
-      label: 'CV',
-      value: metrics.cv,
-      unit: '%',
-      format: (v) => v.toFixed(1),
-      delta: isWorkday ? deltas.cv : -deltas.cv,
-      betterIfLower: true,
-    },
-    {
-      label: 'MAGE',
-      value: metrics.mage,
-      unit: 'mg/dL',
-      format: (v) => v.toFixed(0),
-      delta: isWorkday ? deltas.mage : -deltas.mage,
-      betterIfLower: true,
-    },
+  const comparisons = [
+    { id: 'tir', label: 'Time in Range', sublabel: '70-180 mg/dL', workday: workdayMetrics.tir, restday: restdayMetrics.tir, unit: '%', format: (v) => safeFormat(v, 1), betterIfHigher: true },
+    { id: 'mean', label: 'Mean Glucose', workday: workdayMetrics.mean, restday: restdayMetrics.mean, unit: 'mg/dL', format: (v) => safeFormat(v, 0), workdaySD: workdayMetrics.sd, restdaySD: restdayMetrics.sd },
+    { id: 'cv', label: 'Coefficient Variation', workday: workdayMetrics.cv, restday: restdayMetrics.cv, unit: '%', format: (v) => safeFormat(v, 1), betterIfLower: true },
   ];
 
   return (
-    <div className={`card border-2 border-${themeColor}-600/50`}>
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-700">
-        <Icon className={`w-5 h-5 text-${themeColor}-400`} />
-        <h4 className={`text-lg font-semibold text-${themeColor}-400`}>{label}</h4>
-        <span className="text-sm text-gray-500 ml-auto">({dayCount} days)</span>
+    <div className="card" style={{ padding: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Work Schedule Analysis</h3>
+        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{workdayCount} workdays vs {restdayCount} rest days</div>
       </div>
-
-      {/* Metrics */}
-      <div className="space-y-3">
-        {metricItems.map((item, idx) => (
-          <MetricRow key={idx} {...item} />
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr 1fr', gap: '1rem', alignItems: 'stretch' }}>
+        {comparisons.map((comp) => (<WorkdayRow key={comp.id} {...comp} />))}
       </div>
     </div>
   );
 }
 
-/**
- * MetricRow - Individual metric display with optional delta
- */
-function MetricRow({ label, value, unit, format, subtitle, delta, betterIfHigher, betterIfLower }) {
-  const formattedValue = format ? format(value) : value;
+function WorkdayRow({ label, sublabel, workday, restday, unit, format, workdaySD, restdaySD, betterIfHigher, betterIfLower }) {
+  const delta = workday - restday;
+  const deltaFormatted = format(Math.abs(delta));
+  let trendIcon = '→', trendColor = '#6b7280';
+  if (Math.abs(delta) > 0.5) {
+    if (betterIfHigher) { trendIcon = delta > 0 ? '↑' : '↓'; trendColor = delta > 0 ? '#10b981' : '#ef4444'; }
+    else if (betterIfLower) { trendIcon = delta > 0 ? '↑' : '↓'; trendColor = delta < 0 ? '#10b981' : '#ef4444'; }
+    else { trendIcon = delta > 0 ? '↑' : '↓'; }
+  }
   
-  // Determine delta color
-  let deltaColor = 'text-gray-500';
-  if (delta !== undefined && delta !== 0) {
-    if (betterIfHigher) {
-      deltaColor = delta > 0 ? 'text-green-400' : 'text-red-400';
-    } else if (betterIfLower) {
-      deltaColor = delta < 0 ? 'text-green-400' : 'text-red-400';
-    }
-  }
-
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex-1">
-        <div className="text-sm text-gray-400">{label}</div>
-        {subtitle && <div className="text-xs text-gray-600 mt-0.5">{subtitle}</div>}
+    <>
+      {/* Label */}
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.25rem' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{label}</div>
+        {sublabel && <div style={{ fontSize: '0.625rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{sublabel}</div>}
       </div>
-      <div className="flex items-baseline gap-1">
-        <span className="text-lg font-semibold text-gray-100">
-          {formattedValue}
-        </span>
-        <span className="text-sm text-gray-500">{unit}</span>
-        {delta !== undefined && Math.abs(delta) > 0.1 && (
-          <span className={`text-xs ml-2 ${deltaColor}`}>
-            {delta > 0 ? '+' : ''}{format ? format(delta) : delta.toFixed(1)}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/**
- * WorkdayInsights - Automatic insights based on deltas
- */
-function WorkdayInsights({ deltas }) {
-  const insights = [];
-
-  // TIR insights
-  if (Math.abs(deltas.tir) > 5) {
-    const betterDay = deltas.tir > 0 ? 'workdays' : 'rest days';
-    const diff = Math.abs(deltas.tir).toFixed(1);
-    insights.push({
-      type: deltas.tir > 0 ? 'positive' : 'warning',
-      message: `Time in Range is ${diff}% higher on ${betterDay}`,
-    });
-  }
-
-  // CV insights
-  if (Math.abs(deltas.cv) > 3) {
-    const betterDay = deltas.cv < 0 ? 'workdays' : 'rest days';
-    const diff = Math.abs(deltas.cv).toFixed(1);
-    insights.push({
-      type: deltas.cv < 0 ? 'positive' : 'warning',
-      message: `Glucose variability (CV) is ${diff}% lower on ${betterDay}`,
-    });
-  }
-
-  // MAGE insights
-  if (Math.abs(deltas.mage) > 10) {
-    const betterDay = deltas.mage < 0 ? 'workdays' : 'rest days';
-    const diff = Math.abs(deltas.mage).toFixed(0);
-    insights.push({
-      type: deltas.mage < 0 ? 'positive' : 'warning',
-      message: `Glycemic excursions (MAGE) are ${diff} mg/dL lower on ${betterDay}`,
-    });
-  }
-
-  if (insights.length === 0) {
-    return (
-      <div className="card bg-blue-900/20 border-blue-700">
-        <p className="text-sm text-blue-300">
-          ✓ Glucose control is similar between workdays and rest days (no major differences detected)
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {insights.map((insight, idx) => (
-        <div
-          key={idx}
-          className={`card ${
-            insight.type === 'positive'
-              ? 'bg-green-900/20 border-green-700'
-              : 'bg-yellow-900/20 border-yellow-700'
-          }`}
-        >
-          <p className={`text-sm ${
-            insight.type === 'positive' ? 'text-green-300' : 'text-yellow-300'
-          }`}>
-            {insight.type === 'positive' ? '✓' : '⚠'} {insight.message}
-          </p>
+      
+      {/* Workday Card */}
+      <div style={{ backgroundColor: '#111827', color: 'white', padding: '1.25rem', borderRadius: '4px', border: '2px solid #1f2937' }}>
+        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: '#9ca3af' }}>
+          Workdays
         </div>
-      ))}
-    </div>
+        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: '#f9fafb', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+          {format(workday)}
+          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#d1d5db' }}>{unit}</span>
+        </div>
+        {workdaySD != null && (
+          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: '#d1d5db' }}>
+            ± {safeFormat(workdaySD, 0)} SD
+          </div>
+        )}
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.25rem', color: trendColor }}>{trendIcon}</span>
+          <span style={{ fontSize: '0.875rem', color: trendColor, fontWeight: 600 }}>
+            {delta > 0 ? '+' : ''}{deltaFormatted} {unit} vs rest
+          </span>
+        </div>
+      </div>
+      
+      {/* Rest Day Card */}
+      <div style={{ backgroundColor: '#111827', color: 'white', padding: '1.25rem', borderRadius: '4px', border: '2px solid #1f2937' }}>
+        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: '#9ca3af' }}>
+          Rest Days
+        </div>
+        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: '#9ca3af', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+          {format(restday)}
+          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#6b7280' }}>{unit}</span>
+        </div>
+        {restdaySD != null && (
+          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: '#9ca3af' }}>
+            ± {safeFormat(restdaySD, 0)} SD
+          </div>
+        )}
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #374151', fontSize: '0.6875rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Non-work days
+        </div>
+      </div>
+    </>
   );
 }

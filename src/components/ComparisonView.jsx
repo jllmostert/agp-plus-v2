@@ -2,19 +2,21 @@ import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 /**
+ * Safe number formatter - handles NaN, null, undefined, strings
+ */
+const safeFormat = (val, decimals = 0) => {
+  const num = Number(val);
+  if (isNaN(num) || !isFinite(num)) return 'N/A';
+  return num.toFixed(decimals);
+};
+
+/**
  * ComparisonView - Period-over-period comparison component
  * 
- * Displays side-by-side comparison of current period vs. previous period
- * with delta calculations and color-coded improvements/deteriorations.
+ * Grid-based layout: [Label] [Current] [Previous]
+ * Inline styles for consistency with MetricsDisplay
  * 
- * @param {Object} props.currentMetrics - Metrics for current period
- * @param {Object} props.previousMetrics - Metrics for previous period (comparison)
- * @param {Date} props.startDate - Current period start date
- * @param {Date} props.endDate - Current period end date
- * @param {Date} props.prevStart - Previous period start date
- * @param {Date} props.prevEnd - Previous period end date
- * 
- * @version 2.1.0
+ * @version 2.1.2 CLINICAL GRID
  */
 export default function ComparisonView({ 
   currentMetrics, 
@@ -39,17 +41,18 @@ export default function ComparisonView({
   const currentDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
   const previousDays = Math.ceil((prevEnd - prevStart) / (1000 * 60 * 60 * 24)) + 1;
 
-  // Metrics to compare (3x2 grid)
+  // Metrics to compare
   const comparisons = [
     {
       id: 'tir',
       label: 'Time in Range',
+      sublabel: '70-180 mg/dL',
       current: currentMetrics.tir,
       previous: previousMetrics.tir,
       unit: '%',
-      format: (v) => v.toFixed(1),
+      format: (v) => safeFormat(v, 1),
       betterIfHigher: true,
-      target: '≥70%',
+      target: 'Target ≥70%',
     },
     {
       id: 'mean',
@@ -57,23 +60,20 @@ export default function ComparisonView({
       current: currentMetrics.mean,
       previous: previousMetrics.mean,
       unit: 'mg/dL',
-      format: (v) => v.toFixed(0),
-      subtitle: (v, sd) => `± ${sd.toFixed(0)} SD`,
+      format: (v) => safeFormat(v, 0),
       currentSD: currentMetrics.sd,
       previousSD: previousMetrics.sd,
-      betterIfLower: true,
-      betterIfInRange: { min: 70, max: 180 },
-      target: '70-180',
+      target: 'Target 70-180',
     },
     {
       id: 'cv',
-      label: 'CV',
+      label: 'Coefficient Variation',
       current: currentMetrics.cv,
       previous: previousMetrics.cv,
       unit: '%',
-      format: (v) => v.toFixed(1),
+      format: (v) => safeFormat(v, 1),
       betterIfLower: true,
-      target: '≤36%',
+      target: 'Target ≤36%',
     },
     {
       id: 'gmi',
@@ -81,279 +81,225 @@ export default function ComparisonView({
       current: currentMetrics.gmi,
       previous: previousMetrics.gmi,
       unit: '%',
-      format: (v) => v.toFixed(1),
+      format: (v) => safeFormat(v, 1),
       betterIfLower: true,
-      target: '<7.0%',
-    },
-    {
-      id: 'mage',
-      label: 'MAGE',
-      current: currentMetrics.mage,
-      previous: previousMetrics.mage,
-      unit: 'mg/dL',
-      format: (v) => v.toFixed(0),
-      betterIfLower: true,
-      target: 'Lower better',
-    },
-    {
-      id: 'modd',
-      label: 'MODD',
-      current: currentMetrics.modd,
-      previous: previousMetrics.modd,
-      unit: 'mg/dL',
-      format: (v) => v.toFixed(0),
-      betterIfLower: true,
-      target: 'Lower better',
+      target: 'Target <7.0%',
     },
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="card" style={{ padding: '2rem' }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-100">
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '1.5rem'
+      }}>
+        <h3 style={{ 
+          fontSize: '1.125rem', 
+          fontWeight: 600, 
+          color: 'var(--text-primary)'
+        }}>
           Period Comparison
         </h3>
-        <div className="text-sm text-gray-400">
-          Current vs. Previous
-        </div>
-      </div>
-
-      {/* Period Labels */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="card border-2 border-blue-600/50">
-          <div className="text-sm text-gray-400 mb-1">Current Period</div>
-          <div className="text-lg font-semibold text-blue-400">
-            {formatDate(startDate)} → {formatDate(endDate)}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">{currentDays} days</div>
-        </div>
-
-        <div className="card border-2 border-gray-600/50">
-          <div className="text-sm text-gray-400 mb-1">Previous Period</div>
-          <div className="text-lg font-semibold text-gray-400">
-            {formatDate(prevStart)} → {formatDate(prevEnd)}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">{previousDays} days</div>
+        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+          {formatDate(startDate)} → {formatDate(endDate)} vs {formatDate(prevStart)} → {formatDate(prevEnd)}
         </div>
       </div>
 
       {/* Comparison Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {comparisons.map((comparison) => (
-          <ComparisonCard key={comparison.id} {...comparison} />
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: '200px 1fr 1fr',
+        gap: '1rem',
+        alignItems: 'stretch'
+      }}>
+        {comparisons.map((comp) => (
+          <ComparisonRow key={comp.id} {...comp} />
         ))}
       </div>
-
-      {/* Overall Assessment */}
-      <OverallAssessment comparisons={comparisons} />
     </div>
   );
 }
 
 /**
- * ComparisonCard - Individual comparison card for a metric
+ * ComparisonRow - Single row in comparison grid
+ * [Label] [Current Card] [Previous Card]
  */
-function ComparisonCard({ 
+function ComparisonRow({ 
   label, 
+  sublabel,
   current, 
   previous, 
   unit, 
   format, 
-  subtitle,
   currentSD,
   previousSD,
   betterIfHigher, 
   betterIfLower,
-  betterIfInRange,
   target 
 }) {
-  // Calculate delta
+  // Calculate delta and trend
   const delta = current - previous;
-  const deltaPercent = previous !== 0 ? ((delta / previous) * 100) : 0;
-
-  // Determine if change is improvement
-  let isImprovement = false;
-  let isDeterioration = false;
+  const deltaFormatted = format(Math.abs(delta));
   
-  if (Math.abs(delta) > 0.1) { // Only consider significant changes
+  let trendIcon = '→';
+  let trendColor = '#6b7280'; // gray-500
+  
+  if (Math.abs(delta) > 0.5) {
     if (betterIfHigher) {
-      isImprovement = delta > 0;
-      isDeterioration = delta < 0;
+      trendIcon = delta > 0 ? '↑' : '↓';
+      trendColor = delta > 0 ? '#10b981' : '#ef4444'; // green-500 : red-500
     } else if (betterIfLower) {
-      isImprovement = delta < 0;
-      isDeterioration = delta > 0;
-    } else if (betterIfInRange) {
-      // For mean: check if moving towards or away from target range
-      const currentDistance = Math.min(
-        Math.abs(current - betterIfInRange.min),
-        Math.abs(current - betterIfInRange.max)
-      );
-      const previousDistance = Math.min(
-        Math.abs(previous - betterIfInRange.min),
-        Math.abs(previous - betterIfInRange.max)
-      );
-      isImprovement = currentDistance < previousDistance;
-      isDeterioration = currentDistance > previousDistance;
-    }
-  }
-
-  // Get delta icon and color
-  const getDeltaDisplay = () => {
-    if (Math.abs(delta) < 0.1) {
-      return {
-        icon: Minus,
-        color: 'text-gray-500',
-        text: 'No change',
-      };
-    }
-    
-    if (isImprovement) {
-      return {
-        icon: delta > 0 ? TrendingUp : TrendingDown,
-        color: 'text-green-400',
-        text: `${delta > 0 ? '+' : ''}${format(delta)} ${unit}`,
-      };
-    }
-    
-    if (isDeterioration) {
-      return {
-        icon: delta > 0 ? TrendingUp : TrendingDown,
-        color: 'text-red-400',
-        text: `${delta > 0 ? '+' : ''}${format(delta)} ${unit}`,
-      };
-    }
-    
-    return {
-      icon: delta > 0 ? TrendingUp : TrendingDown,
-      color: 'text-gray-400',
-      text: `${delta > 0 ? '+' : ''}${format(delta)} ${unit}`,
-    };
-  };
-
-  const deltaDisplay = getDeltaDisplay();
-  const DeltaIcon = deltaDisplay.icon;
-
-  return (
-    <div className="card">
-      {/* Label */}
-      <div className="text-sm text-gray-400 mb-3">{label}</div>
-
-      {/* Current Value */}
-      <div className="mb-2">
-        <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-bold text-blue-400">
-            {format(current)}
-          </span>
-          <span className="text-sm text-gray-500">{unit}</span>
-        </div>
-        {subtitle && currentSD && (
-          <div className="text-xs text-gray-600 mt-0.5">
-            {subtitle(current, currentSD)}
-          </div>
-        )}
-        <div className="text-xs text-gray-600">Current</div>
-      </div>
-
-      {/* Delta */}
-      <div className={`flex items-center gap-1 mb-2 ${deltaDisplay.color}`}>
-        <DeltaIcon className="w-4 h-4" />
-        <span className="text-sm font-medium">{deltaDisplay.text}</span>
-        {Math.abs(deltaPercent) > 1 && (
-          <span className="text-xs">({deltaPercent > 0 ? '+' : ''}{deltaPercent.toFixed(0)}%)</span>
-        )}
-      </div>
-
-      {/* Previous Value */}
-      <div className="pt-2 border-t border-gray-700">
-        <div className="flex items-baseline gap-1">
-          <span className="text-lg font-semibold text-gray-400">
-            {format(previous)}
-          </span>
-          <span className="text-xs text-gray-600">{unit}</span>
-        </div>
-        {subtitle && previousSD && (
-          <div className="text-xs text-gray-600 mt-0.5">
-            {subtitle(previous, previousSD)}
-          </div>
-        )}
-        <div className="text-xs text-gray-600">Previous</div>
-      </div>
-
-      {/* Target */}
-      {target && (
-        <div className="mt-2 text-xs text-gray-500">
-          Target: {target}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * OverallAssessment - Summary of improvements/deteriorations
- */
-function OverallAssessment({ comparisons }) {
-  let improvements = 0;
-  let deteriorations = 0;
-  let unchanged = 0;
-
-  comparisons.forEach((comp) => {
-    const delta = comp.current - comp.previous;
-    
-    if (Math.abs(delta) < 0.1) {
-      unchanged++;
-      return;
-    }
-
-    let isImprovement = false;
-    if (comp.betterIfHigher) {
-      isImprovement = delta > 0;
-    } else if (comp.betterIfLower) {
-      isImprovement = delta < 0;
-    } else if (comp.betterIfInRange) {
-      const currentDistance = Math.min(
-        Math.abs(comp.current - comp.betterIfInRange.min),
-        Math.abs(comp.current - comp.betterIfInRange.max)
-      );
-      const previousDistance = Math.min(
-        Math.abs(comp.previous - comp.betterIfInRange.min),
-        Math.abs(comp.previous - comp.betterIfInRange.max)
-      );
-      isImprovement = currentDistance < previousDistance;
-    }
-
-    if (isImprovement) {
-      improvements++;
+      trendIcon = delta > 0 ? '↑' : '↓';
+      trendColor = delta < 0 ? '#10b981' : '#ef4444'; // green-500 : red-500
     } else {
-      deteriorations++;
+      trendIcon = delta > 0 ? '↑' : '↓';
     }
-  });
-
-  // Determine overall message
-  let message = '';
-  let colorClass = '';
-  let icon = '';
-
-  if (improvements > deteriorations) {
-    message = `Overall improvement: ${improvements} metrics improved, ${deteriorations} declined`;
-    colorClass = 'bg-green-900/20 border-green-700 text-green-300';
-    icon = '✓';
-  } else if (deteriorations > improvements) {
-    message = `Mixed results: ${improvements} metrics improved, ${deteriorations} declined`;
-    colorClass = 'bg-yellow-900/20 border-yellow-700 text-yellow-300';
-    icon = '⚠';
-  } else {
-    message = `Stable control: ${improvements} improved, ${deteriorations} declined, ${unchanged} unchanged`;
-    colorClass = 'bg-blue-900/20 border-blue-700 text-blue-300';
-    icon = '=';
   }
 
   return (
-    <div className={`card ${colorClass}`}>
-      <p className="text-sm">
-        {icon} {message}
-      </p>
-    </div>
+    <>
+      {/* Label */}
+      <div style={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: '0.25rem'
+      }}>
+        <div style={{ 
+          fontSize: '0.75rem', 
+          fontWeight: 700, 
+          letterSpacing: '0.1em', 
+          textTransform: 'uppercase',
+          color: 'var(--text-secondary)'
+        }}>
+          {label}
+        </div>
+        {sublabel && (
+          <div style={{ 
+            fontSize: '0.625rem', 
+            color: '#6b7280',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            {sublabel}
+          </div>
+        )}
+      </div>
+
+      {/* Current Period Card */}
+      <div style={{
+        backgroundColor: '#111827',
+        color: 'white',
+        padding: '1.25rem',
+        borderRadius: '4px',
+        border: '2px solid #1f2937'
+      }}>
+        <div style={{ 
+          fontSize: '0.6875rem',
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          marginBottom: '0.75rem',
+          color: '#9ca3af'
+        }}>
+          Current Period
+        </div>
+        <div style={{ 
+          fontSize: '2rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          color: '#f9fafb',
+          fontVariantNumeric: 'tabular-nums',
+          lineHeight: 1
+        }}>
+          {format(current)}
+          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#d1d5db' }}>{unit}</span>
+        </div>
+        {currentSD != null && (
+          <div style={{ 
+            fontSize: '1rem',
+            fontWeight: 600,
+            marginTop: '0.5rem',
+            color: '#d1d5db'
+          }}>
+            ± {safeFormat(currentSD, 0)} SD
+          </div>
+        )}
+        
+        {/* Trend Indicator */}
+        <div style={{ 
+          marginTop: '0.75rem',
+          paddingTop: '0.75rem',
+          borderTop: '1px solid #374151',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <span style={{ fontSize: '1.25rem', color: trendColor }}>{trendIcon}</span>
+          <span style={{ fontSize: '0.875rem', color: trendColor, fontWeight: 600 }}>
+            {delta > 0 ? '+' : ''}{deltaFormatted} {unit}
+          </span>
+        </div>
+      </div>
+
+      {/* Previous Period Card */}
+      <div style={{
+        backgroundColor: '#111827',
+        color: 'white',
+        padding: '1.25rem',
+        borderRadius: '4px',
+        border: '2px solid #1f2937'
+      }}>
+        <div style={{ 
+          fontSize: '0.6875rem',
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          marginBottom: '0.75rem',
+          color: '#9ca3af'
+        }}>
+          Previous Period
+        </div>
+        <div style={{ 
+          fontSize: '2rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          color: '#9ca3af',
+          fontVariantNumeric: 'tabular-nums',
+          lineHeight: 1
+        }}>
+          {format(previous)}
+          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#6b7280' }}>{unit}</span>
+        </div>
+        {previousSD != null && (
+          <div style={{ 
+            fontSize: '1rem',
+            fontWeight: 600,
+            marginTop: '0.5rem',
+            color: '#9ca3af'
+          }}>
+            ± {safeFormat(previousSD, 0)} SD
+          </div>
+        )}
+        
+        {/* Target Info */}
+        {target && (
+          <div style={{ 
+            marginTop: '0.75rem',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid #374151',
+            fontSize: '0.6875rem',
+            color: '#6b7280',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            {target}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

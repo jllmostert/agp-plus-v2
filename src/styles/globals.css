@@ -1,12 +1,72 @@
 /**
- * AGP+ v2.1 - Global Styles
+ * AGP+ v2.1 - BRUTALIST GLOBALS
  * 
- * Dark theme with USSR-inspired aesthetic
- * High contrast for medical data clarity
+ * Design Philosophy: NASA Flight Log + 1980s Medical Interface + Brutalist Web
+ * 
+ * Rules:
+ * - No gradients, no shadows (except hover inset)
+ * - Massive borders (2-3px black)
+ * - Monospace typography
+ * - Soviet red + yellow as sparse accents
+ * - Cut-on, cut-off transitions (≤100ms, linear)
+ * - Printed feel, not floating
  */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ============================================================================
-   BASE RESET & TYPOGRAPHY
+   CSS VARIABLES - BRUTALIST PALETTE
+   ========================================================================= */
+
+:root {
+  /* Core Colors - Light Mode */
+  --color-black: #000;
+  --color-white: #fff;
+  --color-gray-dark: #222;
+  --color-gray-mid: #666;
+  --color-gray-light: #ccc;
+  --color-gray-vlight: #eee;
+  
+  /* Accent Colors - Soviet Inspired */
+  --color-red: #c70000;        /* Soviet red - warnings, critical */
+  --color-yellow: #f4e300;     /* Data highlight - caution */
+  
+  /* Glucose Ranges */
+  --color-tbr: #c70000;        /* Time Below Range <70 */
+  --color-tir: #ddd;           /* Time In Range 70-180 */
+  --color-tar: #f4e300;        /* Time Above Range >180 */
+  
+  /* Base Theme */
+  --bg-primary: #fff;
+  --bg-secondary: #eee;
+  --bg-hero: #000;
+  --text-primary: #000;
+  --text-secondary: #666;
+  --text-inverse: #fff;
+  --border-primary: #000;
+  --border-secondary: #666;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #111;
+    --bg-secondary: #222;
+    --bg-hero: #000;
+    --text-primary: #eee;
+    --text-secondary: #999;
+    --text-inverse: #111;
+    --border-primary: #444;
+    --border-secondary: #666;
+    
+    --color-tir: #444;
+  }
+}
+
+/* ============================================================================
+   BASE RESET
    ========================================================================= */
 
 * {
@@ -17,298 +77,265 @@
 
 html {
   font-size: 16px;
-  -webkit-font-smoothing: antialiased;
+  /* NO font smoothing - keep edges sharp */
+  -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
-               'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 
-               'Helvetica Neue', sans-serif;
-  line-height: 1.6;
-  color: var(--color-text);
-  background-color: var(--color-bg);
+  font-family: 'SF Mono', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  line-height: 1.4;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  font-weight: 400;
 }
 
 /* ============================================================================
-   COLOR SCHEME - DARK THEME
+   TYPOGRAPHY - MONOSPACE HIERARCHY
    ========================================================================= */
 
-:root {
-  /* Background colors */
-  --color-bg: #1a1a1a;
-  --color-bg-secondary: #2d2d2d;
-  --color-bg-tertiary: #3a3a3a;
-  
-  /* Text colors */
-  --color-text: #e5e5e5;
-  --color-text-secondary: #a0a0a0;
-  --color-text-muted: #6b6b6b;
-  
-  /* Accent colors */
-  --color-primary: #4a9eff;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  
-  /* Border colors */
-  --color-border: #404040;
-  --color-border-light: #505050;
-  
-  /* Glucose range colors (clinical standard) */
-  --color-critical-low: #dc2626;     /* <54 mg/dL */
-  --color-low: #f59e0b;              /* 54-69 mg/dL */
-  --color-target: #10b981;           /* 70-180 mg/dL */
-  --color-high: #f59e0b;             /* 181-250 mg/dL */
-  --color-very-high: #dc2626;        /* >250 mg/dL */
-  
-  /* Day/Night analysis colors */
-  --color-day: #3b82f6;              /* Blue for daytime */
-  --color-night: #6366f1;            /* Indigo for nighttime */
-  
-  /* Workday analysis colors */
-  --color-workday: #eab308;          /* Yellow for workdays */
-  --color-restday: #10b981;          /* Green for rest days */
-  
-  /* Comparison colors */
-  --color-comparison-current: #3b82f6;
-  --color-comparison-previous: #6b7280;
-  
-  /* Chart colors */
-  --color-agp-median: #3b82f6;
-  --color-agp-band: rgba(59, 130, 246, 0.2);
-  --color-grid: #404040;
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2rem;      /* 32px */
+  letter-spacing: 0.1em;
+}
+
+h2 {
+  font-size: 1.5rem;    /* 24px */
+  letter-spacing: 0.08em;
+}
+
+h3 {
+  font-size: 1.25rem;   /* 20px */
+}
+
+h4 {
+  font-size: 1rem;      /* 16px */
+}
+
+/* Metric Values - Large, Monospace */
+.metric-value {
+  font-size: 3rem;      /* 48px */
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Labels - Small Caps */
+.metric-label {
+  font-size: 0.75rem;   /* 12px */
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   LAYOUT - ADAPTIVE GRID
+   ========================================================================= */
+
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: clamp(12px, 2vw, 36px);
+}
+
+.section {
+  margin-bottom: clamp(24px, 4vh, 48px);
+}
+
+/* Grid System */
+.grid-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .grid-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+   CARDS - MASSIVE BORDERS, NO SHADOWS
+   ========================================================================= */
+
+.card {
+  background: var(--bg-primary);
+  border: 2px solid var(--border-primary);
+  border-radius: 2px;
+  padding: 1.5rem;
+  transition: transform 100ms linear, box-shadow 100ms linear;
+}
+
+.card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 0 2px var(--border-primary) inset;
+}
+
+/* Hero Card - Black background, white text */
+.card-hero {
+  background: var(--bg-hero);
+  color: var(--text-inverse);
+  border: 3px solid var(--border-primary);
+  padding: 2rem;
+}
+
+/* Secondary Card - Gray background */
+.card-secondary {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+}
+
+/* ============================================================================
+   BUTTONS - SHARP, FUNCTIONAL
+   ========================================================================= */
+
+.btn {
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid var(--border-primary);
+  border-radius: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 100ms linear;
+}
+
+.btn:hover {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  background: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
+}
+
+.btn-primary:hover {
+  background: var(--color-white);
+  color: var(--color-black);
+}
+
+.btn-danger {
+  background: var(--color-red);
+  color: var(--color-white);
+  border-color: var(--color-red);
+}
+
+/* ============================================================================
+   FIXED TOP BANNER
+   ========================================================================= */
+
+.top-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--bg-hero);
+  color: var(--text-inverse);
+  border-bottom: 2px solid var(--border-primary);
+  padding: 0.5rem clamp(12px, 2vw, 36px);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 /* ============================================================================
    UTILITY CLASSES
    ========================================================================= */
 
-/* Container */
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 1rem;
+.text-mono {
+  font-family: 'SF Mono', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Card */
-.card {
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  transition: border-color 0.2s ease;
+.border-massive {
+  border: 3px solid var(--border-primary);
 }
 
-.card:hover {
-  border-color: var(--color-border-light);
+.border-solid {
+  border: 2px solid var(--border-primary);
 }
 
-/* Button base */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.375rem;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+.border-thin {
+  border: 1px solid var(--border-secondary);
 }
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.bg-hero {
+  background: var(--bg-hero);
+  color: var(--text-inverse);
 }
 
-/* Button variants */
-.btn-primary {
-  background-color: var(--color-primary);
-  color: white;
+.text-red {
+  color: var(--color-red);
 }
 
-.btn-primary:hover:not(:disabled) {
-  background-color: #3b8ae8;
+.text-yellow {
+  color: var(--color-yellow);
 }
 
-.btn-secondary {
-  background-color: var(--color-bg-tertiary);
-  color: var(--color-text);
-  border-color: var(--color-border);
+.bg-red {
+  background: var(--color-red);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-bg-secondary);
-  border-color: var(--color-border-light);
-}
-
-/* Grid layouts */
-.grid-2 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.grid-3 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-}
-
-.grid-4 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+.bg-yellow {
+  background: var(--color-yellow);
 }
 
 /* ============================================================================
-   COMPONENT-SPECIFIC STYLES
+   BRUTALIST SPACING
    ========================================================================= */
 
-/* Metric Card */
-.metric-card {
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+.space-brutal-sm {
+  margin-bottom: 1rem;
 }
 
-.metric-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--color-border-light);
+.space-brutal-md {
+  margin-bottom: 2rem;
 }
 
-.metric-label {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
-}
-
-.metric-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--color-text);
-  line-height: 1.2;
-}
-
-.metric-unit {
-  font-size: 1rem;
-  font-weight: 400;
-  color: var(--color-text-secondary);
-  margin-left: 0.25rem;
-}
-
-/* Comparison Delta */
-.delta-positive {
-  color: var(--color-success);
-}
-
-.delta-negative {
-  color: var(--color-danger);
-}
-
-.delta-neutral {
-  color: var(--color-text-secondary);
+.space-brutal-lg {
+  margin-bottom: 3rem;
 }
 
 /* ============================================================================
-   SCROLLBAR STYLING (WebKit)
-   ========================================================================= */
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-bg-tertiary);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-light);
-}
-
-/* ============================================================================
-   PRINT STYLES
+   PRINT STYLES (Preserve existing black/white)
    ========================================================================= */
 
 @media print {
-  body {
-    background-color: white;
-    color: black;
-  }
-  
-  .no-print {
-    display: none !important;
+  * {
+    color: #000 !important;
+    background: #fff !important;
+    box-shadow: none !important;
   }
   
   .card {
-    border: 1px solid #ccc;
+    border: 2px solid #000 !important;
     page-break-inside: avoid;
   }
-}
-
-/* ============================================================================
-   RESPONSIVE ADJUSTMENTS
-   ========================================================================= */
-
-@media (max-width: 768px) {
-  html {
-    font-size: 14px;
-  }
   
-  .grid-2,
-  .grid-3,
-  .grid-4 {
-    grid-template-columns: 1fr;
-  }
-  
-  .metric-value {
-    font-size: 1.75rem;
-  }
-}
-
-/* ============================================================================
-   ACCESSIBILITY
-   ========================================================================= */
-
-/* Focus states */
-*:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  :root {
-    --color-border: #ffffff;
-    --color-text: #ffffff;
-  }
-  
-  .card {
-    border-width: 2px;
+  @page {
+    margin: 8mm;
   }
 }

@@ -31,6 +31,7 @@ export default function PeriodSelector({ startDate, endDate, availableDates, onC
   };
 
   const handleCustomStartChange = (e) => {
+    if (!endDate) return; // Need endDate to validate
     const newStart = new Date(e.target.value);
     if (newStart <= endDate && newStart >= availableDates.min) {
       onChange(newStart, endDate);
@@ -38,17 +39,21 @@ export default function PeriodSelector({ startDate, endDate, availableDates, onC
   };
 
   const handleCustomEndChange = (e) => {
+    if (!startDate) return; // Need startDate to validate
     const newEnd = new Date(e.target.value);
     if (newEnd >= startDate && newEnd <= availableDates.max) {
       onChange(startDate, newEnd);
     }
   };
 
-  // Calculate current period length
-  const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+  // Calculate current period length (only if both dates exist)
+  const daysDiff = startDate && endDate 
+    ? Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1
+    : 0;
 
   // Format dates for input fields (YYYY-MM-DD)
   const formatDateForInput = (date) => {
+    if (!date) return '';
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -57,6 +62,7 @@ export default function PeriodSelector({ startDate, endDate, availableDates, onC
 
   // Format dates for display (DD-MM-YYYY)
   const formatDateForDisplay = (date) => {
+    if (!date) return '';
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -64,31 +70,25 @@ export default function PeriodSelector({ startDate, endDate, availableDates, onC
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <Calendar className="w-5 h-5 text-gray-400" />
-        <h3 className="text-lg font-semibold text-gray-100">Analysis Period</h3>
-      </div>
-
-      {/* Preset Buttons */}
-      <div className="flex flex-wrap gap-3">
+    <div className="flex items-center gap-2" style={{ flexWrap: 'nowrap' }}>
+      {/* Preset Buttons - Inline */}
+      <div className="flex gap-2" style={{ flexShrink: 0 }}>
         <PresetButton
-          label="14 days"
+          label="14d"
           days={14}
           onClick={() => handlePresetClick(14)}
           isActive={daysDiff === 14}
           isDisabled={false}
         />
         <PresetButton
-          label="30 days"
+          label="30d"
           days={30}
           onClick={() => handlePresetClick(30)}
           isActive={daysDiff === 30}
           isDisabled={false}
         />
         <PresetButton
-          label="90 days"
+          label="90d"
           days={90}
           onClick={() => handlePresetClick(90)}
           isActive={daysDiff === 90}
@@ -96,62 +96,52 @@ export default function PeriodSelector({ startDate, endDate, availableDates, onC
         />
       </div>
 
-      {/* Custom Date Inputs */}
-      <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Start Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Start Date
-            </label>
-            <input
-              type="date"
-              value={formatDateForInput(startDate)}
-              min={formatDateForInput(availableDates.min)}
-              max={formatDateForInput(endDate)}
-              onChange={handleCustomStartChange}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                         hover:border-gray-500 transition-colors"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Available from: {formatDateForDisplay(availableDates.min)}
-            </p>
-          </div>
-
-          {/* End Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              End Date
-            </label>
-            <input
-              type="date"
-              value={formatDateForInput(endDate)}
-              min={formatDateForInput(startDate)}
-              max={formatDateForInput(availableDates.max)}
-              onChange={handleCustomEndChange}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                         hover:border-gray-500 transition-colors"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Available until: {formatDateForDisplay(availableDates.max)}
-            </p>
-          </div>
+      {/* Custom Date Inputs - Inline */}
+      <div className="flex gap-2 items-center">
+        {/* Start Date */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-400 whitespace-nowrap">
+            Start
+          </label>
+          <input
+            type="date"
+            value={formatDateForInput(startDate)}
+            min={formatDateForInput(availableDates.min)}
+            max={formatDateForInput(endDate)}
+            onChange={handleCustomStartChange}
+            className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-gray-100 text-sm
+                       focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
         </div>
 
-        {/* Current Selection Summary */}
-        <div className="mt-4 pt-4 border-t border-gray-700">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">Selected period:</span>
-            <span className="font-medium text-gray-100">
-              {formatDateForDisplay(startDate)} → {formatDateForDisplay(endDate)}
-              <span className="text-gray-500 ml-2">({daysDiff} days)</span>
-            </span>
-          </div>
+        {/* End Date */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-400 whitespace-nowrap">
+            End
+          </label>
+          <input
+            type="date"
+            value={formatDateForInput(endDate)}
+            min={formatDateForInput(startDate)}
+            max={formatDateForInput(availableDates.max)}
+            onChange={handleCustomEndChange}
+            className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-gray-100 text-sm
+                       focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
         </div>
+        
+        {/* Period Length Badge */}
+        {daysDiff > 0 && (
+          <div className="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-xs text-gray-300">
+            {daysDiff} {daysDiff === 1 ? 'dag' : 'dagen'}
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+/**
   );
 }
 

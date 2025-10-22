@@ -60,6 +60,11 @@ export const parseCSV = (text) => {
  * Parse ProTime workday data from multiple formats
  * Supports:
  * 1. PDF text (copy-pasted from ProTime PDF)
+ *    - Automatically extracts year from PDF header (e.g., "Gegenereerd op 22/10/2025")
+ *    - Falls back to "Week XX YYYY" headers if present
+ *    - Uses current year as final fallback
+ *    - Supports Dutch day abbreviations (ma, di, wo, do, vr, za, zo)
+ *    - Filters out free days ("-" in time columns) and absent days
  * 2. JSON array: ["2024/10/01", "2024/10/02"]
  * 3. JSON object with workdays array: {workdays: ["2024/10/01"]}
  * 4. JSON object with date:boolean pairs: {"2024/10/01": true}
@@ -118,23 +123,40 @@ export const parseProTime = (input) => {
   
   const lines = input.split('\n');
   
-  lines.forEach(line => {
-    // Extract year from "Week XX YYYY" headers
+  // Try to extract year from PDF header first (ProTime exports)
+  // Format: "Gegenereerd op 22/10/2025" or similar date in header
+  const headerYearMatch = input.match(/\b(\d{1,2})\/(\d{1,2})\/(20\d{2})\b/);
+  if (headerYearMatch) {
+    currentYear = parseInt(headerYearMatch[3]);
+  }
+  
+  lines.forEach((line) => {
+    // Extract year from "Week XX YYYY" headers (if present)
     const yearMatch = line.match(/Week\s+\d+\s+(20\d{2})/);
     if (yearMatch) {
       currentYear = parseInt(yearMatch[1]);
       return;
     }
     
-    // Match workday lines with times
-    // Format: "ma 30/09  7:33  14:46" or "di 01/10  8:00  17:00"
-    const match = line.match(/^(ma|di|wo|do|vr|za|zo)\s+(\d{1,2})\/(\d{1,2})\s+([\d:]+)\s+([\d:]+)/);
+    // Match lines with date format: day DD/MM
+    // Use \s+ to match multiple spaces (common in PDF extraction)
+    // Example: "wo 01/10   8:52   17:03" or "ma 06/10   11:34   19:46"
+    const dateMatch = line.match(/(ma|di|wo|do|vr|za|zo)\s+(\d{1,2})\/(\d{1,2})/);
     
-    if (match) {
-      const [_, dayAbbr, dayNum, month, startTime, endTime] = match;
+    if (dateMatch) {
+      const [_, dayAbbr, dayNum, month] = dateMatch;
       
-      // Only include days with actual work times (not "-" placeholders)
-      if (startTime !== '-' && endTime !== '-') {
+      // Check if this is a work day by looking for time values (HH:MM format)
+      // And exclude lines with "Vrije Dag", "Vakantie", or "OA Var" (vacation code)
+      const hasTimeFormat = /\d{1,2}:\d{2}/.test(line);
+      const isVacation = line.includes('Vakantie') || line.includes('OA Var');
+      const isFreeDay = line.includes('OZ Vrije Dag') || line.includes('Vrije Dag');
+      
+      // Only count as workday if:
+      // 1. Has actual time entries (HH:MM format)
+      // 2. Not a vacation day (no "Vakantie" or "OA Var")
+      // 3. Not a free day (no "Vrije Dag")
+      if (hasTimeFormat && !isVacation && !isFreeDay) {
         const paddedMonth = month.padStart(2, '0');
         const paddedDay = dayNum.padStart(2, '0');
         const dateStr = `${currentYear}/${paddedMonth}/${paddedDay}`;

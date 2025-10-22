@@ -1,52 +1,431 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Activity, Download, ChevronDown } from 'lucide-react';
+
+// Custom hooks
+import { useCSVData } from '../hooks/useCSVData';
+import { useMetrics } from '../hooks/useMetrics';
+import { useComparison } from '../hooks/useComparison';
+
+// Core utilities
+import { parseProTime } from '../core/parsers';
+import { downloadHTML } from '../core/html-exporter';
+
+// UI Components
+import FileUpload from './FileUpload';
+import PeriodSelector from './PeriodSelector';
+import MetricsDisplay from './MetricsDisplay';
+import AGPChart from './AGPChart';
+import ComparisonView from './ComparisonView';
+import DayNightSplit from './DayNightSplit';
+import WorkdaySplit from './WorkdaySplit';
 
 /**
- * AGPGenerator - Main Container Component (PLACEHOLDER)
+ * AGPGenerator - Main application container
  * 
- * This is a temporary placeholder component for initial project setup.
- * The full implementation will be created in PROMPT 7, after all child
- * components have been built in PROMPTS 2-6.
+ * Orchestrates the entire AGP+ application:
+ * - CSV data loading and parsing
+ * - ProTime workday data import
+ * - Period selection and date management
+ * - Metrics calculation coordination
+ * - Component composition and data flow
  * 
- * @version 2.1.0 (Placeholder)
+ * @version 2.1.0
  */
 export default function AGPGenerator() {
+  // ============================================
+  // HOOKS: Data Management
+  // ============================================
+  
+  const { csvData, dateRange, loadCSV, error: csvError } = useCSVData();
+
+  // ============================================
+  // STATE: Period Selection
+  // ============================================
+  
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
+  // ============================================
+  // STATE: Optional Features
+  // ============================================
+  
+  const [workdays, setWorkdays] = useState(null); // Set of workday date strings
+  const [dayNightEnabled, setDayNightEnabled] = useState(false);
+  const [dataImportExpanded, setDataImportExpanded] = useState(true); // Collapsible data import
+
+  // ============================================
+  // CALCULATED DATA: Metrics & Comparison
+  // ============================================
+  
+  // Calculate metrics for current period
+  const metricsResult = useMetrics(csvData, startDate, endDate, workdays);
+  
+  // Auto-calculate comparison for preset periods
+  const comparisonData = useComparison(csvData, startDate, endDate, dateRange);
+
+  // ============================================
+  // EVENT HANDLERS: File Upload
+  // ============================================
+
+  /**
+   * Auto-select last 14 days (or full range) when CSV is loaded
+   * Keep import section OPEN so user can add ProTime
+   */
+  useEffect(() => {
+    if (csvData && dateRange && !startDate && !endDate) {
+      const end = new Date(dateRange.max);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 13); // 14 days = today - 13 days
+      
+      // If data range is shorter than 14 days, use full range
+      const actualStart = start < dateRange.min ? dateRange.min : start;
+      
+      setStartDate(actualStart);
+      setEndDate(end);
+      // NOTE: Import stays OPEN - no auto-collapse here
+    }
+  }, [csvData, dateRange, startDate, endDate]);
+
+  /**
+   * Handle CSV file upload
+   */
+  const handleCSVLoad = (text) => {
+    loadCSV(text);
+    
+    // Reset period selection when new CSV is loaded
+    setStartDate(null);
+    setEndDate(null);
+  };
+
+  /**
+   * Handle ProTime data import (PDF text or JSON)
+   */
+  const handleProTimeLoad = (text) => {
+    try {
+      const workdayDates = parseProTime(text);
+      
+      if (!workdayDates || workdayDates.length === 0) {
+        console.error('No workdays found in ProTime data');
+        return;
+      }
+
+      // Convert array to Set for fast lookups
+      const workdaySet = new Set(workdayDates);
+      setWorkdays(workdaySet);
+      
+    } catch (err) {
+      console.error('ProTime parsing failed:', err);
+    }
+  };
+
+  // ============================================
+  // EVENT HANDLERS: Period Selection
+  // ============================================
+
+  /**
+   * Handle period selection change
+   * Collapse import section when user actively changes period
+   */
+  const handlePeriodChange = (newStartDate, newEndDate) => {
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+    
+    // User is actively choosing a period = ready to analyze
+    // Collapse import section to maximize space for metrics
+    setDataImportExpanded(false);
+  };
+
+  /**
+   * Handle day/night toggle
+   */
+  const handleDayNightToggle = () => {
+    setDayNightEnabled(!dayNightEnabled);
+  };
+
+  /**
+   * Handle HTML export
+   */
+  const handleExportHTML = () => {
+    if (!metricsResult || !startDate || !endDate) return;
+    
+    // Format dates to YYYY/MM/DD
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}/${month}/${day}`;
+    };
+    
+    downloadHTML({
+      metrics: metricsResult.metrics,
+      agpData: metricsResult.agp,
+      events: metricsResult.events,
+      startDate: formatDate(startDate),
+      endDate: formatDate(endDate),
+      dayNightMetrics: dayNightEnabled ? {
+        day: metricsResult.dayMetrics,
+        night: metricsResult.nightMetrics
+      } : null,
+      workdaySplit: workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics ? {
+        workday: metricsResult.workdayMetrics,
+        restday: metricsResult.restdayMetrics,
+        workdayCount: metricsResult.workdayMetrics.days,
+        restdayCount: metricsResult.restdayMetrics.days
+      } : null,
+      comparison: comparisonData ? {
+        current: metricsResult.metrics,
+        previous: comparisonData.comparison,
+        comparisonAGP: comparisonData.comparisonAGP,
+        prevStart: formatDate(new Date(comparisonData.prevStart)),
+        prevEnd: formatDate(new Date(comparisonData.prevEnd))
+      } : null
+    });
+  };
+
+  // ============================================
+  // RENDER: Main UI
+  // ============================================
+
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-12 text-center">
-          <h1 className="text-4xl font-bold mb-2">
-            AGP+ v2.1
-          </h1>
-          <p className="text-xl text-gray-400">
+    <div className="min-h-screen" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+      <div className="app-container">
+        
+        {/* Header */}
+        <header className="section">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <Activity className="w-8 h-8" style={{ color: 'var(--text-primary)' }} />
+              <div>
+                <h1 style={{ letterSpacing: '0.1em', fontWeight: 700, marginBottom: '0.25rem' }}>
+                  AGP+ V2.1
+                </h1>
+                {/* Active Period Display */}
+                {startDate && endDate && (
+                  <p style={{ 
+                    fontSize: '0.875rem', 
+                    color: 'var(--color-green)',
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
+                    fontFamily: 'monospace'
+                  }}>
+                    {startDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    {' → '}
+                    {endDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    <span style={{ 
+                      marginLeft: '0.5rem', 
+                      color: 'var(--text-secondary)',
+                      fontWeight: 400
+                    }}>
+                      ({Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1} dagen)
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          <p style={{ 
+            fontSize: '0.875rem', 
+            color: 'var(--text-secondary)', 
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase'
+          }}>
             Ambulatory Glucose Profile Generator
-          </p>
-          <p className="text-sm text-gray-500 mt-4">
-            🚧 Development Mode - Component placeholder
           </p>
         </header>
 
-        <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">
-          <h2 className="text-2xl font-semibold mb-4">Setup Status</h2>
-          
-          <div className="space-y-3">
-            <StatusItem status="complete" text="✅ Vite config loaded" />
-            <StatusItem status="complete" text="✅ React 18 initialized" />
-            <StatusItem status="complete" text="✅ Dark theme applied" />
-            <StatusItem status="pending" text="⏳ Components pending (PROMPTS 2-6)" />
-            <StatusItem status="pending" text="⏳ Full AGPGenerator implementation (PROMPT 7)" />
+        {/* Top Controls Row: Import | Export | Period - All side by side */}
+        <section className="section">
+          {/* Row 1: 3-column grid - always horizontal */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'auto auto 1fr',
+            gap: '1rem',
+            alignItems: 'center',
+            marginBottom: '1rem'
+          }}>
+            
+            {/* 1. Data Import Button - Collapsible trigger */}
+            <button
+              onClick={() => setDataImportExpanded(!dataImportExpanded)}
+              className="flex items-center justify-between rounded"
+              style={{
+                background: 'var(--bg-secondary)',
+                border: '2px solid var(--border-primary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                padding: '0.75rem 1rem',
+                minWidth: '140px'
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: csvData ? 'var(--color-green)' : 'var(--color-gray)',
+                  transition: 'all 0.2s'
+                }} />
+                <h2 style={{ 
+                  fontSize: '0.875rem',
+                  fontWeight: 700, 
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase'
+                }}>
+                  Import
+                </h2>
+                {csvData && !dataImportExpanded && (
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    color: 'var(--text-secondary)',
+                    letterSpacing: '0.05em'
+                  }}>
+                    ✓
+                  </span>
+                )}
+              </div>
+              <ChevronDown 
+                className="w-5 h-5 ml-2"
+                style={{
+                  transform: dataImportExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                  transition: 'transform 0.2s',
+                  color: 'var(--text-secondary)'
+                }}
+              />
+            </button>
+
+            {/* 2. Export Button - Only when data available */}
+            {metricsResult && startDate && endDate ? (
+              <button
+                onClick={handleExportHTML}
+                className="btn btn-primary flex items-center gap-2"
+                style={{
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </button>
+            ) : <div />}
+
+            {/* 3. Period Selector - Takes remaining space */}
+            {csvData && dateRange ? (
+              <PeriodSelector
+                availableDates={dateRange}
+                startDate={startDate}
+                endDate={endDate}
+                onChange={handlePeriodChange}
+              />
+            ) : <div />}
+            
           </div>
 
-          <div className="mt-8 p-4 bg-blue-900/20 border border-blue-700 rounded">
-            <p className="text-sm text-blue-300">
-              <strong>Next steps:</strong> Run PROMPT 2 to create display components
-              (MetricsDisplay, PeriodSelector, WorkdaySplit)
-            </p>
-          </div>
-        </div>
+          {/* Row 2: Expanded Import Content - full width below */}
+          {dataImportExpanded && (
+            <div className="mb-4" style={{ 
+              background: 'var(--bg-secondary)',
+              border: '2px solid var(--border-primary)',
+              borderRadius: '4px',
+              padding: '1rem'
+            }}>
+              <FileUpload
+                onCSVLoad={handleCSVLoad}
+                onProTimeLoad={handleProTimeLoad}
+                csvLoaded={!!csvData}
+                proTimeLoaded={!!workdays}
+              />
+              
+              {csvError && (
+                <div className="card mt-4" style={{ 
+                  background: 'var(--color-red)', 
+                  color: 'var(--color-white)',
+                  border: '2px solid var(--color-red)'
+                }}>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 700, letterSpacing: '0.05em' }}>
+                    <strong>ERROR:</strong> {csvError}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
 
-        <footer className="mt-12 text-center text-sm text-gray-500">
-          <p>AGP+ v2.1.0 - Development Build</p>
-          <p className="mt-2">Built with React 18 + Vite 5</p>
+        {/* Main Content - Only show when CSV loaded and period selected */}
+        {csvData && dateRange && startDate && endDate && metricsResult && (
+          <>
+                {/* 1. AGP CHART - Visual Overview First */}
+                <section className="section">
+                  <AGPChart
+                    agpData={metricsResult.agp}
+                    events={metricsResult.events}
+                    metrics={metricsResult.metrics}
+                    comparison={comparisonData?.comparisonAGP || null}
+                  />
+                </section>
+
+                {/* 2. HERO METRICS - TIR, Mean, CV, GMI + All Secondary */}
+                <section className="section">
+                  <MetricsDisplay
+                    metrics={metricsResult.metrics}
+                    startDate={startDate}
+                    endDate={endDate}
+                  />
+                </section>
+
+                {/* 3. DAY/NIGHT SPLIT */}
+                <section className="section">
+                  <DayNightSplit
+                    dayMetrics={metricsResult.dayMetrics}
+                    nightMetrics={metricsResult.nightMetrics}
+                    enabled={dayNightEnabled}
+                    onToggle={handleDayNightToggle}
+                  />
+                </section>
+
+                {/* 4. WORKDAY SPLIT - Only show when ProTime loaded */}
+                {workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics && (
+                  <section className="section">
+                    <WorkdaySplit
+                      workdayMetrics={metricsResult.workdayMetrics}
+                      restdayMetrics={metricsResult.restdayMetrics}
+                      workdays={workdays}
+                      startDate={startDate}
+                      endDate={endDate}
+                    />
+                  </section>
+                )}
+
+                {/* 5. PERIOD COMPARISON - Last */}
+                {comparisonData && (
+                  <section className="section">
+                    <ComparisonView
+                      currentMetrics={metricsResult.metrics}
+                      previousMetrics={comparisonData.comparison}
+                      startDate={startDate}
+                      endDate={endDate}
+                      prevStart={comparisonData.prevStart}
+                      prevEnd={comparisonData.prevEnd}
+                    />
+                  </section>
+                )}
+              </>
+        )}
+
+        {/* Footer */}
+        <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
+          <p>
+            AGP+ v2.1 | Built for Medtronic CareLink CSV exports
+          </p>
+          <p className="mt-2">
+            Following{' '}
+            <a 
+              href="https://diabetesjournals.org/care/issue/48/Supplement_1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 underline"
+            >
+              ADA Standards of Care in Diabetes—2025
+            </a>
+          </p>
         </footer>
       </div>
     </div>
@@ -54,18 +433,82 @@ export default function AGPGenerator() {
 }
 
 /**
- * StatusItem - Helper component for status display
+ * EmptyCSVState - Message shown when no CSV is loaded
  */
-function StatusItem({ status, text }) {
-  const statusColors = {
-    complete: 'text-green-400',
-    pending: 'text-yellow-400',
-    error: 'text-red-400',
-  };
-
+function EmptyCSVState() {
   return (
-    <div className={`flex items-center gap-2 ${statusColors[status]}`}>
-      <span className="font-mono text-sm">{text}</span>
+    <div className="text-center py-16">
+      <div className="max-w-md mx-auto">
+        <div className="mb-6">
+          <Activity className="w-16 h-16 text-gray-600 mx-auto" />
+        </div>
+        
+        <h2 className="text-2xl font-semibold text-gray-300 mb-4">
+          Welcome to AGP+ v2.1
+        </h2>
+        
+        <p className="text-gray-400 mb-6">
+          Get started by uploading your Medtronic CareLink CSV export above.
+        </p>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 text-left">
+          <h3 className="font-semibold text-gray-200 mb-3">
+            How to export from CareLink:
+          </h3>
+          <ol className="text-sm text-gray-400 space-y-2 list-decimal list-inside">
+            <li>Log in to CareLink at carelink.minimed.eu</li>
+            <li>Go to "Reports" → "Device Data"</li>
+            <li>Select date range (minimum 14 days recommended)</li>
+            <li>Click "Export" → "CSV"</li>
+            <li>Upload the downloaded file above</li>
+          </ol>
+        </div>
+
+        <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4 text-left">
+          <p className="text-sm text-blue-300">
+            <strong>💡 Tip:</strong> For best results, export at least 14 days of data. 
+            The tool will automatically compare periods if you export 30 or 90 days.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * EmptyPeriodState - Message shown when CSV loaded but no period selected
+ */
+function EmptyPeriodState() {
+  return (
+    <div className="text-center py-12">
+      <div className="max-w-md mx-auto">
+        <h3 className="text-xl font-semibold text-gray-300 mb-3">
+          Select an Analysis Period
+        </h3>
+        
+        <p className="text-gray-400 mb-4">
+          Choose a time period above to view your glucose metrics and AGP analysis.
+        </p>
+
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-left">
+          <p className="text-sm text-gray-400">
+            <strong className="text-gray-300">Available options:</strong>
+          </p>
+          <ul className="text-sm text-gray-400 mt-2 space-y-1 list-disc list-inside">
+            <li><strong>14 days:</strong> Minimum recommended period</li>
+            <li><strong>30 days:</strong> Standard monthly analysis</li>
+            <li><strong>90 days:</strong> Quarterly review</li>
+            <li><strong>Custom:</strong> Any date range within your data</li>
+          </ul>
+        </div>
+
+        <div className="mt-4 bg-blue-900/20 border border-blue-700 rounded-lg p-3">
+          <p className="text-xs text-blue-300">
+            💡 Selecting 14, 30, or 90 days will automatically enable period comparison 
+            if you have enough historical data.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
