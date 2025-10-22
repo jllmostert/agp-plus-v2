@@ -1,0 +1,38 @@
+{
+  "name": "agp-plus",
+  "version": "2.1.0",
+  "description": "AGP+ v2.1 - Ambulatory Glucose Profile Generator for Medtronic 780G CGM data",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.263.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0"
+  },
+  "keywords": [
+    "diabetes",
+    "cgm",
+    "ambulatory-glucose-profile",
+    "medtronic",
+    "780g",
+    "glucose-monitoring",
+    "healthcare"
+  ],
+  "author": "Jo Mostert",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jllmostert/agp-plus-v2.git"
+  }
+}
