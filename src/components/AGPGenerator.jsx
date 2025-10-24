@@ -427,7 +427,7 @@ export default function AGPGenerator() {
                 fontSize: '1.5rem',
                 marginBottom: 0
               }}>
-                AGP+ V2.1
+                AGP+ V2.2.0
               </h1>
             </div>
             
