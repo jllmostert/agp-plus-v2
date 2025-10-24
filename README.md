@@ -26,7 +26,7 @@ npm install
 npm run dev
 
 # Open browser
-http://localhost:3001
+http://localhost:5173
 ```
 
 ---
@@ -196,7 +196,7 @@ The `/docs/artifacts/` folder contains reference implementations:
 ### Commands
 ```bash
 # Development
-npm run dev              # Start dev server (port 3001)
+npm run dev              # Start dev server (port 5173)
 
 # Build
 npm run build            # Production build → dist/

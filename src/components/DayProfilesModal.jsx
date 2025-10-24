@@ -13,12 +13,7 @@ import DayProfileCard from './DayProfileCard';
 import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
 
 export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patientInfo = null }) {
-  console.log('🟣 DayProfilesModal render:', { isOpen, dayProfiles: dayProfiles?.length, patientInfo });
-  
   if (!isOpen) return null;
-
-  console.log('🟣 Modal IS open, rendering content...');
-  console.log('🟣 First profile:', dayProfiles?.[0]);
 
   return (
     <div 

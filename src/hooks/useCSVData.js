@@ -54,7 +54,6 @@ export function useCSVData() {
           
           if (Object.keys(updates).length > 0) {
             await patientStorage.update(updates);
-            console.log('✅ Patient metadata extracted from CSV:', updates);
           }
         }
       } catch (metadataErr) {
@@ -63,10 +62,18 @@ export function useCSVData() {
       }
 
       // Extract date range from data
-      const dates = data.map(row => {
-        const [year, month, day] = row.date.split('/');
-        return new Date(year, month - 1, day);
-      });
+      const dates = data
+        .filter(row => row.date && row.date !== 'Date') // Skip header rows
+        .map(row => {
+          const [year, month, day] = row.date.split('/');
+          const dateObj = new Date(year, month - 1, day);
+          return dateObj;
+        })
+        .filter(d => d && !isNaN(d.getTime())); // Filter out invalid dates
+
+      if (dates.length === 0) {
+        throw new Error('No valid dates found in CSV data');
+      }
 
       const minDate = new Date(Math.min(...dates));
       const maxDate = new Date(Math.max(...dates));

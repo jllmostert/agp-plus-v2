@@ -97,6 +97,16 @@ export default function AGPGenerator() {
     }
   }, [patientInfoOpen]);
 
+  /**
+   * Auto-expand import section if no data loaded but saved uploads exist
+   * This ensures user can always access their saved data on app startup
+   */
+  useEffect(() => {
+    if (!csvData && savedUploads.length > 0) {
+      setDataImportExpanded(true);
+    }
+  }, [csvData, savedUploads]);
+
   // ============================================
   // CALCULATED DATA: Metrics & Comparison
   // ============================================
@@ -161,7 +171,6 @@ export default function AGPGenerator() {
       if (activeUploadId) {
         try {
           await updateProTimeData(activeUploadId, workdaySet);
-          console.log('✅ ProTime data added to saved upload');
         } catch (err) {
           console.error('Failed to update saved upload with ProTime:', err);
         }
@@ -284,15 +293,20 @@ export default function AGPGenerator() {
       // Keep data import section OPEN so user can see what's loaded
       setDataImportExpanded(true);
 
-      // Reset period selection (will auto-select last 14 days via useEffect)
-      setStartDate(null);
-      setEndDate(null);
+      // Auto-select last 14 days (same logic as useEffect)
+      const end = new Date(upload.dateRange.max);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 13); // 14 days = today - 13 days
+      
+      // If data range is shorter than 14 days, use full range
+      const actualStart = start < upload.dateRange.min ? upload.dateRange.min : start;
+      
+      setStartDate(actualStart);
+      setEndDate(end);
 
       // Show success toast
       setLoadToast(`✅ Loaded: ${upload.name}`);
       setTimeout(() => setLoadToast(null), 3000); // Auto-hide after 3s
-      
-      console.log(`✅ Loaded upload: ${upload.name}`);
       
     } catch (err) {
       console.error('Failed to load upload:', err);
@@ -304,27 +318,19 @@ export default function AGPGenerator() {
    * Handle day profiles modal open
    */
   const handleDayProfilesOpen = async () => {
-    console.log('🔵 Day profiles button clicked!');
-    console.log('csvData:', csvData ? `${csvData.length} rows` : 'null');
-    console.log('dateRange:', dateRange);
-    
     if (!csvData || !dateRange) {
       alert('Load CSV data first.');
       return;
     }
 
     try {
-      console.log('🟢 Starting day profile generation...');
-      
       // Import day-profile-engine and metrics-engine
       const { getLastSevenDays } = await import('../core/day-profile-engine.js');
       const { calculateMetrics } = await import('../core/metrics-engine.js');
-      console.log('✅ Engines imported');
       
       // Get CSV creation date from dateRange.max (last available date)
       const maxDate = new Date(dateRange.max);
       const csvCreatedDate = `${maxDate.getFullYear()}/${String(maxDate.getMonth() + 1).padStart(2, '0')}/${String(maxDate.getDate()).padStart(2, '0')}`;
-      console.log('📅 CSV created date:', csvCreatedDate);
       
       // Calculate overall mean from selected period (or use current metrics if available)
       let overallMean = null;
@@ -346,19 +352,15 @@ export default function AGPGenerator() {
         overallMean = tempMetrics?.mean || null;
         agpCurve = calculateAGP(csvData, formatDate(startDate), formatDate(endDate));
       }
-      console.log('📊 Overall mean:', overallMean);
-      console.log('📊 AGP curve points:', agpCurve?.length);
       
       // Generate last 7 day profiles
       const profiles = getLastSevenDays(csvData, csvCreatedDate);
-      console.log('📊 Profiles generated:', profiles ? profiles.length : 'null');
       
       // Add overall mean AND AGP curve to each profile
       const profilesWithMean = profiles.map(p => ({ ...p, overallMean, agpCurve }));
       
       setDayProfiles(profilesWithMean);
       setDayProfilesOpen(true);
-      console.log('✅ Modal should open now');
       
     } catch (err) {
       console.error('❌ Failed to generate day profiles:', err);
@@ -431,9 +433,7 @@ export default function AGPGenerator() {
             
             <button
               onClick={() => {
-                console.log('🔴 BUTTON CLICKED!');
                 setPatientInfoOpen(true);
-                console.log('State should be true now');
               }}
               style={{
                 padding: '0.75rem 1rem',
@@ -735,7 +735,8 @@ export default function AGPGenerator() {
               background: 'var(--bg-secondary)',
               border: '2px solid var(--border-primary)',
               borderRadius: '4px',
-              padding: '1rem'
+              padding: '1rem',
+              marginTop: '1rem'
             }}>
               {/* File Upload Section */}
               <FileUpload
@@ -861,9 +862,7 @@ export default function AGPGenerator() {
         )}
 
         {/* Patient Info Modal */}
-        {console.log('Checking patientInfoOpen:', patientInfoOpen)}
         {patientInfoOpen && (
-          console.log('🟢 RENDERING PORTAL NOW!'),
           ReactDOM.createPortal(
             <PatientInfo 
               isModal={true}
@@ -887,7 +886,7 @@ export default function AGPGenerator() {
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
           <p>
-            AGP+ v2.1 | Built for Medtronic CareLink CSV exports
+            AGP+ v2.2.0 | Built for Medtronic CareLink CSV exports
           </p>
           <p className="mt-2">
             Following{' '}

@@ -10,18 +10,44 @@
  */
 
 /**
+ * Calculate dynamic Y-axis range for a single day curve
+ * Same logic as DayProfileCard for consistency
+ */
+const calculateDynamicYRange = (curve) => {
+  const validGlucose = curve
+    .filter(d => d.hasData && d.glucose !== null)
+    .map(d => d.glucose);
+
+  if (validGlucose.length === 0) {
+    return { yMin: 54, yMax: 250 }; // Fallback to clinical range
+  }
+
+  const dataMin = Math.min(...validGlucose);
+  const dataMax = Math.max(...validGlucose);
+  const dataRange = dataMax - dataMin;
+
+  // Dynamic padding: more zoom for tight ranges, less for wide ranges
+  const padding_buffer = dataRange < 100 ? 30 : dataRange < 150 ? 20 : 15;
+
+  // Adaptive range: start with clinical range (54-250), expand if needed
+  const yMin = Math.max(40, Math.min(54, dataMin - padding_buffer));
+  const yMax = Math.min(400, Math.max(250, dataMax + padding_buffer));
+
+  return { yMin, yMax };
+};
+
+/**
  * Generate SVG for single day glucose curve
  */
-const generateDayCurveSVG = (curve, events, sensorChanges, agpCurve) => {
+const generateDayCurveSVG = (curve, events, sensorChanges, cartridgeChanges, agpCurve) => {
   const width = 650;  // Wider for better horizontal stretch
   const height = 85;  // Smaller height to fit in compact card
   const padding = { top: 6, right: 15, bottom: 15, left: 30 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
   
-  // Y-axis scale (40-400 mg/dL)
-  const yMin = 40;
-  const yMax = 400;
+  // Calculate dynamic Y-axis range
+  const { yMin, yMax } = calculateDynamicYRange(curve);
   const yScale = (glucose) => {
     return chartHeight - ((glucose - yMin) / (yMax - yMin)) * chartHeight;
   };
@@ -29,10 +55,52 @@ const generateDayCurveSVG = (curve, events, sensorChanges, agpCurve) => {
   // X-axis scale (288 bins = 24 hours)
   const xScale = (bin) => (bin / 288) * chartWidth;
   
-  // Target zone
-  const targetLow = yScale(180);
-  const targetHigh = yScale(70);
-  const targetHeight = targetHigh - targetLow;
+  // Calculate smart Y-axis ticks
+  const calculateYTicks = () => {
+    const range = yMax - yMin;
+    const idealTickCount = 4; // Fewer ticks for compact display
+    const roughStep = range / idealTickCount;
+    
+    let step;
+    if (roughStep <= 25) step = 20;
+    else if (roughStep <= 40) step = 25;
+    else if (roughStep <= 60) step = 40;
+    else step = 50;
+
+    const ticks = [];
+    const startTick = Math.ceil(yMin / step) * step;
+    
+    for (let tick = startTick; tick <= yMax; tick += step) {
+      ticks.push(tick);
+    }
+
+    // Always include 70 and 180 if in range
+    const CRITICAL_TICKS = [70, 180];
+    const MIN_SPACING = 15;
+    
+    for (const critical of CRITICAL_TICKS) {
+      if (yMin <= critical && yMax >= critical) {
+        const hasConflict = ticks.some(t => t !== critical && Math.abs(t - critical) < MIN_SPACING);
+        
+        if (hasConflict) {
+          const filtered = ticks.filter(t => Math.abs(t - critical) >= MIN_SPACING);
+          ticks.length = 0;
+          ticks.push(...filtered, critical);
+        } else if (!ticks.includes(critical)) {
+          ticks.push(critical);
+        }
+      }
+    }
+
+    return ticks.sort((a, b) => a - b);
+  };
+
+  const yTicks = calculateYTicks();
+  
+  // Target zone (only render if 70 and 180 are in range)
+  const targetLow = (yMin <= 180 && yMax >= 180) ? yScale(180) : null;
+  const targetHigh = (yMin <= 70 && yMax >= 70) ? yScale(70) : null;
+  const targetHeight = (targetLow !== null && targetHigh !== null) ? targetHigh - targetLow : 0;
   
   // Generate curve path
   const curvePoints = curve
@@ -49,28 +117,30 @@ const generateDayCurveSVG = (curve, events, sensorChanges, agpCurve) => {
   
   return `
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <!-- Target zone -->
+      ${targetHeight > 0 ? `
+      <!-- Target zone (70-180 mg/dL) -->
       <rect x="${padding.left}" y="${padding.top + targetLow}" 
             width="${chartWidth}" height="${targetHeight}" 
             fill="#e0e0e0"/>
+      ` : ''}
       
-      <!-- Grid lines -->
+      <!-- Grid lines for critical thresholds (if in range) -->
+      ${yMin <= 180 && yMax >= 180 ? `
       <line x1="${padding.left}" y1="${padding.top + yScale(180)}" 
             x2="${padding.left + chartWidth}" y2="${padding.top + yScale(180)}" 
             stroke="#ccc" stroke-width="0.5" stroke-dasharray="2,2"/>
+      ` : ''}
+      ${yMin <= 70 && yMax >= 70 ? `
       <line x1="${padding.left}" y1="${padding.top + yScale(70)}" 
             x2="${padding.left + chartWidth}" y2="${padding.top + yScale(70)}" 
             stroke="#ccc" stroke-width="0.5" stroke-dasharray="2,2"/>
+      ` : ''}
       
-      <!-- Y-axis labels -->
-      <text x="${padding.left - 5}" y="${padding.top + yScale(400)}" 
-            text-anchor="end" font-size="7" fill="#666">400</text>
-      <text x="${padding.left - 5}" y="${padding.top + yScale(180)}" 
-            text-anchor="end" font-size="7" fill="#666">180</text>
-      <text x="${padding.left - 5}" y="${padding.top + yScale(70)}" 
-            text-anchor="end" font-size="7" fill="#666">70</text>
-      <text x="${padding.left - 5}" y="${padding.top + yScale(40)}" 
-            text-anchor="end" font-size="7" fill="#666">40</text>
+      <!-- Y-axis labels (dynamic ticks) -->
+      ${yTicks.map(tick => `
+      <text x="${padding.left - 5}" y="${padding.top + yScale(tick) + 2}" 
+            text-anchor="end" font-size="7" fill="#666">${tick}</text>
+      `).join('')}
       
       <!-- X-axis labels -->
       ${[0, 6, 12, 18, 24].map(hour => `
@@ -103,11 +173,18 @@ const generateDayCurveSVG = (curve, events, sensorChanges, agpCurve) => {
                   r="3" fill="#EF4444" stroke="#000" stroke-width="1"/>
         `).join('')}
         
-        <!-- Sensor changes -->
-        ${sensorChanges.map(change => `
+        <!-- Sensor change - red dashed line when sensor stops -->
+        ${sensorChanges.filter(c => c.type === 'start').map(change => `
           <line x1="${xScale(change.minuteOfDay / 5)}" y1="0" 
                 x2="${xScale(change.minuteOfDay / 5)}" y2="${chartHeight}" 
-                stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+                stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,4"/>
+        `).join('')}
+        
+        <!-- Cartridge change - orange dotted line -->
+        ${cartridgeChanges.map(change => `
+          <line x1="${xScale(change.minuteOfDay / 5)}" y1="0" 
+                x2="${xScale(change.minuteOfDay / 5)}" y2="${chartHeight}" 
+                stroke="#FF8C00" stroke-width="1.5" stroke-dasharray="2,2"/>
         `).join('')}
       </g>
     </svg>
@@ -182,7 +259,7 @@ const generateTIRBarSVG = (metrics) => {
  * Generate single day profile card (compact print version)
  */
 const generateDayCard = (profile) => {
-  const { date, dayOfWeek, metrics, curve, events, sensorChanges, badges } = profile;
+  const { date, dayOfWeek, metrics, curve, events, sensorChanges, cartridgeChanges, badges } = profile;
   
   const dateStr = profile.dateObj.toLocaleDateString('nl-NL', {
     day: '2-digit',
@@ -208,7 +285,7 @@ const generateDayCard = (profile) => {
       <!-- Main: Curve + TIR Bar -->
       <div class="day-main">
         <div class="day-curve">
-          ${generateDayCurveSVG(curve, events, sensorChanges, profile.agpCurve)}
+          ${generateDayCurveSVG(curve, events, sensorChanges, cartridgeChanges, profile.agpCurve)}
         </div>
         <div class="day-tir">
           ${generateTIRBarSVG(metrics)}
@@ -455,7 +532,7 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
       padding: 3mm;
       margin-top: 4mm;
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 2mm;
       font-size: 8pt;
     }
@@ -479,10 +556,19 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     .legend-marker.sensor { 
       background: repeating-linear-gradient(
         45deg,
-        #999,
-        #999 1px,
+        #dc2626,
+        #dc2626 1px,
         transparent 1px,
         transparent 3px
+      );
+    }
+    .legend-marker.cartridge { 
+      background: repeating-linear-gradient(
+        45deg,
+        #FF8C00,
+        #FF8C00 1px,
+        transparent 1px,
+        transparent 2px
       );
     }
     
@@ -563,6 +649,10 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
         <div class="legend-marker sensor"></div>
         <span>Sensor wissel</span>
       </div>
+      <div class="legend-item">
+        <div class="legend-marker cartridge"></div>
+        <span>Cartridge wissel</span>
+      </div>
     </div>
   ` : `
     <!-- Legend (on page 1 only if no page 2) -->
@@ -582,6 +672,10 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
       <div class="legend-item">
         <div class="legend-marker sensor"></div>
         <span>Sensor wissel</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-marker cartridge"></div>
+        <span>Cartridge wissel</span>
       </div>
     </div>
   `}
@@ -609,7 +703,8 @@ export const downloadDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     const link = document.createElement('a');
     link.href = url;
     
-    const timestamp = new Date().toISOString().split('T')[0];
+    // Generate unique filename with timestamp (consistent with AGP report format)
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // YYYY-MM-DDTHH-MM-SS
     link.download = `AGP_DayProfiles_${timestamp}.html`;
     
     document.body.appendChild(link);

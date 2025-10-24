@@ -7,7 +7,7 @@ import { HelpCircle } from 'lucide-react';
  * Shows help text on hover for metric explanations.
  * Minimal styling to match AGP+ brutalist aesthetic.
  * 
- * @version 2.1.2
+ * @version 2.2.0
  */
 export default function Tooltip({ text, children }) {
   const [visible, setVisible] = useState(false);

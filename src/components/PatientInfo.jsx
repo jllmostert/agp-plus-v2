@@ -18,8 +18,6 @@ import { patientStorage } from '../utils/patientStorage';
  * @version 2.1.2
  */
 export default function PatientInfo({ onClose, isModal = false }) {
-  console.log('PatientInfo component rendered, isModal:', isModal);
-  
   const [formData, setFormData] = useState({
     name: '',
     email: '',

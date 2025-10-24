@@ -14,7 +14,7 @@ import React from 'react';
 export default function DayProfileCard({ profile }) {
   if (!profile) return null;
 
-  const { date, dayOfWeek, metrics, curve, events, sensorChanges, badges, readingCount } = profile;
+  const { date, dayOfWeek, metrics, curve, events, sensorChanges, cartridgeChanges, badges, readingCount } = profile;
 
   return (
     <div
@@ -129,6 +129,7 @@ export default function DayProfileCard({ profile }) {
           curve={curve} 
           events={events} 
           sensorChanges={sensorChanges}
+          cartridgeChanges={cartridgeChanges}
           agpCurve={profile.agpCurve}
         />
       </div>
@@ -176,7 +177,7 @@ export default function DayProfileCard({ profile }) {
  * Range: Adaptive (min: 54-250 mg/dL clinical range, expands for outliers)
  * 288 bins (5-min intervals)
  */
-function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
+function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCurve }) {
   const svgWidth = 1000;
   const svgHeight = 300;
   const padding = { top: 20, right: 40, bottom: 40, left: 60 };
@@ -221,16 +222,29 @@ function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
     const ticks = [];
     const startTick = Math.ceil(yMin / step) * step;
     
+    // Generate regular ticks
     for (let tick = startTick; tick <= yMax; tick += step) {
       ticks.push(tick);
     }
 
-    // Always include clinical boundaries if in range
-    if (yMin <= 70 && yMax >= 70 && !ticks.includes(70)) {
-      ticks.push(70);
-    }
-    if (yMin <= 180 && yMax >= 180 && !ticks.includes(180)) {
-      ticks.push(180);
+    // Always include clinical boundaries 70 and 180 if in range
+    const CRITICAL_TICKS = [70, 180];
+    const MIN_SPACING = 15; // Minimum spacing in mg/dL between ticks
+    
+    for (const critical of CRITICAL_TICKS) {
+      if (yMin <= critical && yMax >= critical) {
+        // Check if any existing tick is too close to this critical value
+        const hasConflict = ticks.some(t => t !== critical && Math.abs(t - critical) < MIN_SPACING);
+        
+        if (hasConflict) {
+          // Remove conflicting ticks, keep critical ones
+          const filtered = ticks.filter(t => Math.abs(t - critical) >= MIN_SPACING);
+          ticks.length = 0;
+          ticks.push(...filtered, critical);
+        } else if (!ticks.includes(critical)) {
+          ticks.push(critical);
+        }
+      }
     }
 
     return ticks.sort((a, b) => a - b);
@@ -418,23 +432,48 @@ function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
           />
         ))}
 
-        {/* Sensor change markers */}
-        {sensorChanges.map((change, i) => (
+        {/* Sensor change marker - ONE red dashed line when sensor stops */}
+        {sensorChanges && sensorChanges.filter(c => c.type === 'start').map((change, i) => (
+          <g key={`sensor-start-${i}`}>
+            <line
+              x1={xScale(change.minuteOfDay / 5)}
+              y1={0}
+              x2={xScale(change.minuteOfDay / 5)}
+              y2={chartHeight}
+              stroke="#dc2626"
+              strokeWidth={2}
+              strokeDasharray="4,4"
+            />
+            <text
+              x={xScale(change.minuteOfDay / 5) + 5}
+              y={15}
+              fontSize="10"
+              fontFamily="Courier New, monospace"
+              fill="#dc2626"
+              fontWeight="bold"
+            >
+              SENSOR VERVANGEN
+            </text>
+          </g>
+        ))}
+        
+        {/* Cartridge change markers */}
+        {cartridgeChanges?.map((change, i) => (
           <line
-            key={`sensor-${i}`}
+            key={`cartridge-${i}`}
             x1={xScale(change.minuteOfDay / 5)}
             y1={0}
             x2={xScale(change.minuteOfDay / 5)}
             y2={chartHeight}
-            stroke="#999"
+            stroke="#FF8C00"
             strokeWidth={2}
-            strokeDasharray="5,5"
+            strokeDasharray="2,2"
           />
         ))}
       </g>
 
       {/* Legend */}
-      <g transform={`translate(${padding.left + chartWidth - 150}, ${padding.top + 10})`}>
+      <g transform={`translate(${padding.left + chartWidth - 180}, ${padding.top + 10})`}>
         <circle cx={0} cy={0} r={4} fill="#DC2626" stroke="#000" strokeWidth={1} />
         <text x={10} y={4} fontSize="10" fontFamily="Courier New, monospace" fill="#000">
           HYPO L2
@@ -450,9 +489,14 @@ function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
           HYPER
         </text>
 
-        <line x1={0} y1={45} x2={20} y2={45} stroke="#999" strokeWidth={2} strokeDasharray="5,5" />
+        <line x1={0} y1={45} x2={20} y2={45} stroke="#dc2626" strokeWidth={2} strokeDasharray="4,4" />
         <text x={25} y={49} fontSize="10" fontFamily="Courier New, monospace" fill="#000">
           SENSOR
+        </text>
+
+        <line x1={0} y1={60} x2={20} y2={60} stroke="#FF8C00" strokeWidth={2} strokeDasharray="2,2" />
+        <text x={25} y={64} fontSize="10" fontFamily="Courier New, monospace" fill="#000">
+          CARTRIDGE
         </text>
       </g>
     </svg>

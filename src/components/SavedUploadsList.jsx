@@ -239,35 +239,45 @@ export default function SavedUploadsList({
                     )}
                   </div>
 
-                  {/* Load Button - Only show if not already active */}
-                  {upload.id !== activeId && (
-                    <button
-                      onClick={() => onLoad(upload.id)}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        background: 'var(--bg-primary)',
-                        border: '2px solid var(--border-primary)',
-                        color: 'var(--text-primary)',
-                        cursor: 'pointer',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        transition: 'all 100ms linear'
-                      }}
-                      onMouseEnter={(e) => {
+                  {/* Load Button - Always visible */}
+                  <button
+                    onClick={() => onLoad(upload.id)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      background: upload.id === activeId ? 'var(--color-green)' : 'var(--bg-primary)',
+                      border: upload.id === activeId ? '2px solid var(--color-green)' : '2px solid var(--border-primary)',
+                      color: upload.id === activeId ? '#000' : 'var(--text-primary)',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      transition: 'all 100ms linear'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (upload.id === activeId) {
+                        e.target.style.background = '#e5e5e5';
+                        e.target.style.color = '#000';
+                        e.target.style.border = '2px solid var(--color-green)';
+                      } else {
                         e.target.style.background = 'var(--text-primary)';
                         e.target.style.color = 'var(--bg-primary)';
-                      }}
-                      onMouseLeave={(e) => {
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (upload.id === activeId) {
+                        e.target.style.background = 'var(--color-green)';
+                        e.target.style.color = '#000';
+                        e.target.style.border = '2px solid var(--color-green)';
+                      } else {
                         e.target.style.background = 'var(--bg-primary)';
                         e.target.style.color = 'var(--text-primary)';
-                      }}
-                    >
-                      LOAD DATA
-                    </button>
-                  )}
+                      }
+                    }}
+                  >
+                    {upload.id === activeId ? '↻ RELOAD DATA' : 'LOAD DATA'}
+                  </button>
                 </div>
               )}
             </div>

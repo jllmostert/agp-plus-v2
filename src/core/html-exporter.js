@@ -16,30 +16,67 @@
 import { CONFIG } from './metrics-engine.js';
 
 /**
- * Generate SVG path data for AGP curve
+ * Calculate dynamic Y-axis range based on actual data
+ * Same logic as DayProfileCard for consistent behavior
  */
-const generateAGPPath = (agpData, percentile) => {
+const calculateDynamicYRange = (agpData) => {
+  // Extract all glucose values from AGP data
+  const allValues = [];
+  agpData.forEach(bin => {
+    // Get all percentiles (5, 25, 50, 75, 95)
+    Object.keys(bin).forEach(key => {
+      if (!isNaN(bin[key])) {
+        allValues.push(bin[key]);
+      }
+    });
+  });
+
+  if (allValues.length === 0) {
+    // Fallback to clinical range if no data
+    return { yMin: 54, yMax: 250 };
+  }
+
+  const dataMin = Math.min(...allValues);
+  const dataMax = Math.max(...allValues);
+  const dataRange = dataMax - dataMin;
+
+  // Dynamic padding: more zoom for tight ranges, less for wide ranges
+  const padding_buffer = dataRange < 100 ? 30 : dataRange < 150 ? 20 : 15;
+
+  // Adaptive range: start with clinical range (54-250), expand if needed
+  const yMin = Math.max(40, Math.min(54, dataMin - padding_buffer));
+  const yMax = Math.min(400, Math.max(250, dataMax + padding_buffer));
+
+  return { yMin, yMax };
+};
+
+/**
+ * Generate SVG path data for AGP curve with dynamic Y-axis
+ */
+const generateAGPPath = (agpData, percentile, yMin, yMax) => {
+  const yRange = yMax - yMin;
   return agpData.map((d, i) => {
     const x = 60 + (i / CONFIG.AGP_BINS) * 780;
-    const y = 350 - ((d[percentile] / CONFIG.GLUCOSE.MAX) * 300);
+    const y = 350 - (((d[percentile] - yMin) / yRange) * 300);
     return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
   }).join(' ');
 };
 
 /**
- * Generate SVG path for filled AGP band
+ * Generate SVG path for filled AGP band with dynamic Y-axis
  */
-const generateAGPBand = (agpData, topPercentile, bottomPercentile) => {
+const generateAGPBand = (agpData, topPercentile, bottomPercentile, yMin, yMax) => {
+  const yRange = yMax - yMin;
   const topPath = agpData.map((d, i) => {
     const x = 60 + (i / CONFIG.AGP_BINS) * 780;
-    const y = 350 - ((d[topPercentile] / CONFIG.GLUCOSE.MAX) * 300);
+    const y = 350 - (((d[topPercentile] - yMin) / yRange) * 300);
     return `${x},${y}`;
   }).join(' L ');
   
   const bottomPath = agpData.slice().reverse().map((d, i) => {
     const reverseIdx = CONFIG.AGP_BINS - 1 - i;
     const x = 60 + (reverseIdx / CONFIG.AGP_BINS) * 780;
-    const y = 350 - ((d[bottomPercentile] / CONFIG.GLUCOSE.MAX) * 300);
+    const y = 350 - (((d[bottomPercentile] - yMin) / yRange) * 300);
     return `${x},${y}`;
   }).join(' L ');
   
@@ -104,6 +141,53 @@ export const generateHTML = (options) => {
     console.error('generateHTML: Missing required data', { metrics: !!metrics, agpData: !!agpData, startDate: !!startDate, endDate: !!endDate });
     throw new Error('Missing required data for HTML generation');
   }
+
+  // Calculate dynamic Y-axis range
+  const { yMin, yMax } = calculateDynamicYRange(agpData);
+  const yRange = yMax - yMin;
+
+  // Calculate Y-axis ticks
+  const calculateYTicks = () => {
+    const range = yMax - yMin;
+    const idealTickCount = 5;
+    const roughStep = range / idealTickCount;
+    
+    // Round to nice numbers
+    let step;
+    if (roughStep <= 25) step = 20;
+    else if (roughStep <= 40) step = 25;
+    else if (roughStep <= 60) step = 40;
+    else step = 50;
+
+    const ticks = [];
+    const startTick = Math.ceil(yMin / step) * step;
+    
+    for (let tick = startTick; tick <= yMax; tick += step) {
+      ticks.push(tick);
+    }
+
+    // Always include 70 and 180 if in range
+    const CRITICAL_TICKS = [70, 180];
+    const MIN_SPACING = 15;
+    
+    for (const critical of CRITICAL_TICKS) {
+      if (yMin <= critical && yMax >= critical) {
+        const hasConflict = ticks.some(t => t !== critical && Math.abs(t - critical) < MIN_SPACING);
+        
+        if (hasConflict) {
+          const filtered = ticks.filter(t => Math.abs(t - critical) >= MIN_SPACING);
+          ticks.length = 0;
+          ticks.push(...filtered, critical);
+        } else if (!ticks.includes(critical)) {
+          ticks.push(critical);
+        }
+      }
+    }
+
+    return ticks.sort((a, b) => a - b);
+  };
+
+  const yTicks = calculateYTicks();
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -589,23 +673,20 @@ export const generateHTML = (options) => {
     </div>
     
     <svg viewBox="0 0 900 450" width="100%">
-      <!-- Grid lines - critical thresholds -->
-      <line x1="60" y1="${350 - (54/400)*300}" x2="840" y2="${350 - (54/400)*300}" 
-        stroke="#000" stroke-width="2" stroke-dasharray="8,4" />
-      <line x1="60" y1="${350 - (70/400)*300}" x2="840" y2="${350 - (70/400)*300}" 
-        stroke="#000" stroke-width="3" />
-      <line x1="60" y1="${350 - (180/400)*300}" x2="840" y2="${350 - (180/400)*300}" 
-        stroke="#000" stroke-width="3" />
-      <line x1="60" y1="${350 - (250/400)*300}" x2="840" y2="${350 - (250/400)*300}" 
-        stroke="#000" stroke-width="2" stroke-dasharray="8,4" />
+      <!-- Grid lines - critical thresholds (dynamic) -->
+      ${[54, 70, 180, 250].filter(val => yMin <= val && yMax >= val).map(val => {
+        const y = 350 - ((val - yMin) / yRange) * 300;
+        const isDashed = val === 54 || val === 250;
+        return `<line x1="60" y1="${y}" x2="840" y2="${y}" 
+          stroke="#000" stroke-width="${isDashed ? '2' : '3'}" ${isDashed ? 'stroke-dasharray="8,4"' : ''} />`;
+      }).join('\n      ')}
       
-      <!-- Y-axis labels -->
-      <text x="45" y="${350 - (54/400)*300 + 5}" font-size="12" font-weight="bold" text-anchor="end">54</text>
-      <text x="45" y="${350 - (70/400)*300 + 5}" font-size="13" font-weight="bold" text-anchor="end">70</text>
-      <text x="45" y="${350 - (180/400)*300 + 5}" font-size="13" font-weight="bold" text-anchor="end">180</text>
-      <text x="45" y="${350 - (250/400)*300 + 5}" font-size="12" font-weight="bold" text-anchor="end">250</text>
-      <text x="45" y="355" font-size="11" text-anchor="end">0</text>
-      <text x="45" y="55" font-size="11" text-anchor="end">400</text>
+      <!-- Y-axis labels (dynamic ticks) -->
+      ${yTicks.map(tick => {
+        const y = 350 - ((tick - yMin) / yRange) * 300;
+        const isCritical = tick === 70 || tick === 180;
+        return `<text x="45" y="${y + 5}" font-size="${isCritical ? '13' : '12'}" font-weight="bold" text-anchor="end">${tick}</text>`;
+      }).join('\n      ')}
       <text x="20" y="210" font-size="11" font-weight="bold" text-anchor="middle" transform="rotate(-90 20 210)">mg/dL</text>
       
       <!-- X-axis -->
@@ -619,18 +700,18 @@ export const generateHTML = (options) => {
       <text x="450" y="395" font-size="11" font-weight="bold" text-anchor="middle">Time of Day</text>
       
       <!-- AGP bands - higher contrast for print -->
-      <path d="${generateAGPBand(agpData, 'p5', 'p95')}" fill="#ccc" />
-      <path d="${generateAGPBand(agpData, 'p25', 'p75')}" fill="#999" />
+      <path d="${generateAGPBand(agpData, 'p5', 'p95', yMin, yMax)}" fill="#ccc" />
+      <path d="${generateAGPBand(agpData, 'p25', 'p75', yMin, yMax)}" fill="#999" />
       
       <!-- Median line - thick black -->
-      <path d="${generateAGPPath(agpData, 'p50')}" stroke="#000" stroke-width="3" fill="none" />
+      <path d="${generateAGPPath(agpData, 'p50', yMin, yMax)}" stroke="#000" stroke-width="3" fill="none" />
       
       <!-- Mean line - dashed (darker for print) -->
-      <path d="${generateAGPPath(agpData, 'mean')}" stroke="#444" stroke-width="2" stroke-dasharray="6,3" fill="none" />
+      <path d="${generateAGPPath(agpData, 'mean', yMin, yMax)}" stroke="#444" stroke-width="2" stroke-dasharray="6,3" fill="none" />
       
       ${comparison ? `
       <!-- Comparison median - dotted -->
-      <path d="${generateAGPPath(comparison.comparisonAGP, 'p50')}" stroke="#000" stroke-width="2" stroke-dasharray="2,4" fill="none" />
+      <path d="${generateAGPPath(comparison.comparisonAGP, 'p50', yMin, yMax)}" stroke="#000" stroke-width="2" stroke-dasharray="2,4" fill="none" />
       ` : ''}
       
       <!-- Hypo event markers -->

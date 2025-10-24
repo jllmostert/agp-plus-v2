@@ -96,9 +96,14 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   });
 
   if (filtered.length === 0) return null;
+  
+  // Filter out rows without glucose (events like Rewind)
+  const glucoseRows = filtered.filter(r => r.glucose !== null && !isNaN(r.glucose));
+  
+  if (glucoseRows.length === 0) return null;
 
   // Basic statistics
-  const values = filtered.map(r => r.glucose);
+  const values = glucoseRows.map(r => r.glucose);
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / (values.length - 1);
   const sd = Math.sqrt(variance);
@@ -122,7 +127,7 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
 
   // MAGE - Mean Amplitude of Glycemic Excursions
   const byDay = {};
-  filtered.forEach(r => {
+  glucoseRows.forEach(r => {
     if (!byDay[r.date]) byDay[r.date] = [];
     byDay[r.date].push({ t: utils.parseDate(r.date, r.time), g: r.glucose });
   });
@@ -181,7 +186,7 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   };
   
   // Bin glucose values by time of day
-  filtered.forEach(row => {
+  glucoseRows.forEach(row => {
     const dt = utils.parseDate(row.date, row.time);
     const minuteOfDay = dt.getHours() * 60 + dt.getMinutes();
     const binIdx = Math.floor(minuteOfDay / 5);
@@ -226,18 +231,18 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   }
   
   const modd = moddCount > 0 ? moddSum / moddCount : 0;
-  const uniqueDays = new Set(filtered.map(r => r.date)).size;
+  const uniqueDays = new Set(glucoseRows.map(r => r.date)).size;
 
   // Calculate data quality metrics
   const expectedReadings = uniqueDays * 288; // 288 readings per day (5-min intervals)
-  const actualReadings = filtered.length;
+  const actualReadings = glucoseRows.length;
   const missingReadings = expectedReadings - actualReadings;
   const missingPercent = ((missingReadings / expectedReadings) * 100).toFixed(1);
   const uptimePercent = (100 - parseFloat(missingPercent)).toFixed(1);
   
   // Count complete days (days with 288 readings)
   const readingsPerDay = {};
-  filtered.forEach(r => {
+  glucoseRows.forEach(r => {
     readingsPerDay[r.date] = (readingsPerDay[r.date] || 0) + 1;
   });
   const completeDays = Object.values(readingsPerDay).filter(count => count === 288).length;
@@ -256,7 +261,7 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
     min: Math.min(...values),
     max: Math.max(...values),
     days: uniqueDays,
-    readingCount: filtered.length,
+    readingCount: glucoseRows.length,
     // Data quality metrics (NEW)
     dataQuality: {
       uptimePercent: parseFloat(uptimePercent),
@@ -281,7 +286,7 @@ export const calculateAGP = (data, startDate, endDate) => {
     const dt = utils.parseDate(row.date, row.time);
     const startDt = utils.parseDate(startDate, '00:00:00');
     const endDt = utils.parseDate(endDate, '23:59:59');
-    return dt >= startDt && dt <= endDt;
+    return dt >= startDt && dt <= endDt && row.glucose !== null && !isNaN(row.glucose);
   });
 
   const bins = Array(CONFIG.AGP_BINS).fill(null).map(() => []);
@@ -322,12 +327,14 @@ export const calculateAGP = (data, startDate, endDate) => {
  * @returns {Object} Object with hypoL1, hypoL2, hyper event counts and details
  */
 export const detectEvents = (data, startDate, endDate) => {
-  const filtered = data.filter(row => {
-    const dt = utils.parseDate(row.date, row.time);
-    const startDt = utils.parseDate(startDate, '00:00:00');
-    const endDt = utils.parseDate(endDate, '23:59:59');
-    return dt >= startDt && dt <= endDt;
-  }).sort((a, b) => utils.parseDate(a.date, a.time) - utils.parseDate(b.date, b.time));
+  const filtered = data
+    .filter(row => {
+      const dt = utils.parseDate(row.date, row.time);
+      const startDt = utils.parseDate(startDate, '00:00:00');
+      const endDt = utils.parseDate(endDate, '23:59:59');
+      return dt >= startDt && dt <= endDt && row.glucose !== null && !isNaN(row.glucose);
+    })
+    .sort((a, b) => utils.parseDate(a.date, a.time) - utils.parseDate(b.date, b.time));
 
   const hypoL1 = [];
   const hypoL2 = [];

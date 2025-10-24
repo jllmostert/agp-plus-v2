@@ -133,15 +133,21 @@ export const parseCSV = (text) => {
           return null;
         }
         
-        // Parse glucose value (required)
+        // Parse glucose value (may be null for event-only rows like Rewind)
         const glucose = utils.parseDecimal(parts[34]);
-        if (isNaN(glucose)) {
+        const hasGlucose = !isNaN(glucose);
+        
+        // Skip rows that have neither glucose nor important events
+        const hasRewind = parts[21]?.trim() === 'Rewind';
+        const hasBolus = !isNaN(utils.parseDecimal(parts[13]));
+        
+        if (!hasGlucose && !hasRewind && !hasBolus) {
           skippedRows++;
           return null;
         }
         
-        // Validate glucose range (40-400 mg/dL is reasonable)
-        if (glucose < 40 || glucose > 400) {
+        // Validate glucose range if present (40-400 mg/dL is reasonable)
+        if (hasGlucose && (glucose < 40 || glucose > 400)) {
           console.warn(`Suspicious glucose value at row ${index + CONFIG.CSV_SKIP_LINES}: ${glucose} mg/dL`);
         }
         
@@ -151,10 +157,11 @@ export const parseCSV = (text) => {
         return {
           date: parts[1],           // YYYY/MM/DD
           time: parts[2],           // HH:MM:SS
-          glucose,                  // mg/dL
-          bolus: utils.parseDecimal(parts[20]) || 0,
-          bg: utils.parseDecimal(parts[18]) || null,
-          carbs: utils.parseDecimal(parts[27]) || 0
+          glucose: hasGlucose ? glucose : null,  // mg/dL (may be null)
+          bolus: utils.parseDecimal(parts[13]) || 0,
+          bg: utils.parseDecimal(parts[5]) || null,
+          carbs: utils.parseDecimal(parts[27]) || 0,
+          rewind: hasRewind
         };
       })
       .filter(row => row !== null);

@@ -1,42 +1,57 @@
-# AGP+ v2.1 - Documentation Index
+# AGP+ v2.2 - Documentation Index
 
 ## 📚 How to Use This Documentation
 
-This folder contains complete documentation for the AGP+ v2.1 project. Read documents in the order listed below for best understanding.
+This folder contains complete documentation for the AGP+ v2.2 project. Read documents in the order listed below for best understanding.
 
 ---
 
 ## 📖 Reading Order
 
-### 1. **START HERE**: [README.md](./README.md) ⭐
-Quick overview of the project, features, and architecture. Perfect for new contributors or anyone wanting a high-level understanding.
+### 1. **START HERE**: [HANDOFF_PROMPT_V2_2_0.md](./HANDOFF_PROMPT_V2_2_0.md) ⭐
+Essential guide for working with the project:
+- How to use Desktop Commander
+- Project structure overview
+- Common tasks and workflows
+- Critical Y-axis algorithm explanation
 
-**Time to read:** 10 minutes
+**Time to read:** 15 minutes  
+**Essential for:** Anyone starting work on AGP+
 
 ---
 
-### 2. **DEEP DIVE**: [AGP_PLUS_v2_1_PROJECT_BRIEFING.md](./AGP_PLUS_v2_1_PROJECT_BRIEFING.md) 🎯
-Complete technical documentation including:
-- Detailed component breakdown
-- Data flow diagrams
-- Algorithm explanations
-- Known limitations & design decisions
-- Implementation notes
+### 2. **TECHNICAL DEEP DIVE**: Project Briefing v2.2.0 🎯
+Complete technical documentation split into two parts:
 
-**Time to read:** 45-60 minutes  
+**Part 1:** [PROJECT_BRIEFING_V2_2_0_PART1.md](./PROJECT_BRIEFING_V2_2_0_PART1.md)
+- Architecture overview
+- Adaptive Y-axis algorithm (CRITICAL)
+- Data structures
+- Event detection algorithms
+- Achievement badges
+
+**Part 2:** [PROJECT_BRIEFING_V2_2_0_PART2.md](./PROJECT_BRIEFING_V2_2_0_PART2.md)
+- File structure deep dive
+- Component responsibilities
+- Testing guide
+- Known limitations
+- Development workflow
+
+**Time to read:** 60-90 minutes  
 **Essential for:** Developers, contributors, anyone modifying code
 
 ---
 
-### 3. **DESIGN REFERENCE**: [DESIGN_SYSTEM_QUICK_REF.md](./DESIGN_SYSTEM_QUICK_REF.md) 🎨
-UI/UX guidelines and design patterns:
-- Color schemes (React UI vs HTML export)
-- Typography standards
-- Component styling patterns
-- Spacing & layout conventions
+### 3. **QUICK REFERENCE**: [MASTER_INDEX_V2_2_0.md](./MASTER_INDEX_V2_2_0.md) 🚀
+One-page cheatsheet for common tasks:
+- File structure map
+- Common debugging tasks
+- Design system quick rules
+- Key algorithms summary
+- Testing checklist
 
-**Time to read:** 10 minutes  
-**Essential for:** Frontend developers, UI/UX work
+**Time to read:** 5 minutes (reference)  
+**Essential for:** Quick lookups during development
 
 ---
 
@@ -47,7 +62,7 @@ Medical and clinical information:
 - Target ranges & clinical interpretation
 - ADA/ATTD guideline references
 
-**Time to read:** 20 minutes  
+**Time to read:** 15 minutes  
 **Essential for:** Understanding the medical context, QA testing, validation
 
 ---
@@ -59,116 +74,118 @@ Medtronic MiniMed 780G specific documentation:
 - SmartGuard algorithm notes
 - Data export limitations
 
-**Time to read:** 15 minutes  
+**Time to read:** 10 minutes  
 **Essential for:** Data parsing work, troubleshooting CSV issues
 
 ---
 
-## 🗂️ Code Reference (artifacts/)
+## 🗂️ Additional Resources
 
-The `artifacts/` folder contains reference implementations of core modules:
+### Root Documentation
+- **[README.md](../README.md)** - Project overview, quick start, features
+- **[CHANGELOG.md](../CHANGELOG.md)** - Version history and release notes
+- **[ROADMAP_v3.0.md](../ROADMAP_v3.0.md)** - Future plans and enhancements
 
-- **ARTIFACT-01__metrics-engine_js.txt** - Calculation engine
-  - Clinical metrics (TIR, CV, GMI, MAGE, MODD)
-  - AGP percentile calculations
-  - Event detection logic
-
-- **ARTIFACT-02__parsers_js.txt** - Data parsing utilities
-  - CareLink CSV parser
-  - ProTime data parser
-  - Date range validation
-
-- **ARTIFACT-03__html-exporter_js.txt** - Report generation
-  - HTML report template
-  - Print-optimized styling
-  - Data formatting
-
-**Note:** These are reference files showing the implementation as it was built. The actual source code may have evolved - always check the live repository for current code.
+### No Longer Maintained
+- ~~DESIGN_SYSTEM_QUICK_REF.md~~ - Design patterns now in PROJECT_BRIEFING
+- ~~artifacts/~~ folder - Reference implementations (code has evolved, check live repo)
 
 ---
 
 ## 🎯 Quick Reference by Task
 
 ### "I want to understand the project"
-1. Read [README.md](./README.md)
-2. Skim [AGP_PLUS_v2_1_PROJECT_BRIEFING.md](./AGP_PLUS_v2_1_PROJECT_BRIEFING.md)
+1. Read [HANDOFF_PROMPT_V2_2_0.md](./HANDOFF_PROMPT_V2_2_0.md)
+2. Skim [PROJECT_BRIEFING_V2_2_0_PART1.md](./PROJECT_BRIEFING_V2_2_0_PART1.md)
 
-### "I need to modify UI/styling"
-1. Read [DESIGN_SYSTEM_QUICK_REF.md](./DESIGN_SYSTEM_QUICK_REF.md)
-2. Check relevant sections in project briefing
+### "I need to start coding NOW"
+1. Read [MASTER_INDEX_V2_2_0.md](./MASTER_INDEX_V2_2_0.md)
+2. Keep it open while coding for quick reference
+
+### "I'm working on day profiles feature"
+1. Read [PROJECT_BRIEFING_V2_2_0_PART1.md](./PROJECT_BRIEFING_V2_2_0_PART1.md) - Adaptive Y-axis section
+2. Check [MASTER_INDEX_V2_2_0.md](./MASTER_INDEX_V2_2_0.md) - Key algorithms
+3. Look at `DayProfileCard.jsx` and `day-profile-engine.js`
 
 ### "I'm working on metrics calculations"
 1. Read [metric_definitions.md](./metric_definitions.md)
-2. Check `artifacts/ARTIFACT-01__metrics-engine_js.txt`
-3. Review calculation logic in project briefing
+2. Review `metrics-engine.js` in the codebase
+3. Check calculation logic in PROJECT_BRIEFING Part 1
 
 ### "I'm debugging CSV parsing issues"
 1. Read [minimed_780g_ref.md](./minimed_780g_ref.md)
-2. Check `artifacts/ARTIFACT-02__parsers_js.txt`
-3. Review CSV format section in project briefing
+2. Check `parsers.js` in the codebase
+3. Review CSV format section in HANDOFF_PROMPT
 
 ### "I want to add a new feature"
-1. Read [AGP_PLUS_v2_1_PROJECT_BRIEFING.md](./AGP_PLUS_v2_1_PROJECT_BRIEFING.md) completely
+1. Read both PROJECT_BRIEFING parts completely
 2. Check [metric_definitions.md](./metric_definitions.md) if clinical
-3. Review [DESIGN_SYSTEM_QUICK_REF.md](./DESIGN_SYSTEM_QUICK_REF.md) for UI consistency
+3. Review design patterns in existing components
 
 ---
 
 ## 📊 Documentation Stats
 
-- **Total pages:** ~150
-- **Core documents:** 5
-- **Reference implementations:** 3
-- **Last updated:** October 2025
-- **Version:** 2.1.0
+- **Total pages:** ~200+
+- **Core documents:** 6
+- **Last updated:** October 24, 2025
+- **Version:** 2.2.0 - Day Profiles Edition
 
 ---
 
 ## ✅ Documentation Checklist
 
-Before starting work on AGP+, ensure you've read:
+Before starting work on AGP+ v2.2, ensure you've read:
 
-- [ ] README.md (overview)
+- [ ] HANDOFF_PROMPT_V2_2_0.md (how to work with project)
 - [ ] Relevant sections of PROJECT_BRIEFING (your work area)
-- [ ] DESIGN_SYSTEM_QUICK_REF.md (if touching UI)
+- [ ] MASTER_INDEX_V2_2_0.md (quick reference)
 - [ ] metric_definitions.md (if working with calculations)
 
 ---
 
-## 🔄 Keeping Documentation Updated
+## 🔄 Version History
 
-This documentation reflects AGP+ v2.1.0 as of October 2025. 
+**v2.2.0 (October 24, 2025)** - Day Profiles Edition
+- Added individual day analysis feature
+- Added achievement badge system
+- Enhanced event detection with sensor/cartridge changes
+- Adaptive Y-axis algorithm implementation
 
-**If you make significant changes:**
-1. Update relevant documentation files
-2. Update version numbers
-3. Update "Last Updated" dates
-4. Create clear git commit describing documentation changes
+**v2.1.3 (October 23, 2025)** - Data Persistence
+- IndexedDB storage for uploads
+- Patient information management
+- Save/load functionality
+
+**v2.1.0 (October 20, 2025)** - Architecture Rewrite
+- Modular component structure
+- Custom hooks pattern
+- Auto-comparison feature
 
 ---
 
 ## 💡 Documentation Best Practices
 
 **When reading:**
-- Start with README for context
-- Jump to specific sections as needed
+- Start with HANDOFF_PROMPT for context
+- Use MASTER_INDEX for quick lookups
+- Jump to PROJECT_BRIEFING for deep dives
 - Use Ctrl+F / Cmd+F to search within documents
-- Keep PROJECT_BRIEFING open as reference
 
 **When contributing:**
 - Update docs alongside code changes
 - Keep explanations clear and concise
 - Include examples where helpful
-- Link between related documents
+- Update version numbers when needed
 
 ---
 
 ## 🎉 You're Ready!
 
-You now have complete documentation for AGP+ v2.1. Start with the README and explore from there.
+You now have complete documentation for AGP+ v2.2. Start with the HANDOFF_PROMPT and explore from there.
 
 Happy coding! 🚀
 
 ---
 
-*Documentation structure designed for clarity and ease of navigation*
+*Last updated: October 24, 2025 - v2.2.0*

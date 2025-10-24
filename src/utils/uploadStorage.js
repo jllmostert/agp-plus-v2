@@ -259,7 +259,6 @@ export const uploadStorage = {
       localStorage.removeItem(OLD_KEY);
       localStorage.removeItem(OLD_ACTIVE_KEY);
       
-      console.log(`✅ Migrated ${uploads.length} uploads from LocalStorage to IndexedDB`);
       return uploads.length;
       
     } catch (err) {

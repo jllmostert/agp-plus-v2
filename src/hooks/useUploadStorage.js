@@ -49,7 +49,6 @@ export function useUploadStorage() {
         
         if (migratedCount > 0) {
           setMigrationStatus(`Migrated ${migratedCount} uploads to new storage`);
-          console.log(`✅ Successfully migrated ${migratedCount} uploads from LocalStorage`);
         }
         
         // Load current data

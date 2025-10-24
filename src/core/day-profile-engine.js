@@ -73,8 +73,11 @@ export function getDayProfile(data, date) {
   // Generate 24-hour glucose curve (288 bins, 5-min intervals)
   const curve = generate24HourCurve(dayData);
   
-  // Detect sensor changes (look for gaps > 30 minutes)
-  const sensorChanges = detectSensorChanges(dayData);
+  // Detect sensor changes (pass full dataset to detect cross-day gaps)
+  const sensorChanges = detectSensorChanges(data, date);
+  
+  // Detect cartridge/reservoir changes (Rewind events)
+  const cartridgeChanges = detectCartridgeChanges(dayData);
   
   // Detect badges
   const badges = detectBadges(metrics, events);
@@ -90,6 +93,7 @@ export function getDayProfile(data, date) {
     curve,
     events,
     sensorChanges,
+    cartridgeChanges,
     badges,
     readingCount: dayData.length
   };
@@ -125,14 +129,22 @@ function generate24HourCurve(dayData) {
 /**
  * Detect sensor changes (gaps > 30 minutes)
  * @param {Array} dayData - Glucose data for one day
- * @returns {Array} Array of sensor change timestamps
+ * @returns {Array} Array of sensor change events with start and end timestamps
  */
-function detectSensorChanges(dayData) {
-  const sorted = [...dayData].sort((a, b) => 
+/**
+ * Detect sensor changes (gaps > 30 minutes)
+ * @param {Array} allData - Full glucose dataset
+ * @param {string} targetDate - Date to get changes for (YYYY/MM/DD)
+ * @returns {Array} Array of sensor change markers for this day
+ */
+function detectSensorChanges(allData, targetDate) {
+  const sorted = [...allData].sort((a, b) => 
     utils.parseDate(a.date, a.time) - utils.parseDate(b.date, b.time)
   );
   
-  const changes = [];
+  // Detect all gaps in the full dataset (>30 minutes)
+  // But only mark MAJOR gaps as sensor changes (longest gaps)
+  const gaps = [];
   
   for (let i = 1; i < sorted.length; i++) {
     const prev = utils.parseDate(sorted[i - 1].date, sorted[i - 1].time);
@@ -140,10 +152,62 @@ function detectSensorChanges(dayData) {
     const gapMinutes = (curr - prev) / 60000;
     
     if (gapMinutes > 30) {
+      gaps.push({
+        prev,
+        curr,
+        prevDate: sorted[i - 1].date,
+        currDate: sorted[i].date,
+        gapMinutes
+      });
+    }
+  }
+  
+  // Filter for sensor change gaps: 2-10 hours
+  // - >2 hours: captures warming up period
+  // - <10 hours: excludes normal overnight gaps or multi-day absences
+  const majorGaps = gaps.filter(g => g.gapMinutes > 120 && g.gapMinutes < 600);
+  
+  const allChanges = [];
+  for (const gap of majorGaps) {
+    // Add marker at START of gap (sensor went offline)
+    allChanges.push({
+      timestamp: gap.prev,
+      date: gap.prevDate,
+      minuteOfDay: gap.prev.getHours() * 60 + gap.prev.getMinutes(),
+      gapMinutes: Math.round(gap.gapMinutes),
+      type: 'start'
+    });
+    
+    // Add marker at END of gap (sensor came back online)
+    allChanges.push({
+      timestamp: gap.curr,
+      date: gap.currDate,
+      minuteOfDay: gap.curr.getHours() * 60 + gap.curr.getMinutes(),
+      gapMinutes: Math.round(gap.gapMinutes),
+      type: 'end'
+    });
+  }
+  
+  // Filter to include changes for the target date
+  const targetChanges = allChanges.filter(change => change.date === targetDate);
+  
+  return targetChanges;
+}
+
+/**
+ * Detect cartridge/reservoir changes (Rewind events)
+ * @param {Array} dayData - Glucose data for one day
+ * @returns {Array} Array of cartridge change timestamps
+ */
+function detectCartridgeChanges(dayData) {
+  const changes = [];
+  
+  for (const row of dayData) {
+    if (row.rewind) {
+      const timestamp = utils.parseDate(row.date, row.time);
       changes.push({
-        timestamp: curr,
-        minuteOfDay: curr.getHours() * 60 + curr.getMinutes(),
-        gapMinutes: Math.round(gapMinutes)
+        timestamp,
+        minuteOfDay: timestamp.getHours() * 60 + timestamp.getMinutes()
       });
     }
   }
