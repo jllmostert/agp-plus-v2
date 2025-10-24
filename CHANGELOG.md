@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.2.0] - 2025-10-24
 
+### Added - Day Profiles Feature
+- **Individual Day Analysis**: View last 7 complete days with detailed glucose curves
+- **DayProfileCard Component**: Single-day visualization with 24h glucose curve, TIR bar, and metrics
+- **DayProfilesModal Component**: Full-screen modal displaying 7 day profiles
+- **Achievement Badges**: Automatic detection of Perfect Day, Zen Master, and exceptional performance
+- **Event Detection per Day**: Hypoglycemic events (L1: 54-70 mg/dL, L2: <54 mg/dL), hyperglycemic events (>250 mg/dL), sensor changes
+- **Adaptive Y-axis Algorithm**: Dynamic range adjustment (54-250 mg/dL baseline, expands to 40-400 as needed)
+- **Smart Tick Generation**: Always includes 70 & 180 mg/dL thresholds when in visible range
+- **AGP Reference Overlay**: Dotted median line from overall period for context
+- **Print Export**: `day-profiles-exporter.js` generates optimized HTML for A4 printing
+  - Maximum 2 pages (4 days on page 1, 3 days on page 2)
+  - Brutalist print design with B/W patterns for TIR visualization
+  - Compact layout: 56mm height per card with aggressive spacing optimization
+  - Legend moved to page 2 to maximize space on page 1
+
 ### Changed - AGP Visualization Simplification
 - **Removed Mean Curve**: AGP chart now displays only the median (P50) line
   - Aligns with ADA/ATTD clinical guidelines for AGP visualization
@@ -47,21 +62,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Technical Changes
 - Added `day-profile-engine.js` in `src/core/` for day-level calculations
-- Added `day-profiles-exporter.js` in `src/core/` (606 lines) for HTML generation
+- Added `day-profiles-exporter.js` in `src/core/` (700+ lines) for HTML generation
 - Added `DayProfileCard.jsx` (548 lines) in `src/components/`
 - Added `DayProfilesModal.jsx` (156 lines) in `src/components/`
-- Added `HypoglycemiaEvents.jsx` component for event detection display
 - Updated `AGPGenerator.jsx` to include day profiles button and modal portal
 - Day profiles use full 5-minute resolution (288 bins per day) for accurate visualization
 
-### Known Issues & Future Optimizations
-- ⚠️ **Y-axis range (40-400 mg/dL) uses excessive vertical space**
-  - Most clinical data is 54-250 mg/dL
-  - Current design: ~30% of chart height shows glucose patterns, ~70% is whitespace
-  - Planned v2.3: Adaptive Y-axis with dynamic range and outlier indicators
-- ⚠️ **Horizontal whitespace**: 70% margins/padding vs 30% actual chart width
-  - SVG already optimized to 650px with 100% container fill
-  - Further gains require card padding reduction
+### Fixed - UI/UX Polish & Code Quality
+- **Button Text**: Changed to "BEKIJK DAGPROFIELEN" (Dutch, uppercase for consistency)
+- **Button Font Size**: Increased from 14px to 16px for better readability
+- **Version Numbers**: Updated to v2.2.0 across package.json, footer, and component headers
+- **Code Cleanup**: Removed all console.log() debug statements (production-ready)
+- **Documentation**: Complete v2.2.0 handoff, briefing, and index files updated
 
 ---
 
