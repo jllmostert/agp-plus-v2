@@ -9,7 +9,8 @@ import { getMetricTooltip } from '../utils/metricDefinitions';
  * Hero Grid: 4 primary metrics (TIR 2x wide, Mean±SD, CV, GMI)
  * Secondary Grid: All other metrics with reduced visual weight
  * 
- * @version 2.1.2 CLINICAL HIERARCHY
+ * @version 2.2.0 - Reorganized Overview section (Analysis Period + Data Quality)
+ *                   Moved GRI to HypoglycemiaEvents component
  */
 export default function MetricsDisplay({ metrics }) {
   if (!metrics) {
@@ -173,36 +174,6 @@ export default function MetricsDisplay({ metrics }) {
         <SecondaryMetricCard label="MAGE" value={safeFormat(metrics.mage, 0)} unit="mg/dL" subtitle="Glycemic excursions" metricId="mage" />
         <SecondaryMetricCard label="MODD" value={safeFormat(metrics.modd, 0)} unit="mg/dL" subtitle="Day-to-day variability" metricId="modd" />
 
-        {/* Risk Assessment */}
-        <div style={{ 
-          display: 'flex',
-          alignItems: 'center',
-          fontSize: '0.75rem', 
-          fontWeight: 700, 
-          letterSpacing: '0.15em', 
-          textTransform: 'uppercase',
-          color: 'var(--text-secondary)'
-        }}>
-          Risk Assessment
-        </div>
-        <SecondaryMetricCard 
-          label="GRI" 
-          value={safeFormat(metrics.gri, 1)} 
-          unit="" 
-          subtitle={
-            Number(metrics.gri) < 20 ? 'Very low risk' :
-            Number(metrics.gri) < 40 ? 'Low risk' :
-            Number(metrics.gri) < 60 ? 'Moderate risk' :
-            Number(metrics.gri) < 80 ? 'High risk' : 'Very high risk'
-          }
-          status={
-            Number(metrics.gri) < 40 ? 'good' :
-            Number(metrics.gri) < 60 ? 'neutral' : 'warning'
-          }
-          metricId="gri"
-        />
-        <div /> {/* Empty cell for grid alignment */}
-
         {/* Glucose Range */}
         <div style={{ 
           display: 'flex',
@@ -218,7 +189,7 @@ export default function MetricsDisplay({ metrics }) {
         <SecondaryMetricCard label="Minimum" value={safeFormat(metrics.min, 0)} unit="mg/dL" />
         <SecondaryMetricCard label="Maximum" value={safeFormat(metrics.max, 0)} unit="mg/dL" />
 
-        {/* Analysis Period */}
+        {/* Overview */}
         <div style={{ 
           display: 'flex',
           alignItems: 'center',
@@ -228,18 +199,25 @@ export default function MetricsDisplay({ metrics }) {
           textTransform: 'uppercase',
           color: 'var(--text-secondary)'
         }}>
-          Analysis Period
+          Overview
         </div>
-        <SecondaryMetricCard label="Days Analyzed" value={safeFormat(metrics.days, 0)} unit="days" />
         <SecondaryMetricCard 
-          label="CGM Readings" 
-          value={metrics.readingCount != null ? metrics.readingCount.toLocaleString() : 'N/A'} 
-          unit=""
+          label="Analysis Period" 
+          value={safeFormat(metrics.days, 0)} 
+          unit="days"
           subtitle={
-            metrics.dataQuality?.uptimePercent != null
-              ? `${safeFormat(metrics.dataQuality.uptimePercent, 1)}% uptime`
-              : metrics.readingCount != null && metrics.days != null
-              ? `${safeFormat((metrics.readingCount / (metrics.days * 288)) * 100, 0)}% coverage`
+            metrics.dataQuality?.completeDays != null && metrics.dataQuality?.totalDays != null
+              ? `${metrics.dataQuality.completeDays} complete / ${metrics.dataQuality.totalDays - metrics.dataQuality.completeDays} partial`
+              : ''
+          }
+        />
+        <SecondaryMetricCard 
+          label="Data Quality" 
+          value={metrics.dataQuality?.uptimePercent != null ? safeFormat(metrics.dataQuality.uptimePercent, 1) : 'N/A'} 
+          unit="%"
+          subtitle={
+            metrics.readingCount != null
+              ? `${metrics.readingCount.toLocaleString()} readings`
               : ''
           }
           status={
@@ -247,43 +225,6 @@ export default function MetricsDisplay({ metrics }) {
             metrics.dataQuality?.uptimePercent >= 85 ? 'warning' :
             metrics.dataQuality?.uptimePercent != null ? 'danger' :
             'neutral'
-          }
-        />
-
-        {/* Data Quality */}
-        <div style={{ 
-          display: 'flex',
-          alignItems: 'center',
-          fontSize: '0.75rem', 
-          fontWeight: 700, 
-          letterSpacing: '0.15em', 
-          textTransform: 'uppercase',
-          color: 'var(--text-secondary)'
-        }}>
-          Data Quality
-        </div>
-        <SecondaryMetricCard 
-          label="Sensor Uptime" 
-          value={metrics.dataQuality?.uptimePercent != null ? safeFormat(metrics.dataQuality.uptimePercent, 1) : 'N/A'} 
-          unit="%"
-          status={
-            metrics.dataQuality?.uptimePercent >= 95 ? 'good' :
-            metrics.dataQuality?.uptimePercent >= 85 ? 'warning' :
-            'danger'
-          }
-        />
-        <SecondaryMetricCard 
-          label="Complete Days" 
-          value={
-            metrics.dataQuality?.completeDays != null && metrics.dataQuality?.totalDays != null
-              ? `${metrics.dataQuality.completeDays}/${metrics.dataQuality.totalDays}`
-              : 'N/A'
-          }
-          unit=""
-          subtitle={
-            metrics.dataQuality?.completeDays != null && metrics.dataQuality?.totalDays != null
-              ? `${safeFormat((metrics.dataQuality.completeDays / metrics.dataQuality.totalDays) * 100, 0)}% complete`
-              : ''
           }
         />
       </div>

@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.2.0] - 2025-10-24
 
+### Changed - Metrics Layout Reorganization
+- **HypoglycemiaEvents Panel**: Replaced "Total Events" card with GRI (Glycemia Risk Index)
+  - New 4-card layout: Level 2 <54 | Level 1 54-70 | TBR <70 | GRI
+  - GRI displays risk level classification (Very Low/Low/Moderate/High/Very High)
+  - Moved from secondary metrics grid to hypo panel for semantic clarity
+- **Secondary Grid Restructure**: Consolidated Analysis Period and Data Quality under "Overview"
+  - **Overview Section**: Analysis Period (days with complete/partial breakdown) | Data Quality (uptime % with readings count)
+  - Removed standalone Risk Assessment section
+  - New hierarchy in Data Quality card: Uptime % (primary) with readings count (subtitle)
+- **Final Grid Layout**:
+  1. Range Distribution: TAR >180 | TBR <70
+  2. Variability Metrics: MAGE | MODD
+  3. Glucose Range: Minimum | Maximum
+  4. Overview: Analysis Period | Data Quality
+
 ### Added - Day Profiles Feature
 - **Individual Day Analysis**: View last 7 complete days with detailed glucose curves
 - **DayProfileCard Component**: Single-day visualization with 24h glucose curve, TIR bar, and metrics

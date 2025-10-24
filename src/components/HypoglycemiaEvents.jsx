@@ -9,10 +9,11 @@ import { AlertTriangle } from 'lucide-react';
  * 
  * @param {Object} props.events - { hypoL1: {count, events}, hypoL2: {count, events} }
  * @param {number} props.tbrPercent - Total time below range percentage
+ * @param {number} props.gri - Glycemia Risk Index
  * 
- * @version 2.1.3 - Added average duration
+ * @version 2.2.0 - Replaced Total Events with GRI
  */
-export default function HypoglycemiaEvents({ events, tbrPercent }) {
+export default function HypoglycemiaEvents({ events, tbrPercent, gri }) {
   if (!events || (!events.hypoL1?.count && !events.hypoL2?.count)) {
     return null;
   }
@@ -107,19 +108,18 @@ export default function HypoglycemiaEvents({ events, tbrPercent }) {
 
         <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.6)', border: '2px solid #4b5563', padding: '1rem', borderRadius: '4px' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#e5e7eb', marginBottom: '0.5rem' }}>
-            Total Events
+            Risk Index (GRI)
           </div>
           <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#f9fafb', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-            {totalEvents}
+            {gri != null ? parseFloat(gri).toFixed(1) : 'N/A'}
           </div>
           <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#e5e7eb', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            L1 + L2 Combined
+            {gri != null && parseFloat(gri) < 20 ? 'Very Low Risk' :
+             gri != null && parseFloat(gri) < 40 ? 'Low Risk' :
+             gri != null && parseFloat(gri) < 60 ? 'Moderate Risk' :
+             gri != null && parseFloat(gri) < 80 ? 'High Risk' : 
+             gri != null ? 'Very High Risk' : 'Target <5'}
           </div>
-          {avgDuration > 0 && (
-            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#d1d5db', marginTop: '0.5rem' }}>
-              Ø {avgDuration} min
-            </div>
-          )}
         </div>
       </div>
     </div>

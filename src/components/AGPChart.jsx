@@ -184,6 +184,7 @@ export default function AGPChart({
       <HypoglycemiaEvents 
         events={events} 
         tbrPercent={metrics?.tbr}
+        gri={metrics?.gri}
       />
     </div>
   );
