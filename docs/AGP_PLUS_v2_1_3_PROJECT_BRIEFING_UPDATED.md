@@ -19,6 +19,39 @@ AGP+ v2.1.3 is a complete architectural redesign with full component modularity,
 
 ---
 
+## WHAT'S NEW IN v2.2
+
+### 🆕 Day Profiles Export (NEW!)
+- ✅ **Individual Day Analysis** - View last 7 days with full glucose curves, metrics, and events
+- ✅ **Printable HTML Export** - Optimized for A4 printing (max 2 pages)
+- ✅ **Achievement Badges** - Perfect Day, Zen Master, exceptional performance indicators
+- ✅ **Event Detection** - Hypoglycemic (L1/L2), hyperglycemic events, sensor changes
+- ✅ **AGP Reference Line** - Dotted overlay of period median for context
+- ✅ **Compact Layout** - 4 days per page, brutalist B/W print design
+
+**Components:**
+- `DayProfileCard.jsx` - Single day card with curve, TIR bar, metrics
+- `DayProfilesModal.jsx` - Full-screen modal with 7-day stack
+- `day-profiles-exporter.js` - HTML generation for print (599 lines)
+
+**Print Optimization:**
+- Page 1: Header + 4 day cards
+- Page 2: Header + 3 day cards + legend
+- Fixed height cards (56mm) for consistent pagination
+- B/W patterns (dots/stripes) for TIR visualization
+
+**Future Optimization Notes:**
+- ⚠️ **Y-axis range needs optimization** - Currently 40-400 mg/dL wastes vertical space
+  - Most data is 54-250 mg/dL (clinical action range)
+  - ~30% chart height is dead space above 250 and below 54
+  - Compresses actual glucose variability (makes patterns harder to scan)
+  - **TODO:** Implement adaptive Y-axis (54-250 as primary, with breakpoints for outliers)
+- ⚠️ **Horizontal whitespace** - 70% of width is margins/padding vs 30% actual chart
+  - SVG already optimized to 650px width with 100% container fill
+  - Further gains require reducing left/right padding in cards
+
+---
+
 ## WHAT'S NEW IN v2.1.3
 
 ### 🆕 Data Persistence (NEW!)
@@ -77,8 +110,8 @@ AGP+ v2.1.3 is a complete architectural redesign with full component modularity,
 ```
 agp-plus/
 ├── src/
-│   ├── components/          # 10 UI components
-│   │   ├── AGPGenerator.jsx        Main orchestrator (760 lines)
+│   ├── components/          # 13 UI components [UPDATED v2.2]
+│   │   ├── AGPGenerator.jsx        Main orchestrator (988 lines)
 │   │   ├── FileUpload.jsx          CSV/ProTime upload UI (330 lines)
 │   │   ├── PeriodSelector.jsx      Date range picker (250 lines)
 │   │   ├── MetricsDisplay.jsx      4-column metrics grid (290 lines)
@@ -86,8 +119,11 @@ agp-plus/
 │   │   ├── ComparisonView.jsx      Period comparison (280 lines)
 │   │   ├── DayNightSplit.jsx       Day/night analysis (290 lines)
 │   │   ├── WorkdaySplit.jsx        Workday comparison (310 lines)
-│   │   ├── PatientInfo.jsx         Patient demographics modal (278 lines) [NEW]
-│   │   └── SavedUploadsList.jsx    Saved data management (318 lines) [NEW]
+│   │   ├── PatientInfo.jsx         Patient demographics modal (278 lines)
+│   │   ├── SavedUploadsList.jsx    Saved data management (318 lines)
+│   │   ├── DayProfileCard.jsx      Single day profile card (548 lines) [NEW v2.2]
+│   │   ├── DayProfilesModal.jsx    7-day profiles modal (156 lines) [NEW v2.2]
+│   │   └── HypoglycemiaEvents.jsx  Event detection component [NEW v2.2]
 │   │
 │   ├── hooks/               # 4 custom hooks
 │   │   ├── useCSVData.js           CSV parsing & state (112 lines)
@@ -95,12 +131,13 @@ agp-plus/
 │   │   ├── useComparison.js        Auto-comparison logic (110 lines)
 │   │   └── useUploadStorage.js     IndexedDB management (450 lines) [NEW]
 │   │
-│   ├── core/                # 3 calculation modules
+│   ├── core/                # 4 calculation modules [UPDATED v2.2]
 │   │   ├── metrics-engine.js       Clinical calculations (600+ lines)
 │   │   ├── parsers.js              CSV/ProTime/Metadata parsing (307 lines)
-│   │   └── html-exporter.js        Report generation (776 lines)
+│   │   ├── html-exporter.js        AGP report generation (870 lines)
+│   │   └── day-profiles-exporter.js Day profiles HTML export (606 lines) [NEW v2.2]
 │   │
-│   ├── utils/               # Utility modules [NEW]
+│   ├── utils/               # Utility modules
 │   │   ├── patientStorage.js       Patient info IndexedDB (150 lines)
 │   │   └── uploadStorage.js        Upload data IndexedDB (200 lines)
 │   │
@@ -113,7 +150,7 @@ agp-plus/
 ├── vite.config.js           # Build configuration
 └── index.html               # Entry HTML
 
-Total: ~5,000+ lines production code
+Total: ~6,500+ lines production code [UPDATED v2.2]
 ```
 
 ### Component Hierarchy

@@ -1,12 +1,12 @@
-# AGP+ v2.1 - Ambulatory Glucose Profile Analyzer
+# AGP+ v2.2 - Ambulatory Glucose Profile Analyzer
 
 > **Professional diabetes data analysis tool following ADA/ATTD 2019 clinical guidelines**
 
 ## Overview
 
-AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, and period-over-period comparison following international clinical standards.
+AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **and individual day profiles** following international clinical standards.
 
-**Version:** 2.1.0  
+**Version:** 2.2.0  
 **Status:** Production Ready  
 **Last Updated:** October 2025
 
@@ -33,9 +33,11 @@ http://localhost:3001
 
 ## Core Features
 
-### Data Import
+### Data Import & Storage
 - ✅ Medtronic CareLink CSV upload
 - ✅ ProTime workday data integration (PDF/JSON)
+- ✅ **IndexedDB persistent storage** (save/load unlimited uploads)
+- ✅ **Patient information management** (auto-extraction + manual entry)
 - ✅ Automatic data validation & error handling
 
 ### Clinical Analysis
@@ -45,6 +47,16 @@ http://localhost:3001
 - ✅ **Period Comparison**: Auto-comparison for 14/30/90-day periods
 - ✅ **Day/Night Analysis**: Separate metrics for 06:00-22:00 vs 22:00-06:00
 - ✅ **Workday Split**: Compare workdays vs rest days (ProTime integration)
+- ✅ **Day Profiles** ⭐ NEW: Individual day analysis with 24h glucose curves
+
+### Day Profiles (v2.2)
+- ✅ **Last 7 Days View**: Individual cards per day with full context
+- ✅ **24h Glucose Curves**: High-resolution 5-minute data visualization
+- ✅ **Achievement Badges**: Perfect Day, Zen Master, exceptional performance
+- ✅ **Event Markers**: Visual hypo L1/L2, hyper events, sensor changes
+- ✅ **AGP Reference**: Period median overlay for context
+- ✅ **Print Export**: Optimized HTML for A4 printing (max 2 pages)
+- ✅ **Per-Day Metrics**: TIR, TAR, TBR, Mean±SD, CV for each day
 
 ### User Experience
 - ✅ Preset period buttons (14/30/90 days)
@@ -52,7 +64,7 @@ http://localhost:3001
 - ✅ Toggle-able analysis modes
 - ✅ Dark theme optimized interface
 - ✅ Responsive design (desktop/tablet/mobile)
-- ✅ HTML report export
+- ✅ HTML report export (AGP + Day Profiles)
 
 ---
 
@@ -63,12 +75,13 @@ http://localhost:3001
 - **Vite** - Build tool & dev server
 - **Tailwind CSS** - Styling system
 - **Lucide React** - Icon library
+- **IndexedDB** - Client-side persistent storage
 
 ### Project Structure
 ```
 agp-plus/
 ├── src/
-│   ├── components/        # 8 React UI components
+│   ├── components/        # 13 React UI components
 │   │   ├── AGPGenerator.jsx
 │   │   ├── FileUpload.jsx
 │   │   ├── PeriodSelector.jsx
@@ -76,17 +89,28 @@ agp-plus/
 │   │   ├── AGPChart.jsx
 │   │   ├── ComparisonView.jsx
 │   │   ├── DayNightSplit.jsx
-│   │   └── WorkdaySplit.jsx
+│   │   ├── WorkdaySplit.jsx
+│   │   ├── PatientInfo.jsx           [NEW v2.1]
+│   │   ├── SavedUploadsList.jsx      [NEW v2.1]
+│   │   ├── DayProfileCard.jsx        [NEW v2.2]
+│   │   ├── DayProfilesModal.jsx      [NEW v2.2]
+│   │   └── HypoglycemiaEvents.jsx    [NEW v2.2]
 │   │
-│   ├── hooks/             # 3 Custom React hooks
+│   ├── hooks/             # 4 Custom React hooks
 │   │   ├── useCSVData.js
 │   │   ├── useMetrics.js
-│   │   └── useComparison.js
+│   │   ├── useComparison.js
+│   │   └── useUploadStorage.js       [NEW v2.1]
 │   │
-│   ├── core/              # 3 Calculation engines
+│   ├── core/              # 4 Calculation engines
 │   │   ├── metrics-engine.js
 │   │   ├── parsers.js
-│   │   └── html-exporter.js
+│   │   ├── html-exporter.js
+│   │   └── day-profiles-exporter.js  [NEW v2.2]
+│   │
+│   ├── utils/             # Utility modules
+│   │   ├── patientStorage.js         [NEW v2.1]
+│   │   └── uploadStorage.js          [NEW v2.1]
 │   │
 │   └── styles/            # Tailwind CSS
 │
@@ -238,12 +262,27 @@ npx gh-pages -d dist
 
 ## Future Enhancements
 
+### Day Profiles Optimization (v2.3 Priority)
+**Problem:** Current Y-axis (40-400 mg/dL) wastes vertical space
+- Most clinically relevant data: 54-250 mg/dL
+- Current design: ~30% chart shows actual glucose patterns, ~70% is whitespace
+- **Impact:** Compressed glucose variability makes patterns harder to scan
+
+**Solution (Planned):**
+- [ ] Adaptive Y-axis: Primary range 54-250 mg/dL with dynamic breakpoints
+- [ ] Visual indicators for outliers above/below (similar to Medtronic PDF)
+- [ ] Maintain clinical context while maximizing data density
+- [ ] Reduce horizontal padding to increase chart width (currently 70% margins)
+
 ### Planned Features
+- [x] ~~Save/load sessions~~ (✅ Implemented v2.1 - IndexedDB)
+- [x] ~~Patient information management~~ (✅ Implemented v2.1)
+- [x] ~~Day profiles with print export~~ (✅ Implemented v2.2)
 - [ ] PDF export (in addition to HTML)
-- [ ] Save/load sessions (localStorage)
 - [ ] Multiple CSV comparison
 - [ ] Custom target ranges
 - [ ] A1C correlation tracking
+- [ ] Adaptive Y-axis for day profiles (v2.3)
 
 ### Under Consideration
 - [ ] Backend API integration

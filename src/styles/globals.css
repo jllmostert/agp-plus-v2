@@ -339,3 +339,137 @@ h4 {
     margin: 8mm;
   }
 }
+/* ============================================================================
+   PRINT STYLES - DAY PROFILES (MEDTRONIC STYLE - COMPACT LIST)
+   ========================================================================= */
+
+@media print {
+  /* Hide everything except profiles */
+  body > *:not([style*="position: fixed"]) {
+    display: none !important;
+  }
+
+  /* Modal container - white background */
+  body > div[style*="position: fixed"] {
+    position: relative !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Hide buttons and title */
+  button,
+  .day-profiles-title {
+    display: none !important;
+  }
+
+  /* Container: simple vertical stack */
+  .day-profiles-container {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Each card: horizontal layout (curve left, metrics right) */
+  .day-profile-card {
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: 1px solid #000 !important;
+    border-bottom: 2px solid #000 !important;
+    padding: 3mm !important;
+    margin: 0 !important;
+    page-break-inside: avoid !important;
+    background: white !important;
+  }
+
+  /* Header (date + badges) - compact horizontal */
+  .day-profile-card > div:first-child {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 5mm !important;
+    padding: 2mm !important;
+    margin-bottom: 2mm !important;
+    border-bottom: 1px solid #000 !important;
+    background: #f5f5f5 !important;
+  }
+
+  /* Hide badges (save space) */
+  .day-profile-card > div:first-child > div:last-child {
+    display: none !important;
+  }
+
+  /* Date text smaller */
+  .day-profile-card > div:first-child > div:first-child * {
+    font-size: 9pt !important;
+  }
+
+  /* Main content: curve + sidebar side-by-side */
+  .day-profile-card > div:nth-child(2) {
+    display: flex !important;
+    flex-direction: row !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  /* Curve container - 70% width */
+  .day-profile-card > div:nth-child(2) > div:first-child {
+    width: 70% !important;
+    border-right: 1px solid #000 !important;
+    padding: 2mm !important;
+  }
+
+  /* TIR sidebar - 30% width */
+  .day-profile-card > div:nth-child(2) > div:last-child {
+    width: 30% !important;
+    padding: 2mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+
+  /* SVG: smaller but readable */
+  svg {
+    max-width: 100% !important;
+    height: 50mm !important;
+  }
+
+  /* Footer metrics - compact horizontal */
+  .day-profile-card > div:last-child {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 3mm !important;
+    padding: 2mm !important;
+    border-top: 1px solid #000 !important;
+    background: #f9f9f9 !important;
+  }
+
+  /* Metric boxes - smaller text */
+  .day-profile-card > div:last-child > div {
+    font-size: 7pt !important;
+  }
+
+  /* Page breaks: 4 cards per page */
+  .day-profile-card:nth-child(4) {
+    page-break-after: always !important;
+  }
+
+  .day-profile-card:last-child {
+    page-break-after: auto !important;
+  }
+
+  /* A4 settings - maximize space */
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  /* Global font sizing */
+  .day-profile-card * {
+    font-size: 8pt !important;
+    line-height: 1.1 !important;
+  }
+}

@@ -22,6 +22,7 @@ import DayNightSplit from './DayNightSplit';
 import WorkdaySplit from './WorkdaySplit';
 import SavedUploadsList from './SavedUploadsList';
 import PatientInfo from './PatientInfo';
+import DayProfilesModal from './DayProfilesModal';
 
 /**
  * AGPGenerator - Main application container
@@ -74,6 +75,8 @@ export default function AGPGenerator() {
   const [patientInfoOpen, setPatientInfoOpen] = useState(false);
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
+  const [dayProfilesOpen, setDayProfilesOpen] = useState(false); // Day profiles modal state
+  const [dayProfiles, setDayProfiles] = useState(null); // Last 7 days data
 
   // Load patient info from storage
   useEffect(() => {
@@ -297,6 +300,72 @@ export default function AGPGenerator() {
     }
   };
 
+  /**
+   * Handle day profiles modal open
+   */
+  const handleDayProfilesOpen = async () => {
+    console.log('🔵 Day profiles button clicked!');
+    console.log('csvData:', csvData ? `${csvData.length} rows` : 'null');
+    console.log('dateRange:', dateRange);
+    
+    if (!csvData || !dateRange) {
+      alert('Load CSV data first.');
+      return;
+    }
+
+    try {
+      console.log('🟢 Starting day profile generation...');
+      
+      // Import day-profile-engine and metrics-engine
+      const { getLastSevenDays } = await import('../core/day-profile-engine.js');
+      const { calculateMetrics } = await import('../core/metrics-engine.js');
+      console.log('✅ Engines imported');
+      
+      // Get CSV creation date from dateRange.max (last available date)
+      const maxDate = new Date(dateRange.max);
+      const csvCreatedDate = `${maxDate.getFullYear()}/${String(maxDate.getMonth() + 1).padStart(2, '0')}/${String(maxDate.getDate()).padStart(2, '0')}`;
+      console.log('📅 CSV created date:', csvCreatedDate);
+      
+      // Calculate overall mean from selected period (or use current metrics if available)
+      let overallMean = null;
+      let agpCurve = null;
+      
+      if (metricsResult?.metrics?.mean) {
+        overallMean = metricsResult.metrics.mean;
+        agpCurve = metricsResult.agp; // Get AGP percentile data
+      } else if (startDate && endDate) {
+        // Calculate on the fly
+        const { calculateAGP } = await import('../core/metrics-engine.js');
+        const formatDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}/${month}/${day}`;
+        };
+        const tempMetrics = calculateMetrics(csvData, formatDate(startDate), formatDate(endDate));
+        overallMean = tempMetrics?.mean || null;
+        agpCurve = calculateAGP(csvData, formatDate(startDate), formatDate(endDate));
+      }
+      console.log('📊 Overall mean:', overallMean);
+      console.log('📊 AGP curve points:', agpCurve?.length);
+      
+      // Generate last 7 day profiles
+      const profiles = getLastSevenDays(csvData, csvCreatedDate);
+      console.log('📊 Profiles generated:', profiles ? profiles.length : 'null');
+      
+      // Add overall mean AND AGP curve to each profile
+      const profilesWithMean = profiles.map(p => ({ ...p, overallMean, agpCurve }));
+      
+      setDayProfiles(profilesWithMean);
+      setDayProfilesOpen(true);
+      console.log('✅ Modal should open now');
+      
+    } catch (err) {
+      console.error('❌ Failed to generate day profiles:', err);
+      alert(`Failed to generate day profiles: ${err.message}`);
+    }
+  };
+
   // ============================================
   // RENDER: Main UI
   // ============================================
@@ -449,11 +518,11 @@ export default function AGPGenerator() {
           </p>
         </header>
 
-        {/* Control Buttons: 4-column grid */}
+        {/* Control Buttons: 5-column grid */}
         <section className="section">
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(5, 1fr)',
             gap: '1rem',
             marginBottom: '1rem'
           }}>
@@ -533,7 +602,46 @@ export default function AGPGenerator() {
               </h2>
             </button>
 
-            {/* 3. Export Button */}
+            {/* 3. Day Profiles Button */}
+            <button
+              onClick={handleDayProfilesOpen}
+              disabled={!csvData || !dateRange}
+              style={{
+                background: csvData && dateRange ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                border: '3px solid var(--border-primary)',
+                cursor: csvData && dateRange ? 'pointer' : 'not-allowed',
+                padding: '1.5rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                minHeight: '100px',
+                opacity: csvData && dateRange ? 1 : 0.5
+              }}
+              title={!csvData || !dateRange ? "Load CSV first" : "View last 7 day profiles"}
+            >
+              <h2 style={{ 
+                fontSize: '0.875rem',
+                fontWeight: 700, 
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                color: 'var(--text-primary)',
+                marginBottom: 0
+              }}>
+                DAGPROFIELEN
+              </h2>
+              <span style={{ 
+                fontSize: '0.625rem',
+                color: 'var(--text-secondary)',
+                fontWeight: 600,
+                letterSpacing: '0.1em'
+              }}>
+                (7D)
+              </span>
+            </button>
+
+            {/* 4. Export Button */}
             <button
               onClick={handleExportHTML}
               disabled={!metricsResult || !startDate || !endDate}
@@ -564,7 +672,7 @@ export default function AGPGenerator() {
               </h2>
             </button>
 
-            {/* 4. Period Display */}
+            {/* 5. Period Display */}
             {csvData && dateRange ? (
               <div style={{
                 background: 'var(--bg-secondary)',
@@ -763,6 +871,17 @@ export default function AGPGenerator() {
             />,
             document.body
           )
+        )}
+
+        {/* Day Profiles Modal - Portal */}
+        {dayProfilesOpen && ReactDOM.createPortal(
+          <DayProfilesModal 
+            isOpen={dayProfilesOpen}
+            onClose={() => setDayProfilesOpen(false)}
+            dayProfiles={dayProfiles}
+            patientInfo={patientInfo}
+          />,
+          document.body
         )}
 
         {/* Footer */}

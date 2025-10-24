@@ -1,0 +1,142 @@
+# Changelog
+
+All notable changes to AGP+ will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [2.2.0] - 2025-10-24
+
+### Added - Day Profiles Feature
+- **Individual Day Analysis**: View last 7 complete days with detailed glucose curves
+- **DayProfileCard Component**: Single-day visualization with 24h glucose curve, TIR bar, and metrics
+- **DayProfilesModal Component**: Full-screen modal displaying 7 day profiles
+- **Achievement Badges**: Automatic detection of Perfect Day, Zen Master, and exceptional performance
+- **Event Detection per Day**: Hypoglycemic events (L1: 54-70 mg/dL, L2: <54 mg/dL), hyperglycemic events (>250 mg/dL), sensor changes
+- **AGP Reference Overlay**: Dotted median line from overall period for context
+- **Print Export**: `day-profiles-exporter.js` generates optimized HTML for A4 printing
+  - Maximum 2 pages (4 days on page 1, 3 days on page 2)
+  - Brutalist print design with B/W patterns for TIR visualization
+  - Compact layout: 56mm height per card with aggressive spacing optimization
+  - Legend moved to page 2 to maximize space on page 1
+
+### Technical Changes
+- Added `day-profile-engine.js` in `src/core/` for day-level calculations
+- Added `day-profiles-exporter.js` in `src/core/` (606 lines) for HTML generation
+- Added `DayProfileCard.jsx` (548 lines) in `src/components/`
+- Added `DayProfilesModal.jsx` (156 lines) in `src/components/`
+- Added `HypoglycemiaEvents.jsx` component for event detection display
+- Updated `AGPGenerator.jsx` to include day profiles button and modal portal
+- Day profiles use full 5-minute resolution (288 bins per day) for accurate visualization
+
+### Known Issues & Future Optimizations
+- ⚠️ **Y-axis range (40-400 mg/dL) uses excessive vertical space**
+  - Most clinical data is 54-250 mg/dL
+  - Current design: ~30% of chart height shows glucose patterns, ~70% is whitespace
+  - Planned v2.3: Adaptive Y-axis with dynamic range and outlier indicators
+- ⚠️ **Horizontal whitespace**: 70% margins/padding vs 30% actual chart width
+  - SVG already optimized to 650px with 100% container fill
+  - Further gains require card padding reduction
+
+---
+
+## [2.1.3] - 2025-10-23
+
+### Added - Data Persistence & Patient Information
+- **IndexedDB Storage**: Unlimited client-side data storage for CSV uploads
+- **Save/Load Uploads**: Save multiple datasets with custom names, lock protection
+- **Patient Information Management**: Auto-extraction from CSV + manual entry modal
+  - Auto-extracts: Name, device model, serial number, sensor type
+  - Manual fields: Date of birth, physician, email
+  - Displays in app header and HTML exports
+- **Storage Management UI**: View saved uploads, storage usage, rename, delete
+- **Load Success Toast**: Visual feedback when loading saved data
+- **Metric Tooltips**: Clinical definitions on hover for all metrics
+
+### Technical Changes
+- Added `useUploadStorage.js` hook (450 lines) for IndexedDB operations
+- Added `patientStorage.js` and `uploadStorage.js` in `src/utils/`
+- Added `PatientInfo.jsx` (278 lines) modal component
+- Added `SavedUploadsList.jsx` (318 lines) for upload management
+- Added `metricDefinitions.js` with clinical metric descriptions
+- Added `Tooltip.jsx` and `MetricTooltip.jsx` components
+- Updated `html-exporter.js` to include patient info in reports
+
+---
+
+## [2.1.0] - 2025-10-20
+
+### Changed - Complete Architecture Rewrite
+- **Modular Component Structure**: Split monolithic component into 10 separate files
+- **Custom Hooks**: Extracted business logic into `useCSVData`, `useMetrics`, `useComparison`
+- **Core Modules**: Separated calculation engines into `src/core/`
+- **Production Structure**: Organized folders: `components/`, `hooks/`, `core/`, `utils/`
+
+### Added - Enhanced Features
+- **Auto-comparison**: Automatically triggers for preset periods (14/30/90 days)
+- **Day/Night Toggle**: Enable/disable 06:00-00:00 vs 00:00-06:00 split analysis
+- **Collapsible UI**: Organized sections with clean expand/collapse behavior
+- **ProTime Modal**: Dual-tab import (PDF text paste + JSON file upload)
+- **Empty States**: Helpful onboarding messages throughout UI
+- **Error Handling**: Clear, user-friendly error messages with dismiss functionality
+- **6-Metric Comparison**: Added TIR, Mean±SD, CV, GMI, MAGE, MODD with delta indicators
+- **Overall Assessment**: Automatic summary of period-over-period changes
+
+### Technical Improvements
+- Vite build system with optimized bundling
+- Improved code organization (~5,000+ lines across modular files)
+- Better separation of concerns (UI vs logic vs calculations)
+- Enhanced state management with proper React patterns
+
+---
+
+## [2.0.0] - 2025-10-15
+
+### Added - Initial Production Release
+- Complete AGP analysis following ADA/ATTD 2019 guidelines
+- 8 core clinical metrics (TIR, TAR, TBR, CV, GMI, Mean, MAGE, MODD)
+- AGP visualization with percentile bands (10th, 25th, 50th, 75th, 90th)
+- Event detection (hypoglycemia L1/L2, hyperglycemia)
+- Period comparison for historical context
+- Day/Night split analysis
+- Workday split analysis (with ProTime integration)
+- HTML report export with print optimization
+- Responsive dark theme UI
+
+### Technical Foundation
+- React 18 + Vite
+- Tailwind CSS styling
+- Lucide React icons
+- Pure SVG visualization (no chart libraries)
+- CareLink CSV parsing with validation
+
+---
+
+## Future Versions
+
+### [2.3.0] - Planned
+- Adaptive Y-axis for day profiles (54-250 mg/dL primary range)
+- Improved chart density and information scannability
+- Outlier indicators for values outside primary range
+
+### [3.0.0] - Under Consideration
+- Backend API integration
+- User accounts & cloud sync
+- Multi-patient comparison
+- PDF export
+- Mobile app (React Native)
+
+---
+
+## Version Naming Convention
+
+- **Major (X.0.0)**: Breaking changes, major architectural shifts
+- **Minor (x.Y.0)**: New features, backward-compatible additions
+- **Patch (x.y.Z)**: Bug fixes, minor improvements
+
+---
+
+**Project Repository**: [GitHub URL]  
+**Documentation**: See `/docs/` folder for detailed technical documentation
