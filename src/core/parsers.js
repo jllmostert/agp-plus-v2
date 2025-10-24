@@ -4,11 +4,85 @@
  * 
  * Exports:
  * - parseCSV: Parse Medtronic CareLink CSV export
+ * - parseCSVMetadata: Extract patient info from CSV headers
  * - parseProTime: Parse ProTime workday data (PDF text or JSON)
  * - exportProTimeJSON: Export workday data to JSON file
  */
 
 import { CONFIG, utils } from './metrics-engine.js';
+
+/**
+ * Extract patient metadata from Medtronic CareLink CSV header
+ * 
+ * CSV Header Structure (first 3 lines):
+ * Line 1: Last Name;First Name;...;Device;MiniMed 780G MMT-1886;...
+ * Line 2: "Mostert";"Jo";...;"Serial Number";NG4114235H;...
+ * Line 3: Patient DOB;;;;;;CGM;Guardian™ 4 Sensor
+ * 
+ * @param {string} text - Raw CSV text content
+ * @returns {Object|null} Patient metadata {name, deviceSerial, device, cgm} or null if not found
+ */
+export const parseCSVMetadata = (text) => {
+  try {
+    const lines = text.split('\n');
+    
+    if (lines.length < 3) {
+      console.warn('CSV too short to extract metadata');
+      return null;
+    }
+    
+    const metadata = {};
+    
+    // Parse line 1: Device info
+    // Format: Last Name;First Name;...;Device;MiniMed 780G MMT-1886;...
+    const line1 = lines[0];
+    const line1Parts = line1.split(';');
+    
+    const deviceIndex = line1Parts.findIndex(part => part.trim() === 'Device');
+    if (deviceIndex !== -1 && deviceIndex + 1 < line1Parts.length) {
+      metadata.device = line1Parts[deviceIndex + 1].trim();
+    }
+    
+    // Parse line 2: Patient name and serial number
+    // Format: "Mostert";"Jo";...;"Serial Number";NG4114235H;...
+    const line2 = lines[1];
+    const line2Parts = line2.split(';');
+    
+    // Extract name (combine first and last, remove quotes)
+    const lastName = line2Parts[0]?.replace(/"/g, '').trim() || '';
+    const firstName = line2Parts[1]?.replace(/"/g, '').trim() || '';
+    
+    if (lastName || firstName) {
+      metadata.name = `${firstName} ${lastName}`.trim();
+    }
+    
+    // Extract serial number
+    const serialIndex = line2Parts.findIndex(part => 
+      part.replace(/"/g, '').trim() === 'Serial Number'
+    );
+    if (serialIndex !== -1 && serialIndex + 1 < line2Parts.length) {
+      metadata.deviceSerial = line2Parts[serialIndex + 1].replace(/"/g, '').trim();
+    }
+    
+    // Parse line 3: CGM info (optional)
+    // Format: Patient DOB;;;;;;CGM;Guardian™ 4 Sensor
+    if (lines.length >= 3) {
+      const line3 = lines[2];
+      const line3Parts = line3.split(';');
+      
+      const cgmIndex = line3Parts.findIndex(part => part.trim() === 'CGM');
+      if (cgmIndex !== -1 && cgmIndex + 1 < line3Parts.length) {
+        metadata.cgm = line3Parts[cgmIndex + 1].trim();
+      }
+    }
+    
+    // Return null if no metadata found
+    return Object.keys(metadata).length > 0 ? metadata : null;
+  } catch (err) {
+    console.error('Failed to parse CSV metadata:', err);
+    return null;
+  }
+};
 
 /**
  * Parse Medtronic CareLink CSV export

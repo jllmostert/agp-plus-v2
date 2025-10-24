@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Download, ChevronDown, AlertCircle, Save } from 'lucide-react';
+import ReactDOM from 'react-dom';
+import { Activity, Download, ChevronDown, AlertCircle, Save, User } from 'lucide-react';
 
 // Custom hooks
 import { useCSVData } from '../hooks/useCSVData';
@@ -20,6 +21,7 @@ import ComparisonView from './ComparisonView';
 import DayNightSplit from './DayNightSplit';
 import WorkdaySplit from './WorkdaySplit';
 import SavedUploadsList from './SavedUploadsList';
+import PatientInfo from './PatientInfo';
 
 /**
  * AGPGenerator - Main application container
@@ -69,6 +71,28 @@ export default function AGPGenerator() {
   const [workdays, setWorkdays] = useState(null); // Set of workday date strings
   const [dayNightEnabled, setDayNightEnabled] = useState(false);
   const [dataImportExpanded, setDataImportExpanded] = useState(true); // Collapsible data import
+  const [patientInfoOpen, setPatientInfoOpen] = useState(false);
+  const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
+  const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
+
+  // Load patient info from storage
+  useEffect(() => {
+    const loadPatientInfo = async () => {
+      try {
+        const { patientStorage } = await import('../utils/patientStorage');
+        const info = await patientStorage.get();
+        setPatientInfo(info);
+      } catch (err) {
+        console.error('Failed to load patient info:', err);
+      }
+    };
+    loadPatientInfo();
+    
+    // Reload when modal closes (in case data was updated)
+    if (!patientInfoOpen) {
+      loadPatientInfo();
+    }
+  }, [patientInfoOpen]);
 
   // ============================================
   // CALCULATED DATA: Metrics & Comparison
@@ -206,7 +230,8 @@ export default function AGPGenerator() {
         comparisonAGP: comparisonData.comparisonAGP,
         prevStart: formatDate(new Date(comparisonData.prevStart)),
         prevEnd: formatDate(new Date(comparisonData.prevEnd))
-      } : null
+      } : null,
+      patientInfo: patientInfo // Add patient info to export
     });
   };
 
@@ -253,10 +278,21 @@ export default function AGPGenerator() {
         setWorkdays(null);
       }
 
-      // Reset period selection
+      // Keep data import section OPEN so user can see what's loaded
+      setDataImportExpanded(true);
+
+      // Reset period selection (will auto-select last 14 days via useEffect)
       setStartDate(null);
       setEndDate(null);
+
+      // Show success toast
+      setLoadToast(`✅ Loaded: ${upload.name}`);
+      setTimeout(() => setLoadToast(null), 3000); // Auto-hide after 3s
+      
+      console.log(`✅ Loaded upload: ${upload.name}`);
+      
     } catch (err) {
+      console.error('Failed to load upload:', err);
       alert(`Failed to load upload: ${err.message}`);
     }
   };
@@ -283,155 +319,309 @@ export default function AGPGenerator() {
             ✅ {migrationStatus} - Now using IndexedDB for unlimited storage!
           </div>
         )}
+
+        {/* Load Success Toast */}
+        {loadToast && (
+          <div style={{
+            padding: '1rem',
+            marginBottom: '1rem',
+            background: 'var(--color-green)',
+            color: '#000',
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            border: '3px solid #000',
+            animation: 'slideDown 200ms ease-out'
+          }}>
+            {loadToast}
+          </div>
+        )}
         
-        {/* Header */}
+        {/* Header - Brutalist Box */}
         <header className="section">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <Activity className="w-8 h-8" style={{ color: 'var(--text-primary)' }} />
-              <div>
-                <h1 style={{ letterSpacing: '0.1em', fontWeight: 700, marginBottom: '0.25rem' }}>
-                  AGP+ V2.1
-                </h1>
-                {/* Active Period Display */}
-                {startDate && endDate && (
-                  <p style={{ 
-                    fontSize: '0.875rem', 
-                    color: 'var(--color-green)',
-                    fontWeight: 600,
-                    letterSpacing: '0.05em',
-                    fontFamily: 'monospace'
+          <div className="card" style={{ 
+            padding: '1.5rem',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
+            gridTemplateRows: 'auto auto',
+            gap: '1rem',
+            alignItems: 'center'
+          }}>
+            {/* Row 1: Title + Patient Info Button */}
+            <div>
+              <h1 style={{ 
+                letterSpacing: '0.15em', 
+                fontWeight: 700, 
+                fontSize: '1.5rem',
+                marginBottom: 0
+              }}>
+                AGP+ V2.1
+              </h1>
+            </div>
+            
+            <button
+              onClick={() => {
+                console.log('🔴 BUTTON CLICKED!');
+                setPatientInfoOpen(true);
+                console.log('State should be true now');
+              }}
+              style={{
+                padding: '0.75rem 1rem',
+                background: 'var(--bg-secondary)',
+                border: '2px solid var(--border-primary)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                justifySelf: 'end',
+                height: 'fit-content'
+              }}
+            >
+              <User size={16} />
+              PATIENT INFO
+            </button>
+
+            {/* Row 2: Patient Info + Date Range (spans both columns) */}
+            <div style={{ 
+              gridColumn: '1 / -1',
+              borderTop: '2px solid var(--border-primary)',
+              paddingTop: '1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              {/* Patient Info Display */}
+              {patientInfo && patientInfo.name && (
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  fontFamily: 'monospace'
+                }}>
+                  {patientInfo.name}
+                  {patientInfo.dob && ` • DOB ${new Date(patientInfo.dob).toLocaleDateString('nl-NL')}`}
+                  {patientInfo.cgm && ` • ${patientInfo.cgm}`}
+                </div>
+              )}
+              
+              {/* Active Period Display */}
+              {startDate && endDate && (
+                <div style={{ 
+                  fontSize: '0.875rem', 
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  letterSpacing: '0.05em',
+                  fontFamily: 'monospace'
+                }}>
+                  {startDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  {' → '}
+                  {endDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  <span style={{ 
+                    marginLeft: '0.5rem', 
+                    color: 'var(--text-secondary)',
+                    fontWeight: 400,
+                    textTransform: 'uppercase'
                   }}>
-                    {startDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    {' → '}
-                    {endDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    <span style={{ 
-                      marginLeft: '0.5rem', 
-                      color: 'var(--text-secondary)',
-                      fontWeight: 400
-                    }}>
-                      ({Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1} dagen)
-                    </span>
-                  </p>
-                )}
-              </div>
+                    ({Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1} DAGEN)
+                  </span>
+                </div>
+              )}
             </div>
           </div>
+          
           <p style={{ 
-            fontSize: '0.875rem', 
-            color: 'var(--text-secondary)', 
-            letterSpacing: '0.05em',
+            marginTop: '1rem',
+            fontSize: '0.75rem', 
+            color: 'var(--text-secondary)',
+            fontWeight: 600,
+            letterSpacing: '0.1em',
             textTransform: 'uppercase'
           }}>
-            Ambulatory Glucose Profile Generator
+            AMBULATORY GLUCOSE PROFILE GENERATOR
           </p>
         </header>
 
-        {/* Top Controls Row: Import | Export | Period - All side by side */}
+        {/* Control Buttons: 4-column grid */}
         <section className="section">
-          {/* Row 1: 3-column grid - always horizontal */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'auto auto 1fr',
+            gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '1rem',
-            alignItems: 'center',
             marginBottom: '1rem'
           }}>
             
-            {/* 1. Data Import Button - Collapsible trigger */}
+            {/* 1. Import Button */}
             <button
               onClick={() => setDataImportExpanded(!dataImportExpanded)}
-              className="flex items-center justify-between rounded"
               style={{
                 background: 'var(--bg-secondary)',
-                border: '2px solid var(--border-primary)',
+                border: '3px solid var(--border-primary)',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-                padding: '0.75rem 1rem',
-                minWidth: '140px'
+                padding: '1.5rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                minHeight: '100px'
               }}
             >
-              <div className="flex items-center gap-3">
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: csvData ? 'var(--color-green)' : 'var(--color-gray)',
-                  transition: 'all 0.2s'
-                }} />
+              <h2 style={{ 
+                fontSize: '0.875rem',
+                fontWeight: 700, 
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                color: 'var(--text-primary)',
+                marginBottom: 0
+              }}>
+                IMPORT
+              </h2>
+              {csvData && (
+                <span style={{ 
+                  fontSize: '1.25rem',
+                  color: 'var(--color-green)'
+                }}>
+                  ✓
+                </span>
+              )}
+              {!csvData && (
+                <span style={{ 
+                  fontSize: '1.25rem',
+                  color: 'var(--text-secondary)'
+                }}>
+                  ›
+                </span>
+              )}
+            </button>
+
+            {/* 2. Save Button */}
+            <button
+              onClick={handleSaveUpload}
+              disabled={!csvData || !dateRange}
+              style={{
+                background: csvData && dateRange ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                border: '3px solid var(--border-primary)',
+                cursor: csvData && dateRange ? 'pointer' : 'not-allowed',
+                padding: '1.5rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                minHeight: '100px',
+                opacity: csvData && dateRange ? 1 : 0.5
+              }}
+              title={!csvData || !dateRange ? "Load CSV first" : "Save current upload to storage"}
+            >
+              <h2 style={{ 
+                fontSize: '0.875rem',
+                fontWeight: 700, 
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                color: 'var(--text-primary)',
+                marginBottom: 0
+              }}>
+                SAVE
+              </h2>
+            </button>
+
+            {/* 3. Export Button */}
+            <button
+              onClick={handleExportHTML}
+              disabled={!metricsResult || !startDate || !endDate}
+              style={{
+                background: metricsResult && startDate && endDate ? '#000' : 'var(--bg-primary)',
+                border: '3px solid #000',
+                color: metricsResult && startDate && endDate ? '#fff' : 'var(--text-secondary)',
+                cursor: metricsResult && startDate && endDate ? 'pointer' : 'not-allowed',
+                padding: '1.5rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                minHeight: '100px',
+                opacity: metricsResult && startDate && endDate ? 1 : 0.5
+              }}
+              title={!metricsResult ? "Generate metrics first" : "Export as HTML report"}
+            >
+              <h2 style={{ 
+                fontSize: '0.875rem',
+                fontWeight: 700, 
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                marginBottom: 0
+              }}>
+                EXPORT
+              </h2>
+            </button>
+
+            {/* 4. Period Display */}
+            {csvData && dateRange ? (
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: '3px solid var(--border-primary)',
+                padding: '1.5rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.25rem',
+                minHeight: '100px'
+              }}>
+                <div style={{ 
+                  fontSize: '0.625rem',
+                  fontWeight: 700, 
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '0.25rem'
+                }}>
+                  {Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1}d, {((dateRange.end - dateRange.start) / (1000 * 60 * 60 * 24)).toFixed(0)}d
+                </div>
+                <PeriodSelector
+                  availableDates={dateRange}
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChange={handlePeriodChange}
+                />
+              </div>
+            ) : (
+              <div style={{
+                background: 'var(--bg-primary)',
+                border: '3px solid var(--border-primary)',
+                padding: '1.5rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '100px',
+                opacity: 0.5
+              }}>
                 <h2 style={{ 
                   fontSize: '0.875rem',
                   fontWeight: 700, 
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase'
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-secondary)',
+                  marginBottom: 0
                 }}>
-                  Import
+                  PERIOD
                 </h2>
-                {csvData && !dataImportExpanded && (
-                  <span style={{ 
-                    fontSize: '0.75rem', 
-                    color: 'var(--text-secondary)',
-                    letterSpacing: '0.05em'
-                  }}>
-                    ✓
-                  </span>
-                )}
               </div>
-              <ChevronDown 
-                className="w-5 h-5 ml-2"
-                style={{
-                  transform: dataImportExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-                  transition: 'transform 0.2s',
-                  color: 'var(--text-secondary)'
-                }}
-              />
-            </button>
-
-            {/* 2. Save + Export Buttons - Only when data available */}
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {csvData && dateRange && (
-                <button
-                  onClick={handleSaveUpload}
-                  className="btn flex items-center gap-2"
-                  style={{
-                    whiteSpace: 'nowrap',
-                    border: '2px solid var(--border-primary)',
-                    background: 'var(--bg-secondary)'
-                  }}
-                  title="Save current upload to storage"
-                >
-                  <Save className="w-4 h-4" />
-                  Save
-                </button>
-              )}
-              
-              {metricsResult && startDate && endDate && (
-                <button
-                  onClick={handleExportHTML}
-                  className="btn btn-primary flex items-center gap-2"
-                  style={{
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  <Download className="w-4 h-4" />
-                  Export
-                </button>
-              )}
-            </div>
-
-            {/* 3. Period Selector - Takes remaining space */}
-            {csvData && dateRange ? (
-              <PeriodSelector
-                availableDates={dateRange}
-                startDate={startDate}
-                endDate={endDate}
-                onChange={handlePeriodChange}
-              />
-            ) : <div />}
+            )}
             
           </div>
 
-          {/* Row 2: Expanded Import Content - full width below */}
+          {/* Expanded Import Content - full width below */}
           {dataImportExpanded && (
             <div className="mb-4" style={{ 
               background: 'var(--bg-secondary)',
@@ -560,6 +750,19 @@ export default function AGPGenerator() {
                   </section>
                 )}
               </>
+        )}
+
+        {/* Patient Info Modal */}
+        {console.log('Checking patientInfoOpen:', patientInfoOpen)}
+        {patientInfoOpen && (
+          console.log('🟢 RENDERING PORTAL NOW!'),
+          ReactDOM.createPortal(
+            <PatientInfo 
+              isModal={true}
+              onClose={() => setPatientInfoOpen(false)} 
+            />,
+            document.body
+          )
         )}
 
         {/* Footer */}

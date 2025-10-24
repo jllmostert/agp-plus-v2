@@ -7,7 +7,8 @@
  * Database: 'agp-plus-db'
  * Stores:
  *   - 'uploads': {id, timestamp, name, csvData, dateRange, proTimeData, locked}
- *   - 'settings': {key, value} - for activeUploadId
+ *   - 'settings': {key, value} - for activeUploadId and patient info
+ *   - 'patientInfo': {key: 'patient', name, email, dob, physician, cgm}
  */
 
 const DB_NAME = 'agp-plus-db';
@@ -290,5 +291,50 @@ export const uploadStorage = {
         sizeMB: (JSON.stringify(u).length / (1024 * 1024)).toFixed(2)
       }))
     };
+  },
+
+  /**
+   * Save patient information
+   */
+  async savePatientInfo(patientInfo) {
+    const db = await openDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(SETTINGS_STORE, 'readwrite');
+      const store = transaction.objectStore(SETTINGS_STORE);
+      const request = store.put({ 
+        key: 'patientInfo', 
+        value: {
+          name: patientInfo.name || '',
+          email: patientInfo.email || '',
+          dob: patientInfo.dob || '',
+          physician: patientInfo.physician || '',
+          cgm: patientInfo.cgm || '',
+          lastUpdated: new Date().toISOString()
+        }
+      });
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  /**
+   * Get patient information
+   */
+  async getPatientInfo() {
+    const db = await openDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(SETTINGS_STORE, 'readonly');
+      const store = transaction.objectStore(SETTINGS_STORE);
+      const request = store.get('patientInfo');
+      
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.value : null);
+      };
+      request.onerror = () => reject(request.error);
+    });
   }
 };

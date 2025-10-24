@@ -1,5 +1,7 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Activity, Zap } from 'lucide-react';
+import Tooltip from './Tooltip';
+import { getMetricTooltip } from '../utils/metricDefinitions';
 
 /**
  * MetricsDisplay - Clinical Dashboard Layout
@@ -37,6 +39,7 @@ export default function MetricsDisplay({ metrics }) {
       case 'tbr': return v <= 4 ? 'good' : v <= 10 ? 'warning' : 'danger';
       case 'cv': return v <= 36 ? 'good' : v <= 50 ? 'warning' : 'danger';
       case 'gmi': return v < 7.0 ? 'good' : v < 8.0 ? 'warning' : 'danger';
+      case 'gri': return v < 5 ? 'good' : v < 20 ? 'neutral' : 'warning';
       case 'mean': return (v >= 70 && v <= 180) ? 'good' : 'warning';
       default: return 'neutral';
     }
@@ -63,17 +66,19 @@ export default function MetricsDisplay({ metrics }) {
             justifyContent: 'center'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            <Activity style={{ width: '24px', height: '24px', color: 'var(--text-inverse)' }} />
-            <span style={{ 
-              fontSize: '0.875rem', 
-              fontWeight: 700, 
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase'
-            }}>
-              Time in Range
-            </span>
-          </div>
+          <Tooltip text={getMetricTooltip('tir')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <Activity style={{ width: '24px', height: '24px', color: 'var(--text-inverse)' }} />
+              <span style={{ 
+                fontSize: '0.875rem', 
+                fontWeight: 700, 
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase'
+              }}>
+                Time in Range
+              </span>
+            </div>
+          </Tooltip>
           
           <div style={{ 
             fontSize: 'clamp(3rem, 8vw, 4.5rem)', 
@@ -104,6 +109,7 @@ export default function MetricsDisplay({ metrics }) {
           unit="mg/dL"
           subtitle={`± ${safeFormat(metrics.sd, 0)} SD`}
           status={getStatus('mean', metrics.mean)}
+          metricId="mean"
         />
 
         {/* CV */}
@@ -114,6 +120,7 @@ export default function MetricsDisplay({ metrics }) {
           unit="%"
           subtitle="Target ≤36%"
           status={getStatus('cv', metrics.cv)}
+          metricId="cv"
         />
 
         {/* GMI */}
@@ -124,6 +131,7 @@ export default function MetricsDisplay({ metrics }) {
           unit="%"
           subtitle={`~${safeFormat(metrics.gmi, 1)}% HbA1c`}
           status={getStatus('gmi', metrics.gmi)}
+          metricId="gmi"
         />
       </div>
 
@@ -147,8 +155,8 @@ export default function MetricsDisplay({ metrics }) {
         }}>
           Range Distribution
         </div>
-        <SecondaryMetricCard label="TAR >180" value={safeFormat(metrics.tar, 1)} unit="%" status={getStatus('tar', metrics.tar)} />
-        <SecondaryMetricCard label="TBR <70" value={safeFormat(metrics.tbr, 1)} unit="%" status={getStatus('tbr', metrics.tbr)} />
+        <SecondaryMetricCard label="TAR >180" value={safeFormat(metrics.tar, 1)} unit="%" status={getStatus('tar', metrics.tar)} metricId="tar" />
+        <SecondaryMetricCard label="TBR <70" value={safeFormat(metrics.tbr, 1)} unit="%" status={getStatus('tbr', metrics.tbr)} metricId="tbr" />
 
         {/* Variability Metrics */}
         <div style={{ 
@@ -162,8 +170,38 @@ export default function MetricsDisplay({ metrics }) {
         }}>
           Variability Metrics
         </div>
-        <SecondaryMetricCard label="MAGE" value={safeFormat(metrics.mage, 0)} unit="mg/dL" subtitle="Glycemic excursions" />
-        <SecondaryMetricCard label="MODD" value={safeFormat(metrics.modd, 0)} unit="mg/dL" subtitle="Day-to-day variability" />
+        <SecondaryMetricCard label="MAGE" value={safeFormat(metrics.mage, 0)} unit="mg/dL" subtitle="Glycemic excursions" metricId="mage" />
+        <SecondaryMetricCard label="MODD" value={safeFormat(metrics.modd, 0)} unit="mg/dL" subtitle="Day-to-day variability" metricId="modd" />
+
+        {/* Risk Assessment */}
+        <div style={{ 
+          display: 'flex',
+          alignItems: 'center',
+          fontSize: '0.75rem', 
+          fontWeight: 700, 
+          letterSpacing: '0.15em', 
+          textTransform: 'uppercase',
+          color: 'var(--text-secondary)'
+        }}>
+          Risk Assessment
+        </div>
+        <SecondaryMetricCard 
+          label="GRI" 
+          value={safeFormat(metrics.gri, 1)} 
+          unit="" 
+          subtitle={
+            Number(metrics.gri) < 20 ? 'Very low risk' :
+            Number(metrics.gri) < 40 ? 'Low risk' :
+            Number(metrics.gri) < 60 ? 'Moderate risk' :
+            Number(metrics.gri) < 80 ? 'High risk' : 'Very high risk'
+          }
+          status={
+            Number(metrics.gri) < 40 ? 'good' :
+            Number(metrics.gri) < 60 ? 'neutral' : 'warning'
+          }
+          metricId="gri"
+        />
+        <div /> {/* Empty cell for grid alignment */}
 
         {/* Glucose Range */}
         <div style={{ 
@@ -198,8 +236,53 @@ export default function MetricsDisplay({ metrics }) {
           value={metrics.readingCount != null ? metrics.readingCount.toLocaleString() : 'N/A'} 
           unit=""
           subtitle={
-            metrics.readingCount != null && metrics.days != null
+            metrics.dataQuality?.uptimePercent != null
+              ? `${safeFormat(metrics.dataQuality.uptimePercent, 1)}% uptime`
+              : metrics.readingCount != null && metrics.days != null
               ? `${safeFormat((metrics.readingCount / (metrics.days * 288)) * 100, 0)}% coverage`
+              : ''
+          }
+          status={
+            metrics.dataQuality?.uptimePercent >= 95 ? 'good' :
+            metrics.dataQuality?.uptimePercent >= 85 ? 'warning' :
+            metrics.dataQuality?.uptimePercent != null ? 'danger' :
+            'neutral'
+          }
+        />
+
+        {/* Data Quality */}
+        <div style={{ 
+          display: 'flex',
+          alignItems: 'center',
+          fontSize: '0.75rem', 
+          fontWeight: 700, 
+          letterSpacing: '0.15em', 
+          textTransform: 'uppercase',
+          color: 'var(--text-secondary)'
+        }}>
+          Data Quality
+        </div>
+        <SecondaryMetricCard 
+          label="Sensor Uptime" 
+          value={metrics.dataQuality?.uptimePercent != null ? safeFormat(metrics.dataQuality.uptimePercent, 1) : 'N/A'} 
+          unit="%"
+          status={
+            metrics.dataQuality?.uptimePercent >= 95 ? 'good' :
+            metrics.dataQuality?.uptimePercent >= 85 ? 'warning' :
+            'danger'
+          }
+        />
+        <SecondaryMetricCard 
+          label="Complete Days" 
+          value={
+            metrics.dataQuality?.completeDays != null && metrics.dataQuality?.totalDays != null
+              ? `${metrics.dataQuality.completeDays}/${metrics.dataQuality.totalDays}`
+              : 'N/A'
+          }
+          unit=""
+          subtitle={
+            metrics.dataQuality?.completeDays != null && metrics.dataQuality?.totalDays != null
+              ? `${safeFormat((metrics.dataQuality.completeDays / metrics.dataQuality.totalDays) * 100, 0)}% complete`
               : ''
           }
         />
@@ -212,7 +295,7 @@ export default function MetricsDisplay({ metrics }) {
  * PrimaryMetricCard - Hero Grid Metrics (Mean, CV, GMI)
  * Large text, high contrast, prominent display
  */
-function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 'neutral' }) {
+function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 'neutral', metricId }) {
   const getStatusColor = () => {
     switch(status) {
       case 'good': return 'var(--text-primary)';
@@ -234,24 +317,26 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
       }}
     >
       {/* Icon + Label */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <Icon style={{ 
-          width: '20px', 
-          height: '20px',
-          color: status === 'danger' ? 'var(--color-red)' : 
-                 status === 'warning' ? 'var(--color-yellow)' : 
-                 'var(--text-primary)'
-        }} />
-        <span style={{ 
-          fontSize: '0.875rem',
-          fontWeight: 700,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          color: 'var(--text-secondary)'
-        }}>
-          {label}
-        </span>
-      </div>
+      <Tooltip text={metricId ? getMetricTooltip(metricId) : ''}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+          <Icon style={{ 
+            width: '20px', 
+            height: '20px',
+            color: status === 'danger' ? 'var(--color-red)' : 
+                   status === 'warning' ? 'var(--color-yellow)' : 
+                   'var(--text-primary)'
+          }} />
+          <span style={{ 
+            fontSize: '0.875rem',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--text-secondary)'
+          }}>
+            {label}
+          </span>
+        </div>
+      </Tooltip>
 
       {/* Value */}
       <div>
@@ -288,7 +373,7 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
  * SecondaryMetricCard - Detail Grid Metrics
  * White-on-dark with proper contrast, grouped by category
  */
-function SecondaryMetricCard({ label, value, unit, subtitle, status = 'neutral' }) {
+function SecondaryMetricCard({ label, value, unit, subtitle, status = 'neutral', metricId }) {
   const getStatusColor = () => {
     switch(status) {
       case 'good': return '#10b981'; // green-500
@@ -309,16 +394,18 @@ function SecondaryMetricCard({ label, value, unit, subtitle, status = 'neutral' 
       }}
     >
       {/* Label */}
-      <div style={{ 
-        fontSize: '0.75rem',
-        fontWeight: 700,
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
-        marginBottom: '0.75rem',
-        color: '#9ca3af' // gray-400
-      }}>
-        {label}
-      </div>
+      <Tooltip text={metricId ? getMetricTooltip(metricId) : ''}>
+        <div style={{ 
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          marginBottom: '0.75rem',
+          color: '#9ca3af' // gray-400
+        }}>
+          {label}
+        </div>
+      </Tooltip>
 
       {/* Value */}
       <div style={{ 

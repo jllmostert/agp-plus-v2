@@ -185,30 +185,29 @@ export default function SavedUploadsList({
                 </div>
               ) : (
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <button
-                      onClick={() => onLoad(upload.id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        padding: 0,
-                        fontFamily: 'inherit'
-                      }}
-                    >
-                      <span style={{
-                        fontSize: '0.875rem',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                      }}>
-                        {upload.name}
-                      </span>
-                    </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <span style={{
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                      color: 'var(--text-primary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      flex: 1
+                    }}>
+                      {upload.name}
+                    </span>
                     {upload.id === activeId && (
-                      <Check className="w-4 h-4" style={{ color: 'var(--color-green)' }} />
+                      <span style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: 'var(--color-green)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        padding: '0.25rem 0.5rem',
+                        border: '2px solid var(--color-green)'
+                      }}>
+                        ✓ ACTIVE
+                      </span>
                     )}
                     {!upload.locked && (
                       <button
@@ -224,10 +223,12 @@ export default function SavedUploadsList({
                       </button>
                     )}
                   </div>
+                  
+                  {/* Metadata Line */}
                   <div style={{
                     fontSize: '0.75rem',
                     color: 'var(--text-secondary)',
-                    marginTop: '0.25rem'
+                    marginBottom: '0.5rem'
                   }}>
                     {formatDate(upload.timestamp)}
                     {upload.dateRange && (
@@ -237,6 +238,36 @@ export default function SavedUploadsList({
                       <> · 📊 {upload.proTimeData.length} workdays</>
                     )}
                   </div>
+
+                  {/* Load Button - Only show if not already active */}
+                  {upload.id !== activeId && (
+                    <button
+                      onClick={() => onLoad(upload.id)}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        background: 'var(--bg-primary)',
+                        border: '2px solid var(--border-primary)',
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        transition: 'all 100ms linear'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = 'var(--text-primary)';
+                        e.target.style.color = 'var(--bg-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'var(--bg-primary)';
+                        e.target.style.color = 'var(--text-primary)';
+                      }}
+                    >
+                      LOAD DATA
+                    </button>
+                  )}
                 </div>
               )}
             </div>

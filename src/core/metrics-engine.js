@@ -109,6 +109,16 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   const tir = (values.filter(v => v >= 70 && v <= 180).length / values.length) * 100;
   const tar = (values.filter(v => v > 180).length / values.length) * 100;
   const tbr = (values.filter(v => v < 70).length / values.length) * 100;
+  
+  // Time in ranges (detailed breakdown for GRI)
+  const tbrLow = (values.filter(v => v >= 54 && v < 70).length / values.length) * 100;  // Level 1 hypo
+  const tbrVeryLow = (values.filter(v => v < 54).length / values.length) * 100;         // Level 2 hypo
+  const tarHigh = (values.filter(v => v > 180 && v <= 250).length / values.length) * 100;
+  const tarVeryHigh = (values.filter(v => v > 250).length / values.length) * 100;
+  
+  // GRI - Glycemia Risk Index (Klonoff et al. 2018)
+  // Weights: VLow=3.0, Low=2.4, VHigh=1.6, High=0.8
+  const gri = (3.0 * tbrVeryLow) + (2.4 * tbrLow) + (1.6 * tarVeryHigh) + (0.8 * tarHigh);
 
   // MAGE - Mean Amplitude of Glycemic Excursions
   const byDay = {};
@@ -218,6 +228,20 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   const modd = moddCount > 0 ? moddSum / moddCount : 0;
   const uniqueDays = new Set(filtered.map(r => r.date)).size;
 
+  // Calculate data quality metrics
+  const expectedReadings = uniqueDays * 288; // 288 readings per day (5-min intervals)
+  const actualReadings = filtered.length;
+  const missingReadings = expectedReadings - actualReadings;
+  const missingPercent = ((missingReadings / expectedReadings) * 100).toFixed(1);
+  const uptimePercent = (100 - parseFloat(missingPercent)).toFixed(1);
+  
+  // Count complete days (days with 288 readings)
+  const readingsPerDay = {};
+  filtered.forEach(r => {
+    readingsPerDay[r.date] = (readingsPerDay[r.date] || 0) + 1;
+  });
+  const completeDays = Object.values(readingsPerDay).filter(count => count === 288).length;
+
   return {
     mean: Math.round(mean),
     sd: sd.toFixed(1),
@@ -226,12 +250,22 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
     tar: tar.toFixed(1),
     tbr: tbr.toFixed(1),
     gmi: gmi.toFixed(1),
+    gri: gri.toFixed(1),
     mage: mage.toFixed(1),
     modd: modd.toFixed(1),
     min: Math.min(...values),
     max: Math.max(...values),
     days: uniqueDays,
-    readingCount: filtered.length
+    readingCount: filtered.length,
+    // Data quality metrics (NEW)
+    dataQuality: {
+      uptimePercent: parseFloat(uptimePercent),
+      missingPercent: parseFloat(missingPercent),
+      completeDays: completeDays,
+      totalDays: uniqueDays,
+      expectedReadings: expectedReadings,
+      actualReadings: actualReadings
+    }
   };
 };
 

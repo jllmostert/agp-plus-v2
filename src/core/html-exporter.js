@@ -47,6 +47,43 @@ const generateAGPBand = (agpData, topPercentile, bottomPercentile) => {
 };
 
 /**
+ * Generate automated clinical summary
+ * One-line interpretation of key metrics
+ */
+const generateClinicalSummary = (metrics) => {
+  const tir = parseFloat(metrics.tir);
+  const cv = parseFloat(metrics.cv);
+  const tbr = parseFloat(metrics.tbr);
+  
+  const parts = [];
+  
+  // TIR assessment
+  if (tir >= 70) {
+    parts.push(`TIR ${tir}% (target met)`);
+  } else if (tir >= 50) {
+    parts.push(`TIR ${tir}% (below target)`);
+  } else {
+    parts.push(`TIR ${tir}% (needs improvement)`);
+  }
+  
+  // CV assessment
+  if (cv <= 36) {
+    parts.push('stable glucose');
+  } else {
+    parts.push('variable glucose');
+  }
+  
+  // TBR warning
+  if (tbr > 4) {
+    parts.push(`TBR ${tbr}% (caution)`);
+  } else if (tbr > 1) {
+    parts.push(`TBR ${tbr}% (monitor)`);
+  }
+  
+  return parts.join(', ');
+};
+
+/**
  * Generate complete HTML report
  */
 export const generateHTML = (options) => {
@@ -58,7 +95,8 @@ export const generateHTML = (options) => {
     endDate,
     dayNightMetrics = null,
     workdaySplit = null,
-    comparison = null
+    comparison = null,
+    patientInfo = null
   } = options;
 
   // Validate required data
@@ -155,7 +193,7 @@ export const generateHTML = (options) => {
       color: #fff;
     }
     
-    /* Metrics Grid - Compact 4-column, BRUTALIST borders */
+    /* Metrics Grid - 4-column hero cards, BRUTALIST borders */
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -169,9 +207,9 @@ export const generateHTML = (options) => {
     }
     
     .metric-label {
-      font-size: 7pt;
+      font-size: 10pt;
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letterSpacing: 0.1em;
       text-transform: uppercase;
       margin-bottom: 2mm;
     }
@@ -185,7 +223,7 @@ export const generateHTML = (options) => {
     }
     
     .metric-subtitle {
-      font-size: 6pt;
+      font-size: 9pt;
       margin-top: 2mm;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -204,7 +242,7 @@ export const generateHTML = (options) => {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 8pt;
+      font-size: 9pt;
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -230,13 +268,16 @@ export const generateHTML = (options) => {
       color: #fff; 
     }
     .tir-tar { 
-      background: #ddd; 
+      /* Dot pattern for B&W print distinction */
+      background-image: radial-gradient(circle, #000 1px, transparent 1px);
+      background-size: 5px 5px;
+      background-color: #fff;
     }
     
     .tir-legend {
       display: flex;
       justify-content: space-between;
-      font-size: 7pt;
+      font-size: 8pt;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -268,7 +309,7 @@ export const generateHTML = (options) => {
       justify-content: space-between;
       padding: 2mm 0;
       border-bottom: 1px solid #000;
-      font-size: 8pt;
+      font-size: 9pt;
     }
     
     .detail-row:last-child {
@@ -279,6 +320,7 @@ export const generateHTML = (options) => {
       font-weight: 400;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      font-size: 10pt;
     }
     
     .detail-value {
@@ -344,7 +386,7 @@ export const generateHTML = (options) => {
     }
     
     .comparison-old {
-      color: #666;
+      color: #555; /* Darker for better print contrast (was #666) */
       font-variant-numeric: tabular-nums;
     }
     
@@ -402,7 +444,7 @@ export const generateHTML = (options) => {
       border: 3px solid #000;
       background: #000;
       color: #fff;
-      font-size: 6pt;
+      font-size: 7pt;
       font-weight: 700;
       text-align: center;
       text-transform: uppercase;
@@ -413,7 +455,20 @@ export const generateHTML = (options) => {
 <body>
   <div class="header">
     <h1>AGP+ V2.1</h1>
-    <div class="subtitle">AMBULATORY GLUCOSE PROFILE | ${startDate} → ${endDate} (${metrics.days} DAYS) | GENERATED: ${new Date().toLocaleDateString('nl-NL').toUpperCase()}</div>
+    ${patientInfo && patientInfo.name ? `
+    <div class="subtitle" style="margin-bottom: 2mm; font-size: 10pt; background: #fff; color: #000; padding: 2mm; border: 2px solid #fff;">
+      <div style="margin-bottom: 1mm;">
+        <strong>PATIENT:</strong> ${patientInfo.name.toUpperCase()}${patientInfo.dob ? ` | <strong>DOB:</strong> ${new Date(patientInfo.dob).toLocaleDateString('nl-NL')}` : ''}
+      </div>
+      ${patientInfo.physician ? `<div style="margin-bottom: 1mm;"><strong>PHYSICIAN:</strong> ${patientInfo.physician.toUpperCase()}</div>` : ''}
+      ${patientInfo.email ? `<div style="margin-bottom: 1mm;"><strong>EMAIL:</strong> ${patientInfo.email}</div>` : ''}
+      ${patientInfo.cgm ? `<div><strong>CGM DEVICE:</strong> ${patientInfo.cgm.toUpperCase()}</div>` : ''}
+    </div>
+    ` : ''}
+    <div class="subtitle">AMBULATORY GLUCOSE PROFILE | ${startDate} → ${endDate} (${metrics.days} DAYS)</div>
+    <div class="subtitle" style="margin-top: 2mm; padding: 2mm; background: #f5f5f5; color: #000; border: 2px solid #ddd;">
+      <strong>CLINICAL SUMMARY:</strong> ${generateClinicalSummary(metrics)}
+    </div>
   </div>
 
   <div class="section">
@@ -453,6 +508,15 @@ export const generateHTML = (options) => {
           <span class="detail-value">${metrics.modd} mg/dL</span>
         </div>
         <div class="detail-row">
+          <span class="detail-label">GRI (glycemia risk index)</span>
+          <span class="detail-value">${metrics.gri} ${
+            Number(metrics.gri) < 20 ? '(Very low)' :
+            Number(metrics.gri) < 40 ? '(Low)' :
+            Number(metrics.gri) < 60 ? '(Moderate)' :
+            Number(metrics.gri) < 80 ? '(High)' : '(Very high)'
+          }</span>
+        </div>
+        <div class="detail-row">
           <span class="detail-label">TAR (time above 180 mg/dL)</span>
           <span class="detail-value">${metrics.tar}%</span>
         </div>
@@ -476,7 +540,7 @@ export const generateHTML = (options) => {
         </div>
         <div class="detail-row">
           <span class="detail-label">Total readings</span>
-          <span class="detail-value">${metrics.readingCount}</span>
+          <span class="detail-value">${metrics.readingCount.toLocaleString()} <span style="font-size: 0.8em; color: #555;">(${metrics.dataQuality?.uptimePercent || 0}% uptime)</span></span>
         </div>
       </div>
     </div>
@@ -497,10 +561,31 @@ export const generateHTML = (options) => {
       </div>
     </div>
     
+    <!-- Annotations below TIR bar for print clarity -->
+    <div style="display: flex; justify-content: space-between; margin-bottom: 3mm; padding: 0 2mm; font-size: 8pt; font-weight: 700;">
+      <div style="text-align: left;">
+        <span style="background: repeating-linear-gradient(45deg, #fff, #fff 2px, #000 2px, #000 4px); padding: 1mm 2mm; border: 2px solid #000;">TBR ${metrics.tbr}%</span>
+      </div>
+      <div style="text-align: center;">
+        <span style="background: #000; color: #fff; padding: 1mm 2mm; border: 2px solid #000;">TIR ${metrics.tir}%</span>
+      </div>
+      <div style="text-align: right;">
+        <span style="background-image: radial-gradient(circle, #000 1px, transparent 1px); background-size: 5px 5px; background-color: #fff; color: #000; padding: 1mm 2mm; border: 2px solid #000;">TAR ${metrics.tar}%</span>
+      </div>
+    </div>
+    
     <div class="tir-legend">
       <span><strong>TBR</strong> &lt;70 mg/dL (striped)</span>
       <span><strong>TIR</strong> 70-180 mg/dL (black - TARGET)</span>
-      <span><strong>TAR</strong> &gt;180 mg/dL (gray)</span>
+      <span><strong>TAR</strong> &gt;180 mg/dL (dotted)</span>
+    </div>
+    
+    <!-- Hypo events summary -->
+    <div style="font-size: 8pt; color: #555; margin-bottom: 3mm; text-align: center;">
+      <strong style="color: #000;">Hypo events/day:</strong> 
+      <strong>${(events.hypoL1.events.length / metrics.days).toFixed(1)}</strong> (≥15min, ≤70 mg/dL) • 
+      <strong style="color: #000;">Severe (&lt;54):</strong> 
+      <strong>${(events.hypoL2.events.length / metrics.days).toFixed(1)}</strong>
     </div>
     
     <svg viewBox="0 0 900 450" width="100%">
@@ -527,41 +612,47 @@ export const generateHTML = (options) => {
       ${[0, 3, 6, 9, 12, 15, 18, 21, 24].map(hour => {
         const x = 60 + (hour / 24) * 780;
         return `
-          <line x1="${x}" y1="50" x2="${x}" y2="360" stroke="#ccc" stroke-width="1" />
+          <line x1="${x}" y1="50" x2="${x}" y2="360" stroke="#bbb" stroke-width="1" />
           <text x="${x}" y="375" font-size="11" text-anchor="middle">${String(hour).padStart(2, '0')}:00</text>
         `;
       }).join('')}
       <text x="450" y="395" font-size="11" font-weight="bold" text-anchor="middle">Time of Day</text>
       
-      <!-- AGP bands - higher contrast -->
-      <path d="${generateAGPBand(agpData, 'p5', 'p95')}" fill="#ddd" />
-      <path d="${generateAGPBand(agpData, 'p25', 'p75')}" fill="#aaa" />
+      <!-- AGP bands - higher contrast for print -->
+      <path d="${generateAGPBand(agpData, 'p5', 'p95')}" fill="#ccc" />
+      <path d="${generateAGPBand(agpData, 'p25', 'p75')}" fill="#999" />
       
       <!-- Median line - thick black -->
       <path d="${generateAGPPath(agpData, 'p50')}" stroke="#000" stroke-width="3" fill="none" />
       
-      <!-- Mean line - dashed -->
-      <path d="${generateAGPPath(agpData, 'mean')}" stroke="#666" stroke-width="2" stroke-dasharray="6,3" fill="none" />
+      <!-- Mean line - dashed (darker for print) -->
+      <path d="${generateAGPPath(agpData, 'mean')}" stroke="#444" stroke-width="2" stroke-dasharray="6,3" fill="none" />
       
       ${comparison ? `
       <!-- Comparison median - dotted -->
       <path d="${generateAGPPath(comparison.comparisonAGP, 'p50')}" stroke="#000" stroke-width="2" stroke-dasharray="2,4" fill="none" />
       ` : ''}
       
+      <!-- Hypo event markers -->
+      ${[...events.hypoL2.events, ...events.hypoL1.events].map(event => {
+        const x = 60 + (event.minuteOfDay / 1440) * 780;
+        return `<line x1="${x}" y1="50" x2="${x}" y2="360" stroke="#ff0000" stroke-width="2" opacity="0.6" />`;
+      }).join('\n      ')}
+      
       <!-- Legend box -->
       <rect x="680" y="60" width="150" height="${comparison ? '110' : '90'}" fill="#fff" stroke="#000" stroke-width="2" />
       <text x="755" y="78" font-size="11" font-weight="bold" text-anchor="middle">LEGEND</text>
       <line x1="690" y1="85" x2="720" y2="85" stroke="#000" stroke-width="3" />
       <text x="725" y="88" font-size="10">Median (p50)</text>
-      <line x1="690" y1="100" x2="720" y2="100" stroke="#666" stroke-width="2" stroke-dasharray="6,3" />
+      <line x1="690" y1="100" x2="720" y2="100" stroke="#444" stroke-width="2" stroke-dasharray="6,3" />
       <text x="725" y="103" font-size="10">Mean</text>
       ${comparison ? `
       <line x1="690" y1="115" x2="720" y2="115" stroke="#000" stroke-width="2" stroke-dasharray="2,4" />
       <text x="725" y="118" font-size="10">Previous</text>
       ` : ''}
-      <rect x="690" y="${comparison ? '125' : '110'}" width="30" height="8" fill="#aaa" />
+      <rect x="690" y="${comparison ? '125' : '110'}" width="30" height="8" fill="#999" />
       <text x="725" y="${comparison ? '132' : '117'}" font-size="10">IQR (p25-p75)</text>
-      <rect x="690" y="${comparison ? '140' : '125'}" width="30" height="8" fill="#ddd" />
+      <rect x="690" y="${comparison ? '140' : '125'}" width="30" height="8" fill="#ccc" />
       <text x="725" y="${comparison ? '147' : '132'}" font-size="10">p5-p95</text>
     </svg>
     
@@ -725,8 +816,32 @@ export const generateHTML = (options) => {
   </div>
   ` : ''}
 
-  <div class="footer">
-    AGP+ V2.1 | MINIMED 780G + GUARDIAN 4 | ADA/ATTD 2019 GUIDELINES | PRINT-OPTIMIZED BRUTALIST DESIGN
+  <div class="footer" style="margin-top: 8mm; padding-top: 4mm; border-top: 3px solid #000; font-size: 7pt;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 2mm;">
+      <div>
+        <strong>REPORT GENERATED:</strong> ${new Date().toLocaleString('nl-NL', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }).toUpperCase()}
+      </div>
+      <div>
+        <strong>AGP+ VERSION:</strong> 2.1.3
+      </div>
+    </div>
+    <div style="display: flex; justify-content: space-between; color: #555;">
+      <div>
+        <strong>ANALYSIS PERIOD:</strong> ${metrics.days} DAYS | ${metrics.readingCount.toLocaleString()} CGM READINGS
+      </div>
+      <div>
+        <strong>DATA QUALITY:</strong> ${metrics.dataQuality?.uptimePercent}% UPTIME
+      </div>
+    </div>
+    <div style="margin-top: 2mm; text-align: center; color: #888;">
+      ADA STANDARDS OF MEDICAL CARE IN DIABETES—2025
+    </div>
   </div>
 </body>
 </html>`;

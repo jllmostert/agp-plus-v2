@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
-import { parseCSV } from '../core/parsers.js';
+import { parseCSV, parseCSVMetadata } from '../core/parsers.js';
+import { patientStorage } from '../utils/patientStorage.js';
 
 /**
  * useCSVData - Custom hook for CSV data management
  * 
  * Handles CSV parsing, date range extraction, and data state management.
+ * Automatically extracts and saves patient metadata from CSV headers.
  * 
  * @returns {Object} CSV data state and handlers
  * @returns {Array|null} csvData - Parsed CSV data array
@@ -13,7 +15,7 @@ import { parseCSV } from '../core/parsers.js';
  * @returns {Function} clearCSV - Clear loaded CSV data
  * @returns {string|null} error - Error message if parsing failed
  * 
- * @version 2.1.0
+ * @version 2.1.2
  */
 export function useCSVData() {
   const [csvData, setCsvData] = useState(null);
@@ -23,7 +25,7 @@ export function useCSVData() {
   /**
    * Load and parse CSV text
    */
-  const loadCSV = useCallback((text) => {
+  const loadCSV = useCallback(async (text) => {
     setError(null);
     
     try {
@@ -32,6 +34,32 @@ export function useCSVData() {
       
       if (data.length === 0) {
         throw new Error('No valid data found in CSV');
+      }
+
+      // Extract and save patient metadata if found
+      try {
+        const metadata = parseCSVMetadata(text);
+        if (metadata) {
+          const existingInfo = await patientStorage.get();
+          
+          // Only update if fields are empty
+          const updates = {};
+          if (metadata.name && !existingInfo?.name) {
+            updates.name = metadata.name;
+          }
+          if (metadata.deviceSerial && !existingInfo?.cgm) {
+            // Save device serial as CGM info
+            updates.cgm = `MiniMed 780G (SN: ${metadata.deviceSerial})`;
+          }
+          
+          if (Object.keys(updates).length > 0) {
+            await patientStorage.update(updates);
+            console.log('✅ Patient metadata extracted from CSV:', updates);
+          }
+        }
+      } catch (metadataErr) {
+        console.warn('Could not extract patient metadata:', metadataErr);
+        // Don't fail CSV load if metadata extraction fails
       }
 
       // Extract date range from data
