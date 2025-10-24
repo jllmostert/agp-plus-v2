@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.2.0] - 2025-10-24
 
+### Changed - AGP Visualization Simplification
+- **Removed Mean Curve**: AGP chart now displays only the median (P50) line
+  - Aligns with ADA/ATTD clinical guidelines for AGP visualization
+  - Median is more robust to outliers and represents "typical day" pattern
+  - Matches commercial CGM platform standards (Medtronic, Dexcom)
+  - Median line now solid black (2.5px) instead of dashed for better visibility
+- **Updated Legend**: Removed "Gemiddeld" (mean) entry, simplified to median + percentile bands
+
 ### Changed - Metrics Layout Reorganization
 - **HypoglycemiaEvents Panel**: Replaced "Total Events" card with GRI (Glycemia Risk Index)
   - New 4-card layout: Level 2 <54 | Level 1 54-70 | TBR <70 | GRI

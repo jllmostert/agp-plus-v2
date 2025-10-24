@@ -19,13 +19,12 @@ import HypoglycemiaEvents from './HypoglycemiaEvents.jsx';
  * agpData[i] = {
  *   p5: number,   // 5th percentile
  *   p25: number,  // 25th percentile
- *   p50: number,  // 50th percentile (median)
+ *   p50: number,  // 50th percentile (median) - PRIMARY CURVE
  *   p75: number,  // 75th percentile
- *   p95: number,  // 95th percentile
- *   mean: number  // Mean glucose
+ *   p95: number   // 95th percentile
  * }
  * 
- * @version 2.1.0
+ * @version 2.2.0 - Simplified to median-only (removed mean curve)
  */
 export default function AGPChart({ 
   agpData, 
@@ -125,24 +124,13 @@ export default function AGPChart({
             opacity="0.5"
           />
 
-          {/* Median line (p50) - black DASHED */}
+          {/* Median line (p50) - black SOLID */}
           <path
             d={paths.median}
             fill="none"
             stroke="#000000"
-            strokeWidth="2"
-            strokeDasharray="4,4"
-            strokeLinecap="butt"
-          />
-          
-          {/* Mean line - orange dashed */}
-          <path
-            d={paths.mean}
-            fill="none"
-            stroke="#fb923c"
-            strokeWidth="2"
-            strokeDasharray="3,3"
-            strokeLinecap="butt"
+            strokeWidth="2.5"
+            strokeLinecap="round"
           />
 
           {/* Comparison overlay (if present) - gray dashed thicker */}
@@ -196,7 +184,6 @@ export default function AGPChart({
 function generatePaths(agpData, xScale, yScale) {
   return {
     median: generatePath(agpData, 'p50', xScale, yScale),
-    mean: generatePath(agpData, 'mean', xScale, yScale),
     band_5_95: generateBand(agpData, 'p95', 'p5', xScale, yScale),
     band_25_75: generateBand(agpData, 'p75', 'p25', xScale, yScale),
   };
@@ -488,8 +475,7 @@ function ChartLegend({ hasComparison }) {
         zIndex: 10
       }}
     >
-      <LegendItem color="#000000" label="Mediaan" thickness={2} isDashed />
-      <LegendItem color="#fb923c" label="Gemiddeld" thickness={2} isDashed />
+      <LegendItem color="#000000" label="Mediaan" thickness={2.5} />
       <LegendItem color="#3b82f6" label="25-75%" isShaded opacity={0.5} />
       <LegendItem color="#93c5fd" label="5-95%" isShaded opacity={0.5} />
       {hasComparison && <LegendItem color="#9ca3af" label="Vorige periode" thickness={2.5} isDashed />}
