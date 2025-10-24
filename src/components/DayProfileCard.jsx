@@ -171,8 +171,9 @@ export default function DayProfileCard({ profile }) {
 }
 
 /**
- * 24-hour glucose curve SVG
- * Range: 40-400 mg/dL
+ * 24-hour glucose curve SVG with adaptive Y-axis
+ * Automatically adjusts range to focus on clinical data while preserving outliers
+ * Range: Adaptive (min: 54-250 mg/dL clinical range, expands for outliers)
  * 288 bins (5-min intervals)
  */
 function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
@@ -182,19 +183,35 @@ function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
   const chartWidth = svgWidth - padding.left - padding.right;
   const chartHeight = svgHeight - padding.top - padding.bottom;
 
-  // Y-axis scale (40-400 mg/dL)
-  const yMin = 40;
-  const yMax = 400;
+  // Calculate adaptive Y-axis range
+  const validGlucose = curve
+    .filter((d) => d.hasData && d.glucose !== null)
+    .map((d) => d.glucose);
+  
+  const dataMin = validGlucose.length > 0 ? Math.min(...validGlucose) : 70;
+  const dataMax = validGlucose.length > 0 ? Math.max(...validGlucose) : 180;
+
+  // Adaptive range: start with clinical range (54-250), expand if needed
+  const yMin = Math.max(40, Math.min(54, dataMin - 20));
+  const yMax = Math.min(400, Math.max(250, dataMax + 20));
+
+  // Detect outliers beyond display range
+  const outlierLow = validGlucose.filter(g => g < yMin);
+  const outlierHigh = validGlucose.filter(g => g > yMax);
+
   const yScale = (glucose) => {
-    return chartHeight - ((glucose - yMin) / (yMax - yMin)) * chartHeight;
+    // Clamp glucose to display range
+    const clampedGlucose = Math.max(yMin, Math.min(yMax, glucose));
+    return chartHeight - ((clampedGlucose - yMin) / (yMax - yMin)) * chartHeight;
   };
 
   // X-axis scale (288 bins = 24 hours)
   const xScale = (bin) => (bin / 288) * chartWidth;
 
-  // Target zone (70-180 mg/dL)
-  const targetLow = yScale(180);
-  const targetHigh = yScale(70);
+  // Target zone (70-180 mg/dL) - only if both boundaries are in range
+  const showTargetZone = yMin <= 70 && yMax >= 180;
+  const targetLow = showTargetZone ? yScale(180) : 0;
+  const targetHigh = showTargetZone ? yScale(70) : 0;
   const targetHeight = targetHigh - targetLow;
 
   // Generate path for glucose curve
@@ -207,18 +224,20 @@ function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
 
   return (
     <svg width="100%" height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
-      {/* Target zone (brutalist grey band) */}
-      <rect
-        x={padding.left}
-        y={padding.top + targetLow}
-        width={chartWidth}
-        height={targetHeight}
-        fill="#E0E0E0"
-        opacity={1}
-      />
+      {/* Target zone (brutalist grey band) - only if fully visible */}
+      {showTargetZone && (
+        <rect
+          x={padding.left}
+          y={padding.top + targetLow}
+          width={chartWidth}
+          height={targetHeight}
+          fill="#E0E0E0"
+          opacity={1}
+        />
+      )}
 
-      {/* Grid lines */}
-      {[70, 180, 250].map((value) => (
+      {/* Grid lines - only show clinical thresholds that are within range */}
+      {[70, 180, 250].filter(v => v >= yMin && v <= yMax).map((value) => (
         <line
           key={value}
           x1={padding.left}
@@ -231,37 +250,29 @@ function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
         />
       ))}
 
-      {/* Y-axis labels */}
+      {/* Y-axis labels - adaptive based on range */}
       <text
         x={padding.left - 10}
-        y={padding.top + yScale(400) + 5}
+        y={padding.top + yScale(yMax) + 5}
         textAnchor="end"
         fontSize="12"
         fontFamily="Courier New, monospace"
         fill="#666"
       >
-        400
+        {Math.round(yMax)}
       </text>
-      <text
-        x={padding.left - 10}
-        y={padding.top + yScale(250) + 5}
-        textAnchor="end"
-        fontSize="12"
-        fontFamily="Courier New, monospace"
-        fill="#666"
-      >
-        250
-      </text>
-      <text
-        x={padding.left - 10}
-        y={padding.top + yScale(180) + 5}
-        textAnchor="end"
-        fontSize="12"
-        fontFamily="Courier New, monospace"
-        fill="#666"
-      >
-        180
-      </text>
+      {yMax > 180 && (
+        <text
+          x={padding.left - 10}
+          y={padding.top + yScale(180) + 5}
+          textAnchor="end"
+          fontSize="12"
+          fontFamily="Courier New, monospace"
+          fill="#666"
+        >
+          180
+        </text>
+      )}
       <text
         x={padding.left - 10}
         y={padding.top + yScale(70) + 5}
@@ -274,14 +285,52 @@ function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
       </text>
       <text
         x={padding.left - 10}
-        y={padding.top + yScale(40) + 5}
+        y={padding.top + yScale(yMin) + 5}
         textAnchor="end"
         fontSize="12"
         fontFamily="Courier New, monospace"
         fill="#666"
       >
-        40
+        {Math.round(yMin)}
       </text>
+
+      {/* Outlier indicators */}
+      {outlierLow.length > 0 && (
+        <g>
+          <polygon
+            points={`${padding.left + chartWidth/2 - 8},${padding.top + chartHeight + 5} ${padding.left + chartWidth/2},${padding.top + chartHeight + 12} ${padding.left + chartWidth/2 + 8},${padding.top + chartHeight + 5}`}
+            fill="#DC2626"
+          />
+          <text
+            x={padding.left + chartWidth/2 + 15}
+            y={padding.top + chartHeight + 12}
+            fontSize="11"
+            fontFamily="Courier New, monospace"
+            fill="#DC2626"
+            fontWeight="bold"
+          >
+            {outlierLow.length} LOW
+          </text>
+        </g>
+      )}
+      {outlierHigh.length > 0 && (
+        <g>
+          <polygon
+            points={`${padding.left + chartWidth/2 - 8},${padding.top - 5} ${padding.left + chartWidth/2},${padding.top - 12} ${padding.left + chartWidth/2 + 8},${padding.top - 5}`}
+            fill="#DC2626"
+          />
+          <text
+            x={padding.left + chartWidth/2 + 15}
+            y={padding.top - 5}
+            fontSize="11"
+            fontFamily="Courier New, monospace"
+            fill="#DC2626"
+            fontWeight="bold"
+          >
+            {outlierHigh.length} HIGH
+          </text>
+        </g>
+      )}
 
       {/* X-axis labels (time) */}
       {[0, 6, 12, 18, 24].map((hour) => (
