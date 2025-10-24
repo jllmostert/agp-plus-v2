@@ -190,14 +190,53 @@ function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
   
   const dataMin = validGlucose.length > 0 ? Math.min(...validGlucose) : 70;
   const dataMax = validGlucose.length > 0 ? Math.max(...validGlucose) : 180;
+  const dataRange = dataMax - dataMin;
+
+  // Dynamic padding: more zoom for tight ranges, less for wide ranges
+  const padding_buffer = dataRange < 100 ? 30 : dataRange < 150 ? 20 : 15;
 
   // Adaptive range: start with clinical range (54-250), expand if needed
-  const yMin = Math.max(40, Math.min(54, dataMin - 20));
-  const yMax = Math.min(400, Math.max(250, dataMax + 20));
+  const yMin = Math.max(40, Math.min(54, dataMin - padding_buffer));
+  const yMax = Math.min(400, Math.max(250, dataMax + padding_buffer));
 
   // Detect outliers beyond display range
   const outlierLow = validGlucose.filter(g => g < yMin);
   const outlierHigh = validGlucose.filter(g => g > yMax);
+  const outlierLowMin = outlierLow.length > 0 ? Math.min(...outlierLow) : null;
+  const outlierHighMax = outlierHigh.length > 0 ? Math.max(...outlierHigh) : null;
+
+  // Calculate smart Y-axis ticks
+  const calculateYTicks = () => {
+    const range = yMax - yMin;
+    const idealTickCount = 5;
+    const roughStep = range / idealTickCount;
+    
+    // Round to nice numbers (20, 25, 40, 50)
+    let step;
+    if (roughStep <= 25) step = 20;
+    else if (roughStep <= 40) step = 25;
+    else if (roughStep <= 60) step = 40;
+    else step = 50;
+
+    const ticks = [];
+    const startTick = Math.ceil(yMin / step) * step;
+    
+    for (let tick = startTick; tick <= yMax; tick += step) {
+      ticks.push(tick);
+    }
+
+    // Always include clinical boundaries if in range
+    if (yMin <= 70 && yMax >= 70 && !ticks.includes(70)) {
+      ticks.push(70);
+    }
+    if (yMin <= 180 && yMax >= 180 && !ticks.includes(180)) {
+      ticks.push(180);
+    }
+
+    return ticks.sort((a, b) => a - b);
+  };
+
+  const yTicks = calculateYTicks();
 
   const yScale = (glucose) => {
     // Clamp glucose to display range
@@ -236,98 +275,74 @@ function GlucoseCurve24h({ curve, events, sensorChanges, agpCurve }) {
         />
       )}
 
-      {/* Grid lines - only show clinical thresholds that are within range */}
-      {[70, 180, 250].filter(v => v >= yMin && v <= yMax).map((value) => (
+      {/* Grid lines - smart ticks with emphasis on clinical boundaries */}
+      {yTicks.map((value) => (
         <line
           key={value}
           x1={padding.left}
           y1={padding.top + yScale(value)}
           x2={padding.left + chartWidth}
           y2={padding.top + yScale(value)}
-          stroke="#ccc"
-          strokeWidth={1}
-          strokeDasharray="4"
+          stroke={value === 70 || value === 180 ? "#999" : "#ddd"}
+          strokeWidth={value === 70 || value === 180 ? 1.5 : 1}
+          strokeDasharray={value === 70 || value === 180 ? "6,3" : "4,4"}
         />
       ))}
 
-      {/* Y-axis labels - adaptive based on range */}
-      <text
-        x={padding.left - 10}
-        y={padding.top + yScale(yMax) + 5}
-        textAnchor="end"
-        fontSize="12"
-        fontFamily="Courier New, monospace"
-        fill="#666"
-      >
-        {Math.round(yMax)}
-      </text>
-      {yMax > 180 && (
+      {/* Y-axis labels - smart ticks */}
+      {yTicks.map((value) => (
         <text
+          key={value}
           x={padding.left - 10}
-          y={padding.top + yScale(180) + 5}
+          y={padding.top + yScale(value) + 5}
           textAnchor="end"
           fontSize="12"
           fontFamily="Courier New, monospace"
-          fill="#666"
+          fill={value === 70 || value === 180 ? "#333" : "#666"}
+          fontWeight={value === 70 || value === 180 ? "bold" : "normal"}
         >
-          180
+          {Math.round(value)}
         </text>
-      )}
-      <text
-        x={padding.left - 10}
-        y={padding.top + yScale(70) + 5}
-        textAnchor="end"
-        fontSize="12"
-        fontFamily="Courier New, monospace"
-        fill="#666"
-      >
-        70
-      </text>
-      <text
-        x={padding.left - 10}
-        y={padding.top + yScale(yMin) + 5}
-        textAnchor="end"
-        fontSize="12"
-        fontFamily="Courier New, monospace"
-        fill="#666"
-      >
-        {Math.round(yMin)}
-      </text>
+      ))}
 
-      {/* Outlier indicators */}
+      {/* Outlier indicators - improved with min/max values */}
       {outlierLow.length > 0 && (
         <g>
+          {/* Arrow pointing down */}
           <polygon
-            points={`${padding.left + chartWidth/2 - 8},${padding.top + chartHeight + 5} ${padding.left + chartWidth/2},${padding.top + chartHeight + 12} ${padding.left + chartWidth/2 + 8},${padding.top + chartHeight + 5}`}
+            points={`${padding.left + 20},${padding.top + chartHeight + 5} ${padding.left + 15},${padding.top + chartHeight + 12} ${padding.left + 25},${padding.top + chartHeight + 12}`}
             fill="#DC2626"
           />
+          {/* Text label */}
           <text
-            x={padding.left + chartWidth/2 + 15}
+            x={padding.left + 35}
             y={padding.top + chartHeight + 12}
             fontSize="11"
             fontFamily="Courier New, monospace"
             fill="#DC2626"
             fontWeight="bold"
           >
-            {outlierLow.length} LOW
+            {outlierLow.length} LOW (min: {Math.round(outlierLowMin)})
           </text>
         </g>
       )}
       {outlierHigh.length > 0 && (
         <g>
+          {/* Arrow pointing up */}
           <polygon
-            points={`${padding.left + chartWidth/2 - 8},${padding.top - 5} ${padding.left + chartWidth/2},${padding.top - 12} ${padding.left + chartWidth/2 + 8},${padding.top - 5}`}
+            points={`${padding.left + 20},${padding.top - 5} ${padding.left + 15},${padding.top - 12} ${padding.left + 25},${padding.top - 12}`}
             fill="#DC2626"
           />
+          {/* Text label */}
           <text
-            x={padding.left + chartWidth/2 + 15}
+            x={padding.left + 35}
             y={padding.top - 5}
             fontSize="11"
             fontFamily="Courier New, monospace"
             fill="#DC2626"
             fontWeight="bold"
           >
-            {outlierHigh.length} HIGH
+            {outlierHigh.length} HIGH (max: {Math.round(outlierHighMax)})
           </text>
         </g>
       )}
