@@ -18,7 +18,7 @@
   const [csvData, setCsvData] = useState(null);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [dayProfiles, setDayProfiles] = useState(null); // [NEW v2.2]
+  const dayProfiles = useDayProfiles(csvData, dateRange, metricsResult); // [v2.2.1: hook replaces useState]
   ```
 
 **DayProfileCard.jsx** [NEW v2.2] (~650 lines)
@@ -239,7 +239,7 @@
 |------|----------|-------|---------|--------------|
 | useCSVData | File upload | parsers.js | csvData, dateRange | Save patient info |
 | useMetrics | Date change | metrics-engine.js | metrics, agp, events | None |
-| useDayProfiles | Data change | day-profile-engine.js | Array of 7 profiles | None |
+| useDayProfiles **[v2.2.1]** | Data/date change | day-profile-engine.js | Array of 7 profiles | None |
 | useUploadStorage | User action | uploadStorage.js | CRUD functions | IndexedDB writes |
 | usePatientInfo | User input | patientStorage.js | patientInfo + update fn | IndexedDB writes |
 

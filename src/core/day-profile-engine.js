@@ -100,9 +100,31 @@ export function getDayProfile(data, date) {
 }
 
 /**
- * Generate 24-hour glucose curve with 5-minute bins
- * @param {Array} dayData - Glucose data for one day
- * @returns {Array} Array of 288 objects with {time, glucose, hasData}
+ * Generate 24-hour glucose curve binned into 5-minute intervals
+ * 
+ * BINNING STRATEGY:
+ * 
+ * - Total bins: 288 (24 hours × 12 bins/hour)
+ * - Bin width: 5 minutes (standard CGM sampling resolution)
+ * - Time mapping: Bin 0 = 00:00-00:05, Bin 143 = 11:55-12:00, etc.
+ * 
+ * Data Structure:
+ * Each bin contains:
+ * - bin: Index (0-287)
+ * - time: Human-readable format (HH:MM)
+ * - glucose: Raw mg/dL value (null if no data)
+ * - hasData: Boolean flag for sparse data handling
+ * 
+ * Why 5-minute bins?
+ * - Matches Medtronic Guardian sensor sampling frequency
+ * - Balances resolution vs. data sparsity
+ * - Standard interval for AGP/CGM visualization (per ATTD consensus)
+ * 
+ * Note: Each bin takes the reading closest to that 5-min mark.
+ * Gaps in data (sensor off, lost signal) are preserved as null values.
+ * 
+ * @param {Array} dayData - Pre-filtered glucose readings for single day
+ * @returns {Array} Array of 288 bin objects with {bin, time, glucose, hasData}
  */
 function generate24HourCurve(dayData) {
   const curve = Array(288).fill(null).map((_, i) => ({
@@ -127,15 +149,32 @@ function generate24HourCurve(dayData) {
 }
 
 /**
- * Detect sensor changes (gaps > 30 minutes)
- * @param {Array} dayData - Glucose data for one day
- * @returns {Array} Array of sensor change events with start and end timestamps
- */
-/**
- * Detect sensor changes (gaps > 30 minutes)
- * @param {Array} allData - Full glucose dataset
- * @param {string} targetDate - Date to get changes for (YYYY/MM/DD)
- * @returns {Array} Array of sensor change markers for this day
+ * Detect sensor changes within a specific day based on data gaps
+ * 
+ * DETECTION ALGORITHM:
+ * 
+ * 1. Gap Detection:
+ *    - Identifies periods with no glucose readings (>30 min)
+ *    - Filters for "major gaps" (3-10 hours) that indicate sensor replacement
+ * 
+ * 2. Threshold Rationale:
+ *    - >3 hours (180 min): Minimum gap for true sensor change
+ *      * Includes 2h warmup period + placement/calibration time
+ *      * Excludes brief sensor dropouts or BG meter calibrations
+ *    - <10 hours (600 min): Maximum realistic sensor change duration
+ *      * Excludes overnight gaps or multi-day data absences
+ *      * Prevents false positives from extended sensor failures
+ * 
+ * 3. Marker Placement:
+ *    - Only marks gap START (when sensor goes offline)
+ *    - No marker at gap END (data resuming is visually obvious in chart)
+ *    - Skips midnight timestamps (00:00:00) to avoid day-boundary artifacts
+ * 
+ * Note: This looks at gaps WITHIN the target day only, not cross-day transitions
+ * 
+ * @param {Array} allData - Full glucose dataset (needed for accurate gap calculation)
+ * @param {string} targetDate - Date to analyze (YYYY/MM/DD format)
+ * @returns {Array} Array of sensor change markers with {timestamp, date, minuteOfDay, gapMinutes, type}
  */
 function detectSensorChanges(allData, targetDate) {
   // Filter data for this specific day first
@@ -197,9 +236,27 @@ function detectSensorChanges(allData, targetDate) {
 }
 
 /**
- * Detect cartridge/reservoir changes (Rewind events)
- * @param {Array} dayData - Glucose data for one day
- * @returns {Array} Array of cartridge change timestamps
+ * Detect insulin pump cartridge/reservoir changes via Rewind events
+ * 
+ * DETECTION METHOD:
+ * 
+ * Medtronic pumps log "Rewind" alarm when:
+ * - User removes reservoir to refill insulin
+ * - Triggers automatic rewind of pump mechanism
+ * - Appears in CSV as alarm string containing "Rewind"
+ * 
+ * Clinical Context:
+ * - Cartridge changes typically every 2-3 days
+ * - Often coincides with infusion set changes
+ * - Useful for correlating glycemic patterns with fresh insulin/tubing
+ * 
+ * Chart Display:
+ * - Orange marker on day profile chart
+ * - Shows exact time of reservoir replacement
+ * - Helps identify if poor control correlates with old insulin/sets
+ * 
+ * @param {Array} dayData - Glucose readings for single day (pre-filtered by date)
+ * @returns {Array} Array of cartridge change markers with {timestamp, minuteOfDay}
  */
 function detectCartridgeChanges(dayData) {
   const changes = [];
