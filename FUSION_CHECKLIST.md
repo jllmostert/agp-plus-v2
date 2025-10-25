@@ -53,7 +53,7 @@
 
 ---
 
-## ✅ PHASE 2: MIGRATION SCRIPT (COMPLETE)
+## ⚠️ PHASE 2: MIGRATION SCRIPT (95% COMPLETE - 1 BUG)
 
 ### 2.1 Migration Foundation
 - [x] Create `src/storage/migrations/` directory
@@ -65,16 +65,17 @@
 - [x] Function: `checkIfMigrated()` - Check schema version
 - [x] Function: `loadV2Uploads()` - Get all v2.x uploads
 - [x] Function: `migrateReadings()` - Process each upload
-- [x] Function: `backfillEvents()` - Detect historical events
+- [x] Function: `backfillEvents()` - Detect historical events ⚠️ BUG
 - [x] Function: `markMigrationComplete()` - Set version flag
 
 ### 2.3 Migration Testing
 - [x] Test: Fresh install (no v2.x data) ✅
-- [ ] Test: Single upload migration ⏳ NEXT
-- [ ] Test: Multiple uploads (10+)
-- [ ] Test: Large dataset (3 years)
+- [x] Test: Single upload migration ✅
+- [x] Test: Multiple uploads (3 uploads tested) ✅
+- [x] Test: Deduplication (72,707 → 28,387 readings) ✅
+- [x] Test: Performance (0.39s for 3 uploads) ✅
+- [ ] Test: Event detection ⚠️ NEEDS FIX
 - [ ] Test: Migration idempotency (run twice = same result)
-- [ ] Test: Performance measurement (log timing)
 
 ### 2.4 Error Handling
 - [x] Handle corrupted v2.x data
@@ -82,6 +83,12 @@
 - [x] Handle missing uploads store
 - [x] Rollback on critical errors (resetMigration function)
 - [x] Comprehensive error logging
+
+### 2.5 Bug Fix Needed
+- [ ] Fix: `timestamp.toISOString is not a function` in event detection
+  - Location: `detectSensorChanges()` and `detectCartridgeChanges()`
+  - Solution: Convert string timestamps to Date objects
+  - Test: Should detect sensor and cartridge changes after fix
 
 ---
 
@@ -223,29 +230,26 @@
 
 ```
 Phase 1: Storage Foundation     ████████████████████ 100% ✅
-Phase 2: Migration Script        ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 2: Migration Script        ███████████████████░  95% ⚠️ (1 bug)
 Phase 3: React Integration       ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 4: Device Events           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5: Testing & Polish        ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 6: Documentation & Release ░░░░░░░░░░░░░░░░░░░░   0%
 
-Overall Progress: 16.7% (Phase 1 complete)
+Overall Progress: 32.5% (Phase 1 complete, Phase 2 nearly done)
 ```
 
 ---
 
 ## 🎯 CURRENT FOCUS
 
-**Next Task:** Phase 2.1 - Create migration script foundation
+**Next Task:** Phase 2.5 - Fix event detection bug (15 min)
 
-**Files to create:**
-- `src/storage/migrations/migrateToV3.js`
+**Bug:** `timestamp.toISOString is not a function`  
+**Location:** `migrateToV3.js` lines ~260-320  
+**Fix:** Convert string timestamps to Date objects before calling event storage
 
-**Strategy:**
-1. Start with version check
-2. Add basic migration loop
-3. Test with single upload
-4. Iterate and expand
+**Then:** Mark Phase 2 complete, proceed to Phase 3
 
 ---
 

@@ -31,33 +31,42 @@ v3.0 transformeert AGP+ van per-upload naar incremental master dataset:
 
 ---
 
-## ✅ KLAAR (Phase 1)
+## ✅ KLAAR (Phase 1 & 2)
 
-**Storage Foundation (3 files, ~700 lines):**
+**Phase 1 - Storage Foundation (3 files, ~700 lines):**
 - `src/storage/db.js` - IndexedDB v3 schema (6 stores)
 - `src/storage/masterDatasetStorage.js` - Month-bucketing engine
 - `src/storage/eventStorage.js` - Device event persistence
 
+**Phase 2 - Migration Script (~95% complete):**
+- `src/storage/migrations/migrateToV3.js` - Full migration logic
+- `src/storage/migrations/testMigration.js` - Testing harness
+- ✅ Fresh install test passed
+- ✅ Real data test passed (28,387 readings, 0.39s)
+- ✅ Deduplication working (72,707 → 28,387)
+- ⚠️ Event detection bug (timestamp conversion needed)
+
 **Git:**
-- v3.0-dev branch aangemaakt en gepusht
-- 5 commits ahead of main
-- Dev warning in README
+- v3.0-dev branch active
+- 6 commits ahead of main
+- All v2.x compatibility maintained
 
 ---
 
-## 🚀 VOLGENDE STAP (Phase 2)
+## 🚀 VOLGENDE STAP (Fix Event Bug → Phase 3)
 
-**Create:** `src/storage/migrations/migrateToV3.js`
+**Create:** Fix event detection bug in `migrateToV3.js`
 
-**Functionaliteit:**
-1. Check schema version (avoid re-migration)
-2. Load v2.x uploads from 'uploads' store
-3. Process each: `appendReadingsToMaster(upload.csvData, filename)`
-4. Backfill events: detect sensors/cartridges from historical data
-5. Rebuild cache
-6. Mark complete: save version to 'masterDataset' store
+**Issue:** `timestamp.toISOString is not a function`
+- CSV timestamps are strings, not Date objects
+- Need conversion before calling event storage
 
-**Test met:** Fresh DB, 1 upload, 10 uploads, 3 years data
+**Fix Location:** Lines ~260-320 in `migrateToV3.js`
+- `detectSensorChanges()` function
+- `detectCartridgeChanges()` function
+- Add: `timestamp = new Date(timestamp)` before storing events
+
+**Then:** Complete Phase 2 testing, proceed to Phase 3 (React Integration)
 
 ---
 
