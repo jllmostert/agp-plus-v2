@@ -52,7 +52,6 @@ export async function storeSensorChange(timestamp, gapMinutes, sourceFile) {
   };
   
   await putRecord(STORES.SENSOR_EVENTS, event);
-  console.log(`[SensorEvent] Stored: ${timestamp.toISOString()}`);
 }
 
 /**
@@ -77,7 +76,6 @@ export async function storeCartridgeChange(timestamp, alarmText, sourceFile) {
   };
   
   await putRecord(STORES.CARTRIDGE_EVENTS, event);
-  console.log(`[CartridgeEvent] Stored: ${timestamp.toISOString()}`);
 }
 
 /**
