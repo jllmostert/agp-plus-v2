@@ -193,6 +193,21 @@
   - `loadPatientInfo()` → restore from DB
 - **Storage:** IndexedDB (`patientInfoDB`)
 
+**useDayProfiles.js** (~94 lines) **[NEW v2.2.1]**
+- **Role:** Individual day profile generation
+- **Triggers:** When csvData or dateRange changes
+- **Calls:** day-profile-engine.js (getLastSevenDays)
+- **Returns:** Array of 7 day profile objects, or null
+- **Includes:**
+  - Per-day metrics (TIR, TAR, TBR, mean, SD, CV, GMI)
+  - 24h glucose curves (288 5-minute bins)
+  - Event detection (hypo L1/L2, hyper)
+  - Sensor/cartridge change markers
+  - Achievement badges
+  - AGP overlay data for comparison
+- **Architecture:** Extracted from AGPGenerator component (v2.2.1)
+- **Purpose:** Separates business logic from UI orchestration
+
 ---
 
 ### `/src/storage/` - IndexedDB Helpers
@@ -224,6 +239,7 @@
 |------|----------|-------|---------|--------------|
 | useCSVData | File upload | parsers.js | csvData, dateRange | Save patient info |
 | useMetrics | Date change | metrics-engine.js | metrics, agp, events | None |
+| useDayProfiles | Data change | day-profile-engine.js | Array of 7 profiles | None |
 | useUploadStorage | User action | uploadStorage.js | CRUD functions | IndexedDB writes |
 | usePatientInfo | User input | patientStorage.js | patientInfo + update fn | IndexedDB writes |
 

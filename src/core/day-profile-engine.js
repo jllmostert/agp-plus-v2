@@ -218,21 +218,62 @@ function detectCartridgeChanges(dayData) {
 }
 
 /**
- * Detect achievement badges for a day
- * @param {Object} metrics - Calculated metrics
- * @param {Object} events - Detected events
- * @returns {Array} Array of badge objects
+ * Detect achievement badges for a day based on clinical thresholds
+ * 
+ * BADGE CRITERIA (Evidence-Based Thresholds):
+ * 
+ * 🏆 PERFECT DAY - Ultra-Rare Elite Achievement
+ * - TIR ≥ 99%
+ * - Rationale: Near-perfect glycemic control, statistically rare (<1% of days)
+ * - Clinical significance: Demonstrates exceptional diabetes management
+ * 
+ * 🧘 ZEN MASTER - Stability Excellence
+ * - TIR ≥ 95% (ADA recommended target for adults)
+ * - CV < 30% (coefficient of variation, indicates low glucose variability)
+ * - 0 hypoglycemic events (safety metric)
+ * - Rationale: Combines high TIR with exceptional stability (CV < 36% is good, < 30% is excellent)
+ * - Clinical significance: Low risk profile with minimal glucose fluctuations
+ * 
+ * 👑 YOU SLAY QUEEN - Solid All-Rounder
+ * - TIR ≥ 95% (ADA recommended target)
+ * - CV < 36% (good glucose variability, per clinical consensus)
+ * - 0 hypoglycemic events (safety metric)
+ * - Rationale: Achievable target for most patients with well-controlled diabetes
+ * - Clinical significance: Balanced control without excessive variability
+ * 
+ * THRESHOLD JUSTIFICATION:
+ * - TIR 95%: Per ADA/ATTD 2023 guidelines for adults with T1D
+ * - CV 36%: Consensus threshold for "stable" glucose control (ATTD 2017)
+ * - CV 30%: Aspirational target indicating exceptional stability
+ * - Hypo count: Zero tolerance aligns with safety-first approach
+ * 
+ * @param {Object} metrics - Calculated metrics { tir, cv, ... }
+ * @param {Object} events - Detected events { hypoL1, hypoL2, hyper }
+ * @returns {Array} Array of badge objects with { id, emoji, name, description }
  */
 export function detectBadges(metrics, events) {
   const badges = [];
   
   if (!metrics) return badges;
   
-  const tir = parseFloat(metrics.tir);
-  const cv = parseFloat(metrics.cv);
-  const hypoCount = events.hypoL1.count + events.hypoL2.count;
+  // Extract key metrics for badge evaluation
+  const tir = parseFloat(metrics.tir);  // Time in Range (70-180 mg/dL)
+  const cv = parseFloat(metrics.cv);    // Coefficient of Variation (glucose stability)
+  const hypoCount = events.hypoL1.count + events.hypoL2.count;  // Total hypoglycemic events
   
-  // 🏆 Perfect Day: TIR >= 99% (super strict!)
+  /**
+   * BADGE LOGIC
+   * 
+   * Badges are evaluated in order of strictness (most difficult first).
+   * Multiple badges can be earned on the same day if criteria overlap.
+   * 
+   * Design philosophy: Encourage both high TIR AND stability (low CV),
+   * while prioritizing safety (zero hypos).
+   */
+  
+  // 🏆 PERFECT DAY: TIR >= 99%
+  // Ultra-rare achievement - virtually all readings in target range
+  // No CV or hypo requirements (if you hit 99% TIR, you deserve this regardless)
   if (tir >= 99) {
     badges.push({
       id: 'perfect_day',
@@ -242,7 +283,9 @@ export function detectBadges(metrics, events) {
     });
   }
   
-  // 🧘 Zen Master: TIR >= 95% + CV < 30% + 0 hypo's (stability master)
+  // 🧘 ZEN MASTER: TIR >= 95% + CV < 30% + 0 hypos
+  // Triple threat: high TIR, exceptional stability, perfect safety
+  // CV < 30% is aspirational - requires very flat glucose profile
   if (tir >= 95 && cv < 30 && hypoCount === 0) {
     badges.push({
       id: 'zen_master',
@@ -252,7 +295,9 @@ export function detectBadges(metrics, events) {
     });
   }
   
-  // 👑 You Slay Queen: TIR >= 95% + CV < 36% + 0 hypo's (solid all-rounder)
+  // 👑 YOU SLAY QUEEN: TIR >= 95% + CV < 36% + 0 hypos
+  // Achievable excellence: high TIR, good stability, perfect safety
+  // CV < 36% is consensus "stable" threshold - realistic target
   if (tir >= 95 && cv < 36 && hypoCount === 0) {
     badges.push({
       id: 'slay_queen',

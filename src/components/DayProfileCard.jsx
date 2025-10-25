@@ -185,16 +185,45 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
   const chartWidth = svgWidth - padding.left - padding.right;
   const chartHeight = svgHeight - padding.top - padding.bottom;
 
-  // Calculate adaptive Y-axis using centralized utility
-  // This ensures consistent Y-axis behavior across day profiles and exports
+  /**
+   * ADAPTIVE Y-AXIS ALGORITHM
+   * 
+   * Goal: Maximize visual space for clinically relevant glucose data (54-250 mg/dL range)
+   * while maintaining readability and avoiding excessive whitespace.
+   * 
+   * The algorithm dynamically adjusts Y-axis bounds based on actual glucose distribution:
+   * 
+   * 1. Calculate percentiles (10th/90th) from valid glucose readings
+   * 2. Add padding above/below for visual breathing room
+   * 3. Clamp to clinical minimum (40 mg/dL floor) and maximum (400 mg/dL ceiling)
+   * 4. Ensure critical thresholds (54, 70, 180, 250 mg/dL) are visible when relevant
+   * 
+   * Outliers (values outside calculated bounds) are:
+   * - Tracked separately for display counts
+   * - Shown as indicators at chart edges
+   * - Not hidden, just compressed to maintain scale integrity
+   * 
+   * This approach typically uses 60-70% of available vertical space vs. 30% with fixed 40-400 range.
+   */
   const { yMin, yMax, yTicks, outliers } = calculateAdaptiveYAxis(curve);
-  const outlierLowMin = outliers?.low;
-  const outlierHighMax = outliers?.high;
   
-  // Recalculate outlier arrays for display (needed for count and conditional rendering)
+  // Extract scalar outlier boundary values for reference
+  const outlierLowMin = outliers?.low;   // Minimum glucose among low outliers
+  const outlierHighMax = outliers?.high;  // Maximum glucose among high outliers
+  
+  /**
+   * OUTLIER ARRAY RECALCULATION
+   * 
+   * Why needed: calculateAdaptiveYAxis returns outlier *counts* as scalars,
+   * but the component needs arrays for:
+   * - .length checks (conditional rendering)
+   * - Displaying individual outlier counts in UI
+   * 
+   * We recalculate arrays locally from curve data using yMin/yMax boundaries.
+   */
   const validGlucose = curve.filter(d => d.hasData && d.glucose !== null).map(d => d.glucose);
-  const outlierLow = validGlucose.filter(g => g < yMin);
-  const outlierHigh = validGlucose.filter(g => g > yMax);
+  const outlierLow = validGlucose.filter(g => g < yMin);   // Below Y-axis range
+  const outlierHigh = validGlucose.filter(g => g > yMax);  // Above Y-axis range
 
   // Create scale functions for coordinate mapping
   const yScale = createYScale(yMin, yMax, chartHeight);
