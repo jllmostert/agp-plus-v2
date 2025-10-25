@@ -2,7 +2,7 @@
 
 **Branch:** v3.0-dev  
 **Started:** October 25, 2025  
-**Status:** Phase 1 Complete ✅
+**Status:** Phase 2 Complete ✅
 
 ---
 
@@ -12,6 +12,7 @@
 - [x] `docs/V3_ARCHITECTURE.md` - Technical architecture overview
 - [x] `docs/GIT_WORKFLOW_V3.md` - Branch management tutorial
 - [x] `MIGRATING_TO_V3.md` - User-facing migration guide
+- [x] `MIGRATION_TESTING.md` - Testing guide for migration
 
 ### Git Setup
 - [x] Created `v3.0-dev` branch from main (v2.2.1)
@@ -25,28 +26,37 @@
 
 **Commit:** `b5a678e` - "feat: add v3.0 IndexedDB schema and storage engines"
 
+### Phase 2: Migration Script
+- [x] `src/storage/migrations/migrateToV3.js` - Complete migration engine
+  - [x] Version check (idempotency)
+  - [x] v2.x upload processing
+  - [x] Device event backfill (sensor/cartridge detection)
+  - [x] Cache rebuild
+  - [x] Error handling & recovery
+  - [x] Performance logging
+- [x] `src/storage/migrations/testMigration.js` - Browser console test utilities
+- [x] `MIGRATION_TESTING.md` - Comprehensive testing guide
+
+**Next commit:** Ready to commit Phase 2 completion
+
 ---
 
 ## 🚧 NEXT STEPS
 
-### Phase 2: Migration Script (2-3 hours)
+### Phase 2 Testing (1-2 hours) ⏳ IMMEDIATE NEXT
 
-**File to create:** `src/storage/migrations/migrateToV3.js`
+**Manual testing required:**
+- [ ] Fresh install test (no v2.x data)
+- [ ] Single upload migration
+- [ ] Multiple uploads (10+)
+- [ ] Idempotency test (run twice)
+- [ ] Performance measurement
+- [ ] IndexedDB verification
 
-**What it does:**
-1. Check if already migrated (version check)
-2. Load all v2.x uploads from 'uploads' store
-3. Extract readings from each upload
-4. Call `appendReadingsToMaster()` for each
-5. Backfill device events (sensor/cartridge)
-6. Rebuild cache
-7. Mark migration complete
+**Test environment:** localhost:5173 (dev server)
+**Test tools:** Browser console + IndexedDB inspector
 
-**Test with:**
-- Fresh install (no v2.x data)
-- 1 upload (small dataset)
-- 10+ uploads (realistic scenario)
-- Measure performance
+**See:** `MIGRATION_TESTING.md` for step-by-step guide
 
 ### Phase 3: React Integration (3-4 hours)
 
