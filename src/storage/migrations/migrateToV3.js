@@ -113,10 +113,19 @@ async function migrateReadings(upload, index, total) {
       return stats;
     }
     
-    // Parse CSV
+    // Handle CSV data (might be raw text or already parsed)
     let parsedData;
     try {
-      parsedData = parseCSV(upload.csvData);
+      // Check if csvData is already parsed (array) or needs parsing (string)
+      if (Array.isArray(upload.csvData)) {
+        console.log(`[Migration] Using pre-parsed csvData (${upload.csvData.length} rows)`);
+        parsedData = upload.csvData;
+      } else if (typeof upload.csvData === 'string') {
+        console.log(`[Migration] Parsing CSV text`);
+        parsedData = parseCSV(upload.csvData);
+      } else {
+        throw new Error(`Invalid csvData format: ${typeof upload.csvData}`);
+      }
     } catch (parseErr) {
       stats.errors.push(`CSV parse error: ${parseErr.message}`);
       console.error(`[Migration] ❌ Failed to parse CSV for ${upload.id}:`, parseErr);

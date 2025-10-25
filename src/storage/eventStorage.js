@@ -11,7 +11,7 @@
  * - cartridge_change: Detected from "Rewind" alarms
  */
 
-import { STORES, getRecord, putRecord, queryByIndex } from './db.js';
+import { STORES, openDB, getRecord, putRecord, queryByIndex } from './db.js';
 
 /**
  * Generate idempotent event ID from timestamp
