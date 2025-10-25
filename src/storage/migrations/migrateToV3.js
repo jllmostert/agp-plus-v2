@@ -287,14 +287,15 @@ async function detectSensorChanges(parsedData, sourceFile, stats) {
  * @param {Object} stats - Stats object to update
  */
 async function detectCartridgeChanges(parsedData, sourceFile, stats) {
-  // Find all Rewind events
+  // Find all Rewind events and convert to Date objects
   const rewindEvents = parsedData
-    .filter(row => row.rewind === true)
+    .filter(row => row.rewind === true && row.date && row.time)  // Ensure date/time exist
     .map(row => {
       const [year, month, day] = row.date.split('/').map(Number);
       const [hours, minutes, seconds] = row.time.split(':').map(Number);
       return new Date(year, month - 1, day, hours, minutes, seconds);
-    });
+    })
+    .filter(date => !isNaN(date.getTime()));  // Filter out invalid dates
   
   if (rewindEvents.length === 0) return;
   
