@@ -41,12 +41,6 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
   useEffect(() => {
     // Early exit if any required data is missing
     if (!csvData || csvData.length === 0 || !startDate || !endDate || !dateRange) {
-      console.log('[useComparison] NULL because:', {
-        csvData: csvData ? `${csvData.length} readings` : 'null',
-        startDate: startDate ? startDate.toISOString() : 'null',
-        endDate: endDate ? endDate.toISOString() : 'null',
-        dateRange: dateRange ? `${dateRange.min?.toISOString?.()}-${dateRange.max?.toISOString?.()}` : 'null'
-      });
       setComparisonData(null);
       return;
     }
@@ -58,19 +52,10 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
       const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
       const currentPeriodDays = Math.round((endDay - startDay) / (1000 * 60 * 60 * 24)) + 1;
 
-      console.log('[useComparison] Current period:', {
-        days: currentPeriodDays,
-        start: startDate.toISOString(),
-        end: endDate.toISOString(),
-        startDay: startDay.toDateString(),
-        endDay: endDay.toDateString()
-      });
-
       // Only auto-compare for 14 and 30 day periods (not 90 days - too long)
       const isPresetPeriod = [14, 30].includes(currentPeriodDays);
       
       if (!isPresetPeriod) {
-        console.log('[useComparison] Not preset period:', currentPeriodDays);
         setComparisonData(null);
         return;
       }
@@ -81,12 +66,6 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
       
       const prevStart = new Date(prevEnd);
       prevStart.setDate(prevStart.getDate() - currentPeriodDays + 1);
-
-      console.log('[useComparison] Previous period:', {
-        start: prevStart.toISOString(),
-        end: prevEnd.toISOString(),
-        dateRangeMin: dateRange.min?.toISOString?.() || dateRange.min
-      });
 
       // Ensure dateRange.min is a Date object (might be string from V3)
       const datasetMinDate = dateRange.min instanceof Date 
@@ -107,37 +86,14 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
       const prevStartStr = formatDateForMetrics(prevStart);
       const prevEndStr = formatDateForMetrics(prevEnd);
       
-      console.log('[useComparison] Calculating metrics for:', {
-        prevStartStr,
-        prevEndStr,
-        dataLength: csvData.length
-      });
-      
       const comparison = calculateMetrics(csvData, prevStartStr, prevEndStr);
       const comparisonAGP = calculateAGP(csvData, prevStartStr, prevEndStr);
 
-      console.log('[useComparison] Calculation results:', {
-        comparison: comparison ? `readingCount=${comparison.readingCount}` : 'NULL',
-        comparisonAGP: comparisonAGP ? `${comparisonAGP.length} points` : 'NULL'
-      });
-
       // Verify we have valid data
       if (!comparison || !comparisonAGP || comparison.readingCount < 100) {
-        console.log('[useComparison] Insufficient data for comparison:', {
-          hasComparison: !!comparison,
-          hasAGP: !!comparisonAGP,
-          readingCount: comparison?.readingCount || 0,
-          minRequired: 100
-        });
         setComparisonData(null);
         return;
       }
-
-      console.log('[useComparison] ✅ Comparison data generated successfully:', {
-        readingCount: comparison.readingCount,
-        tir: comparison.tir,
-        agpPoints: comparisonAGP.length
-      });
 
       setComparisonData({
         comparison,
