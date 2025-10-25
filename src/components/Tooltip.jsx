@@ -18,8 +18,14 @@ export default function Tooltip({ text, children }) {
     <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
       {children}
       <button
-        onMouseEnter={() => setVisible(true)}
-        onMouseLeave={() => setVisible(false)}
+        onMouseEnter={(e) => {
+          setVisible(true);
+          e.currentTarget.style.opacity = '1';
+        }}
+        onMouseLeave={(e) => {
+          setVisible(false);
+          e.currentTarget.style.opacity = '0.6';
+        }}
         onClick={(e) => {
           e.preventDefault();
           setVisible(!visible);
@@ -34,8 +40,6 @@ export default function Tooltip({ text, children }) {
           opacity: 0.6,
           transition: 'opacity 0.2s'
         }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
       >
         <HelpCircle style={{ width: '14px', height: '14px' }} />
       </button>
