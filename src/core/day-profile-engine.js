@@ -138,12 +138,17 @@ function generate24HourCurve(dayData) {
  * @returns {Array} Array of sensor change markers for this day
  */
 function detectSensorChanges(allData, targetDate) {
-  const sorted = [...allData].sort((a, b) => 
+  // Filter data for this specific day first
+  const dayData = allData.filter(row => row.date === targetDate);
+  
+  if (dayData.length === 0) return [];
+  
+  // Sort by time
+  const sorted = [...dayData].sort((a, b) => 
     utils.parseDate(a.date, a.time) - utils.parseDate(b.date, b.time)
   );
   
-  // Detect all gaps in the full dataset (>30 minutes)
-  // But only mark MAJOR gaps as sensor changes (longest gaps)
+  // Detect gaps WITHIN this day only (>30 minutes)
   const gaps = [];
   
   for (let i = 1; i < sorted.length; i++) {
@@ -162,36 +167,33 @@ function detectSensorChanges(allData, targetDate) {
     }
   }
   
-  // Filter for sensor change gaps: 2-10 hours
-  // - >2 hours: captures warming up period
+  // Filter for sensor change gaps: 3-10 hours
+  // - >3 hours: true sensor changes (warmup + placement time)
   // - <10 hours: excludes normal overnight gaps or multi-day absences
-  const majorGaps = gaps.filter(g => g.gapMinutes > 120 && g.gapMinutes < 600);
+  // Note: 2-hour gaps are often BG tests or brief sensor issues, not replacements
+  const majorGaps = gaps.filter(g => g.gapMinutes > 180 && g.gapMinutes < 600);
   
   const allChanges = [];
   for (const gap of majorGaps) {
-    // Add marker at START of gap (sensor went offline)
+    // Add marker at START of gap ONLY (sensor went offline)
+    // No marker at END - data resuming is visually obvious
+    
+    // Skip markers at exact midnight (00:00:00) - these are day-boundary artifacts
+    const minuteOfDay = gap.prev.getHours() * 60 + gap.prev.getMinutes();
+    if (minuteOfDay === 0) {
+      continue; // Skip midnight timestamps
+    }
+    
     allChanges.push({
       timestamp: gap.prev,
       date: gap.prevDate,
-      minuteOfDay: gap.prev.getHours() * 60 + gap.prev.getMinutes(),
+      minuteOfDay: minuteOfDay,
       gapMinutes: Math.round(gap.gapMinutes),
       type: 'start'
     });
-    
-    // Add marker at END of gap (sensor came back online)
-    allChanges.push({
-      timestamp: gap.curr,
-      date: gap.currDate,
-      minuteOfDay: gap.curr.getHours() * 60 + gap.curr.getMinutes(),
-      gapMinutes: Math.round(gap.gapMinutes),
-      type: 'end'
-    });
   }
   
-  // Filter to include changes for the target date
-  const targetChanges = allChanges.filter(change => change.date === targetDate);
-  
-  return targetChanges;
+  return allChanges;
 }
 
 /**

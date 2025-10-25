@@ -1,8 +1,21 @@
 # AGP+ V2.2.0 - HANDOFF PROMPT
 
-**Last updated:** October 24, 2025  
-**Version:** 2.2.0 - Day Profiles Edition  
+**Last updated:** October 25, 2025  
+**Version:** 2.2.1 - Sensor Change Detection Fix  
 **Project:** AGP+ (Ambulatory Glucose Profile Plus)
+
+---
+
+## 🔧 RECENT FIXES (v2.2.1)
+
+### Sensor Change Detection Bug (Oct 25, 2025)
+**Problem:** False sensor change markers appeared on days without any data gaps.
+**Root cause:** Gap detection looked at cross-day gaps (e.g., 23 Oct 23:53 → 24 Oct 07:01) and attributed them to individual days.
+**Fix:** 
+- Now detects gaps only WITHIN each day (not cross-day)
+- Removed END markers (only show START of gap)
+- Filter out midnight (00:00:00) artifacts
+**Files changed:** `src/core/day-profile-engine.js`
 
 ---
 
@@ -286,12 +299,20 @@ const ticks = calculateYTicks(yMin, yMax);
 
 ### Sensor Change
 
-**Detection:** Data gap > 30 minutes
+**Detection:** Data gap > 3 hours within same day
 
 ```javascript
-// Major gaps (2-10 hours) = sensor change
-// Marked at LAST reading before gap (red dashed line)
-// No marker when data resumes (visually obvious)
+// Gap detection parameters:
+// - Minimum gap: 180 minutes (3 hours)
+// - Maximum gap: 600 minutes (10 hours)
+// - Scope: Only within same day (no cross-day gaps)
+// - Marked at START of gap only (red dashed line)
+// - Excludes midnight (00:00:00) timestamps (artifacts)
+//
+// Why 3 hours minimum:
+// - True sensor changes: 3-6 hours (placement + warmup)
+// - BG tests/brief issues: typically < 3 hours
+// - Cross-day gaps: filtered out to prevent false positives
 ```
 
 ### Cartridge Change
