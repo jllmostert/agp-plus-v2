@@ -2,7 +2,8 @@
 
 **Branch:** v3.0-dev  
 **Started:** October 25, 2025  
-**Status:** Phase 2 Complete ✅
+**Last Updated:** October 25, 2025 - 23:30 CET  
+**Status:** Phase 2 ~95% Complete ⚠️ (1 minor bug)
 
 ---
 
@@ -13,41 +14,83 @@
 - [x] `docs/GIT_WORKFLOW_V3.md` - Branch management tutorial
 - [x] `MIGRATING_TO_V3.md` - User-facing migration guide
 - [x] `MIGRATION_TESTING.md` - Testing guide for migration
+- [x] `HANDOFF_SESSION_2025-10-25.md` - Detailed session handoff
 
 ### Git Setup
 - [x] Created `v3.0-dev` branch from main (v2.2.1)
 - [x] Added development warning banner to README
-- [x] Pushed to GitHub
+- [x] Pushed to GitHub (7 commits ahead of main)
 
-### Phase 1: Storage Foundation
+### Phase 1: Storage Foundation ✅ 100%
 - [x] `src/storage/db.js` - IndexedDB v3 schema with 6 stores
 - [x] `src/storage/masterDatasetStorage.js` - Month-bucketing + caching
 - [x] `src/storage/eventStorage.js` - Device event persistence
 
-**Commit:** `b5a678e` - "feat: add v3.0 IndexedDB schema and storage engines"
+**Status:** Complete, tested, working perfectly
 
-### Phase 2: Migration Script
+### Phase 2: Migration Script ⚠️ 95%
 - [x] `src/storage/migrations/migrateToV3.js` - Complete migration engine
-  - [x] Version check (idempotency)
-  - [x] v2.x upload processing
-  - [x] Device event backfill (sensor/cartridge detection)
-  - [x] Cache rebuild
-  - [x] Error handling & recovery
-  - [x] Performance logging
-- [x] `src/storage/migrations/testMigration.js` - Browser console test utilities
-- [x] `MIGRATION_TESTING.md` - Comprehensive testing guide
+  - [x] Version check (idempotency) ✅
+  - [x] v2.x upload processing ✅
+  - [x] Month bucketing (4 buckets tested) ✅
+  - [x] Deduplication (72,707 → 28,387 readings) ✅
+  - [x] Cache rebuild (42ms for 28k readings) ✅
+  - [x] Performance (0.39s total) ✅
+  - [x] Error handling & recovery ✅
+  - [ ] Device event backfill ⚠️ BUG (timestamp conversion)
+- [x] `src/storage/migrations/testMigration.js` - Testing utilities
+- [x] v2.x compatibility fixes (`uploadStorage.js`, `patientStorage.js`)
 
-**Next commit:** Ready to commit Phase 2 completion
+**Latest Commits:**
+- `c1e578a` - "docs: update handoff and progress docs after Phase 2 testing success"
+- `69f8bb9` - "fix: migrate uploadStorage and patientStorage to use v3 db.js"
+- `2e8d1cf` - "fix: use 'id' keyPath for migration record, handle pre-parsed data"
+- `c098bc5` - "fix: add openDB import to eventStorage, handle pre-parsed csvData"
+
+### Phase 2 Testing ✅ MOSTLY COMPLETE
+- [x] Fresh install test (no v2.x data) ✅
+- [x] Multiple uploads (3 tested) ✅
+- [x] Deduplication test ✅
+- [x] Performance measurement ✅
+- [ ] Event detection ⚠️ BUG
+- [ ] Migration idempotency (run twice)
+
+**Test Results (October 25, 2025):**
+```
+✅ 3 uploads processed
+✅ 72,707 total readings → 28,387 unique (perfect deduplication)
+✅ 4 month buckets created (Jul-Oct 2025)
+✅ Cache rebuilt in 42ms
+✅ Total migration time: 0.39s
+❌ Event detection failed (timestamp conversion bug)
+```
+
+---
+
+## 🐛 KNOWN ISSUES
+
+### Phase 2: Event Detection Bug
+**Issue:** `TypeError: timestamp.toISOString is not a function`  
+**Location:** `migrateToV3.js` lines ~260-320 in `detectSensorChanges()` and `detectCartridgeChanges()`  
+**Root Cause:** CSV timestamps are strings/objects, not Date instances  
+**Impact:** Sensor and cartridge changes not detected during migration  
+**Priority:** Medium (non-critical, Phase 4 feature)  
+**Fix Required:** Convert string timestamps to Date objects before calling event storage functions
+
+**Estimated Fix Time:** 15 minutes
 
 ---
 
 ## 🚧 NEXT STEPS
 
-### Phase 2 Testing (1-2 hours) ⏳ IMMEDIATE NEXT
+### IMMEDIATE: Fix Event Detection (15 min)
+1. Open `migrateToV3.js`
+2. In `detectSensorChanges()` and `detectCartridgeChanges()`
+3. Convert timestamps: `timestamp = new Date(timestamp)` before storing
+4. Test with `testMigration()`
+5. Verify events detected
 
-**Manual testing required:**
-- [ ] Fresh install test (no v2.x data)
-- [ ] Single upload migration
+### THEN: Phase 3 - React Integration (3-4 hours)
 - [ ] Multiple uploads (10+)
 - [ ] Idempotency test (run twice)
 - [ ] Performance measurement
