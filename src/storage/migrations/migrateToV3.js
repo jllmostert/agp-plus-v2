@@ -265,12 +265,9 @@ async function detectSensorChanges(parsedData, sourceFile, stats) {
       const changeTime = new Date((prev.getTime() + curr.getTime()) / 2);
       
       try {
-        await storeSensorChange({
-          timestamp: changeTime,
-          confidence: 'estimated',  // Gap-based detection
-          source: 'migration',
-          notes: `Detected from ${gapHours.toFixed(1)}h gap in ${sourceFile}`
-        });
+        // storeSensorChange expects: (timestamp, gapMinutes, sourceFile)
+        const gapMinutes = Math.round(gapHours * 60);
+        await storeSensorChange(changeTime, gapMinutes, sourceFile);
         
         stats.sensorsDetected++;
       } catch (err) {
@@ -304,12 +301,8 @@ async function detectCartridgeChanges(parsedData, sourceFile, stats) {
   // Store each cartridge change
   for (const timestamp of rewindEvents) {
     try {
-      await storeCartridgeChange({
-        timestamp,
-        confidence: 'verified',  // Rewind events are explicit
-        source: 'migration',
-        notes: `Detected from Rewind event in ${sourceFile}`
-      });
+      // storeCartridgeChange expects: (timestamp, alarmText, sourceFile)
+      await storeCartridgeChange(timestamp, 'Rewind', sourceFile);
       
       stats.cartridgesDetected++;
     } catch (err) {
