@@ -13,6 +13,7 @@
 import { migrateToV3, resetMigration } from './migrateToV3.js';
 import { getMasterDatasetStats } from '../masterDatasetStorage.js';
 import { getEventStats } from '../eventStorage.js';
+import { getRecord, STORES } from '../db.js';
 
 /**
  * Run migration test
@@ -76,12 +77,16 @@ export async function testMigration(forceReset = false) {
     const eventStats = await getEventStats();
     console.log('Event stats:', eventStats);
     
+    // Check if cache exists
+    const cache = await getRecord(STORES.MASTER_DATASET, 'cache');
+    const cacheExists = cache && cache.readings && cache.readings.length > 0;
+    
     // Success checks
     const checks = {
       'Migration succeeded': result.success,
-      'Readings imported': result.totalReadings > 0,
-      'Cache exists': masterStats.cacheSize > 0,
-      'Events detected': (result.eventsBackfilled.sensors + result.eventsBackfilled.cartridges) > 0
+      'Readings imported': masterStats.totalReadings > 0,
+      'Cache exists': cacheExists,
+      'Events detected': eventStats.totalSensors > 0 || eventStats.totalCartridges > 0
     };
     
     console.log('\n✅ Checks:');
