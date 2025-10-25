@@ -190,6 +190,11 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
   const { yMin, yMax, yTicks, outliers } = calculateAdaptiveYAxis(curve);
   const outlierLowMin = outliers?.low;
   const outlierHighMax = outliers?.high;
+  
+  // Recalculate outlier arrays for display (needed for count and conditional rendering)
+  const validGlucose = curve.filter(d => d.hasData && d.glucose !== null).map(d => d.glucose);
+  const outlierLow = validGlucose.filter(g => g < yMin);
+  const outlierHigh = validGlucose.filter(g => g > yMax);
 
   // Create scale functions for coordinate mapping
   const yScale = createYScale(yMin, yMax, chartHeight);

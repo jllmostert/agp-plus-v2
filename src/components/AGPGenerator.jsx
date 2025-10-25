@@ -77,9 +77,6 @@ export default function AGPGenerator() {
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
   const [dayProfilesOpen, setDayProfilesOpen] = useState(false); // Day profiles modal state
-  
-  // Generate day profiles using custom hook (replaces manual generation)
-  const dayProfiles = useDayProfiles(csvData, dateRange, metricsResult);
 
   // Load patient info from storage
   useEffect(() => {
@@ -119,6 +116,9 @@ export default function AGPGenerator() {
   
   // Auto-calculate comparison for preset periods
   const comparisonData = useComparison(csvData, startDate, endDate, dateRange);
+  
+  // Generate day profiles using custom hook (replaces manual generation)
+  const dayProfiles = useDayProfiles(csvData, dateRange, metricsResult);
 
   // ============================================
   // EVENT HANDLERS: File Upload
