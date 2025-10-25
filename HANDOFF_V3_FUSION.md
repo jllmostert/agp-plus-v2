@@ -31,42 +31,50 @@ v3.0 transformeert AGP+ van per-upload naar incremental master dataset:
 
 ---
 
-## ✅ KLAAR (Phase 1 & 2)
+## ✅ KLAAR (Phase 1 & 2 - COMPLETE!)
 
 **Phase 1 - Storage Foundation (3 files, ~700 lines):**
 - `src/storage/db.js` - IndexedDB v3 schema (6 stores)
 - `src/storage/masterDatasetStorage.js` - Month-bucketing engine
 - `src/storage/eventStorage.js` - Device event persistence
 
-**Phase 2 - Migration Script (~95% complete):**
+**Phase 2 - Migration Script (100% complete!):**
 - `src/storage/migrations/migrateToV3.js` - Full migration logic
 - `src/storage/migrations/testMigration.js` - Testing harness
-- ✅ Fresh install test passed
-- ✅ Real data test passed (28,387 readings, 0.39s)
-- ✅ Deduplication working (72,707 → 28,387)
-- ⚠️ Event detection bug (timestamp conversion needed)
+- ✅ All tests passing (28,387 readings, 0.38s, 3 sensors, 32 cartridges)
+- ✅ Zero errors in final test run
+- ✅ v2.x compatibility maintained
 
 **Git:**
-- v3.0-dev branch active
-- 6 commits ahead of main
-- All v2.x compatibility maintained
+- v3.0-dev branch active (12 commits ahead of main)
+- All code pushed to GitHub
+- Clean working directory
 
 ---
 
-## 🚀 VOLGENDE STAP (Fix Event Bug → Phase 3)
+## 🚀 VOLGENDE STAP (Phase 3 - React Integration)
 
-**Create:** Fix event detection bug in `migrateToV3.js`
+**Create:** `src/hooks/useMasterDataset.js` - React hook voor master dataset
 
-**Issue:** `timestamp.toISOString is not a function`
-- CSV timestamps are strings, not Date objects
-- Need conversion before calling event storage
+**Functionaliteit:**
+1. Load master dataset from cache
+2. Apply date range filters
+3. Return filtered readings + stats
+4. Handle loading states
+5. Auto-refresh when data changes
 
-**Fix Location:** Lines ~260-320 in `migrateToV3.js`
-- `detectSensorChanges()` function
-- `detectCartridgeChanges()` function
-- Add: `timestamp = new Date(timestamp)` before storing events
+**API:**
+```javascript
+const { 
+  readings,      // Filtered readings
+  stats,         // { total, dateRange, bucketCount }
+  isLoading,     
+  error,
+  setDateRange   // (startDate, endDate) => void
+} = useMasterDataset(initialDateRange);
+```
 
-**Then:** Complete Phase 2 testing, proceed to Phase 3 (React Integration)
+**Then:** Build migration banner component
 
 ---
 
