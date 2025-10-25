@@ -181,20 +181,16 @@ export default function AGPGenerator() {
     if (useV3Mode && masterDataset.stats?.dateRange) {
       const { min, max } = masterDataset.stats.dateRange;
       if (min && max) {
-        const range = {
+        return {
           min: new Date(min),
           max: new Date(max)
         };
-        console.log('[fullDatasetRange] V3 range:', range.min.toISOString(), '-', range.max.toISOString());
-        return range;
       }
     }
     // V2 mode: use CSV dateRange
     if (dateRange && dateRange.min && dateRange.max) {
-      console.log('[fullDatasetRange] V2 range:', dateRange.min.toISOString(), '-', dateRange.max.toISOString());
       return dateRange;
     }
-    console.log('[fullDatasetRange] NULL');
     return null;
   }, [useV3Mode, masterDataset.stats, dateRange]);
   
@@ -210,16 +206,6 @@ export default function AGPGenerator() {
     return fullDatasetRange; // Fallback to full range
   }, [useV3Mode, activeDateRange, fullDatasetRange]);
   
-  // Debug: Log current mode and data state
-  useEffect(() => {
-    console.log('[AGPGenerator] Mode:', useV3Mode ? 'V3 (Master Dataset)' : 'V2 (CSV Uploads)');
-    console.log('[AGPGenerator] Active Readings:', activeReadings?.length || 0);
-    console.log('[AGPGenerator] Date Range:', startDate, '→', endDate);
-    if (useV3Mode && masterDataset.stats) {
-      console.log('[AGPGenerator] Dataset Stats:', masterDataset.stats);
-    }
-  }, [useV3Mode, activeReadings?.length, startDate, endDate]);
-  
   // Calculate metrics for current period
   const metricsResult = useMetrics(activeReadings, startDate, endDate, workdays);
   
@@ -230,16 +216,6 @@ export default function AGPGenerator() {
   
   // Generate day profiles using custom hook (replaces manual generation)
   const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult);
-
-  // Debug: Check comparison and workday data
-  useEffect(() => {
-    console.log('[AGPGenerator] Comparison Data:', comparisonData ? 'EXISTS' : 'NULL');
-    console.log('[AGPGenerator] Workdays:', workdays ? `${workdays.size} days` : 'NULL');
-    console.log('[AGPGenerator] Workday Metrics:', metricsResult?.workdayMetrics ? 'EXISTS' : 'NULL');
-    console.log('[AGPGenerator] Restday Metrics:', metricsResult?.restdayMetrics ? 'EXISTS' : 'NULL');
-    console.log('[AGPGenerator] fullDatasetRange:', fullDatasetRange ? 
-      `${fullDatasetRange.min?.toISOString?.()} - ${fullDatasetRange.max?.toISOString?.()}` : 'NULL');
-  }, [comparisonData, workdays, metricsResult, fullDatasetRange]);
 
   // ============================================
   // EVENT HANDLERS: Date Range Filter (V3)
