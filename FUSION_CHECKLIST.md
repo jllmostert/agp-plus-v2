@@ -69,8 +69,8 @@
 - [x] Function: `markMigrationComplete()` - Set version flag
 
 ### 2.3 Migration Testing
-- [ ] Test: Fresh install (no v2.x data) ⏳ NEXT
-- [ ] Test: Single upload migration
+- [x] Test: Fresh install (no v2.x data) ✅
+- [ ] Test: Single upload migration ⏳ NEXT
 - [ ] Test: Multiple uploads (10+)
 - [ ] Test: Large dataset (3 years)
 - [ ] Test: Migration idempotency (run twice = same result)
