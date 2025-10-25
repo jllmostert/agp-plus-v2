@@ -395,7 +395,7 @@ export default function AGPGenerator() {
                 fontSize: '1.5rem',
                 marginBottom: 0
               }}>
-                AGP+ V2.2.0
+                AGP+ V2.2.1
               </h1>
             </div>
             
@@ -854,7 +854,7 @@ export default function AGPGenerator() {
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
           <p>
-            AGP+ v2.2.0 | Built for Medtronic CareLink CSV exports
+            AGP+ v2.2.1 | Built for Medtronic CareLink CSV exports
           </p>
           <p className="mt-2">
             Following{' '}

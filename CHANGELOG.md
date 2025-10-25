@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.1] - 2025-10-25
+
+### Changed - Architecture Improvements
+- **Refactored Day Profiles Logic**: Extracted business logic from `AGPGenerator` component to new `useDayProfiles` hook
+  - Improves separation of concerns (components vs hooks vs engines)
+  - Component now purely orchestrates UI, hook handles data processing
+  - Maintains three-layer architecture: Components → Hooks → Engines
+
+### Fixed - Technical Debt
+- **Hook Initialization Order**: Fixed bug where `useDayProfiles` was called before `useMetrics`, causing undefined variable errors
+- **Outlier Array Calculation**: Resolved "outlierLow not defined" error by recalculating arrays locally in `DayProfileCard`
+  - `calculateAdaptiveYAxis` returns scalar outlier counts, component needs arrays for `.length` checks
+
+### Added - Documentation
+- **Comprehensive Inline Comments**: Added JSDoc to complex algorithms in `day-profile-engine.js`
+  - Sensor change detection: 3-10 hour gap threshold rationale, marker placement strategy
+  - Cartridge change detection: Clinical context for Medtronic Rewind events
+  - 24-hour curve binning: 5-minute interval strategy with ATTD consensus alignment
+  - Badge criteria: Already had excellent documentation with ADA/ATTD guidelines
+- **PROJECT_BRIEFING Updates**: Documented `useDayProfiles` hook in architecture reference
+  - Added to hooks section with trigger conditions and data flow
+  - Updated Hook responsibility matrix with v2.2.1 marker
+
+### Technical Details
+- **New File**: `/src/hooks/useDayProfiles.js` (94 lines) - Extracts day profile generation with AGP overlay
+- **Modified Files**: `AGPGenerator.jsx` (simplified), `DayProfileCard.jsx` (outlier fix)
+- **Architecture**: Maintains proper separation - no components calling engines directly
+
+---
+
 ## [2.2.0] - 2025-10-24
 
 ### Added - Day Profiles Feature

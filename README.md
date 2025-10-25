@@ -6,7 +6,7 @@
 
 AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **and individual day profiles** following international clinical standards.
 
-**Version:** 2.2.0  
+**Version:** 2.2.1  
 **Status:** Production Ready  
 **Last Updated:** October 2025
 
