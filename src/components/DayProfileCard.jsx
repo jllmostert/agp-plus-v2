@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+import { calculateAdaptiveYAxis, createYScale, createXScale } from '../core/visualization-utils';
 
 export default function DayProfileCard({ profile }) {
   if (!profile) return null;
@@ -184,82 +185,15 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
   const chartWidth = svgWidth - padding.left - padding.right;
   const chartHeight = svgHeight - padding.top - padding.bottom;
 
-  // Calculate adaptive Y-axis range
-  const validGlucose = curve
-    .filter((d) => d.hasData && d.glucose !== null)
-    .map((d) => d.glucose);
-  
-  const dataMin = validGlucose.length > 0 ? Math.min(...validGlucose) : 70;
-  const dataMax = validGlucose.length > 0 ? Math.max(...validGlucose) : 180;
-  const dataRange = dataMax - dataMin;
+  // Calculate adaptive Y-axis using centralized utility
+  // This ensures consistent Y-axis behavior across day profiles and exports
+  const { yMin, yMax, yTicks, outliers } = calculateAdaptiveYAxis(curve);
+  const outlierLowMin = outliers?.low;
+  const outlierHighMax = outliers?.high;
 
-  // Dynamic padding: more zoom for tight ranges, less for wide ranges
-  const padding_buffer = dataRange < 100 ? 30 : dataRange < 150 ? 20 : 15;
-
-  // Adaptive range: start with clinical range (54-250), expand if needed
-  const yMin = Math.max(40, Math.min(54, dataMin - padding_buffer));
-  const yMax = Math.min(400, Math.max(250, dataMax + padding_buffer));
-
-  // Detect outliers beyond display range
-  const outlierLow = validGlucose.filter(g => g < yMin);
-  const outlierHigh = validGlucose.filter(g => g > yMax);
-  const outlierLowMin = outlierLow.length > 0 ? Math.min(...outlierLow) : null;
-  const outlierHighMax = outlierHigh.length > 0 ? Math.max(...outlierHigh) : null;
-
-  // Calculate smart Y-axis ticks
-  const calculateYTicks = () => {
-    const range = yMax - yMin;
-    const idealTickCount = 5;
-    const roughStep = range / idealTickCount;
-    
-    // Round to nice numbers (20, 25, 40, 50)
-    let step;
-    if (roughStep <= 25) step = 20;
-    else if (roughStep <= 40) step = 25;
-    else if (roughStep <= 60) step = 40;
-    else step = 50;
-
-    const ticks = [];
-    const startTick = Math.ceil(yMin / step) * step;
-    
-    // Generate regular ticks
-    for (let tick = startTick; tick <= yMax; tick += step) {
-      ticks.push(tick);
-    }
-
-    // Always include clinical boundaries 70 and 180 if in range
-    const CRITICAL_TICKS = [70, 180];
-    const MIN_SPACING = 15; // Minimum spacing in mg/dL between ticks
-    
-    for (const critical of CRITICAL_TICKS) {
-      if (yMin <= critical && yMax >= critical) {
-        // Check if any existing tick is too close to this critical value
-        const hasConflict = ticks.some(t => t !== critical && Math.abs(t - critical) < MIN_SPACING);
-        
-        if (hasConflict) {
-          // Remove conflicting ticks, keep critical ones
-          const filtered = ticks.filter(t => Math.abs(t - critical) >= MIN_SPACING);
-          ticks.length = 0;
-          ticks.push(...filtered, critical);
-        } else if (!ticks.includes(critical)) {
-          ticks.push(critical);
-        }
-      }
-    }
-
-    return ticks.sort((a, b) => a - b);
-  };
-
-  const yTicks = calculateYTicks();
-
-  const yScale = (glucose) => {
-    // Clamp glucose to display range
-    const clampedGlucose = Math.max(yMin, Math.min(yMax, glucose));
-    return chartHeight - ((clampedGlucose - yMin) / (yMax - yMin)) * chartHeight;
-  };
-
-  // X-axis scale (288 bins = 24 hours)
-  const xScale = (bin) => (bin / 288) * chartWidth;
+  // Create scale functions for coordinate mapping
+  const yScale = createYScale(yMin, yMax, chartHeight);
+  const xScale = createXScale(288, chartWidth); // 288 bins = 24 hours in 5-min intervals
 
   // Target zone (70-180 mg/dL) - only if both boundaries are in range
   const showTargetZone = yMin <= 70 && yMax >= 180;

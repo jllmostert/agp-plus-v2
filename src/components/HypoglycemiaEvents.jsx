@@ -22,22 +22,10 @@ export default function HypoglycemiaEvents({ events, tbrPercent, gri }) {
   const l2Count = events.hypoL2?.count || 0;
   const totalEvents = l1Count + l2Count;
 
-  // Calculate average durations
-  const l1Events = events.hypoL1?.events || [];
-  const l2Events = events.hypoL2?.events || [];
-  
-  const l1AvgDuration = l1Events.length > 0
-    ? Math.round(l1Events.reduce((sum, e) => sum + e.duration, 0) / l1Events.length)
-    : 0;
-  
-  const l2AvgDuration = l2Events.length > 0
-    ? Math.round(l2Events.reduce((sum, e) => sum + e.duration, 0) / l2Events.length)
-    : 0;
-  
-  const allEvents = [...l1Events, ...l2Events];
-  const avgDuration = allEvents.length > 0
-    ? Math.round(allEvents.reduce((sum, e) => sum + e.duration, 0) / allEvents.length)
-    : 0;
+  // Use average durations calculated by metrics engine
+  const l1AvgDuration = events.hypoL1?.avgDuration || 0;
+  const l2AvgDuration = events.hypoL2?.avgDuration || 0;
+  const avgDuration = events.avgDuration || 0; // Combined average for all hypos
 
   return (
     <div 

@@ -393,10 +393,30 @@ export const detectEvents = (data, startDate, endDate) => {
     }
   });
 
+  // Calculate average durations for each event type
+  const calcAvgDuration = (eventList) => {
+    if (eventList.length === 0) return 0;
+    const totalDuration = eventList.reduce((sum, e) => sum + e.duration, 0);
+    return Math.round(totalDuration / eventList.length);
+  };
+
   return {
-    hypoL1: { count: hypoL1.length, events: hypoL1 },
-    hypoL2: { count: hypoL2.length, events: hypoL2 },
-    hyper: { count: hyper.length, events: hyper },
-    totalHypo: hypoL1.length + hypoL2.length
+    hypoL1: { 
+      count: hypoL1.length, 
+      events: hypoL1,
+      avgDuration: calcAvgDuration(hypoL1)
+    },
+    hypoL2: { 
+      count: hypoL2.length, 
+      events: hypoL2,
+      avgDuration: calcAvgDuration(hypoL2)
+    },
+    hyper: { 
+      count: hyper.length, 
+      events: hyper,
+      avgDuration: calcAvgDuration(hyper)
+    },
+    totalHypo: hypoL1.length + hypoL2.length,
+    avgDuration: calcAvgDuration([...hypoL1, ...hypoL2]) // Combined hypo average
   };
 };
