@@ -19,6 +19,32 @@
 import { useState, useEffect, useCallback } from 'react';
 import { loadOrRebuildCache, getMasterDatasetStats } from '../storage/masterDatasetStorage.js';
 
+/**
+ * Format timestamp to YYYY/MM/DD string
+ * @param {Date|number} timestamp - Date object or Unix timestamp
+ * @returns {string} "YYYY/MM/DD"
+ */
+function formatDate(timestamp) {
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}/${month}/${day}`;
+}
+
+/**
+ * Format timestamp to HH:MM:SS string
+ * @param {Date|number} timestamp - Date object or Unix timestamp
+ * @returns {string} "HH:MM:SS"
+ */
+function formatTime(timestamp) {
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+}
+
 export function useMasterDataset(options = {}) {
   const [readings, setReadings] = useState([]);
   const [stats, setStats] = useState(null);
@@ -28,6 +54,7 @@ export function useMasterDataset(options = {}) {
     start: options.startDate || null,
     end: options.endDate || null
   });
+  const [loadTrigger, setLoadTrigger] = useState(0); // Force reload trigger
 
   /**
    * Load and filter master dataset
@@ -63,7 +90,29 @@ export function useMasterDataset(options = {}) {
         });
       }
 
-      setReadings(filteredReadings);
+      // Transform V3 format → V2 CSV format for backwards compatibility
+      // This allows existing engines (metrics-engine.js, etc.) to work unchanged
+      const normalizedReadings = filteredReadings
+        .filter(reading => {
+          // Safety: Only include readings with valid timestamp and glucose
+          if (!reading.timestamp || reading.glucose == null) {
+            console.warn('[useMasterDataset] Skipping invalid reading:', reading);
+            return false;
+          }
+          return true;
+        })
+        .map(reading => ({
+          // V2 CSV format (what engines expect) - LOWERCASE properties!
+          date: formatDate(reading.timestamp),
+          time: formatTime(reading.timestamp),
+          sg: reading.glucose,
+          glucose: reading.glucose,  // Both sg and glucose for compatibility
+          
+          // Keep V3 original for future use (optional)
+          _v3Original: reading
+        }));
+
+      setReadings(normalizedReadings);
       
     } catch (err) {
       console.error('[useMasterDataset] Load failed:', err);
@@ -95,7 +144,7 @@ export function useMasterDataset(options = {}) {
   // Load data on mount and when date range changes
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData, loadTrigger]);
 
   return {
     readings,

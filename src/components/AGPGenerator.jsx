@@ -126,23 +126,39 @@ export default function AGPGenerator() {
   
   // V3: Dual-mode data source
   // Use master dataset if available, otherwise fall back to v2 CSV uploads
-  // During loading, keep showing old data to prevent UI flicker
   const prevReadingsRef = useRef([]);
-  const useV3Mode = masterDataset.readings.length > 0 && !masterDataset.isLoading;
+  const prevV3ModeRef = useRef(false);
+  
+  // Determine mode: V3 if we have readings OR if we had V3 mode before (sticky during loads)
+  const hasV3Data = masterDataset.readings.length > 0;
+  const hadV3Mode = prevV3ModeRef.current;
+  const useV3Mode = hasV3Data || (masterDataset.isLoading && hadV3Mode);
+  
+  // Update ref for next render
+  if (hasV3Data) {
+    prevV3ModeRef.current = true;
+  }
   
   // Keep previous readings during load to prevent crashes
   const activeReadings = useMemo(() => {
-    if (masterDataset.isLoading && prevReadingsRef.current.length > 0) {
-      // Still loading - use previous readings
+    // If we have new V3 data, use it
+    if (hasV3Data) {
+      prevReadingsRef.current = masterDataset.readings;
+      return masterDataset.readings;
+    }
+    
+    // If loading and we had V3 data before, keep showing old V3 data
+    if (masterDataset.isLoading && hadV3Mode && prevReadingsRef.current.length > 0) {
       return prevReadingsRef.current;
     }
     
-    const readings = useV3Mode ? masterDataset.readings : csvData;
+    // Otherwise fall back to V2
+    const readings = csvData;
     if (readings && readings.length > 0) {
       prevReadingsRef.current = readings;
     }
     return readings;
-  }, [useV3Mode, masterDataset.readings, masterDataset.isLoading, csvData]);
+  }, [hasV3Data, masterDataset.readings, masterDataset.isLoading, hadV3Mode, csvData]);
   
   const activeDateRange = useV3Mode ? masterDataset.stats?.dateRange : dateRange;
   
@@ -590,20 +606,16 @@ export default function AGPGenerator() {
         {/* V3 Migration Banner - Auto-detects and triggers migration */}
         <MigrationBanner />
 
-        {/* V3 Date Range Filter - DISABLED until Phase 3.5
+        {/* V3 Date Range Filter - ENABLED in Phase 3.5
             
-            Issue: V3 master dataset readings have different format than V2 CSV:
-            - V3: { timestamp: 1719792300000, value: 120, ... }
-            - V2: { Date: "2025/07/01", Time: "00:05:00", "Sensor Glucose (mg/dL)": 120, ... }
+            Solution implemented: V3 readings are transformed to V2 CSV format in 
+            useMasterDataset hook before returning to AGPGenerator. This maintains 
+            backwards compatibility with all existing calculation engines.
             
-            metrics-engine.js expects V2 format and crashes on V3 format.
-            
-            Solution (Phase 3.5): Transform V3 readings to V2 format in useMasterDataset hook
-            before returning to AGPGenerator. This maintains backwards compatibility with
-            all existing calculation engines.
-            
-            See PHASE_3_4_RESULTS.md for detailed analysis.
-        
+            Transform happens in useMasterDataset.js:
+            - V3: { timestamp: Date, glucose: 120 }
+            - V2: { Date: "2025/07/01", Time: "00:05:00", "Sensor Glucose (mg/dL)": 120 }
+        */}
         {useV3Mode && masterDataset.stats && (
           <section className="section">
             <DateRangeFilter
@@ -613,7 +625,6 @@ export default function AGPGenerator() {
             />
           </section>
         )}
-        */}
 
         {/* Control Buttons: 5-column grid */}
         <section className="section">

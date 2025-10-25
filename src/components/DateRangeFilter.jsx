@@ -106,15 +106,13 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
       {!customMode && (
         <div style={{ 
           display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
+          gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '8px'
         }}>
           {[
-            { label: 'LAST 7D', days: 7 },
             { label: 'LAST 14D', days: 14 },
             { label: 'LAST 30D', days: 30 },
-            { label: 'LAST 90D', days: 90 },
-            { label: 'ALL TIME', days: null }
+            { label: 'LAST 90D', days: 90 }
           ].map(({ label, days }) => (
             <button
               key={label}
