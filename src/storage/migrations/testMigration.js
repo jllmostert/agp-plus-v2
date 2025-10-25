@@ -79,7 +79,7 @@ export async function testMigration(forceReset = false) {
     
     // Check if cache exists
     const cache = await getRecord(STORES.MASTER_DATASET, 'cache');
-    const cacheExists = cache && cache.readings && cache.readings.length > 0;
+    const cacheExists = cache && cache.allReadings && cache.allReadings.length > 0;
     
     // Success checks
     const checks = {
