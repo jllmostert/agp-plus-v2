@@ -24,9 +24,15 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
 
   // Calculate quick range dates
   function getQuickRange(days) {
+    // Use end-of-today for consistent 24-hour periods
     const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - days);
+    end.setHours(23, 59, 59, 999);
+    
+    // Calculate start date (inclusive)
+    const start = new Date(end);
+    start.setDate(start.getDate() - days + 1);
+    start.setHours(0, 0, 0, 0);
+    
     return { start, end };
   }
 

@@ -47,6 +47,7 @@ function formatTime(timestamp) {
 
 export function useMasterDataset(options = {}) {
   const [readings, setReadings] = useState([]);
+  const [allReadings, setAllReadings] = useState([]); // NEW: Unfiltered dataset for comparison
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -114,10 +115,24 @@ export function useMasterDataset(options = {}) {
 
       setReadings(normalizedReadings);
       
+      // ALSO store unfiltered readings (for comparison calculations)
+      const allNormalizedReadings = cache.allReadings
+        .filter(reading => reading.timestamp && reading.glucose != null)
+        .map(reading => ({
+          date: formatDate(reading.timestamp),
+          time: formatTime(reading.timestamp),
+          sg: reading.glucose,
+          glucose: reading.glucose,
+          _v3Original: reading
+        }));
+      
+      setAllReadings(allNormalizedReadings);
+      
     } catch (err) {
       console.error('[useMasterDataset] Load failed:', err);
       setError(err.message);
       setReadings([]);
+      setAllReadings([]);
       setStats(null);
     } finally {
       setIsLoading(false);
@@ -147,7 +162,8 @@ export function useMasterDataset(options = {}) {
   }, [loadData, loadTrigger]);
 
   return {
-    readings,
+    readings,           // Filtered readings (respects date range)
+    allReadings,        // Unfiltered readings (full dataset for comparison)
     stats,
     isLoading,
     error,

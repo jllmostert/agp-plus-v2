@@ -275,3 +275,40 @@ export async function getMasterDatasetStats() {
     }
   };
 }
+
+/**
+ * Save ProTime workdays to settings (V3)
+ * @param {Set} workdaySet - Set of date strings (YYYY/MM/DD format)
+ */
+export async function saveProTimeData(workdaySet) {
+  if (!workdaySet || workdaySet.size === 0) {
+    console.warn('[saveProTimeData] Empty workday set');
+    return;
+  }
+
+  // Convert Set to Array for storage
+  const workdayArray = Array.from(workdaySet);
+  
+  await putRecord(STORES.SETTINGS, {
+    key: 'protime_workdays',
+    workdays: workdayArray,
+    lastUpdated: Date.now()
+  });
+  
+  console.log(`[saveProTimeData] Saved ${workdayArray.length} workdays`);
+}
+
+/**
+ * Load ProTime workdays from settings (V3)
+ * @returns {Set|null} Set of date strings or null if not found
+ */
+export async function loadProTimeData() {
+  const record = await getRecord(STORES.SETTINGS, 'protime_workdays');
+  
+  if (!record || !record.workdays) {
+    return null;
+  }
+  
+  // Convert Array back to Set
+  return new Set(record.workdays);
+}

@@ -160,13 +160,46 @@ export default function AGPGenerator() {
     return readings;
   }, [hasV3Data, masterDataset.readings, masterDataset.isLoading, hadV3Mode, csvData]);
   
+  // Comparison needs FULL dataset (not filtered) to calculate previous periods
+  const comparisonReadings = useMemo(() => {
+    if (useV3Mode) {
+      // V3: Use unfiltered dataset
+      return masterDataset.allReadings || [];
+    }
+    // V2: Use current csvData (not filtered in V2)
+    return csvData;
+  }, [useV3Mode, masterDataset.allReadings, csvData]);
+  
   const activeDateRange = useV3Mode ? masterDataset.stats?.dateRange : dateRange;
   
   // V3: Show loading indicator during date range changes
   const isFilteringData = masterDataset.isLoading && useV3Mode;
   
-  // V3: Convert master dataset dateRange format {start, end} to {min, max}
-  // for compatibility with hooks that expect Date objects
+  // V3: Get FULL dataset range for comparison availability checks
+  // This is needed so useComparison can check historical data availability
+  const fullDatasetRange = useMemo(() => {
+    if (useV3Mode && masterDataset.stats?.dateRange) {
+      const { min, max } = masterDataset.stats.dateRange;
+      if (min && max) {
+        const range = {
+          min: new Date(min),
+          max: new Date(max)
+        };
+        console.log('[fullDatasetRange] V3 range:', range.min.toISOString(), '-', range.max.toISOString());
+        return range;
+      }
+    }
+    // V2 mode: use CSV dateRange
+    if (dateRange && dateRange.min && dateRange.max) {
+      console.log('[fullDatasetRange] V2 range:', dateRange.min.toISOString(), '-', dateRange.max.toISOString());
+      return dateRange;
+    }
+    console.log('[fullDatasetRange] NULL');
+    return null;
+  }, [useV3Mode, masterDataset.stats, dateRange]);
+  
+  // V3: Convert active filtered range for day profiles
+  // This is the FILTERED range (e.g., "last 14 days"), not full dataset
   const safeDateRange = useMemo(() => {
     if (useV3Mode && activeDateRange) {
       return {
@@ -174,12 +207,8 @@ export default function AGPGenerator() {
         max: new Date(activeDateRange.end)
       };
     }
-    // Only return dateRange if it has valid min/max properties
-    if (dateRange && dateRange.min && dateRange.max) {
-      return dateRange;
-    }
-    return null; // No valid date range available
-  }, [useV3Mode, activeDateRange, dateRange]);
+    return fullDatasetRange; // Fallback to full range
+  }, [useV3Mode, activeDateRange, fullDatasetRange]);
   
   // Debug: Log current mode and data state
   useEffect(() => {
@@ -195,10 +224,22 @@ export default function AGPGenerator() {
   const metricsResult = useMetrics(activeReadings, startDate, endDate, workdays);
   
   // Auto-calculate comparison for preset periods
-  const comparisonData = useComparison(activeReadings, startDate, endDate, safeDateRange);
+  // CRITICAL: Use comparisonReadings (full dataset) not activeReadings (filtered)
+  // This ensures previous period data is available for comparison calculations
+  const comparisonData = useComparison(comparisonReadings, startDate, endDate, fullDatasetRange);
   
   // Generate day profiles using custom hook (replaces manual generation)
   const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult);
+
+  // Debug: Check comparison and workday data
+  useEffect(() => {
+    console.log('[AGPGenerator] Comparison Data:', comparisonData ? 'EXISTS' : 'NULL');
+    console.log('[AGPGenerator] Workdays:', workdays ? `${workdays.size} days` : 'NULL');
+    console.log('[AGPGenerator] Workday Metrics:', metricsResult?.workdayMetrics ? 'EXISTS' : 'NULL');
+    console.log('[AGPGenerator] Restday Metrics:', metricsResult?.restdayMetrics ? 'EXISTS' : 'NULL');
+    console.log('[AGPGenerator] fullDatasetRange:', fullDatasetRange ? 
+      `${fullDatasetRange.min?.toISOString?.()} - ${fullDatasetRange.max?.toISOString?.()}` : 'NULL');
+  }, [comparisonData, workdays, metricsResult, fullDatasetRange]);
 
   // ============================================
   // EVENT HANDLERS: Date Range Filter (V3)
@@ -261,6 +302,29 @@ export default function AGPGenerator() {
   }, [useV3Mode, masterDataset.stats]);
 
   /**
+   * V3: Load ProTime workdays from storage on mount
+   */
+  useEffect(() => {
+    if (useV3Mode && !workdays) {
+      const loadWorkdays = async () => {
+        try {
+          const { loadProTimeData } = await import('../storage/masterDatasetStorage');
+          const savedWorkdays = await loadProTimeData();
+          
+          if (savedWorkdays && savedWorkdays.size > 0) {
+            setWorkdays(savedWorkdays);
+            console.log(`[ProTime] Loaded ${savedWorkdays.size} workdays from V3 storage`);
+          }
+        } catch (err) {
+          console.error('[ProTime] Failed to load from V3:', err);
+        }
+      };
+      
+      loadWorkdays();
+    }
+  }, [useV3Mode, workdays]);
+
+  /**
    * Handle CSV file upload
    */
   const handleCSVLoad = (text) => {
@@ -287,12 +351,23 @@ export default function AGPGenerator() {
       const workdaySet = new Set(workdayDates);
       setWorkdays(workdaySet);
       
-      // If there's an active upload, update it with this ProTime data (async!)
-      if (activeUploadId) {
+      // V3 mode: Save to master dataset settings
+      if (useV3Mode) {
+        try {
+          const { saveProTimeData } = await import('../storage/masterDatasetStorage');
+          await saveProTimeData(workdaySet);
+          console.log('[ProTime] Saved to V3 master dataset');
+        } catch (err) {
+          console.error('[ProTime] Failed to save to V3:', err);
+        }
+      }
+      // V2 mode: Save to active upload
+      else if (activeUploadId) {
         try {
           await updateProTimeData(activeUploadId, workdaySet);
+          console.log('[ProTime] Saved to V2 upload');
         } catch (err) {
-          console.error('Failed to update saved upload with ProTime:', err);
+          console.error('[ProTime] Failed to save to V2 upload:', err);
         }
       }
       
