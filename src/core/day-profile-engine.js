@@ -11,43 +11,41 @@
 import { CONFIG, utils, calculateMetrics, detectEvents } from './metrics-engine.js';
 
 /**
- * Get the last 7 complete days from the dataset
+ * Get the last 7 days from the dataset
  * @param {Array} data - Full glucose data array
- * @param {string} csvCreatedDate - CSV creation date (YYYY/MM/DD)
- * @returns {Array} Array of 7 day profile objects (newest first)
+ * @param {string} csvCreatedDate - CSV creation date (YYYY/MM/DD) - optional, for backward compat
+ * @returns {Array} Array of up to 7 day profile objects (newest first)
+ * 
+ * V3 Note: Now returns last 7 days regardless of completeness.
+ * This allows day profiles to work with filtered datasets (e.g., "Last 14D" filter).
+ */
+/**
+ * Get the last 7 days from the dataset
+ * @param {Array} data - Full glucose data array
+ * @param {string} csvCreatedDate - CSV creation date (YYYY/MM/DD) - optional, for backward compat
+ * @returns {Array} Array of up to 7 day profile objects (newest first)
+ * 
+ * V3 Note: Now returns last 7 days regardless of completeness.
+ * This allows day profiles to work with filtered datasets (e.g., "Last 14D" filter).
  */
 export function getLastSevenDays(data, csvCreatedDate) {
   if (!data || data.length === 0) return [];
   
-  // Get CSV creation date as cutoff (incomplete day)
-  const cutoffDate = utils.parseDate(csvCreatedDate, '00:00:00');
-  
-  // Find all complete days (before cutoff)
-  const completeDays = new Set();
-  const readingsPerDay = {};
-  
+  // Find all unique days in the dataset
+  const allDays = new Set();
   data.forEach(row => {
-    const rowDate = utils.parseDate(row.date, '00:00:00');
-    if (rowDate >= cutoffDate) return; // Skip incomplete day
-    
-    if (!readingsPerDay[row.date]) {
-      readingsPerDay[row.date] = 0;
-    }
-    readingsPerDay[row.date]++;
-  });
-  
-  // Filter for days with reasonable coverage (>= 200 readings, ~70% uptime)
-  Object.entries(readingsPerDay).forEach(([date, count]) => {
-    if (count >= 200) {
-      completeDays.add(date);
+    if (row.date) {
+      allDays.add(row.date);
     }
   });
   
-  // Sort dates and take last 7
-  const sortedDates = Array.from(completeDays).sort().reverse().slice(0, 7);
+  // Sort dates (newest first) and take last 7
+  const sortedDates = Array.from(allDays).sort().reverse().slice(0, 7);
+  
+  if (sortedDates.length === 0) return [];
   
   // Generate profile for each day
-  const profiles = sortedDates.map(date => getDayProfile(data, date));
+  const profiles = sortedDates.map(date => getDayProfile(data, date)).filter(p => p !== null);
   
   return profiles;
 }

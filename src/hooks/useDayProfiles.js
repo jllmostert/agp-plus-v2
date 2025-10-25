@@ -34,13 +34,19 @@ import { getLastSevenDays } from '../core/day-profile-engine.js';
 export function useDayProfiles(csvData, dateRange, currentMetrics) {
   return useMemo(() => {
     // Guard: require all dependencies with proper structure
-    if (!csvData || csvData.length === 0 || !dateRange || !dateRange.max) {
+    if (!csvData || csvData.length === 0) {
+      return null;
+    }
+
+    if (!dateRange || !dateRange.max) {
       return null;
     }
 
     try {
       // Format CSV creation date (last available date = cutoff for "complete" days)
-      const maxDate = new Date(dateRange.max);
+      // V3: dateRange.max is already a Date object
+      // V2: dateRange.max might be a string
+      const maxDate = dateRange.max instanceof Date ? dateRange.max : new Date(dateRange.max);
       
       // Additional guard: validate maxDate is valid
       if (isNaN(maxDate.getTime())) {
@@ -49,14 +55,7 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       
       const csvCreatedDate = formatDateString(maxDate);
       
-      // Generate last 7 complete day profiles
-      // This calls the engine which does all the heavy lifting:
-      // - Filters to last 7 days before CSV creation
-      // - Generates 24h curves (288 bins)
-      // - Calculates per-day metrics
-      // - Detects events (hypo/hyper)
-      // - Marks sensor/cartridge changes
-      // - Awards achievement badges
+      // Generate last 7 day profiles (NO completeness requirement in V3)
       const profiles = getLastSevenDays(csvData, csvCreatedDate);
       
       if (!profiles || profiles.length === 0) {
@@ -68,10 +67,6 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       const agpCurve = currentMetrics?.agp || null;
       
       // Add AGP overlay data to each profile
-      // This allows day profiles to show:
-      // 1. Individual day glucose curve
-      // 2. Overall AGP median (for comparison)
-      // 3. Overall mean glucose line
       const enrichedProfiles = profiles.map(profile => ({
         ...profile,
         overallMean,
