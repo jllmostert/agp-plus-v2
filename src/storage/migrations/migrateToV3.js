@@ -193,7 +193,15 @@ async function backfillEvents(uploads) {
       if (!upload.csvData) continue;
       
       try {
-        const parsedData = parseCSV(upload.csvData);
+        // Handle pre-parsed or raw CSV data
+        let parsedData;
+        if (Array.isArray(upload.csvData)) {
+          parsedData = upload.csvData;
+        } else if (typeof upload.csvData === 'string') {
+          parsedData = parseCSV(upload.csvData);
+        } else {
+          throw new Error(`Invalid csvData format: ${typeof upload.csvData}`);
+        }
         
         // Detect sensor changes from glucose gaps
         // Gap of 2-2.5 hours typically indicates sensor change + warmup
@@ -320,7 +328,7 @@ async function detectCartridgeChanges(parsedData, sourceFile, stats) {
 async function markMigrationComplete(migrationStats) {
   try {
     const migrationRecord = {
-      key: MIGRATION_KEY,
+      id: MIGRATION_KEY,  // Store uses 'id' as keyPath, not 'key'
       version: TARGET_VERSION,
       completedAt: new Date(),
       stats: migrationStats
