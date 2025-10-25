@@ -1,5 +1,7 @@
 # AGP+ v2.2 - Ambulatory Glucose Profile Analyzer
 
+> ⚠️ **v3.0 DEVELOPMENT BRANCH** - This branch contains experimental features and breaking changes. For stable production version, use `main` branch.
+
 > **Professional diabetes data analysis tool following ADA/ATTD 2019 clinical guidelines**
 
 ## Overview
