@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Activity, Download, ChevronDown, AlertCircle, Save, User } from 'lucide-react';
 
@@ -8,6 +8,7 @@ import { useMetrics } from '../hooks/useMetrics';
 import { useComparison } from '../hooks/useComparison';
 import { useUploadStorage } from '../hooks/useUploadStorage';
 import { useDayProfiles } from '../hooks/useDayProfiles';
+import { useMasterDataset } from '../hooks/useMasterDataset';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
@@ -24,6 +25,8 @@ import WorkdaySplit from './WorkdaySplit';
 import SavedUploadsList from './SavedUploadsList';
 import PatientInfo from './PatientInfo';
 import DayProfilesModal from './DayProfilesModal';
+import { MigrationBanner } from './MigrationBanner';
+import { DateRangeFilter } from './DateRangeFilter';
 
 /**
  * AGPGenerator - Main application container
@@ -42,6 +45,10 @@ export default function AGPGenerator() {
   // HOOKS: Data Management
   // ============================================
   
+  // V3: Master dataset (incremental storage)
+  const masterDataset = useMasterDataset();
+  
+  // V2: Legacy CSV uploads (fallback during transition)
   const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
   
   // Upload storage management
@@ -65,6 +72,12 @@ export default function AGPGenerator() {
   
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  
+  // V3: Selected date range for master dataset filter
+  const [selectedDateRange, setSelectedDateRange] = useState({
+    start: null,
+    end: null
+  });
 
   // ============================================
   // STATE: Optional Features
@@ -111,14 +124,81 @@ export default function AGPGenerator() {
   // CALCULATED DATA: Metrics & Comparison
   // ============================================
   
+  // V3: Dual-mode data source
+  // Use master dataset if available, otherwise fall back to v2 CSV uploads
+  // During loading, keep showing old data to prevent UI flicker
+  const prevReadingsRef = useRef([]);
+  const useV3Mode = masterDataset.readings.length > 0 && !masterDataset.isLoading;
+  
+  // Keep previous readings during load to prevent crashes
+  const activeReadings = useMemo(() => {
+    if (masterDataset.isLoading && prevReadingsRef.current.length > 0) {
+      // Still loading - use previous readings
+      return prevReadingsRef.current;
+    }
+    
+    const readings = useV3Mode ? masterDataset.readings : csvData;
+    if (readings && readings.length > 0) {
+      prevReadingsRef.current = readings;
+    }
+    return readings;
+  }, [useV3Mode, masterDataset.readings, masterDataset.isLoading, csvData]);
+  
+  const activeDateRange = useV3Mode ? masterDataset.stats?.dateRange : dateRange;
+  
+  // V3: Show loading indicator during date range changes
+  const isFilteringData = masterDataset.isLoading && useV3Mode;
+  
+  // V3: Convert master dataset dateRange format {start, end} to {min, max}
+  // for compatibility with hooks that expect Date objects
+  const safeDateRange = useMemo(() => {
+    if (useV3Mode && activeDateRange) {
+      return {
+        min: new Date(activeDateRange.start),
+        max: new Date(activeDateRange.end)
+      };
+    }
+    // Only return dateRange if it has valid min/max properties
+    if (dateRange && dateRange.min && dateRange.max) {
+      return dateRange;
+    }
+    return null; // No valid date range available
+  }, [useV3Mode, activeDateRange, dateRange]);
+  
+  // Debug: Log current mode and data state
+  useEffect(() => {
+    console.log('[AGPGenerator] Mode:', useV3Mode ? 'V3 (Master Dataset)' : 'V2 (CSV Uploads)');
+    console.log('[AGPGenerator] Active Readings:', activeReadings?.length || 0);
+    console.log('[AGPGenerator] Date Range:', startDate, '→', endDate);
+    if (useV3Mode && masterDataset.stats) {
+      console.log('[AGPGenerator] Dataset Stats:', masterDataset.stats);
+    }
+  }, [useV3Mode, activeReadings?.length, startDate, endDate]);
+  
   // Calculate metrics for current period
-  const metricsResult = useMetrics(csvData, startDate, endDate, workdays);
+  const metricsResult = useMetrics(activeReadings, startDate, endDate, workdays);
   
   // Auto-calculate comparison for preset periods
-  const comparisonData = useComparison(csvData, startDate, endDate, dateRange);
+  const comparisonData = useComparison(activeReadings, startDate, endDate, safeDateRange);
   
   // Generate day profiles using custom hook (replaces manual generation)
-  const dayProfiles = useDayProfiles(csvData, dateRange, metricsResult);
+  const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult);
+
+  // ============================================
+  // EVENT HANDLERS: Date Range Filter (V3)
+  // ============================================
+  
+  /**
+   * Handle date range changes from DateRangeFilter
+   */
+  const handleDateRangeChange = (start, end) => {
+    setSelectedDateRange({ start, end });
+    masterDataset.setDateRange(start, end);
+    
+    // Update period selector dates for consistency
+    setStartDate(start);
+    setEndDate(end);
+  };
 
   // ============================================
   // EVENT HANDLERS: File Upload
@@ -142,6 +222,27 @@ export default function AGPGenerator() {
       // NOTE: Import stays OPEN - no auto-collapse here
     }
   }, [csvData, dateRange, startDate, endDate]);
+
+  /**
+   * V3: Auto-select last 14 days when master dataset loads
+   */
+  useEffect(() => {
+    if (useV3Mode && masterDataset.stats && !startDate && !endDate && !selectedDateRange.start) {
+      const stats = masterDataset.stats;
+      if (stats.dateRange?.end) {
+        const end = new Date(stats.dateRange.end);
+        const start = new Date(end);
+        start.setDate(start.getDate() - 13); // 14 days = today - 13 days
+        
+        // If data range is shorter than 14 days, use full range
+        const actualStart = stats.dateRange.start && start < new Date(stats.dateRange.start) 
+          ? new Date(stats.dateRange.start) 
+          : start;
+        
+        handleDateRangeChange(actualStart, end);
+      }
+    }
+  }, [useV3Mode, masterDataset.stats]);
 
   /**
    * Handle CSV file upload
@@ -486,6 +587,34 @@ export default function AGPGenerator() {
           </p>
         </header>
 
+        {/* V3 Migration Banner - Auto-detects and triggers migration */}
+        <MigrationBanner />
+
+        {/* V3 Date Range Filter - DISABLED until Phase 3.5
+            
+            Issue: V3 master dataset readings have different format than V2 CSV:
+            - V3: { timestamp: 1719792300000, value: 120, ... }
+            - V2: { Date: "2025/07/01", Time: "00:05:00", "Sensor Glucose (mg/dL)": 120, ... }
+            
+            metrics-engine.js expects V2 format and crashes on V3 format.
+            
+            Solution (Phase 3.5): Transform V3 readings to V2 format in useMasterDataset hook
+            before returning to AGPGenerator. This maintains backwards compatibility with
+            all existing calculation engines.
+            
+            See PHASE_3_4_RESULTS.md for detailed analysis.
+        
+        {useV3Mode && masterDataset.stats && (
+          <section className="section">
+            <DateRangeFilter
+              datasetRange={masterDataset.stats.dateRange}
+              selectedRange={selectedDateRange}
+              onRangeChange={handleDateRangeChange}
+            />
+          </section>
+        )}
+        */}
+
         {/* Control Buttons: 5-column grid */}
         <section className="section">
           <div style={{ 
@@ -768,8 +897,8 @@ export default function AGPGenerator() {
           )}
         </section>
 
-        {/* Main Content - Only show when CSV loaded and period selected */}
-        {csvData && dateRange && startDate && endDate && metricsResult && (
+        {/* Main Content - Show when data loaded (v2 or v3) and period selected */}
+        {((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
           <>
                 {/* 1. AGP CHART - Visual Overview First */}
                 <section className="section">

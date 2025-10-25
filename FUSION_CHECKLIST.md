@@ -87,9 +87,9 @@
 
 ---
 
-## ⏳ PHASE 3: REACT INTEGRATION (IN PROGRESS - 70%)
+## ✅ PHASE 3: REACT INTEGRATION (85% COMPLETE)
 
-### 3.1 Master Dataset Hook
+### 3.1 Master Dataset Hook ✅
 - [x] Create `src/hooks/useMasterDataset.js`
 - [x] State: cache, isLoading, error
 - [x] Function: `loadCache()` on mount
@@ -98,7 +98,7 @@
 - [x] Export: { readings, stats, isLoading, error, setDateRange, refresh }
 - [x] Test with MasterDatasetTest component
 
-### 3.2 Migration Banner Component
+### 3.2 Migration Banner Component ✅
 - [x] Create `src/components/MigrationBanner.jsx`
 - [x] State: migrationStatus (checking/migrating/complete)
 - [x] UI: Progress indicator during migration
@@ -109,7 +109,7 @@
 - [x] Style: Brutalist design (3px borders, monospace)
 - [x] Test: Verified auto-migration works
 
-### 3.3 Date Range Filter Component
+### 3.3 Date Range Filter Component ✅
 - [x] Create `src/components/DateRangeFilter.jsx`
 - [x] Input: Start date picker
 - [x] Input: End date picker
@@ -121,18 +121,37 @@
 - [x] Style: Brutalist design (3px borders, high contrast)
 - [x] Test: Verified filtering works with hook
 
-### 3.4 AGPGenerator Integration
-- [ ] Import `useMasterDataset` instead of `useCSVData`
-- [ ] Add DateRangeFilter component to UI
-- [ ] Update data flow: cache → metrics → display
-- [ ] Handle loading state (show spinner)
-- [ ] Handle error state (show error)
-- [ ] Test: Date range filtering affects AGP display
+### 3.4 AGPGenerator Integration ⚠️ PARTIALLY COMPLETE
+- [x] Import `useMasterDataset` hook
+- [x] Import `MigrationBanner` component
+- [x] Import `DateRangeFilter` component
+- [x] Add dual-mode data source (v2/v3)
+- [x] Add `useV3Mode` logic
+- [x] Add `handleDateRangeChange` handler
+- [x] Update metrics to use `activeReadings`
+- [x] Add MigrationBanner to UI
+- [x] Add debug logging
+- [x] Fix circular dependency in useEffect
+- [x] Fix import errors (useMemo, useRef, named exports)
+- [x] Add prevReadingsRef for stable renders
+- [ ] ⚠️ DateRangeFilter DISABLED - Data format mismatch (deferred to 3.5)
+- [x] **TESTED:** Dual-mode detection works ✅
+- [x] **TESTED:** Auto-migration works ✅
+- [x] **TESTED:** V2→V3 switching works ✅
+- [ ] ⚠️ DateRangeFilter filtering crashes metrics (V3 format ≠ V2 format)
 
-### 3.5 Metrics Hook Update
-- [ ] Modify `src/hooks/useMetrics.js` (if needed)
-- [ ] Accept filtered readings from useMasterDataset
-- [ ] Test: Different date ranges produce correct TIR
+**Status:** Core integration complete, DateRangeFilter deferred  
+**See:** PHASE_3_4_RESULTS.md for detailed analysis
+
+### 3.5 Data Format Normalization ⏳ NEXT
+- [ ] Implement V3→V2 format transform in useMasterDataset
+- [ ] Add formatDate() helper (timestamp → "YYYY/MM/DD")
+- [ ] Add formatTime() helper (timestamp → "HH:MM:SS")
+- [ ] Map V3 fields to V2 CSV structure
+- [ ] Re-enable DateRangeFilter in AGPGenerator
+- [ ] Test: 14d/30d/90d/Custom presets work
+- [ ] Test: Metrics calculate correctly with filtered data
+- [ ] Test: V2 mode still works (backwards compatibility)
 
 ---
 

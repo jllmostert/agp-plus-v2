@@ -33,14 +33,20 @@ import { getLastSevenDays } from '../core/day-profile-engine.js';
  */
 export function useDayProfiles(csvData, dateRange, currentMetrics) {
   return useMemo(() => {
-    // Guard: require all dependencies
-    if (!csvData || !dateRange) {
+    // Guard: require all dependencies with proper structure
+    if (!csvData || csvData.length === 0 || !dateRange || !dateRange.max) {
       return null;
     }
 
     try {
       // Format CSV creation date (last available date = cutoff for "complete" days)
       const maxDate = new Date(dateRange.max);
+      
+      // Additional guard: validate maxDate is valid
+      if (isNaN(maxDate.getTime())) {
+        return null;
+      }
+      
       const csvCreatedDate = formatDateString(maxDate);
       
       // Generate last 7 complete day profiles

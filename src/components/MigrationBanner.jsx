@@ -44,10 +44,10 @@ export function MigrationBanner() {
         setStatus('complete');
         setProgress(`✅ Migrated ${result.totalReadings} readings in ${result.totalTime}s`);
         
-        // Auto-dismiss after 3 seconds
+        // Auto-dismiss after 10 seconds (for testing)
         setTimeout(() => {
           setStatus('hidden');
-        }, 3000);
+        }, 10000);
       } else {
         setStatus('error');
         setError(result.errors?.[0]?.message || 'Migration failed');
@@ -81,7 +81,8 @@ export function MigrationBanner() {
       justifyContent: 'space-between',
       fontFamily: 'monospace',
       fontSize: '14px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+      opacity: status === 'complete' ? 0.6 : 1.0
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {status === 'checking' && (
