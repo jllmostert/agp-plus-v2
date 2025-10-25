@@ -87,48 +87,51 @@
 
 ---
 
-## ⏳ PHASE 3: REACT INTEGRATION (3-4 hours)
+## ⏳ PHASE 3: REACT INTEGRATION (IN PROGRESS - 70%)
 
 ### 3.1 Master Dataset Hook
-- [ ] Create `src/hooks/useMasterDataset.js`
-- [ ] State: cache, isLoading, error
-- [ ] Function: `loadCache()` on mount
-- [ ] Function: `handleNewUpload(csvData, filename)`
-- [ ] Function: `filterByDateRange(start, end)`
-- [ ] Function: `refreshCache()` manual rebuild
-- [ ] Export: { cache, dateRange, isLoading, error, actions }
+- [x] Create `src/hooks/useMasterDataset.js`
+- [x] State: cache, isLoading, error
+- [x] Function: `loadCache()` on mount
+- [x] Function: `filterByDateRange(start, end)`
+- [x] Function: `refreshCache()` manual rebuild
+- [x] Export: { readings, stats, isLoading, error, setDateRange, refresh }
+- [x] Test with MasterDatasetTest component
 
 ### 3.2 Migration Banner Component
-- [ ] Create `src/components/MigrationBanner.jsx`
-- [ ] State: migrationStatus (checking/migrating/complete)
-- [ ] UI: Progress indicator during migration
-- [ ] UI: Success message with stats
-- [ ] UI: Error message with recovery options
-- [ ] Style: Brutalist design (3px borders, monospace)
+- [x] Create `src/components/MigrationBanner.jsx`
+- [x] State: migrationStatus (checking/migrating/complete)
+- [x] UI: Progress indicator during migration
+- [x] UI: Success message with stats
+- [x] UI: Auto-dismiss after 3 seconds
+- [x] Function: Auto-detect and trigger migration
+- [x] Function: needsMigration() export in migrateToV3.js
+- [x] Style: Brutalist design (3px borders, monospace)
+- [x] Test: Verified auto-migration works
 
 ### 3.3 Date Range Filter Component
-- [ ] Create `src/components/DateRangeFilter.jsx`
-- [ ] Input: Start date picker
-- [ ] Input: End date picker
-- [ ] Presets: Last 7/30/90 days
-- [ ] Validation: Start < End
-- [ ] Callback: `onChange(startDate, endDate)`
-- [ ] Style: Brutalist design
+- [x] Create `src/components/DateRangeFilter.jsx`
+- [x] Input: Start date picker
+- [x] Input: End date picker
+- [x] Presets: Last 7/14/30/90 days + All Time
+- [x] Toggle: Quick ranges vs Custom range
+- [x] Validation: Start < End
+- [x] Callback: `onChange(startDate, endDate)`
+- [x] Display: Current dataset range info
+- [x] Style: Brutalist design (3px borders, high contrast)
+- [x] Test: Verified filtering works with hook
 
 ### 3.4 AGPGenerator Integration
 - [ ] Import `useMasterDataset` instead of `useCSVData`
-- [ ] Add MigrationBanner component
-- [ ] Add DateRangeFilter component
+- [ ] Add DateRangeFilter component to UI
 - [ ] Update data flow: cache → metrics → display
 - [ ] Handle loading state (show spinner)
 - [ ] Handle error state (show error)
-- [ ] Test: Upload CSV → auto-append → refresh view
+- [ ] Test: Date range filtering affects AGP display
 
 ### 3.5 Metrics Hook Update
-- [ ] Modify `src/hooks/useMetrics.js`
-- [ ] Accept `dateRange` parameter
-- [ ] Filter readings by date range before calculation
-- [ ] Memoize filtered data (performance)
+- [ ] Modify `src/hooks/useMetrics.js` (if needed)
+- [ ] Accept filtered readings from useMasterDataset
 - [ ] Test: Different date ranges produce correct TIR
 
 ---
@@ -226,12 +229,12 @@
 ```
 Phase 1: Storage Foundation     ████████████████████ 100% ✅
 Phase 2: Migration Script        ████████████████████ 100% ✅
-Phase 3: React Integration       ░░░░░░░░░░░░░░░░░░░░   0% ⏳ NEXT
+Phase 3: React Integration       █████████████░░░░░░░  70% ⏳ IN PROGRESS
 Phase 4: Device Events           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5: Testing & Polish        ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 6: Documentation & Release ░░░░░░░░░░░░░░░░░░░░   0%
 
-Overall Progress: 33.3% (Phase 1 & 2 complete!)
+Overall Progress: 45.0% (Phase 1, 2 complete + Phase 3 70%)
 ```
 
 ---

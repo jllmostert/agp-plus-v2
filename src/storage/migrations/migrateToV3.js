@@ -487,3 +487,26 @@ export async function resetMigration() {
     throw err;
   }
 }
+
+/**
+ * Check if migration is needed
+ * @returns {Promise<boolean>} True if migration needed, false if already complete
+ */
+export async function needsMigration() {
+  try {
+    // Check if migration already completed
+    const migrated = await checkIfMigrated();
+    if (migrated) {
+      return false;
+    }
+    
+    // Check if there are v2.x uploads to migrate
+    const uploads = await loadV2Uploads();
+    return uploads.length > 0;
+    
+  } catch (err) {
+    console.error('[Migration] Error checking migration status:', err);
+    // On error, assume migration not needed to avoid breaking app
+    return false;
+  }
+}
