@@ -1,8 +1,9 @@
 /**
  * IndexedDB Storage Manager for AGP+ Uploads
  * 
- * Handles large datasets (5+ years of ProTime data) efficiently.
- * Replaces LocalStorage with IndexedDB for better capacity (50MB+).
+ * v3.0 MIGRATION NOTE:
+ * Now uses shared db.js module for v3.0 compatibility.
+ * All openDB() calls delegated to centralized schema manager.
  * 
  * Database: 'agp-plus-db'
  * Stores:
@@ -11,38 +12,10 @@
  *   - 'patientInfo': {key: 'patient', name, email, dob, physician, cgm}
  */
 
-const DB_NAME = 'agp-plus-db';
-const DB_VERSION = 1;
-const UPLOAD_STORE = 'uploads';
-const SETTINGS_STORE = 'settings';
+import { openDB, STORES, getRecord, putRecord, getAllRecords } from '../storage/db.js';
 
-/**
- * Open IndexedDB connection
- */
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      
-      // Create uploads store
-      if (!db.objectStoreNames.contains(UPLOAD_STORE)) {
-        const uploadStore = db.createObjectStore(UPLOAD_STORE, { keyPath: 'id' });
-        uploadStore.createIndex('timestamp', 'timestamp', { unique: false });
-        uploadStore.createIndex('locked', 'locked', { unique: false });
-      }
-      
-      // Create settings store
-      if (!db.objectStoreNames.contains(SETTINGS_STORE)) {
-        db.createObjectStore(SETTINGS_STORE, { keyPath: 'key' });
-      }
-    };
-  });
-}
+const UPLOAD_STORE = STORES.UPLOADS;
+const SETTINGS_STORE = STORES.SETTINGS;
 
 /**
  * Generate unique ID

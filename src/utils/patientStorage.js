@@ -1,6 +1,9 @@
 /**
  * Patient Storage Manager
  * 
+ * v3.0 MIGRATION NOTE:
+ * Now uses shared db.js module for v3.0 compatibility.
+ * 
  * Handles patient information in IndexedDB settings store.
  * Single patient profile per installation (personal use case).
  * 
@@ -16,25 +19,10 @@
  * }
  */
 
-const DB_NAME = 'agp-plus-db';
-const DB_VERSION = 1;
-const SETTINGS_STORE = 'settings';
-const PATIENT_KEY = 'patientInfo';
+import { openDB, STORES, getRecord, putRecord } from '../storage/db.js';
 
-/**
- * Open IndexedDB connection
- */
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    // Note: onupgradeneeded is already handled by uploadStorage.js
-    // We're just using the existing database structure
-  });
-}
+const SETTINGS_STORE = STORES.SETTINGS;
+const PATIENT_KEY = 'patientInfo';
 
 /**
  * Patient Storage API
