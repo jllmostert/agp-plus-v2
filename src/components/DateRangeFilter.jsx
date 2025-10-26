@@ -49,8 +49,22 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
   function handleCustomRange() {
     if (!startDate || !endDate) return;
     
+    // Create Date objects and set to local timezone boundaries
     const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);  // Start of day (midnight)
+    
     const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);  // End of day (just before midnight)
+    
+    // DEBUG: Log what we're sending
+    console.log('[DateRangeFilter] 🔍 Custom range selected:', {
+      startDateInput: startDate,
+      endDateInput: endDate,
+      startDateTime: start.toISOString(),
+      endDateTime: end.toISOString(),
+      startValid: !isNaN(start.getTime()),
+      endValid: !isNaN(end.getTime())
+    });
     
     if (start > end) {
       alert('Start date must be before end date');
@@ -71,10 +85,11 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
   }
 
   return (
-    <div style={{      background: '#1a1a1a',
-      border: '3px solid #333',
-      padding: '16px',
-      marginBottom: '20px',
+    <div style={{
+      background: 'var(--bg-card-dark)', // Dark brutalist
+      border: '4px solid var(--color-black)', // THICK border
+      padding: '1.5rem',
+      marginBottom: '1.5rem',
       fontFamily: 'monospace'
     }}>
       {/* Header */}
@@ -82,30 +97,44 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
         display: 'flex', 
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '16px'
+        marginBottom: '1rem',
+        paddingBottom: '1rem',
+        borderBottom: '3px solid var(--color-orange)' // Orange accent
       }}>
         <h3 style={{ 
           margin: 0, 
-          fontSize: '14px',
-          fontWeight: 'bold',
-          color: '#ffffff'
+          fontSize: '1rem',
+          fontWeight: 700,
+          letterSpacing: '0.2em',
+          color: 'var(--color-white)',
+          textTransform: 'uppercase'
         }}>
-          DATE RANGE
+          📅 Date Range
         </h3>
         
         <button
           onClick={toggleCustomMode}
           style={{
-            background: customMode ? '#2563eb' : 'transparent',
-            border: '2px solid #666',
-            color: '#ffffff',
-            padding: '4px 12px',
+            background: customMode ? 'var(--color-orange)' : 'var(--color-black)',
+            border: '3px solid var(--color-orange)',
+            color: 'var(--color-white)',
+            padding: '0.75rem 1.5rem',
             cursor: 'pointer',
-            fontSize: '12px',
-            fontFamily: 'monospace'
+            fontSize: '0.875rem',
+            fontFamily: 'monospace',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            transition: 'all 100ms linear'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'scale(1)';
           }}
         >
-          {customMode ? 'QUICK RANGES' : 'CUSTOM RANGE'}
+          {customMode ? '⚡ Quick Ranges' : '🎯 Custom Range'}
         </button>
       </div>
       {/* Quick ranges */}
@@ -113,34 +142,38 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
         <div style={{ 
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '8px'
+          gap: '1rem'
         }}>
           {[
-            { label: 'LAST 14D', days: 14 },
-            { label: 'LAST 30D', days: 30 },
-            { label: 'LAST 90D', days: 90 }
+            { label: '⏱️ Last 14D', days: 14 },
+            { label: '📆 Last 30D', days: 30 },
+            { label: '📊 Last 90D', days: 90 }
           ].map(({ label, days }) => (
             <button
               key={label}
               onClick={() => handleQuickRange(days)}
               style={{
-                background: 'transparent',
-                border: '2px solid #666',
-                color: '#ffffff',
-                padding: '8px',
+                background: 'var(--color-black)',
+                border: '3px solid var(--color-white)',
+                color: 'var(--color-white)',
+                padding: '1rem',
                 cursor: 'pointer',
-                fontSize: '11px',
+                fontSize: '0.875rem',
                 fontFamily: 'monospace',
-                fontWeight: 'bold',
-                transition: 'all 0.2s'
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                transition: 'all 100ms linear'
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = '#333';
-                e.target.style.borderColor = '#999';
+                e.target.style.background = 'var(--color-white)';
+                e.target.style.color = 'var(--color-black)';
+                e.target.style.transform = 'scale(1.05)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
-                e.target.style.borderColor = '#666';
+                e.target.style.background = 'var(--color-black)';
+                e.target.style.color = 'var(--color-white)';
+                e.target.style.transform = 'scale(1)';
               }}
             >
               {label}
@@ -153,17 +186,20 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
         <div style={{ 
           display: 'grid',
           gridTemplateColumns: '1fr 1fr auto',
-          gap: '12px',
+          gap: '1rem',
           alignItems: 'end'
         }}>
           <div>
             <label style={{ 
               display: 'block',
-              fontSize: '11px',
-              color: '#999',
-              marginBottom: '4px'
+              fontSize: '0.75rem',
+              color: 'var(--color-orange)',
+              marginBottom: '0.5rem',
+              fontWeight: 700,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase'
             }}>
-              START DATE
+              📍 Start Date
             </label>
             <input
               type="date"
@@ -171,12 +207,13 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
               onChange={(e) => setStartDate(e.target.value)}
               style={{
                 width: '100%',
-                background: '#000',
-                border: '2px solid #666',
-                color: '#ffffff',
-                padding: '8px',
-                fontSize: '12px',
-                fontFamily: 'monospace'
+                background: 'var(--color-black)',
+                border: '3px solid var(--color-white)',
+                color: 'var(--color-white)',
+                padding: '1rem',
+                fontSize: '1rem',
+                fontFamily: 'monospace',
+                fontWeight: 600
               }}
             />
           </div>
@@ -184,11 +221,14 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
           <div>
             <label style={{ 
               display: 'block',
-              fontSize: '11px',
-              color: '#999',
-              marginBottom: '4px'
+              fontSize: '0.75rem',
+              color: 'var(--color-orange)',
+              marginBottom: '0.5rem',
+              fontWeight: 700,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase'
             }}>
-              END DATE
+              🏁 End Date
             </label>
             <input
               type="date"
@@ -196,12 +236,13 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
               onChange={(e) => setEndDate(e.target.value)}
               style={{
                 width: '100%',
-                background: '#000',
-                border: '2px solid #666',
-                color: '#ffffff',
-                padding: '8px',
-                fontSize: '12px',
-                fontFamily: 'monospace'
+                background: 'var(--color-black)',
+                border: '3px solid var(--color-white)',
+                color: 'var(--color-white)',
+                padding: '1rem',
+                fontSize: '1rem',
+                fontFamily: 'monospace',
+                fontWeight: 600
               }}
             />
           </div>
@@ -209,18 +250,29 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
             onClick={handleCustomRange}
             disabled={!startDate || !endDate}
             style={{
-              background: '#2563eb',
-              border: '2px solid #3b82f6',
-              color: '#ffffff',
-              padding: '8px 16px',
+              background: startDate && endDate ? 'var(--color-green)' : 'var(--color-black)',
+              border: '3px solid var(--color-green)',
+              color: 'var(--color-white)',
+              padding: '1rem 2rem',
               cursor: startDate && endDate ? 'pointer' : 'not-allowed',
-              fontSize: '12px',
+              fontSize: '1rem',
               fontFamily: 'monospace',
-              fontWeight: 'bold',
-              opacity: startDate && endDate ? 1 : 0.5
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              opacity: startDate && endDate ? 1 : 0.5,
+              transition: 'all 100ms linear'
+            }}
+            onMouseEnter={(e) => {
+              if (startDate && endDate) {
+                e.target.style.transform = 'scale(1.05)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'scale(1)';
             }}
           >
-            APPLY
+            ⚡ Apply
           </button>
         </div>
       )}
@@ -228,14 +280,16 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
       {/* Current range info */}
       {currentRange && (
         <div style={{ 
-          marginTop: '12px',
-          padding: '8px',
-          background: '#000',
-          border: '2px solid #333',
-          fontSize: '11px',
-          color: '#999'
+          marginTop: '1.5rem',
+          padding: '1rem',
+          background: 'var(--color-black)',
+          border: '3px solid var(--color-orange)',
+          fontSize: '0.875rem',
+          color: 'var(--color-white)',
+          fontWeight: 600,
+          letterSpacing: '0.05em'
         }}>
-          <strong style={{ color: '#fff' }}>DATASET RANGE:</strong>{' '}
+          <span style={{ color: 'var(--color-orange)', fontWeight: 700 }}>📊 DATASET RANGE:</span>{' '}
           {new Date(currentRange.min).toLocaleDateString()} → {new Date(currentRange.max).toLocaleDateString()}
         </div>
       )}

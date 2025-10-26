@@ -49,20 +49,20 @@ export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patient
               fontSize: '18px',
               fontWeight: 'bold',
               padding: '12px 24px',
-              border: '3px solid #ffffff',
-              backgroundColor: '#000000',
-              color: '#ffffff',
+              border: '3px solid var(--color-white)',
+              backgroundColor: 'var(--color-black)',
+              color: 'var(--color-white)',
               cursor: 'pointer',
               textTransform: 'uppercase',
               letterSpacing: '2px'
             }}
             onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#ffffff';
-              e.target.style.color = '#000000';
+              e.target.style.backgroundColor = 'var(--color-white)';
+              e.target.style.color = 'var(--color-black)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#000000';
-              e.target.style.color = '#ffffff';
+              e.target.style.backgroundColor = 'var(--color-black)';
+              e.target.style.color = 'var(--color-white)';
             }}
           >
             ← Sluiten
@@ -83,20 +83,20 @@ export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patient
               fontSize: '18px',
               fontWeight: 'bold',
               padding: '12px 24px',
-              border: '3px solid #ffffff',
-              backgroundColor: '#000000',
-              color: '#ffffff',
+              border: '3px solid var(--color-white)',
+              backgroundColor: 'var(--color-black)',
+              color: 'var(--color-white)',
               cursor: 'pointer',
               textTransform: 'uppercase',
               letterSpacing: '2px'
             }}
             onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#ffffff';
-              e.target.style.color = '#000000';
+              e.target.style.backgroundColor = 'var(--color-white)';
+              e.target.style.color = 'var(--color-black)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#000000';
-              e.target.style.color = '#ffffff';
+              e.target.style.backgroundColor = 'var(--color-black)';
+              e.target.style.color = 'var(--color-white)';
             }}
           >
             🖨 Print
@@ -118,11 +118,11 @@ export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patient
               fontFamily: 'Courier New, monospace',
               fontSize: '32px',
               fontWeight: 'bold',
-              color: '#ffffff',
+              color: 'var(--color-white)',
               textTransform: 'uppercase',
               letterSpacing: '3px',
               marginBottom: '48px',
-              borderBottom: '3px solid #ffffff',
+              borderBottom: '3px solid var(--color-white)',
               paddingBottom: '16px'
             }}
           >
@@ -141,11 +141,11 @@ export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patient
               style={{
                 fontFamily: 'Courier New, monospace',
                 fontSize: '18px',
-                color: '#cccccc',
+                color: 'var(--text-tertiary)',
                 textAlign: 'center',
                 padding: '48px',
-                border: '3px solid #444444',
-                backgroundColor: '#1a1a1a'
+                border: '3px solid var(--border-secondary)',
+                backgroundColor: 'var(--bg-card-dark)'
               }}
             >
               Geen volledige dagen beschikbaar. Upload meer data.

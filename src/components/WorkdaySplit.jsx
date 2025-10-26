@@ -34,10 +34,10 @@ export default function WorkdaySplit({ workdayMetrics, restdayMetrics }) {
 function WorkdayRow({ label, sublabel, workday, restday, unit, format, workdaySD, restdaySD, betterIfHigher, betterIfLower }) {
   const delta = workday - restday;
   const deltaFormatted = format(Math.abs(delta));
-  let trendIcon = '→', trendColor = '#6b7280';
+  let trendIcon = '→', trendColor = 'var(--text-secondary)';
   if (Math.abs(delta) > 0.5) {
-    if (betterIfHigher) { trendIcon = delta > 0 ? '↑' : '↓'; trendColor = delta > 0 ? '#10b981' : '#ef4444'; }
-    else if (betterIfLower) { trendIcon = delta > 0 ? '↑' : '↓'; trendColor = delta < 0 ? '#10b981' : '#ef4444'; }
+    if (betterIfHigher) { trendIcon = delta > 0 ? '↑' : '↓'; trendColor = delta > 0 ? 'var(--color-green)' : 'var(--color-red)'; }
+    else if (betterIfLower) { trendIcon = delta > 0 ? '↑' : '↓'; trendColor = delta < 0 ? 'var(--color-green)' : 'var(--color-red)'; }
     else { trendIcon = delta > 0 ? '↑' : '↓'; }
   }
   
@@ -46,24 +46,24 @@ function WorkdayRow({ label, sublabel, workday, restday, unit, format, workdaySD
       {/* Label */}
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.25rem' }}>
         <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{label}</div>
-        {sublabel && <div style={{ fontSize: '0.625rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{sublabel}</div>}
+        {sublabel && <div style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{sublabel}</div>}
       </div>
       
-      {/* Workday Card */}
-      <div style={{ backgroundColor: '#111827', color: 'white', padding: '1.25rem', borderRadius: '4px', border: '2px solid #1f2937' }}>
-        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: '#9ca3af' }}>
+      {/* Workday Card - DARK BRUTALIST */}
+      <div style={{ backgroundColor: 'var(--bg-card-dark)', color: 'var(--text-inverse)', padding: '1.25rem', borderRadius: '4px', border: '2px solid var(--border-primary)' }}>
+        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: 'var(--text-inverse)' }}>
           Workdays
         </div>
-        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: '#f9fafb', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-inverse)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
           {format(workday)}
-          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#d1d5db' }}>{unit}</span>
+          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: 'var(--text-tertiary)' }}>{unit}</span>
         </div>
         {workdaySD != null && (
-          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: '#d1d5db' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: 'var(--text-tertiary)' }}>
             ± {safeFormat(workdaySD, 0)} SD
           </div>
         )}
-        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1.25rem', color: trendColor }}>{trendIcon}</span>
           <span style={{ fontSize: '0.875rem', color: trendColor, fontWeight: 600 }}>
             {delta > 0 ? '+' : ''}{deltaFormatted} {unit} vs rest
@@ -71,21 +71,21 @@ function WorkdayRow({ label, sublabel, workday, restday, unit, format, workdaySD
         </div>
       </div>
       
-      {/* Rest Day Card */}
-      <div style={{ backgroundColor: '#111827', color: 'white', padding: '1.25rem', borderRadius: '4px', border: '2px solid #1f2937' }}>
-        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: '#9ca3af' }}>
+      {/* Rest Day Card - DARK BRUTALIST */}
+      <div style={{ backgroundColor: 'var(--bg-card-dark)', color: 'var(--text-inverse)', padding: '1.25rem', borderRadius: '4px', border: '2px solid var(--border-secondary)' }}>
+        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: 'var(--text-inverse)' }}>
           Rest Days
         </div>
-        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: '#9ca3af', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-inverse)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
           {format(restday)}
-          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#6b7280' }}>{unit}</span>
+          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: 'var(--text-tertiary)' }}>{unit}</span>
         </div>
         {restdaySD != null && (
-          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: '#9ca3af' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: 'var(--text-tertiary)' }}>
             ± {safeFormat(restdaySD, 0)} SD
           </div>
         )}
-        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #374151', fontSize: '0.6875rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-tertiary)', fontSize: '0.6875rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Non-work days
         </div>
       </div>

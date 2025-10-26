@@ -17,53 +17,67 @@
 @tailwind utilities;
 
 /* ============================================================================
-   CSS VARIABLES - BRUTALIST PALETTE
+   CSS VARIABLES - BRUTALIST PALETTE (LIGHT MODE ONLY)
    ========================================================================= */
 
 :root {
-  /* Core Colors - Light Mode */
-  --color-black: #000;
-  --color-white: #fff;
-  --color-gray-dark: #222;
-  --color-gray-mid: #666;
-  --color-gray-light: #ccc;
-  --color-gray-vlight: #eee;
+  /* Paper & Ink - Brutalist Foundation (vintage medical chart aesthetic) */
+  --paper: #e3e0dc;      /* Warm off-white, vintage paper */
+  --ink: #1a1816;        /* Near-black, not pure #000 */
   
-  /* Accent Colors - Soviet Inspired */
-  --color-red: #c70000;        /* Soviet red - warnings, critical */
-  --color-yellow: #f4e300;     /* Data highlight - caution */
-  --color-green: #00c700;      /* Success - data ready */
+  /* Core Colors - Monochrome Foundation */
+  --color-black: var(--ink);
+  --color-white: var(--paper);
+  --color-gray-dark: #2a2826;
+  --color-gray-mid: #6b6560;
+  --color-gray-light: #a8a39d;
+  --color-gray-vlight: #d0ccc7;
   
-  /* Glucose Ranges */
-  --color-tbr: #c70000;        /* Time Below Range <70 */
-  --color-tir: #ddd;           /* Time In Range 70-180 */
-  --color-tar: #f4e300;        /* Time Above Range >180 */
+  /* Brutalist Accent Colors - SINGLE DEFINITIVE SHADES */
+  --color-green: #2d5016;      /* Success, good values, TIR - darker for paper contrast */
+  --color-yellow: #8b6914;     /* Warnings, caution, alerts - warm ochre */
+  --color-orange: #a0522d;     /* Suboptimal, insufficient data - sienna */
+  --color-red: #8b1a1a;        /* Critical, danger, hypo, errors - deep red */
   
-  /* Base Theme */
-  --bg-primary: #fff;
-  --bg-secondary: #eee;
-  --bg-hero: #000;
-  --text-primary: #000;
-  --text-secondary: #666;
-  --text-inverse: #fff;
-  --border-primary: #000;
-  --border-secondary: #666;
-}
-
-/* Dark Mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #111;
-    --bg-secondary: #222;
-    --bg-hero: #000;
-    --text-primary: #eee;
-    --text-secondary: #999;
-    --text-inverse: #111;
-    --border-primary: #444;
-    --border-secondary: #666;
-    
-    --color-tir: #444;
-  }
+  /* Glucose Range Colors - Map to brutalist palette */
+  --color-tbr: var(--color-red);      /* Time Below Range <70 → RED */
+  --color-tir: var(--color-green);    /* Time In Range 70-180 → GREEN */
+  --color-tar: var(--color-orange);   /* Time Above Range >180 → ORANGE */
+  
+  /* AGP Chart Colors - Brutalist grayscale against paper */
+  --color-agp-p5-95: #ccc8c3;     /* 5th-95th percentile band - light warm gray */
+  --color-agp-p25-75: #a39e98;    /* 25th-75th percentile band - medium warm gray */
+  --color-agp-median: var(--ink); /* Median line - ink black */
+  
+  /* Event Markers */
+  --color-hypo-l2: var(--color-red);      /* Level 2 hypo <54 → RED */
+  --color-hypo-l1: var(--color-orange);   /* Level 1 hypo 54-70 → ORANGE */
+  --color-hyper: var(--color-orange);     /* Hyperglycemia >250 → ORANGE */
+  --color-sensor-change: var(--color-red);    /* Sensor gap marker → RED dashed */
+  --color-cartridge-change: var(--color-orange); /* Cartridge rewind → ORANGE dotted */
+  
+  /* Grid & Layout */
+  --grid-line: #c5c0b8;   /* Subtle warm gray for gridlines */
+  
+  /* Data Status Lights */
+  --color-status-green: var(--color-green);   /* Data ready */
+  --color-status-yellow: var(--color-yellow); /* Warning */
+  --color-status-red: var(--color-red);       /* Error */
+  
+  /* Base Theme - Brutalist Contrast (Paper & Ink) */
+  --bg-primary: var(--paper);      /* General page background - warm off-white */
+  --bg-secondary: #ebe8e4;         /* Very light panels (slightly darker than paper) */
+  --bg-tertiary: #d8d4cf;          /* Light sections */
+  --bg-card: #d5d1cc;              /* Light gray cards with ink text */
+  --bg-card-dark: #2a2826;         /* Dark cards with paper text - BRUTALIST */
+  --bg-hero: var(--ink);           /* Ink-black hero cards */
+  --text-primary: var(--ink);
+  --text-secondary: #6b6560;
+  --text-tertiary: #948f89;
+  --text-inverse: var(--paper);
+  --border-primary: var(--ink);
+  --border-secondary: #6b6560;
+  --border-tertiary: #b8b3ad;
 }
 
 /* ============================================================================
@@ -263,7 +277,7 @@ h4 {
 }
 
 /* ============================================================================
-   UTILITY CLASSES
+   UTILITY CLASSES - BRUTALIST COLORS
    ========================================================================= */
 
 .text-mono {
@@ -271,6 +285,7 @@ h4 {
   font-variant-numeric: tabular-nums;
 }
 
+/* Border Utilities */
 .border-massive {
   border: 3px solid var(--border-primary);
 }
@@ -283,25 +298,77 @@ h4 {
   border: 1px solid var(--border-secondary);
 }
 
+/* Background Utilities */
 .bg-hero {
   background: var(--bg-hero);
   color: var(--text-inverse);
 }
 
-.text-red {
-  color: var(--color-red);
+.bg-primary {
+  background: var(--bg-primary);
+}
+
+.bg-secondary {
+  background: var(--bg-secondary);
+}
+
+.bg-tertiary {
+  background: var(--bg-tertiary);
+}
+
+/* Accent Color - Text */
+.text-green {
+  color: var(--color-green);
 }
 
 .text-yellow {
   color: var(--color-yellow);
 }
 
-.bg-red {
-  background: var(--color-red);
+.text-orange {
+  color: var(--color-orange);
+}
+
+.text-red {
+  color: var(--color-red);
+}
+
+/* Accent Color - Backgrounds */
+.bg-green {
+  background: var(--color-green);
+  color: var(--color-black);
 }
 
 .bg-yellow {
   background: var(--color-yellow);
+  color: var(--color-black);
+}
+
+.bg-orange {
+  background: var(--color-orange);
+  color: var(--color-white);
+}
+
+.bg-red {
+  background: var(--color-red);
+  color: var(--color-white);
+}
+
+/* Accent Color - Borders */
+.border-green {
+  border-color: var(--color-green);
+}
+
+.border-yellow {
+  border-color: var(--color-yellow);
+}
+
+.border-orange {
+  border-color: var(--color-orange);
+}
+
+.border-red {
+  border-color: var(--color-red);
 }
 
 /* ============================================================================
@@ -321,18 +388,18 @@ h4 {
 }
 
 /* ============================================================================
-   PRINT STYLES (Preserve existing black/white)
+   PRINT STYLES (Preserve paper & ink aesthetic)
    ========================================================================= */
 
 @media print {
   * {
-    color: #000 !important;
-    background: #fff !important;
+    color: var(--ink) !important;
+    background: var(--paper) !important;
     box-shadow: none !important;
   }
   
   .card {
-    border: 2px solid #000 !important;
+    border: 2px solid var(--ink) !important;
     page-break-inside: avoid;
   }
   
@@ -350,10 +417,10 @@ h4 {
     display: none !important;
   }
 
-  /* Modal container - white background */
+  /* Modal container - paper background */
   body > div[style*="position: fixed"] {
     position: relative !important;
-    background: white !important;
+    background: var(--paper) !important;
     padding: 0 !important;
     margin: 0 !important;
   }
@@ -378,12 +445,12 @@ h4 {
     width: 100% !important;
     height: auto !important;
     min-height: 0 !important;
-    border: 1px solid #000 !important;
-    border-bottom: 2px solid #000 !important;
+    border: 1px solid var(--ink) !important;
+    border-bottom: 2px solid var(--ink) !important;
     padding: 3mm !important;
     margin: 0 !important;
     page-break-inside: avoid !important;
-    background: white !important;
+    background: var(--paper) !important;
   }
 
   /* Header (date + badges) - compact horizontal */
@@ -394,8 +461,8 @@ h4 {
     gap: 5mm !important;
     padding: 2mm !important;
     margin-bottom: 2mm !important;
-    border-bottom: 1px solid #000 !important;
-    background: #f5f5f5 !important;
+    border-bottom: 1px solid var(--ink) !important;
+    background: var(--bg-secondary) !important;
   }
 
   /* Hide badges (save space) */
@@ -419,7 +486,7 @@ h4 {
   /* Curve container - 70% width */
   .day-profile-card > div:nth-child(2) > div:first-child {
     width: 70% !important;
-    border-right: 1px solid #000 !important;
+    border-right: 1px solid var(--ink) !important;
     padding: 2mm !important;
   }
 
@@ -444,8 +511,8 @@ h4 {
     flex-direction: row !important;
     gap: 3mm !important;
     padding: 2mm !important;
-    border-top: 1px solid #000 !important;
-    background: #f9f9f9 !important;
+    border-top: 1px solid var(--ink) !important;
+    background: var(--bg-tertiary) !important;
   }
 
   /* Metric boxes - smaller text */

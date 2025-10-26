@@ -21,14 +21,14 @@ export function DateRangeFilterTest() {
         background: '#1a1a1a',
         border: '3px solid #16a34a',
         padding: '16px',
-        color: '#ffffff',
+        color: 'var(--color-white)',
         fontFamily: 'monospace'
       }}>
         <h3 style={{ margin: '0 0 12px 0', fontSize: '14px' }}>
           FILTERED RESULTS
         </h3>
         <div style={{ fontSize: '12px', color: '#999' }}>
-          <strong style={{ color: '#fff' }}>Readings:</strong> {readings.length.toLocaleString()}
+          <strong style={{ color: 'var(--color-white)' }}>Readings:</strong> {readings.length.toLocaleString()}
         </div>
       </div>
     </div>

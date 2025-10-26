@@ -121,70 +121,70 @@ const generateDayCurveSVG = (curve, events, sensorChanges, cartridgeChanges, agp
       <!-- Target zone (70-180 mg/dL) -->
       <rect x="${padding.left}" y="${padding.top + targetLow}" 
             width="${chartWidth}" height="${targetHeight}" 
-            fill="#e0e0e0"/>
+            fill="var(--bg-tertiary)"/>
       ` : ''}
       
       <!-- Grid lines for critical thresholds (if in range) -->
       ${yMin <= 180 && yMax >= 180 ? `
       <line x1="${padding.left}" y1="${padding.top + yScale(180)}" 
             x2="${padding.left + chartWidth}" y2="${padding.top + yScale(180)}" 
-            stroke="#ccc" stroke-width="0.5" stroke-dasharray="2,2"/>
+            stroke="var(--grid-line)" stroke-width="0.5" stroke-dasharray="2,2"/>
       ` : ''}
       ${yMin <= 70 && yMax >= 70 ? `
       <line x1="${padding.left}" y1="${padding.top + yScale(70)}" 
             x2="${padding.left + chartWidth}" y2="${padding.top + yScale(70)}" 
-            stroke="#ccc" stroke-width="0.5" stroke-dasharray="2,2"/>
+            stroke="var(--grid-line)" stroke-width="0.5" stroke-dasharray="2,2"/>
       ` : ''}
       
       <!-- Y-axis labels (dynamic ticks) -->
       ${yTicks.map(tick => `
       <text x="${padding.left - 5}" y="${padding.top + yScale(tick) + 2}" 
-            text-anchor="end" font-size="7" fill="#666">${tick}</text>
+            text-anchor="end" font-size="7" fill="var(--text-secondary)">${tick}</text>
       `).join('')}
       
       <!-- X-axis labels -->
       ${[0, 6, 12, 18, 24].map(hour => `
         <text x="${padding.left + xScale((hour * 60) / 5)}" 
               y="${height - padding.bottom + 15}" 
-              text-anchor="middle" font-size="7" fill="#666">${String(hour).padStart(2, '0')}:00</text>
+              text-anchor="middle" font-size="7" fill="var(--text-secondary)">${String(hour).padStart(2, '0')}:00</text>
       `).join('')}
       
       <g transform="translate(${padding.left}, ${padding.top})">
         <!-- AGP reference (dotted) -->
-        ${agpPath ? `<path d="${agpPath}" fill="none" stroke="#999" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>` : ''}
+        ${agpPath ? `<path d="${agpPath}" fill="none" stroke="var(--color-gray-mid)" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>` : ''}
         
         <!-- Daily glucose curve -->
-        ${curvePath ? `<path d="${curvePath}" fill="none" stroke="#000" stroke-width="1.5"/>` : ''}
+        ${curvePath ? `<path d="${curvePath}" fill="none" stroke="var(--ink)" stroke-width="1.5"/>` : ''}
         
         <!-- Event markers -->
         ${events.hypoL2.events.map(event => `
           <circle cx="${xScale((event.minuteOfDay || 0) / 5)}" 
                   cy="${yScale(event.startGlucose || 50)}" 
-                  r="3" fill="#DC2626" stroke="#000" stroke-width="1"/>
+                  r="3" fill="var(--color-red)" stroke="var(--ink)" stroke-width="1"/>
         `).join('')}
         ${events.hypoL1.events.map(event => `
           <circle cx="${xScale((event.minuteOfDay || 0) / 5)}" 
                   cy="${yScale(event.startGlucose || 65)}" 
-                  r="3" fill="#F59E0B" stroke="#000" stroke-width="1"/>
+                  r="3" fill="var(--color-orange)" stroke="var(--ink)" stroke-width="1"/>
         `).join('')}
         ${events.hyper.events.map(event => `
           <circle cx="${xScale((event.minuteOfDay || 0) / 5)}" 
                   cy="${yScale(event.startGlucose || 260)}" 
-                  r="3" fill="#EF4444" stroke="#000" stroke-width="1"/>
+                  r="3" fill="var(--color-orange)" stroke="var(--ink)" stroke-width="1"/>
         `).join('')}
         
         <!-- Sensor change - red dashed line when sensor stops -->
         ${sensorChanges.filter(c => c.type === 'start').map(change => `
           <line x1="${xScale(change.minuteOfDay / 5)}" y1="0" 
                 x2="${xScale(change.minuteOfDay / 5)}" y2="${chartHeight}" 
-                stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,4"/>
+                stroke="var(--color-red)" stroke-width="1.5" stroke-dasharray="4,4"/>
         `).join('')}
         
         <!-- Cartridge change - orange dotted line -->
         ${cartridgeChanges.map(change => `
           <line x1="${xScale(change.minuteOfDay / 5)}" y1="0" 
                 x2="${xScale(change.minuteOfDay / 5)}" y2="${chartHeight}" 
-                stroke="#FF8C00" stroke-width="1.5" stroke-dasharray="2,2"/>
+                stroke="var(--color-orange)" stroke-width="1.5" stroke-dasharray="2,2"/>
         `).join('')}
       </g>
     </svg>
@@ -214,24 +214,24 @@ const generateTIRBarSVG = (metrics) => {
       ${tar > 0 ? `
         <defs>
           <pattern id="tar-dots" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="0.8" fill="#000"/>
+            <circle cx="2" cy="2" r="0.8" fill="var(--ink)"/>
           </pattern>
         </defs>
         <rect x="0" y="${yPos}" width="${width}" height="${tarHeight}" 
-              fill="url(#tar-dots)" stroke="#000" stroke-width="1"/>
+              fill="url(#tar-dots)" stroke="var(--ink)" stroke-width="1"/>
         <text x="${width/2}" y="${yPos + tarHeight/2 + 3}" 
-              text-anchor="middle" font-size="8" font-weight="bold" fill="#000">
+              text-anchor="middle" font-size="8" font-weight="bold" fill="var(--ink)">
           ${tar > 8 ? `${metrics.tar}%` : ''}
         </text>
       ` : ''}
       
-      <!-- TIR (middle, solid black) -->
+      <!-- TIR (middle, solid ink) -->
       ${(() => { yPos += tarHeight; return ''; })()}
       ${tir > 0 ? `
         <rect x="0" y="${yPos}" width="${width}" height="${tirHeight}" 
-              fill="#000" stroke="#000" stroke-width="1"/>
+              fill="var(--ink)" stroke="var(--ink)" stroke-width="1"/>
         <text x="${width/2}" y="${yPos + tirHeight/2 + 3}" 
-              text-anchor="middle" font-size="8" font-weight="bold" fill="#fff">
+              text-anchor="middle" font-size="8" font-weight="bold" fill="var(--paper)">
           ${tir > 8 ? `${metrics.tir}%` : ''}
         </text>
       ` : ''}
@@ -241,13 +241,13 @@ const generateTIRBarSVG = (metrics) => {
       ${tbr > 0 ? `
         <defs>
           <pattern id="tbr-stripes" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <rect x="0" y="0" width="2" height="4" fill="#000"/>
+            <rect x="0" y="0" width="2" height="4" fill="var(--ink)"/>
           </pattern>
         </defs>
         <rect x="0" y="${yPos}" width="${width}" height="${tbrHeight}" 
-              fill="url(#tbr-stripes)" stroke="#000" stroke-width="1"/>
+              fill="url(#tbr-stripes)" stroke="var(--ink)" stroke-width="1"/>
         <text x="${width/2}" y="${yPos + tbrHeight/2 + 3}" 
-              text-anchor="middle" font-size="8" font-weight="bold" fill="#000">
+              text-anchor="middle" font-size="8" font-weight="bold" fill="var(--ink)">
           ${tbr > 8 ? `${metrics.tbr}%` : ''}
         </text>
       ` : ''}
@@ -348,6 +348,28 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
        Monospace, high contrast, B/W optimized
        =================================================================== */
     
+    :root {
+      /* Paper & Ink - Brutalist Foundation */
+      --paper: #e3e0dc;
+      --ink: #1a1816;
+      
+      /* Grayscale */
+      --color-gray-mid: #6b6560;
+      --color-gray-light: #a8a39d;
+      --grid-line: #c5c0b8;
+      
+      /* Backgrounds */
+      --bg-secondary: #ebe8e4;
+      --bg-tertiary: #d8d4cf;
+      
+      /* Text */
+      --text-secondary: #6b6560;
+      
+      /* Accents */
+      --color-red: #8b1a1a;
+      --color-orange: #a0522d;
+    }
+    
     * {
       margin: 0;
       padding: 0;
@@ -358,8 +380,8 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
       font-family: "Courier New", "Courier", monospace;
       font-size: 9pt;
       line-height: 1.3;
-      color: #000;
-      background: #fff;
+      color: var(--ink);
+      background: var(--paper);
       padding: 8mm;
       -webkit-font-smoothing: none;
       -moz-osx-font-smoothing: grayscale;
@@ -376,7 +398,7 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     
     /* Header */
     .report-header {
-      border: 3px solid #000;
+      border: 3px solid var(--ink);
       padding: 4mm;
       margin-bottom: 2mm;
       display: grid;
@@ -394,7 +416,7 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     
     .report-subtitle {
       font-size: 8pt;
-      color: #444;
+      color: var(--text-secondary);
       margin-top: 1mm;
     }
     
@@ -417,8 +439,8 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     }
     
     .day-card {
-      border: 3px solid #000;
-      background: #fff;
+      border: 3px solid var(--ink);
+      background: var(--paper);
       display: grid;
       grid-template-rows: auto 1fr auto;
       height: 56mm; /* Even smaller to fit 4 per page with header */
@@ -427,10 +449,10 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     
     /* Day header */
     .day-header {
-      border-bottom: 2px solid #000;
+      border-bottom: 2px solid var(--ink);
       padding: 1mm 2mm;
-      background: #000;
-      color: #fff;
+      background: var(--ink);
+      color: var(--paper);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -446,7 +468,7 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     .day-date span {
       margin-left: 2mm;
       font-size: 7pt;
-      color: #ccc;
+      color: var(--color-gray-light);
     }
     
     .day-badges {
@@ -456,8 +478,8 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     
     .badge {
       padding: 0.5mm 1.5mm;
-      border: 1.5px solid #fff;
-      background: rgba(255, 255, 255, 0.1);
+      border: 1.5px solid var(--paper);
+      background: rgba(227, 224, 220, 0.1);
       font-size: 7pt;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -498,9 +520,9 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     
     /* Day metrics footer */
     .day-metrics {
-      border-top: 2px solid #000;
+      border-top: 2px solid var(--ink);
       padding: 1mm 2mm;
-      background: #f5f5f5;
+      background: var(--bg-secondary);
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 1.5mm;
@@ -515,7 +537,7 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     .metric .label {
       font-size: 6pt;
       font-weight: bold;
-      color: #666;
+      color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }

@@ -124,18 +124,47 @@ export function useMasterDataset(options = {}) {
       let filteredReadings = cache.allReadings;
       
       if (dateRange.start || dateRange.end) {
+        // DEBUG: Log date range for custom range debugging
+        console.log('[useMasterDataset] 🔍 Filtering with date range:', {
+          start: dateRange.start,
+          end: dateRange.end,
+          startType: typeof dateRange.start,
+          endType: typeof dateRange.end,
+          startIsDate: dateRange.start instanceof Date,
+          endIsDate: dateRange.end instanceof Date,
+          totalReadingsBeforeFilter: cache.allReadings.length
+        });
+        
         filteredReadings = filteredReadings.filter(reading => {
           const timestamp = reading.timestamp;
           
-          if (dateRange.start && timestamp < dateRange.start.getTime()) {
-            return false;
+          // Safety: Check if start/end are Date objects
+          if (dateRange.start) {
+            const startTime = dateRange.start instanceof Date 
+              ? dateRange.start.getTime() 
+              : new Date(dateRange.start).getTime();
+            
+            if (timestamp < startTime) {
+              return false;
+            }
           }
           
-          if (dateRange.end && timestamp > dateRange.end.getTime()) {
-            return false;
+          if (dateRange.end) {
+            const endTime = dateRange.end instanceof Date 
+              ? dateRange.end.getTime() 
+              : new Date(dateRange.end).getTime();
+            
+            if (timestamp > endTime) {
+              return false;
+            }
           }
           
           return true;
+        });
+        
+        console.log('[useMasterDataset] ✅ After filter:', {
+          filteredCount: filteredReadings.length,
+          percentKept: ((filteredReadings.length / cache.allReadings.length) * 100).toFixed(1) + '%'
         });
       }
 

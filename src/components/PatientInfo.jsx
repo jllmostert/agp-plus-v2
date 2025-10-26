@@ -191,7 +191,7 @@ export default function PatientInfo({ onClose, isModal = false }) {
               width: '100%',
               padding: '1rem',
               background: saveSuccess ? 'var(--color-green)' : 'var(--text-primary)',
-              color: saveSuccess ? '#000' : 'var(--bg-primary)',
+              color: saveSuccess ? 'var(--color-black)' : 'var(--bg-primary)',
               border: 'none',
               fontSize: '0.875rem',
               fontWeight: 700,

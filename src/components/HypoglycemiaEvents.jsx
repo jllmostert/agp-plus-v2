@@ -30,78 +30,82 @@ export default function HypoglycemiaEvents({ events, tbrPercent, gri }) {
   return (
     <div 
       style={{
-        backgroundColor: '#7f1d1d',
-        border: '3px solid #dc2626',
-        borderLeft: '8px solid #dc2626',
+        backgroundColor: 'var(--color-red)',
+        border: '3px solid var(--color-red)',
+        borderLeft: '8px solid var(--color-red)',
         padding: '1.5rem',
         marginTop: '1.5rem',
         borderRadius: '4px'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-        <AlertTriangle style={{ width: '24px', height: '24px', color: '#fca5a5' }} />
-        <h3 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fecaca' }}>
+        <AlertTriangle style={{ width: '24px', height: '24px', color: 'var(--text-inverse)' }} />
+        <h3 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-inverse)' }}>
           Hypoglycemia Events
         </h3>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
         
-        <div style={{ backgroundColor: 'rgba(220, 38, 38, 0.3)', border: '2px solid #dc2626', padding: '1rem', borderRadius: '4px' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fca5a5', marginBottom: '0.5rem' }}>
+        {/* Level 2 Critical - RED background with white text */}
+        <div style={{ backgroundColor: 'var(--bg-card-dark)', border: '2px solid var(--color-red)', padding: '1rem', borderRadius: '4px' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-inverse)', marginBottom: '0.5rem' }}>
             Level 2 (&lt;54)
           </div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#fee2e2', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-inverse)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
             {l2Count}
           </div>
-          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#fca5a5', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-red)', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Critical Events
           </div>
           {l2AvgDuration > 0 && (
-            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fed7aa', marginTop: '0.5rem' }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-inverse)', marginTop: '0.5rem', opacity: 0.8 }}>
               Ø {l2AvgDuration} min
             </div>
           )}
         </div>
 
-        <div style={{ backgroundColor: 'rgba(249, 115, 22, 0.3)', border: '2px solid #f97316', padding: '1rem', borderRadius: '4px' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fed7aa', marginBottom: '0.5rem' }}>
+        {/* Level 1 Warning - ORANGE border with dark background */}
+        <div style={{ backgroundColor: 'var(--bg-card-dark)', border: '2px solid var(--color-orange)', padding: '1rem', borderRadius: '4px' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-inverse)', marginBottom: '0.5rem' }}>
             Level 1 (54-70)
           </div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#ffedd5', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-inverse)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
             {l1Count}
           </div>
-          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#fed7aa', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-orange)', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Warning Events
           </div>
           {l1AvgDuration > 0 && (
-            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fde68a', marginTop: '0.5rem' }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-inverse)', marginTop: '0.5rem', opacity: 0.8 }}>
               Ø {l1AvgDuration} min
             </div>
           )}
         </div>
 
-        <div style={{ backgroundColor: 'rgba(75, 85, 99, 0.4)', border: '2px solid #6b7280', padding: '1rem', borderRadius: '4px' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#d1d5db', marginBottom: '0.5rem' }}>
+        {/* TBR Percentage */}
+        <div style={{ backgroundColor: 'var(--bg-card-dark)', border: '2px solid var(--border-secondary)', padding: '1rem', borderRadius: '4px' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-inverse)', marginBottom: '0.5rem' }}>
             Time Below Range
           </div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#f3f4f6', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-inverse)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
             {tbrPercent != null ? parseFloat(tbrPercent).toFixed(1) : 'N/A'}
             <span style={{ fontSize: '1.25rem', opacity: 0.7 }}>%</span>
           </div>
-          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#d1d5db', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Target &lt;4%
           </div>
         </div>
 
-        <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.6)', border: '2px solid #4b5563', padding: '1rem', borderRadius: '4px' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#e5e7eb', marginBottom: '0.5rem' }}>
+        {/* GRI */}
+        <div style={{ backgroundColor: 'var(--bg-card-dark)', border: '2px solid var(--border-secondary)', padding: '1rem', borderRadius: '4px' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-inverse)', marginBottom: '0.5rem' }}>
             Risk Index (GRI)
           </div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#f9fafb', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-inverse)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
             {gri != null ? parseFloat(gri).toFixed(1) : 'N/A'}
           </div>
-          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#e5e7eb', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {gri != null && parseFloat(gri) < 20 ? 'Very Low Risk' :
              gri != null && parseFloat(gri) < 40 ? 'Low Risk' :
              gri != null && parseFloat(gri) < 60 ? 'Moderate Risk' :

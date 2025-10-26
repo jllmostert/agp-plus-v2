@@ -55,15 +55,40 @@ export default function FileUpload({
   };
 
   return (
-    <div className="space-y-4">
+    <div style={{ marginBottom: '1.5rem' }}>
       {/* Header */}
-      <div className="flex items-center gap-2">
-        <Upload className="w-5 h-5 text-gray-400" />
-        <h3 className="text-lg font-semibold text-gray-100">Data Import</h3>
+      <div style={{ 
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        marginBottom: '1rem',
+        padding: '1rem',
+        backgroundColor: 'var(--bg-card-dark)',
+        border: '3px solid var(--color-orange)',
+        borderBottom: 'none'
+      }}>
+        <Upload style={{ width: '24px', height: '24px', color: 'var(--color-orange)' }} />
+        <h3 style={{
+          fontSize: '1.25rem',
+          fontWeight: 700,
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          color: 'var(--color-white)',
+          margin: 0
+        }}>
+          📥 Data Import
+        </h3>
       </div>
 
       {/* Upload Buttons */}
-      <div className="flex flex-wrap gap-3">
+      <div style={{ 
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '1rem',
+        padding: '1.5rem',
+        backgroundColor: 'var(--bg-card-dark)',
+        border: '3px solid var(--color-orange)'
+      }}>
         {/* CSV Upload Button */}
         <CSVUploadButton 
           onUpload={handleCSVUpload}
@@ -79,16 +104,37 @@ export default function FileUpload({
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-900/20 border border-red-700 rounded-lg p-3 flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm text-red-300">{error}</p>
+        <div style={{
+          backgroundColor: 'var(--color-red)',
+          border: '3px solid var(--color-black)',
+          padding: '1rem',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.75rem',
+          marginTop: '1rem'
+        }}>
+          <AlertCircle style={{ width: '24px', height: '24px', color: 'var(--color-white)', flexShrink: 0, marginTop: '2px' }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ 
+              fontSize: '0.875rem',
+              color: 'var(--color-white)',
+              fontWeight: 600,
+              margin: 0
+            }}>
+              {error}
+            </p>
           </div>
           <button
             onClick={() => setError(null)}
-            className="text-red-400 hover:text-red-300"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--color-white)',
+              cursor: 'pointer',
+              padding: '0'
+            }}
           >
-            <X className="w-4 h-4" />
+            <X style={{ width: '20px', height: '20px' }} />
           </button>
         </div>
       )}
@@ -119,21 +165,44 @@ function CSVUploadButton({ onUpload, isLoaded }) {
         type="file"
         accept=".csv"
         onChange={onUpload}
-        className="hidden"
+        style={{ display: 'none' }}
       />
       
       <button
         onClick={() => fileInputRef.current?.click()}
-        className={`
-          btn flex items-center gap-2
-          ${isLoaded 
-            ? 'btn-secondary border-green-600 text-green-400' 
-            : 'btn-primary'
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          padding: '1rem 2rem',
+          fontSize: '1rem',
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          fontFamily: 'monospace',
+          backgroundColor: isLoaded ? 'var(--color-green)' : 'var(--color-black)',
+          color: 'var(--color-white)',
+          border: `3px solid ${isLoaded ? 'var(--color-green)' : 'var(--color-white)'}`,
+          cursor: 'pointer',
+          transition: 'all 100ms linear'
+        }}
+        onMouseEnter={(e) => {
+          if (!isLoaded) {
+            e.target.style.backgroundColor = 'var(--color-white)';
+            e.target.style.color = 'var(--color-black)';
           }
-        `}
+          e.target.style.transform = 'scale(1.05)';
+        }}
+        onMouseLeave={(e) => {
+          if (!isLoaded) {
+            e.target.style.backgroundColor = 'var(--color-black)';
+            e.target.style.color = 'var(--color-white)';
+          }
+          e.target.style.transform = 'scale(1)';
+        }}
       >
-        <FileText className="w-4 h-4" />
-        {isLoaded ? 'CSV Loaded ✓' : 'Upload CSV'}
+        <FileText style={{ width: '20px', height: '20px' }} />
+        {isLoaded ? '✅ CSV Loaded' : '📄 Upload CSV'}
       </button>
     </>
   );
@@ -146,16 +215,37 @@ function ProTimeButton({ onClick, isLoaded }) {
   return (
     <button
       onClick={onClick}
-      className={`
-        btn flex items-center gap-2
-        ${isLoaded 
-          ? 'btn-secondary border-green-600 text-green-400' 
-          : 'btn-secondary'
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        padding: '1rem 2rem',
+        fontSize: '1rem',
+        fontWeight: 700,
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        fontFamily: 'monospace',
+        backgroundColor: isLoaded ? 'var(--color-green)' : 'var(--color-black)',
+        color: 'var(--color-white)',
+        border: `3px solid ${isLoaded ? 'var(--color-green)' : 'var(--color-orange)'}`,
+        cursor: 'pointer',
+        transition: 'all 100ms linear'
+      }}
+      onMouseEnter={(e) => {
+        if (!isLoaded) {
+          e.target.style.backgroundColor = 'var(--color-orange)';
         }
-      `}
+        e.target.style.transform = 'scale(1.05)';
+      }}
+      onMouseLeave={(e) => {
+        if (!isLoaded) {
+          e.target.style.backgroundColor = 'var(--color-black)';
+        }
+        e.target.style.transform = 'scale(1)';
+      }}
     >
-      <Calendar className="w-4 h-4" />
-      {isLoaded ? 'ProTime Loaded ✓' : 'Upload PDF'}
+      <Calendar style={{ width: '20px', height: '20px' }} />
+      {isLoaded ? '✅ ProTime Loaded' : '📆 Upload PDF'}
     </button>
   );
 }

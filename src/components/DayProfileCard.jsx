@@ -21,8 +21,8 @@ export default function DayProfileCard({ profile }) {
     <div
       className="day-profile-card"
       style={{
-        border: '3px solid #000',
-        backgroundColor: '#fff',
+        border: '3px solid var(--color-black)',
+        backgroundColor: 'var(--color-white)',
         padding: 0,
         display: 'grid',
         gridTemplateColumns: '1fr auto',
@@ -35,13 +35,13 @@ export default function DayProfileCard({ profile }) {
       <div
         style={{
           gridColumn: '1 / -1',
-          borderBottom: '3px solid #000',
+          borderBottom: '3px solid var(--color-black)',
           padding: '16px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          backgroundColor: '#000',
-          color: '#fff'
+          backgroundColor: 'var(--color-black)',
+          color: 'var(--color-white)'
         }}
       >
         {/* Date */}
@@ -83,7 +83,7 @@ export default function DayProfileCard({ profile }) {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '8px 16px',
-                border: '2px solid #fff',
+                border: '2px solid var(--color-white)',
                 backgroundColor: 'rgba(255, 255, 255, 0.1)'
               }}
               title={badge.description}
@@ -123,7 +123,7 @@ export default function DayProfileCard({ profile }) {
           gridColumn: '1',
           gridRow: '2',
           padding: '24px',
-          borderRight: '3px solid #000'
+          borderRight: '3px solid var(--color-black)'
         }}
       >
         <GlucoseCurve24h 
@@ -154,12 +154,12 @@ export default function DayProfileCard({ profile }) {
       <div
         style={{
           gridColumn: '1 / -1',
-          borderTop: '3px solid #000',
+          borderTop: '3px solid var(--color-black)',
           padding: '16px 24px',
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
           gap: '16px',
-          backgroundColor: '#f5f5f5'
+          backgroundColor: 'var(--bg-secondary)'
         }}
       >
         <MetricBox label="TIR" value={`${metrics.tir}%`} target="≥70%" />
@@ -360,7 +360,7 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
 
         {/* Daily glucose curve (solid black) */}
         {curvePath && (
-          <path d={curvePath} fill="none" stroke="#000" strokeWidth={2} />
+          <path d={curvePath} fill="none" stroke="var(--color-black)" strokeWidth={2} />
         )}
 
         {/* Event markers */}
@@ -371,7 +371,7 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
             cy={yScale(event.startGlucose || 50)}
             r={6}
             fill="#DC2626"
-            stroke="#000"
+            stroke="var(--color-black)"
             strokeWidth={2}
           />
         ))}
@@ -383,7 +383,7 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
             cy={yScale(event.startGlucose || 65)}
             r={6}
             fill="#F59E0B"
-            stroke="#000"
+            stroke="var(--color-black)"
             strokeWidth={2}
           />
         ))}
@@ -395,7 +395,7 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
             cy={yScale(event.startGlucose || 260)}
             r={6}
             fill="#EF4444"
-            stroke="#000"
+            stroke="var(--color-black)"
             strokeWidth={2}
           />
         ))}
@@ -408,7 +408,7 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
               y1={0}
               x2={xScale(change.minuteOfDay / 5)}
               y2={chartHeight}
-              stroke="#dc2626"
+              stroke="var(--color-red)"
               strokeWidth={2}
               strokeDasharray="4,4"
             />
@@ -417,7 +417,7 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
               y={15}
               fontSize="10"
               fontFamily="Courier New, monospace"
-              fill="#dc2626"
+              fill="var(--color-red)"
               fontWeight="bold"
             >
               SENSOR VERVANGEN
@@ -442,28 +442,28 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
 
       {/* Legend */}
       <g transform={`translate(${padding.left + chartWidth - 180}, ${padding.top + 10})`}>
-        <circle cx={0} cy={0} r={4} fill="#DC2626" stroke="#000" strokeWidth={1} />
-        <text x={10} y={4} fontSize="10" fontFamily="Courier New, monospace" fill="#000">
+        <circle cx={0} cy={0} r={4} fill="#DC2626" stroke="var(--color-black)" strokeWidth={1} />
+        <text x={10} y={4} fontSize="10" fontFamily="Courier New, monospace" fill="var(--color-black)">
           HYPO L2
         </text>
 
-        <circle cx={0} cy={15} r={4} fill="#F59E0B" stroke="#000" strokeWidth={1} />
-        <text x={10} y={19} fontSize="10" fontFamily="Courier New, monospace" fill="#000">
+        <circle cx={0} cy={15} r={4} fill="#F59E0B" stroke="var(--color-black)" strokeWidth={1} />
+        <text x={10} y={19} fontSize="10" fontFamily="Courier New, monospace" fill="var(--color-black)">
           HYPO L1
         </text>
 
-        <circle cx={0} cy={30} r={4} fill="#EF4444" stroke="#000" strokeWidth={1} />
-        <text x={10} y={34} fontSize="10" fontFamily="Courier New, monospace" fill="#000">
+        <circle cx={0} cy={30} r={4} fill="#EF4444" stroke="var(--color-black)" strokeWidth={1} />
+        <text x={10} y={34} fontSize="10" fontFamily="Courier New, monospace" fill="var(--color-black)">
           HYPER
         </text>
 
-        <line x1={0} y1={45} x2={20} y2={45} stroke="#dc2626" strokeWidth={2} strokeDasharray="4,4" />
-        <text x={25} y={49} fontSize="10" fontFamily="Courier New, monospace" fill="#000">
+        <line x1={0} y1={45} x2={20} y2={45} stroke="var(--color-red)" strokeWidth={2} strokeDasharray="4,4" />
+        <text x={25} y={49} fontSize="10" fontFamily="Courier New, monospace" fill="var(--color-black)">
           SENSOR
         </text>
 
         <line x1={0} y1={60} x2={20} y2={60} stroke="#FF8C00" strokeWidth={2} strokeDasharray="2,2" />
-        <text x={25} y={64} fontSize="10" fontFamily="Courier New, monospace" fill="#000">
+        <text x={25} y={64} fontSize="10" fontFamily="Courier New, monospace" fill="var(--color-black)">
           CARTRIDGE
         </text>
       </g>
@@ -501,26 +501,26 @@ function TIRBar({ metrics }) {
         style={{
           width: '60px',
           height: `${barHeight}px`,
-          border: '3px solid #000',
+          border: '3px solid var(--color-black)',
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
-          backgroundColor: '#fff'
+          backgroundColor: 'var(--color-white)'
         }}
       >
         {/* TAR (top, red) */}
         <div
           style={{
             height: `${(tar / 100) * barHeight}px`,
-            backgroundColor: '#EF4444',
-            borderBottom: tar > 0 ? '2px solid #000' : 'none',
+            backgroundColor: 'var(--color-tar)',
+            borderBottom: tar > 0 ? '2px solid var(--color-black)' : 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: 'Courier New, monospace',
             fontSize: '11px',
             fontWeight: 'bold',
-            color: '#000'
+            color: 'var(--color-black)'
           }}
         >
           {tar > 5 ? `${metrics.tar}%` : ''}
@@ -530,15 +530,15 @@ function TIRBar({ metrics }) {
         <div
           style={{
             height: `${(tir / 100) * barHeight}px`,
-            backgroundColor: '#22C55E',
-            borderBottom: tir > 0 ? '2px solid #000' : 'none',
+            backgroundColor: 'var(--color-tir)',
+            borderBottom: tir > 0 ? '2px solid var(--color-black)' : 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: 'Courier New, monospace',
             fontSize: '11px',
             fontWeight: 'bold',
-            color: '#000'
+            color: 'var(--color-black)'
           }}
         >
           {tir > 5 ? `${metrics.tir}%` : ''}
@@ -548,14 +548,14 @@ function TIRBar({ metrics }) {
         <div
           style={{
             height: `${(tbr / 100) * barHeight}px`,
-            backgroundColor: '#F59E0B',
+            backgroundColor: 'var(--color-tbr)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: 'Courier New, monospace',
             fontSize: '11px',
             fontWeight: 'bold',
-            color: '#000'
+            color: 'var(--color-black)'
           }}
         >
           {tbr > 5 ? `${metrics.tbr}%` : ''}
@@ -599,7 +599,7 @@ function MetricBox({ label, value, unit, target }) {
           fontFamily: 'Courier New, monospace',
           fontSize: '18px',
           fontWeight: 'bold',
-          color: '#000'
+          color: 'var(--color-black)'
         }}
       >
         {value}

@@ -247,7 +247,7 @@ export default function SavedUploadsList({
                       padding: '0.5rem',
                       background: upload.id === activeId ? 'var(--color-green)' : 'var(--bg-primary)',
                       border: upload.id === activeId ? '2px solid var(--color-green)' : '2px solid var(--border-primary)',
-                      color: upload.id === activeId ? '#000' : 'var(--text-primary)',
+                      color: upload.id === activeId ? 'var(--color-black)' : 'var(--text-primary)',
                       cursor: 'pointer',
                       fontSize: '0.75rem',
                       fontWeight: 700,
@@ -257,8 +257,8 @@ export default function SavedUploadsList({
                     }}
                     onMouseEnter={(e) => {
                       if (upload.id === activeId) {
-                        e.target.style.background = '#e5e5e5';
-                        e.target.style.color = '#000';
+                        e.target.style.background = 'var(--bg-tertiary)';
+                        e.target.style.color = 'var(--color-black)';
                         e.target.style.border = '2px solid var(--color-green)';
                       } else {
                         e.target.style.background = 'var(--text-primary)';
@@ -268,7 +268,7 @@ export default function SavedUploadsList({
                     onMouseLeave={(e) => {
                       if (upload.id === activeId) {
                         e.target.style.background = 'var(--color-green)';
-                        e.target.style.color = '#000';
+                        e.target.style.color = 'var(--color-black)';
                         e.target.style.border = '2px solid var(--color-green)';
                       } else {
                         e.target.style.background = 'var(--bg-primary)';

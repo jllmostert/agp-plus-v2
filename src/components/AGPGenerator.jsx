@@ -333,6 +333,16 @@ export default function AGPGenerator() {
    * Handle date range changes from DateRangeFilter
    */
   const handleDateRangeChange = (start, end) => {
+    // DEBUG: Log what we received
+    console.log('[AGPGenerator] 🔍 handleDateRangeChange called:', {
+      start,
+      end,
+      startType: typeof start,
+      endType: typeof end,
+      startIsDate: start instanceof Date,
+      endIsDate: end instanceof Date
+    });
+    
     setSelectedDateRange({ start, end });
     masterDataset.setDateRange(start, end);
     
@@ -641,7 +651,7 @@ export default function AGPGenerator() {
             padding: '1rem',
             marginBottom: '1rem',
             background: 'var(--color-green)',
-            color: '#000',
+            color: 'var(--color-black)',
             fontWeight: 600,
             borderRadius: '4px',
             textAlign: 'center'
@@ -656,71 +666,143 @@ export default function AGPGenerator() {
             padding: '1rem',
             marginBottom: '1rem',
             background: 'var(--color-green)',
-            color: '#000',
+            color: 'var(--color-black)',
             fontWeight: 700,
             letterSpacing: '0.05em',
             textTransform: 'uppercase',
             textAlign: 'center',
-            border: '3px solid #000',
+            border: '3px solid var(--color-black)',
             animation: 'slideDown 200ms ease-out'
           }}>
             {loadToast}
           </div>
         )}
         
-        {/* Header - Compact Brutalist Box */}
+        {/* Header - Golden Ratio Sidebar Layout */}
         <header className="section">
-          <div className="card" style={{ 
-            padding: '1.5rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: '2rem'
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1.618fr', // Golden ratio
+            border: '3px solid var(--ink)',
+            overflow: 'hidden'
           }}>
-            {/* Left: Title + Subtitle */}
-            <div>
-              <h1 style={{ 
-                letterSpacing: '0.15em', 
-                fontWeight: 700, 
-                fontSize: '1.5rem',
-                marginBottom: '0.5rem'
-              }}>
-                AGP+ V3.7.2
-              </h1>
-              <p style={{ 
-                fontSize: '0.75rem', 
-                color: 'var(--text-secondary)',
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                margin: 0
-              }}>
-                Ambulatory Glucose Profile Generator
-              </p>
+            {/* LEFT: Sidebar - Ink background */}
+            <div style={{
+              background: 'var(--ink)',
+              color: 'var(--paper)',
+              padding: '2rem',
+              borderRight: '3px solid var(--ink)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}>
+              {/* Version + Title */}
+              <div>
+                <h1 style={{ 
+                  letterSpacing: '0.2em', 
+                  fontWeight: 700, 
+                  fontSize: '1.75rem',
+                  marginBottom: '0.25rem',
+                  color: 'var(--paper)'
+                }}>
+                  AGP+
+                </h1>
+                <div style={{ 
+                  fontSize: '0.875rem', 
+                  color: 'var(--paper)',
+                  fontWeight: 600,
+                  opacity: 0.9
+                }}>
+                  V3.7.2
+                </div>
+              </div>
+
+              {/* Patient Button - Green accent */}
+              <button
+                onClick={() => setPatientInfoOpen(true)}
+                style={{
+                  padding: '1rem',
+                  background: 'var(--color-green)',
+                  border: '3px solid var(--paper)',
+                  color: 'var(--paper)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.75rem',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'var(--paper)';
+                  e.target.style.color = 'var(--color-green)';
+                  e.target.style.borderColor = 'var(--color-green)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'var(--color-green)';
+                  e.target.style.color = 'var(--paper)';
+                  e.target.style.borderColor = 'var(--paper)';
+                }}
+              >
+                <User size={18} />
+                PATIËNT
+              </button>
+
+              {/* Patient Info Display */}
+              {patientInfo && patientInfo.name && (
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--paper)',
+                  opacity: 0.8,
+                  lineHeight: 1.6
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                    {patientInfo.name}
+                  </div>
+                  {patientInfo.dob && (
+                    <div>DOB: {new Date(patientInfo.dob).toLocaleDateString('nl-NL')}</div>
+                  )}
+                  {patientInfo.cgm && (
+                    <div>CGM: {patientInfo.cgm}</div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Right: Status Panel + Patient Info Button */}
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-              {/* Status Panel - Compact */}
-              <div style={{
-                background: 'var(--bg-secondary)',
-                border: '2px solid var(--border-primary)',
-                padding: '0.75rem 1rem',
-                fontFamily: 'monospace',
-                fontSize: '0.75rem',
-                minWidth: '280px'
-              }}>
-                {/* Status Light + Main Info */}
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.75rem',
+            {/* RIGHT: Main info area - Paper background */}
+            <div style={{
+              background: 'var(--paper)',
+              color: 'var(--ink)',
+              padding: '2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0' // No gap, divider handles spacing
+            }}>
+              {/* Top Section: Dataset overview */}
+              <div style={{ paddingBottom: '1.5rem' }}>
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--text-secondary)',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
                   marginBottom: '0.5rem'
                 }}>
+                  Dataset
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  {/* Status light */}
                   <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid #000',
+                    width: '20px',
+                    height: '20px',
+                    border: '3px solid var(--ink)',
                     background: dataStatus.lightColor === 'green' 
                       ? 'var(--color-green)' 
                       : dataStatus.lightColor === 'yellow' 
@@ -728,7 +810,11 @@ export default function AGPGenerator() {
                       : 'var(--color-red)',
                     flexShrink: 0
                   }} />
-                  <div style={{ fontWeight: 700, letterSpacing: '0.05em' }}>
+                  <div style={{ 
+                    fontWeight: 700, 
+                    fontSize: '1.125rem',
+                    letterSpacing: '0.05em' 
+                  }}>
                     {dataStatus.hasData ? (
                       <>{dataStatus.readingCount.toLocaleString()} READINGS</>
                     ) : (
@@ -736,95 +822,67 @@ export default function AGPGenerator() {
                     )}
                   </div>
                 </div>
-
-                {/* Date Range - Total Dataset */}
                 {dataStatus.hasData && (
                   <div style={{ 
-                    fontSize: '0.625rem',
+                    fontSize: '0.875rem',
                     color: 'var(--text-secondary)',
                     letterSpacing: '0.05em',
-                    marginBottom: '0.5rem',
-                    paddingLeft: '24px'
+                    paddingLeft: '32px'
                   }}>
-                    Dataset: {dataStatus.dateRangeFormatted}
-                  </div>
-                )}
-
-                {/* Active Period */}
-                {startDate && endDate && (
-                  <>
-                    <div style={{
-                      borderTop: '1px solid var(--border-primary)',
-                      marginTop: '0.5rem',
-                      paddingTop: '0.5rem'
-                    }}>
-                      <div style={{ 
-                        fontSize: '0.625rem',
-                        color: 'var(--text-secondary)',
-                        marginBottom: '0.25rem'
-                      }}>
-                        ANALYSIS PERIOD:
-                      </div>
-                      <div style={{ 
-                        fontWeight: 600,
-                        letterSpacing: '0.05em'
-                      }}>
-                        {startDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                        {' → '}
-                        {endDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                      </div>
-                      <div style={{ 
-                        fontSize: '0.625rem',
-                        color: 'var(--text-secondary)',
-                        marginTop: '0.25rem'
-                      }}>
-                        {Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1} dagen
-                        {activeReadings && <> • {activeReadings.length.toLocaleString()} readings</>}
-                        {workdays && <> • {workdays.size} ProTime workdays</>}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Patient Info */}
-                {patientInfo && patientInfo.name && (
-                  <div style={{
-                    borderTop: '1px solid var(--border-primary)',
-                    marginTop: '0.5rem',
-                    paddingTop: '0.5rem',
-                    fontSize: '0.625rem',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    {patientInfo.name}
-                    {patientInfo.dob && <> • DOB {new Date(patientInfo.dob).toLocaleDateString('nl-NL')}</>}
-                    {patientInfo.cgm && <> • {patientInfo.cgm}</>}
+                    {dataStatus.dateRangeFormatted}
                   </div>
                 )}
               </div>
 
-              {/* Patient Info Button */}
-              <button
-                onClick={() => setPatientInfoOpen(true)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  background: 'var(--bg-secondary)',
-                  border: '2px solid var(--border-primary)',
+              {/* Divider - Double line */}
+              <div style={{
+                borderTop: '3px solid var(--ink)',
+                borderBottom: '3px solid var(--ink)',
+                height: '2px',
+                margin: '0'
+              }} />
+
+              {/* Bottom Section: Analysis period */}
+              {startDate && endDate ? (
+                <div style={{ paddingTop: '1.5rem' }}>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--text-secondary)',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.5rem'
+                  }}>
+                    Analysis
+                  </div>
+                  <div style={{ 
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                    letterSpacing: '0.05em',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {startDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    <span style={{ color: 'var(--color-orange)', margin: '0 0.5rem' }}>→</span>
+                    {endDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.875rem',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    <strong>{Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1}</strong> dagen
+                    {activeReadings && <> • <strong>{activeReadings.length.toLocaleString()}</strong> readings</>}
+                    {workdays && <> • <strong>{workdays.size}</strong> ProTime workdays</>}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ 
+                  paddingTop: '1.5rem',
+                  fontSize: '0.875rem',
                   color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  height: 'fit-content',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                <User size={16} />
-                EDIT
-              </button>
+                  fontStyle: 'italic'
+                }}>
+                  No analysis period selected
+                </div>
+              )}
             </div>
           </div>
 
@@ -836,8 +894,8 @@ export default function AGPGenerator() {
               background: dataStatus.lightColor === 'red' 
                 ? 'var(--color-red)' 
                 : 'var(--color-yellow)',
-              border: '3px solid #000',
-              color: '#000',
+              border: '3px solid var(--color-black)',
+              color: 'var(--color-black)',
               fontWeight: 700,
               fontSize: '0.875rem',
               letterSpacing: '0.05em',
@@ -887,9 +945,9 @@ export default function AGPGenerator() {
                 setDataImportExpanded(!dataImportExpanded);
               }}
               style={{
-                background: dataImportExpanded ? '#000' : 'var(--bg-secondary)',
+                background: dataImportExpanded ? 'var(--color-black)' : 'var(--bg-secondary)',
                 border: '3px solid var(--border-primary)',
-                color: dataImportExpanded ? '#fff' : 'var(--text-primary)',
+                color: dataImportExpanded ? 'var(--color-white)' : 'var(--text-primary)',
                 cursor: 'pointer',
                 padding: '1.5rem 1rem',
                 display: 'flex',
@@ -912,7 +970,7 @@ export default function AGPGenerator() {
               </h2>
               <span style={{ 
                 fontSize: '0.625rem',
-                color: dataImportExpanded ? '#fff' : 'var(--text-secondary)',
+                color: dataImportExpanded ? 'var(--color-white)' : 'var(--text-secondary)',
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase'
@@ -978,9 +1036,9 @@ export default function AGPGenerator() {
               }}
               disabled={!metricsResult || !startDate || !endDate}
               style={{
-                background: dataExportExpanded ? '#000' : (metricsResult && startDate && endDate ? 'var(--bg-secondary)' : 'var(--bg-primary)'),
+                background: dataExportExpanded ? 'var(--color-black)' : (metricsResult && startDate && endDate ? 'var(--bg-secondary)' : 'var(--bg-primary)'),
                 border: '3px solid var(--border-primary)',
-                color: dataExportExpanded ? '#fff' : (metricsResult && startDate && endDate ? 'var(--text-primary)' : 'var(--text-secondary)'),
+                color: dataExportExpanded ? 'var(--color-white)' : (metricsResult && startDate && endDate ? 'var(--text-primary)' : 'var(--text-secondary)'),
                 cursor: metricsResult && startDate && endDate ? 'pointer' : 'not-allowed',
                 padding: '1.5rem 1rem',
                 display: 'flex',
@@ -1004,7 +1062,7 @@ export default function AGPGenerator() {
               </h2>
               <span style={{ 
                 fontSize: '0.625rem',
-                color: dataExportExpanded ? '#fff' : (metricsResult && startDate && endDate ? 'var(--text-secondary)' : 'var(--text-secondary)'),
+                color: dataExportExpanded ? 'var(--color-white)' : (metricsResult && startDate && endDate ? 'var(--text-secondary)' : 'var(--text-secondary)'),
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase'

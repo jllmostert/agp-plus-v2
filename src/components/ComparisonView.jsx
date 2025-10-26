@@ -88,22 +88,37 @@ export default function ComparisonView({
   ];
 
   return (
-    <div className="card" style={{ padding: '2rem' }}>
+    <div style={{ 
+      backgroundColor: 'var(--bg-card-dark)',
+      border: '4px solid var(--color-black)',
+      padding: '2rem',
+      marginBottom: '2rem'
+    }}>
       {/* Header */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        marginBottom: '1.5rem'
+        marginBottom: '2rem',
+        paddingBottom: '1rem',
+        borderBottom: '3px solid var(--color-orange)'
       }}>
         <h3 style={{ 
-          fontSize: '1.125rem', 
-          fontWeight: 600, 
-          color: 'var(--text-primary)'
+          fontSize: '1.25rem',
+          fontWeight: 700,
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          color: 'var(--color-white)'
         }}>
-          Period Comparison
+          🔄 Period Comparison
         </h3>
-        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+        <div style={{ 
+          fontSize: '1rem',
+          color: 'var(--color-orange)',
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          fontFamily: 'monospace'
+        }}>
           {formatDate(startDate)} → {formatDate(endDate)} vs {formatDate(prevStart)} → {formatDate(prevEnd)}
         </div>
       </div>
@@ -145,15 +160,15 @@ function ComparisonRow({
   const deltaFormatted = format(Math.abs(delta));
   
   let trendIcon = '→';
-  let trendColor = '#6b7280'; // gray-500
+  let trendColor = 'var(--text-secondary)'; // gray-500
   
   if (Math.abs(delta) > 0.5) {
     if (betterIfHigher) {
       trendIcon = delta > 0 ? '↑' : '↓';
-      trendColor = delta > 0 ? '#10b981' : '#ef4444'; // green-500 : red-500
+      trendColor = delta > 0 ? 'var(--color-green)' : 'var(--color-red)'; // green-500 : red-500
     } else if (betterIfLower) {
       trendIcon = delta > 0 ? '↑' : '↓';
-      trendColor = delta < 0 ? '#10b981' : '#ef4444'; // green-500 : red-500
+      trendColor = delta < 0 ? 'var(--color-green)' : 'var(--color-red)'; // green-500 : red-500
     } else {
       trendIcon = delta > 0 ? '↑' : '↓';
     }
@@ -166,23 +181,28 @@ function ComparisonRow({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        gap: '0.25rem'
+        gap: '0.5rem',
+        backgroundColor: 'var(--color-orange)',
+        padding: '1rem',
+        border: '3px solid var(--color-black)'
       }}>
         <div style={{ 
-          fontSize: '0.75rem', 
-          fontWeight: 700, 
-          letterSpacing: '0.1em', 
+          fontSize: '0.875rem',
+          fontWeight: 700,
+          letterSpacing: '0.15em',
           textTransform: 'uppercase',
-          color: 'var(--text-secondary)'
+          color: 'var(--color-black)'
         }}>
           {label}
         </div>
         {sublabel && (
           <div style={{ 
-            fontSize: '0.625rem', 
-            color: '#6b7280',
+            fontSize: '0.75rem',
+            color: 'var(--color-black)',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            letterSpacing: '0.1em',
+            fontWeight: 600,
+            opacity: 0.8
           }}>
             {sublabel}
           </div>
@@ -191,39 +211,51 @@ function ComparisonRow({
 
       {/* Current Period Card */}
       <div style={{
-        backgroundColor: '#111827',
-        color: 'white',
-        padding: '1.25rem',
-        borderRadius: '4px',
-        border: '2px solid #1f2937'
-      }}>
+        backgroundColor: 'var(--bg-card-dark)',
+        color: 'var(--color-white)',
+        padding: '1.5rem',
+        borderRadius: '0',
+        border: '3px solid var(--color-green)', // Green = current/active
+        transition: 'all 100ms linear'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.02)';
+        e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-green) inset';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+      >
         <div style={{ 
-          fontSize: '0.6875rem',
+          fontSize: '0.75rem',
           fontWeight: 700,
-          letterSpacing: '0.1em',
+          letterSpacing: '0.15em',
           textTransform: 'uppercase',
-          marginBottom: '0.75rem',
-          color: '#9ca3af'
+          marginBottom: '1rem',
+          color: 'var(--color-green)',
+          borderBottom: '2px solid var(--color-green)',
+          paddingBottom: '0.5rem'
         }}>
-          Current Period
+          📍 Current Period
         </div>
         <div style={{ 
-          fontSize: '2rem',
+          fontSize: '2.5rem',
           fontWeight: 700,
-          letterSpacing: '-0.01em',
-          color: '#f9fafb',
+          letterSpacing: '-0.02em',
+          color: 'var(--color-white)',
           fontVariantNumeric: 'tabular-nums',
           lineHeight: 1
         }}>
           {format(current)}
-          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#d1d5db' }}>{unit}</span>
+          <span style={{ fontSize: '1.25rem', marginLeft: '0.5rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{unit}</span>
         </div>
         {currentSD != null && (
           <div style={{ 
             fontSize: '1rem',
             fontWeight: 600,
-            marginTop: '0.5rem',
-            color: '#d1d5db'
+            marginTop: '0.75rem',
+            color: 'var(--text-tertiary)'
           }}>
             ± {safeFormat(currentSD, 0)} SD
           </div>
@@ -231,15 +263,15 @@ function ComparisonRow({
         
         {/* Trend Indicator */}
         <div style={{ 
-          marginTop: '0.75rem',
-          paddingTop: '0.75rem',
-          borderTop: '1px solid #374151',
+          marginTop: '1rem',
+          paddingTop: '1rem',
+          borderTop: '2px solid var(--text-tertiary)',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.5rem'
+          gap: '0.75rem'
         }}>
-          <span style={{ fontSize: '1.25rem', color: trendColor }}>{trendIcon}</span>
-          <span style={{ fontSize: '0.875rem', color: trendColor, fontWeight: 600 }}>
+          <span style={{ fontSize: '1.5rem', color: trendColor }}>{trendIcon}</span>
+          <span style={{ fontSize: '1rem', color: trendColor, fontWeight: 700, letterSpacing: '0.05em' }}>
             {delta > 0 ? '+' : ''}{deltaFormatted} {unit}
           </span>
         </div>
@@ -247,39 +279,51 @@ function ComparisonRow({
 
       {/* Previous Period Card */}
       <div style={{
-        backgroundColor: '#111827',
-        color: 'white',
-        padding: '1.25rem',
-        borderRadius: '4px',
-        border: '2px solid #1f2937'
-      }}>
+        backgroundColor: 'var(--bg-card-dark)',
+        color: 'var(--color-white)',
+        padding: '1.5rem',
+        borderRadius: '0',
+        border: '3px solid var(--text-tertiary)', // Gray = previous/historical
+        transition: 'all 100ms linear'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.02)';
+        e.currentTarget.style.boxShadow = '0 0 0 3px var(--text-tertiary) inset';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+      >
         <div style={{ 
-          fontSize: '0.6875rem',
+          fontSize: '0.75rem',
           fontWeight: 700,
-          letterSpacing: '0.1em',
+          letterSpacing: '0.15em',
           textTransform: 'uppercase',
-          marginBottom: '0.75rem',
-          color: '#9ca3af'
+          marginBottom: '1rem',
+          color: 'var(--text-tertiary)',
+          borderBottom: '2px solid var(--text-tertiary)',
+          paddingBottom: '0.5rem'
         }}>
-          Previous Period
+          ⏮️ Previous Period
         </div>
         <div style={{ 
-          fontSize: '2rem',
+          fontSize: '2.5rem',
           fontWeight: 700,
-          letterSpacing: '-0.01em',
-          color: '#9ca3af',
+          letterSpacing: '-0.02em',
+          color: 'var(--color-white)',
           fontVariantNumeric: 'tabular-nums',
           lineHeight: 1
         }}>
           {format(previous)}
-          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#6b7280' }}>{unit}</span>
+          <span style={{ fontSize: '1.25rem', marginLeft: '0.5rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{unit}</span>
         </div>
         {previousSD != null && (
           <div style={{ 
             fontSize: '1rem',
             fontWeight: 600,
-            marginTop: '0.5rem',
-            color: '#9ca3af'
+            marginTop: '0.75rem',
+            color: 'var(--text-tertiary)'
           }}>
             ± {safeFormat(previousSD, 0)} SD
           </div>
@@ -288,15 +332,16 @@ function ComparisonRow({
         {/* Target Info */}
         {target && (
           <div style={{ 
-            marginTop: '0.75rem',
-            paddingTop: '0.75rem',
-            borderTop: '1px solid #374151',
-            fontSize: '0.6875rem',
-            color: '#6b7280',
+            marginTop: '1rem',
+            paddingTop: '1rem',
+            borderTop: '2px solid var(--text-tertiary)',
+            fontSize: '0.75rem',
+            color: 'var(--color-orange)',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            letterSpacing: '0.1em',
+            fontWeight: 700
           }}>
-            {target}
+            🎯 {target}
           </div>
         )}
       </div>

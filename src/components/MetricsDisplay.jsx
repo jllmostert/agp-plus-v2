@@ -148,11 +148,14 @@ export default function MetricsDisplay({ metrics }) {
         <div style={{ 
           display: 'flex',
           alignItems: 'center',
-          fontSize: '0.75rem', 
+          fontSize: '0.875rem', 
           fontWeight: 700, 
-          letterSpacing: '0.15em', 
+          letterSpacing: '0.2em', 
           textTransform: 'uppercase',
-          color: 'var(--text-secondary)'
+          color: 'var(--color-black)',
+          backgroundColor: 'var(--color-orange)',
+          padding: '1rem',
+          border: '3px solid var(--color-black)'
         }}>
           Range Distribution
         </div>
@@ -163,11 +166,14 @@ export default function MetricsDisplay({ metrics }) {
         <div style={{ 
           display: 'flex',
           alignItems: 'center',
-          fontSize: '0.75rem', 
+          fontSize: '0.875rem', 
           fontWeight: 700, 
-          letterSpacing: '0.15em', 
+          letterSpacing: '0.2em', 
           textTransform: 'uppercase',
-          color: 'var(--text-secondary)'
+          color: 'var(--color-black)',
+          backgroundColor: 'var(--color-orange)',
+          padding: '1rem',
+          border: '3px solid var(--color-black)'
         }}>
           Variability Metrics
         </div>
@@ -178,11 +184,14 @@ export default function MetricsDisplay({ metrics }) {
         <div style={{ 
           display: 'flex',
           alignItems: 'center',
-          fontSize: '0.75rem', 
+          fontSize: '0.875rem', 
           fontWeight: 700, 
-          letterSpacing: '0.15em', 
+          letterSpacing: '0.2em', 
           textTransform: 'uppercase',
-          color: 'var(--text-secondary)'
+          color: 'var(--color-black)',
+          backgroundColor: 'var(--color-orange)',
+          padding: '1rem',
+          border: '3px solid var(--color-black)'
         }}>
           Glucose Range
         </div>
@@ -193,11 +202,14 @@ export default function MetricsDisplay({ metrics }) {
         <div style={{ 
           display: 'flex',
           alignItems: 'center',
-          fontSize: '0.75rem', 
+          fontSize: '0.875rem', 
           fontWeight: 700, 
-          letterSpacing: '0.15em', 
+          letterSpacing: '0.2em', 
           textTransform: 'uppercase',
-          color: 'var(--text-secondary)'
+          color: 'var(--color-black)',
+          backgroundColor: 'var(--color-orange)',
+          padding: '1rem',
+          border: '3px solid var(--color-black)'
         }}>
           Overview
         </div>
@@ -299,7 +311,7 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
           <div style={{ 
             fontSize: '1rem',
             fontWeight: 600,
-            color: '#d1d5db',
+            color: 'var(--border-tertiary)',
             marginTop: '0.25rem'
           }}>
             {subtitle}
@@ -312,64 +324,87 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
 
 /**
  * SecondaryMetricCard - Detail Grid Metrics
- * White-on-dark with proper contrast, grouped by category
+ * BRUTALIST: Dark background, white text, thick borders, high contrast
  */
 function SecondaryMetricCard({ label, value, unit, subtitle, status = 'neutral', metricId }) {
   const getStatusColor = () => {
     switch(status) {
-      case 'good': return '#10b981'; // green-500
-      case 'warning': return '#f59e0b'; // amber-500
-      case 'danger': return '#ef4444'; // red-500
-      default: return '#f9fafb'; // gray-50 (white for good contrast)
+      case 'good': return 'var(--color-green)';
+      case 'warning': return 'var(--color-orange)';
+      case 'danger': return 'var(--color-red)';
+      default: return 'var(--color-white)';
     }
   };
 
   return (
     <div 
       style={{
-        backgroundColor: '#111827', // gray-900
-        color: 'white',
-        padding: '1.25rem',
-        borderRadius: '4px',
-        border: '2px solid #1f2937' // gray-800
+        backgroundColor: 'var(--bg-card-dark)', // #1a1a1a - brutalist dark
+        color: 'var(--color-white)',
+        padding: '1.5rem',
+        borderRadius: '0', // NO ROUNDED CORNERS
+        border: '3px solid var(--color-black)', // THICK BLACK BORDER
+        transition: 'transform 100ms linear, box-shadow 100ms linear'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.02)';
+        e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-black) inset';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = 'none';
       }}
     >
-      {/* Label */}
+      {/* Label - ORANGE accent for headers */}
       <Tooltip text={metricId ? getMetricTooltip(metricId) : ''}>
         <div style={{ 
           fontSize: '0.75rem',
           fontWeight: 700,
-          letterSpacing: '0.1em',
+          letterSpacing: '0.15em',
           textTransform: 'uppercase',
-          marginBottom: '0.75rem',
-          color: '#9ca3af' // gray-400
+          marginBottom: '1rem',
+          color: 'var(--color-orange)', // BRUTALIST ACCENT
+          borderBottom: '2px solid var(--color-orange)',
+          paddingBottom: '0.5rem'
         }}>
           {label}
         </div>
       </Tooltip>
 
-      {/* Value */}
+      {/* Value - HUGE and STATUS COLORED */}
       <div style={{ 
-        fontSize: '2rem',
+        fontSize: '2.5rem',
         fontWeight: 700,
-        letterSpacing: '-0.01em',
+        letterSpacing: '-0.02em',
         color: getStatusColor(),
         fontVariantNumeric: 'tabular-nums',
-        lineHeight: 1
+        lineHeight: 1,
+        marginBottom: '0.5rem'
       }}>
         {value}
-        {unit && <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: '#d1d5db' }}>{unit}</span>}
+        {unit && (
+          <span style={{ 
+            fontSize: '1.25rem', 
+            marginLeft: '0.5rem', 
+            color: 'var(--text-tertiary)',
+            fontWeight: 600
+          }}>
+            {unit}
+          </span>
+        )}
       </div>
 
-      {/* Subtitle */}
+      {/* Subtitle - dimmed but readable */}
       {subtitle && (
         <div style={{ 
-          fontSize: '0.6875rem',
+          fontSize: '0.75rem',
           fontWeight: 600,
           letterSpacing: '0.05em',
-          marginTop: '0.5rem',
-          color: '#6b7280', // gray-500
-          textTransform: 'uppercase'
+          marginTop: '0.75rem',
+          color: 'var(--text-tertiary)',
+          textTransform: 'uppercase',
+          borderTop: '1px solid var(--text-tertiary)',
+          paddingTop: '0.5rem'
         }}>
           {subtitle}
         </div>

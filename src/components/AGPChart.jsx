@@ -31,8 +31,8 @@ export default function AGPChart({
   events = { hypoL1: [], hypoL2: [], hyper: [] },
   comparison = null,
   metrics = null,
-  width = 900, 
-  height = 400 
+  width = 1200,  // Increased from 900 - "fancy chart" should dominate
+  height = 500   // Increased from 400 - better vertical space
 }) {
   if (!agpData || agpData.length === 0) {
     return (
@@ -96,7 +96,7 @@ export default function AGPChart({
             y1={margin.top}
             x2={xScale(6 * 60)}
             y2={margin.top + chartHeight}
-            stroke="#666"
+            stroke="var(--color-gray-mid)"
             strokeWidth="2"
             strokeDasharray="8,4"
             opacity="0.6"
@@ -109,27 +109,27 @@ export default function AGPChart({
             yScale={yScale}
           />
 
-          {/* Percentile bands (shaded areas) */}
-          {/* 5-95th percentile band - light blue with 30% opacity */}
+          {/* Percentile bands - BRUTALIST GRAYSCALE */}
+          {/* 5-95th percentile band - light gray */}
           <path
             d={paths.band_5_95}
-            fill="#93c5fd"
-            opacity="0.5"
+            fill="var(--color-agp-p5-95)"
+            opacity="0.8"
           />
           
-          {/* 25-75th percentile band - darker blue with 50% opacity */}
+          {/* 25-75th percentile band - medium gray */}
           <path
             d={paths.band_25_75}
-            fill="#3b82f6"
-            opacity="0.5"
+            fill="var(--color-agp-p25-75)"
+            opacity="0.8"
           />
 
-          {/* Median line (p50) - black SOLID */}
+          {/* Median line (p50) - BRUTALIST BLACK SOLID */}
           <path
             d={paths.median}
             fill="none"
-            stroke="#000000"
-            strokeWidth="2.5"
+            stroke="var(--color-agp-median)"
+            strokeWidth="3"
             strokeLinecap="round"
           />
 
@@ -138,7 +138,7 @@ export default function AGPChart({
             <path
               d={comparisonPath}
               fill="none"
-              stroke="#9ca3af"
+              stroke="var(--text-tertiary)"
               strokeWidth="2.5"
               strokeDasharray="6,4"
               opacity="0.9"
@@ -240,7 +240,7 @@ function GridLines({ margin, chartWidth, chartHeight, yScale }) {
           y1={yScale(value)}
           x2={margin.left + chartWidth}
           y2={yScale(value)}
-          stroke="#000000"
+          stroke="var(--color-black)"
           strokeWidth="1"
           opacity="0.2"
         />
@@ -250,14 +250,14 @@ function GridLines({ margin, chartWidth, chartHeight, yScale }) {
 }
 
 /**
- * TargetLines - Clinical targets (BRUTALIST: massive lines, red/yellow)
+ * TargetLines - Clinical targets (BRUTALIST: massive lines, red)
  */
 function TargetLines({ margin, chartWidth, yScale }) {
   const targets = [
-    { value: 54, color: '#c70000', width: 2, dash: '8,4' },    // Critical Low - Soviet red
-    { value: 70, color: '#000000', width: 3, dash: 'none' },   // Low - Black
-    { value: 180, color: '#000000', width: 3, dash: 'none' },  // High - Black
-    { value: 250, color: '#c70000', width: 2, dash: '8,4' },   // Very High - Soviet red
+    { value: 54, color: 'var(--color-red)', width: 2, dash: '8,4' },    // Critical Low
+    { value: 70, color: 'var(--color-black)', width: 3, dash: 'none' },   // Low
+    { value: 180, color: 'var(--color-black)', width: 3, dash: 'none' },  // High
+    { value: 250, color: 'var(--color-red)', width: 2, dash: '8,4' },   // Very High
   ];
 
   return (
@@ -279,7 +279,7 @@ function TargetLines({ margin, chartWidth, yScale }) {
 }
 
 /**
- * EventMarkers - BRUTALIST event indicators (Soviet red/yellow)
+ * EventMarkers - BRUTALIST event indicators
  */
 function EventMarkers({ events, xScale, yScale, chartHeight, margin }) {
   if (!events) return null;
@@ -290,20 +290,20 @@ function EventMarkers({ events, xScale, yScale, chartHeight, margin }) {
   
   return (
     <g className="event-markers">
-      {/* Hypo L2 (critical <54) - Soviet Red X */}
+      {/* Hypo L2 (critical <54) - RED X */}
       {hypoL2.map((event, i) => {
         const cx = xScale(event.minuteOfDay);
         const cy = yScale(event.startGlucose || 50);
         return (
           <g key={`hypoL2-${i}`}>
-            <circle cx={cx} cy={cy} r="6" fill="#c70000" />
-            <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} stroke="#ffffff" strokeWidth="2" />
-            <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} stroke="#ffffff" strokeWidth="2" />
+            <circle cx={cx} cy={cy} r="6" fill="var(--color-hypo-l2)" />
+            <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} stroke="var(--color-white)" strokeWidth="2" />
+            <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} stroke="var(--color-white)" strokeWidth="2" />
           </g>
         );
       })}
 
-      {/* Hypo L1 (54-69) - Yellow Circle */}
+      {/* Hypo L1 (54-69) - ORANGE Circle */}
       {hypoL1.map((event, i) => {
         const cx = xScale(event.minuteOfDay);
         const cy = yScale(event.startGlucose || 62);
@@ -313,14 +313,14 @@ function EventMarkers({ events, xScale, yScale, chartHeight, margin }) {
             cx={cx}
             cy={cy}
             r="5"
-            fill="#f4e300"
-            stroke="#000000"
+            fill="var(--color-hypo-l1)"
+            stroke="var(--color-black)"
             strokeWidth="1"
           />
         );
       })}
 
-      {/* Hyperglycemia (>250) - Soviet Red Triangle */}
+      {/* Hyperglycemia (>250) - ORANGE Triangle */}
       {hyper.map((event, i) => {
         const cx = xScale(event.minuteOfDay);
         const cy = yScale(event.startGlucose || 280);
@@ -329,8 +329,8 @@ function EventMarkers({ events, xScale, yScale, chartHeight, margin }) {
           <polygon
             key={`hyper-${i}`}
             points={`${cx},${cy - size} ${cx - size},${cy + size} ${cx + size},${cy + size}`}
-            fill="#c70000"
-            stroke="#000000"
+            fill="var(--color-hyper)"
+            stroke="var(--color-black)"
             strokeWidth="1"
           />
         );
@@ -354,7 +354,7 @@ function XAxis({ margin, chartWidth, chartHeight }) {
         y1={margin.top + chartHeight}
         x2={margin.left + chartWidth}
         y2={margin.top + chartHeight}
-        stroke="#6b7280"
+        stroke="var(--text-secondary)"
         strokeWidth="1.5"
       />
 
@@ -366,14 +366,14 @@ function XAxis({ margin, chartWidth, chartHeight }) {
             y1={margin.top + chartHeight}
             x2={xPosition(hour)}
             y2={margin.top + chartHeight + 5}
-            stroke="#6b7280"
+            stroke="var(--text-secondary)"
             strokeWidth="1.5"
           />
           <text
             x={xPosition(hour)}
             y={margin.top + chartHeight + 20}
             textAnchor="middle"
-            fill="#9ca3af"
+            fill="var(--text-tertiary)"
             fontSize="12"
           >
             {String(hour).padStart(2, '0')}:00
@@ -386,7 +386,7 @@ function XAxis({ margin, chartWidth, chartHeight }) {
         x={margin.left + chartWidth / 2}
         y={margin.top + chartHeight + 35}
         textAnchor="middle"
-        fill="#6b7280"
+        fill="var(--text-secondary)"
         fontSize="13"
         fontWeight="500"
       >
@@ -410,7 +410,7 @@ function YAxis({ margin, chartHeight, yScale }) {
         y1={margin.top}
         x2={margin.left}
         y2={margin.top + chartHeight}
-        stroke="#6b7280"
+        stroke="var(--text-secondary)"
         strokeWidth="1.5"
       />
 
@@ -422,7 +422,7 @@ function YAxis({ margin, chartHeight, yScale }) {
             y1={yScale(value)}
             x2={margin.left}
             y2={yScale(value)}
-            stroke="#6b7280"
+            stroke="var(--text-secondary)"
             strokeWidth="1.5"
           />
           <text
@@ -430,7 +430,7 @@ function YAxis({ margin, chartHeight, yScale }) {
             y={yScale(value)}
             textAnchor="end"
             alignmentBaseline="middle"
-            fill="#9ca3af"
+            fill="var(--text-tertiary)"
             fontSize="12"
           >
             {value}
@@ -443,7 +443,7 @@ function YAxis({ margin, chartHeight, yScale }) {
         x={margin.left - 45}
         y={margin.top + chartHeight / 2}
         textAnchor="middle"
-        fill="#6b7280"
+        fill="var(--text-secondary)"
         fontSize="13"
         fontWeight="500"
         transform={`rotate(-90, ${margin.left - 45}, ${margin.top + chartHeight / 2})`}
@@ -464,9 +464,9 @@ function ChartLegend({ hasComparison }) {
         position: 'absolute',
         top: '16px',
         right: '16px',
-        backgroundColor: 'white',
-        border: '1px solid #d1d5db',
-        borderRadius: '4px',
+        backgroundColor: 'var(--bg-primary)',
+        border: '2px solid var(--border-secondary)',
+        borderRadius: '2px',
         padding: '12px',
         fontSize: '12px',
         lineHeight: '1.8',
@@ -475,13 +475,13 @@ function ChartLegend({ hasComparison }) {
         zIndex: 10
       }}
     >
-      <LegendItem color="#000000" label="Mediaan" thickness={2.5} />
-      <LegendItem color="#3b82f6" label="25-75%" isShaded opacity={0.5} />
-      <LegendItem color="#93c5fd" label="5-95%" isShaded opacity={0.5} />
-      {hasComparison && <LegendItem color="#9ca3af" label="Vorige periode" thickness={2.5} isDashed />}
-      <LegendItem color="#dc2626" label="L2 Hypo (<54)" isCircle markerType="x" />
-      <LegendItem color="#f97316" label="L1 Hypo (54-69)" isCircle />
-      <LegendItem color="#dc2626" label="Hyper (>250)" isTriangle />
+      <LegendItem color="var(--color-agp-median)" label="Mediaan" thickness={3} />
+      <LegendItem color="var(--color-agp-p25-75)" label="25-75%" isShaded opacity={0.8} />
+      <LegendItem color="var(--color-agp-p5-95)" label="5-95%" isShaded opacity={0.8} />
+      {hasComparison && <LegendItem color="var(--text-tertiary)" label="Vorige periode" thickness={2.5} isDashed />}
+      <LegendItem color="var(--color-hypo-l2)" label="L2 Hypo (<54)" isCircle markerType="x" />
+      <LegendItem color="var(--color-hypo-l1)" label="L1 Hypo (54-69)" isCircle />
+      <LegendItem color="var(--color-hyper)" label="Hyper (>250)" isTriangle />
     </div>
   );
 }
@@ -537,7 +537,7 @@ function LegendItem({ color, label, isDashed, isCircle, isTriangle, markerType, 
           flexShrink: 0
         }} />
       )}
-      <span style={{ color: '#374151', fontSize: '12px', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ color: 'var(--text-secondary)', fontSize: '12px', whiteSpace: 'nowrap' }}>{label}</span>
     </div>
   );
 }
