@@ -22,6 +22,13 @@ import {
 } from '../core/sensor-history-engine';
 
 export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
+  // Debug: Check what we receive
+  console.log('🔴 [SensorHistoryModal] Received sensors:', {
+    count: sensors?.length || 0,
+    firstSensor: sensors?.[0],
+    lastSensor: sensors?.[sensors?.length - 1]
+  });
+
   // Filters state
   const [filters, setFilters] = useState({
     startDate: null,
@@ -48,7 +55,9 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
 
   // Sorted sensors
   const sortedSensors = useMemo(() => {
-    return sortSensors(filteredSensors, sortColumn, sortDirection);
+    const sorted = sortSensors(filteredSensors, sortColumn, sortDirection);
+    console.log('🔴 [SensorHistoryModal] Sorted sensors:', sorted.length);
+    return sorted;
   }, [filteredSensors, sortColumn, sortDirection]);
 
   // Handle sort click
@@ -574,7 +583,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                     <td style={{
                       padding: '10px 12px',
                       borderRight: '1px solid var(--grid-line)',
-                      color: sensor.duration_days >= 7 ? 'var(--color-green)' :
+                      color: sensor.duration_days >= 6.75 ? 'var(--color-green)' :
                              sensor.duration_days >= 6 ? 'var(--color-orange)' :
                              'var(--color-red)',
                       fontWeight: 'bold'
@@ -602,19 +611,40 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       padding: '10px 12px',
                       color: 'var(--paper)'
                     }}>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '4px 12px',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.1em',
-                        border: sensor.success === 1 ? '2px solid var(--color-green)' : '2px solid var(--color-red)',
-                        backgroundColor: sensor.success === 1 ? 'var(--color-green)' : 'var(--color-red)',
-                        color: 'var(--paper)'
-                      }}>
-                        {sensor.success === 1 ? '✓ OK' : '✗ FAIL'}
-                      </span>
+                      {(() => {
+                        const days = sensor.duration_days || 0;
+                        let statusColor, statusBg, statusText;
+                        
+                        if (days >= 6.75) {
+                          statusColor = 'var(--color-green)';
+                          statusBg = 'var(--color-green)';
+                          statusText = '✓ OK';
+                        } else if (days >= 6.0) {
+                          statusColor = 'var(--color-orange)';
+                          statusBg = 'var(--color-orange)';
+                          statusText = '⚠ SHORT';
+                        } else {
+                          statusColor = 'var(--color-red)';
+                          statusBg = 'var(--color-red)';
+                          statusText = '✗ FAIL';
+                        }
+                        
+                        return (
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '4px 12px',
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                            border: `2px solid ${statusColor}`,
+                            backgroundColor: statusBg,
+                            color: 'var(--paper)'
+                          }}>
+                            {statusText}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}

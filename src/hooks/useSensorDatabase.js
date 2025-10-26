@@ -67,6 +67,7 @@ export function useSensorDatabase() {
       setDb(database);
 
       // Query all sensors
+      // Success criteria: sensor lasted ≥6.75 days (6 days 18 hours)
       const result = database.exec(`
         SELECT 
           id as sensor_id,
@@ -80,7 +81,7 @@ export function useSensorDatabase() {
           reason_stop as failure_reason,
           notes,
           CASE 
-            WHEN status = 'success' THEN 1
+            WHEN duration_days >= 6.75 THEN 1
             ELSE 0
           END as success
         FROM sensors
@@ -102,6 +103,13 @@ export function useSensorDatabase() {
           sensor[col] = row[index];
         });
         return sensor;
+      });
+
+      console.log('🔵 [useSensorDatabase] SQL RESULT:', {
+        rowCount: rows.length,
+        sensorDataLength: sensorData.length,
+        firstSensor: sensorData[0],
+        lastSensor: sensorData[sensorData.length - 1]
       });
 
       setSensors(sensorData);

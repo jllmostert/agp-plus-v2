@@ -60,6 +60,16 @@ export default function AGPGenerator() {
   // Sensor database (for history modal)
   const { sensors, isLoading: sensorsLoading, error: sensorsError } = useSensorDatabase();
   
+  // DEBUG: Log what AGPGenerator receives from hook
+  useEffect(() => {
+    console.log('🟢 [AGPGenerator] Sensors from hook:', {
+      count: sensors?.length || 0,
+      isArray: Array.isArray(sensors),
+      firstSensor: sensors?.[0],
+      lastSensor: sensors?.[sensors?.length - 1]
+    });
+  }, [sensors]);
+  
   // V2: Legacy CSV uploads (fallback during transition)
   const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
   
