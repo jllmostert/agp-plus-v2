@@ -16,19 +16,39 @@ AGP+ is a React-based web application for analyzing continuous glucose monitorin
 
 ## Quick Start
 
+### Option 1: Simple Script (Recommended)
 ```bash
-# Clone repository
-git clone https://github.com/[your-username]/agp-plus.git
-cd agp-plus
+# Navigate to project folder
+cd /Users/jomostert/Documents/Projects/agp-plus
 
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+# Run startup script
+./start.sh
 
 # Open browser
-http://localhost:5173
+http://localhost:3001
+```
+
+### Option 2: Manual Start
+```bash
+# Clean up ports
+lsof -ti:3001 | xargs kill -9
+
+# Navigate to project
+cd /Users/jomostert/Documents/Projects/agp-plus
+
+# Set PATH and start server
+export PATH="/opt/homebrew/bin:$PATH" && npx vite --port 3001
+
+# Open browser
+http://localhost:3001
+```
+
+### Option 3: Standard NPM (default port 5173)
+```bash
+cd agp-plus
+npm install
+npm run dev
+# Open http://localhost:5173
 ```
 
 ---
