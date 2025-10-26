@@ -7,7 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.2.2] - 2025-10-26
+## [3.8.4] - 2025-10-27
+
+### Changed - Sensor Table Display Improvements
+- **DateTime Display**: START and EINDE columns now show full date + time
+  - Format: DD-MM-YYYY HH:MM (e.g., "03-09-2025 23:37")
+  - Previously showed only date, losing time precision
+  - Essential for accurate duration analysis
+
+- **Recalculated Duration**: DUUR column now calculates from timestamps in JavaScript
+  - Formula: `(endMs - startMs) / (1000 * 60 * 60 * 24)`
+  - Previously trusted `duration_days` from database
+  - Guarantees calculation consistency across the application
+  - Eliminates potential rounding errors from pre-calculated DB values
+
+- **Chronological Index**: #ID column now shows chronological sensor order
+  - Index 1-219: #1 = first sensor (15 March 2022), #219 = latest sensor
+  - Previously showed arbitrary database ID (non-sequential, meaningless)
+  - Index remains stable when sorting by other columns
+  - Provides meaningful historical context
+
+### Technical Details
+- **Modified Files**:
+  - `src/components/SensorHistoryModal.jsx`: DateTime formatting, duration recalc, chronological indexing
+  
+- **Implementation**:
+  - `sensorsWithIndex` useMemo: Sorts sensors by start_date ascending, assigns 1-based index
+  - Duration calculation uses millisecond precision for maximum accuracy
+  - STATUS badges now use same recalculated duration for color coding consistency
+
+---
+
+## [3.8.3] - 2025-10-26
 
 ### Changed - Sensor Status Visual Improvements
 - **3-Tier Color Coding**: Status column now uses three semantic colors
