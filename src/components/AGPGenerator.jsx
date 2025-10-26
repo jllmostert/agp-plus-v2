@@ -881,7 +881,10 @@ export default function AGPGenerator() {
             
             {/* 1. IMPORT Button (Collapsible) */}
             <button
-              onClick={() => setDataImportExpanded(!dataImportExpanded)}
+              onClick={() => {
+                console.log('🔴 IMPORT CLICKED!', dataImportExpanded);
+                setDataImportExpanded(!dataImportExpanded);
+              }}
               style={{
                 background: dataImportExpanded ? '#000' : 'var(--bg-secondary)',
                 border: '3px solid var(--border-primary)',
@@ -968,7 +971,10 @@ export default function AGPGenerator() {
 
             {/* 3. EXPORT Button (Collapsible) */}
             <button
-              onClick={() => setDataExportExpanded(!dataExportExpanded)}
+              onClick={() => {
+                console.log('🔵 EXPORT CLICKED!', dataExportExpanded);
+                setDataExportExpanded(!dataExportExpanded);
+              }}
               disabled={!metricsResult || !startDate || !endDate}
               style={{
                 background: dataExportExpanded ? '#000' : (metricsResult && startDate && endDate ? 'var(--bg-secondary)' : 'var(--bg-primary)'),
@@ -1091,7 +1097,46 @@ export default function AGPGenerator() {
                 </button>
               </div>
 
-              {/* Hidden file inputs only */}
+              {/* Hidden file inputs for Upload CSV and ProTime */}
+              <input
+                id="csv-upload-input"
+                type="file"
+                accept=".csv"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file && file.name.endsWith('.csv')) {
+                    const text = await file.text();
+                    handleCSVLoad(text);
+                  }
+                  e.target.value = ''; // Reset for re-upload
+                }}
+                style={{ display: 'none' }}
+              />
+              
+              <input
+                id="protime-upload-input"
+                type="file"
+                accept=".pdf"
+                multiple
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) {
+                    try {
+                      const { extractTextFromPDF, extractTextFromMultiplePDFs } = await import('../utils/pdfParser');
+                      const text = files.length === 1 
+                        ? await extractTextFromPDF(files[0])
+                        : await extractTextFromMultiplePDFs(files);
+                      handleProTimeLoad(text);
+                    } catch (err) {
+                      console.error('PDF processing error:', err);
+                    }
+                  }
+                  e.target.value = ''; // Reset for re-upload
+                }}
+                style={{ display: 'none' }}
+              />
+
+              {/* FileUpload component - hidden, just for backwards compat */}
               <div style={{ display: 'none' }}>
                 <FileUpload
                   onCSVLoad={handleCSVLoad}

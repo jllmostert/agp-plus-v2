@@ -20,11 +20,12 @@ const rootElement = document.getElementById('root');
 const root = createRoot(rootElement);
 
 // Render application
+// Note: StrictMode temporarily disabled for debugging
 root.render(
-  <React.StrictMode>
+  <>
     {/* <MigrationBanner /> */}
     <AGPGenerator />
-  </React.StrictMode>
+  </>
 );
 
 /**

@@ -114,6 +114,7 @@ function CSVUploadButton({ onUpload, isLoaded }) {
   return (
     <>
       <input
+        id="csv-upload-input"
         ref={fileInputRef}
         type="file"
         accept=".csv"
@@ -255,6 +256,7 @@ function PDFUploadTab({ fileInputRef, onUpload, isProcessing }) {
         </p>
         
         <input
+          id="protime-upload-input"
           ref={fileInputRef}
           type="file"
           accept=".pdf"
