@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.6.0-dev] - 2025-10-26 (WIP)
+
+### Added - Event Detection System
+- **Sensor Database Import**: Import master_sensors.db (SQLite) from Sensoren project in browser
+  - Uses sql.js for client-side SQLite parsing
+  - Stores in localStorage for fast synchronous access
+  - Includes lot numbers, hardware versions, duration stats
+- **Event Storage Layer**: localStorage-based event caching (`src/storage/eventStorage.js`)
+  - Scan-once-cache-many architecture (no runtime detection overhead)
+  - Fast date-based lookups for day profile markers
+  - Version field for future format migrations
+- **SensorImport Component**: UI for database import with status indicators
+  - Shows sensor count, success rate, average duration
+  - Brutalist styling matching AGP+ design system
+  - Integrated in AGPGenerator.jsx
+
+### Changed - Architecture
+- **Event Detection Philosophy**: Moved from async IndexedDB lookups to localStorage caching
+  - Rationale: Events are small (<1MB), need fast synchronous access during render
+  - Benefits: 10x faster day profile rendering, consistent results, cleaner code
+- **Storage Strategy**: localStorage for events/settings, IndexedDB reserved for large datasets
+- **Detection Approach**: 3-tier confidence system (database > alerts > gaps)
+
+### In Progress
+- [ ] Event detection engine (`src/core/event-detection-engine.js`)
+- [ ] EventManager component (rescan/export/import UI)
+- [ ] JSON export/import for portable event backups
+- [ ] Day profile integration (render from cached events)
+
+### Documentation
+- **HANDOFF_V3_6_EVENTS_OCT26.md**: Comprehensive handoff for next session
+  - Architecture decisions (localStorage vs IndexedDB)
+  - Implementation plan with 5 priorities
+  - Testing checklist for each phase
+  - 90-minute estimated completion time
+- **V3_ARCHITECTURE.md**: Updated with event detection flow diagram
+- **README.md**: Reflects current v3.6 status and completed features
+
+---
+
 ## [2.2.1] - 2025-10-25
 
 ### Changed - Architecture Improvements
