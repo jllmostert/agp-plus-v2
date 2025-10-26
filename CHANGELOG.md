@@ -415,3 +415,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Project Repository**: [GitHub URL]  
 **Documentation**: See `/docs/` folder for detailed technical documentation
+
+## [3.9.0] - 2025-10-26
+
+### Added - Sensor History Modal
+- **Fourth Control Button**: SENSOR HISTORY added between DAGPROFIELEN and EXPORT
+  - Grid layout expanded from 3 to 4 columns
+  - Button shows live count: "219 Sensors"
+  - Disabled state during database load or on error
+  
+- **Full-Screen Modal**: Brutalist sensor database viewer
+  - Overall stats: Total sensors, success rate (67%), avg duration (5.8d), failures
+  - HW version breakdown: Performance per hardware revision (A1.01, A2.01)
+  - Top 10 lot numbers: Quick performance view with color-coded success rates
+  - Complete sortable table: All 219 sensors with clickable column headers
+  
+- **SQLite Integration**: Database served from `/public/sensor_database.db`
+  - Loaded via sql.js WebAssembly from CDN
+  - 92KB database with full sensor history
+  - Schema mapping: `id` → `sensor_id`, `hardware_version` → `hw_version`, etc.
+  - Status conversion: "success"/"failed" → 1/0 boolean
+
+- **Calculation Engine**: Pure functions in `sensor-history-engine.js`
+  - `calculateOverallStats()`: Aggregate statistics
+  - `calculateHWVersionStats()`: Performance by hardware version
+  - `calculateLotPerformance()`: Success rate per lot number
+  - `filterSensors()`: Filter by date/lot/hw/status (ready for future filtering UI)
+  - `sortSensors()`: Multi-column sorting with asc/desc
+
+### Changed - Visual Design
+- **Improved Readability**: Modal backdrop opacity increased from 92% to 97%
+  - Reduces text bleeding from background
+  - Better focus on modal content
+  
+- **Color-Coded Status Badges**: 
+  - Success (≥6d): Green badge with "✓ OK" (var(--color-green))
+  - Failure (<6d): Red badge with "✗ FAIL" (var(--color-red))
+  - Replaces previous monochrome badges
+
+- **Duration Color Coding**:
+  - ≥7 days: Green (goal achieved)
+  - 6-7 days: Orange (acceptable)
+  - <6 days: Red (replacement eligible)
+
+### Technical Details
+- **New Hook**: `useSensorDatabase.js` handles SQLite loading
+  - Fetches `/sensor_database.db` on component mount
+  - Returns sensors array + loading/error states
+  - Auto-cleanup of database connection on unmount
+
+- **New Component**: `SensorHistoryModal.jsx`
+  - React portal rendering (like DayProfilesModal)
+  - Memoized calculations for performance
+  - Sticky header with close button
+  - Paper/ink theme consistency
+
+- **Files Added**:
+  - `src/hooks/useSensorDatabase.js` (127 lines)
+  - `src/core/sensor-history-engine.js` (213 lines)
+  - `src/components/SensorHistoryModal.jsx` (362 lines)
+  - `public/sensor_database.db` (92KB, 219 records)
+
+- **Files Modified**:
+  - `src/components/AGPGenerator.jsx`: Button + modal integration
+  - Grid layout: `repeat(3, 1fr)` → `repeat(4, 1fr)`
+
+### Dependencies
+- Added `sql.js` for SQLite database access in browser
+
+---
+

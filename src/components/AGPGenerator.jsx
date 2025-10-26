@@ -10,6 +10,7 @@ import { useUploadStorage } from '../hooks/useUploadStorage';
 import { useDayProfiles } from '../hooks/useDayProfiles';
 import { useMasterDataset } from '../hooks/useMasterDataset';
 import { useDataStatus } from '../hooks/useDataStatus';
+import { useSensorDatabase } from '../hooks/useSensorDatabase';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
@@ -29,6 +30,7 @@ import WorkdaySplit from './WorkdaySplit';
 import SavedUploadsList from './SavedUploadsList';
 import PatientInfo from './PatientInfo';
 import DayProfilesModal from './DayProfilesModal';
+import SensorHistoryModal from './SensorHistoryModal';
 import { MigrationBanner } from './MigrationBanner';
 import { DateRangeFilter } from './DateRangeFilter';
 
@@ -54,6 +56,9 @@ export default function AGPGenerator() {
   
   // Data status monitoring (green/yellow/red light)
   const dataStatus = useDataStatus(masterDataset.allReadings);
+  
+  // Sensor database (for history modal)
+  const { sensors, isLoading: sensorsLoading, error: sensorsError } = useSensorDatabase();
   
   // V2: Legacy CSV uploads (fallback during transition)
   const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
@@ -101,6 +106,7 @@ export default function AGPGenerator() {
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
   const [dayProfilesOpen, setDayProfilesOpen] = useState(false); // Day profiles modal state
+  const [sensorHistoryOpen, setSensorHistoryOpen] = useState(false); // Sensor history modal state
 
   // Load patient info from storage
   useEffect(() => {
@@ -929,11 +935,11 @@ export default function AGPGenerator() {
           </section>
         )}
 
-        {/* Control Buttons: IMPORT - DAGPROFIELEN - EXPORT */}
+        {/* Control Buttons: IMPORT - DAGPROFIELEN - SENSOR HISTORY - EXPORT */}
         <section className="section">
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '1rem',
             marginBottom: '1rem'
           }}>
@@ -1028,7 +1034,52 @@ export default function AGPGenerator() {
               </span>
             </button>
 
-            {/* 3. EXPORT Button (Collapsible) */}
+            {/* 3. SENSOR HISTORY Button (Direct Action) */}
+            <button
+              onClick={() => setSensorHistoryOpen(true)}
+              disabled={sensorsLoading || sensorsError || !sensors || sensors.length === 0}
+              style={{
+                background: sensors && sensors.length > 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                border: '3px solid var(--border-primary)',
+                cursor: sensors && sensors.length > 0 ? 'pointer' : 'not-allowed',
+                padding: '1.5rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                minHeight: '100px',
+                opacity: sensors && sensors.length > 0 ? 1 : 0.5
+              }}
+              title={sensorsLoading ? "Loading sensor database..." : 
+                     sensorsError ? "Failed to load sensor database" :
+                     !sensors || sensors.length === 0 ? "No sensor data available" : 
+                     "View complete sensor usage history"}
+            >
+              <h2 style={{ 
+                fontSize: '0.875rem',
+                fontWeight: 700, 
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                color: 'var(--text-primary)',
+                marginBottom: 0
+              }}>
+                SENSOR HISTORY
+              </h2>
+              <span style={{ 
+                fontSize: '0.625rem',
+                color: 'var(--text-secondary)',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase'
+              }}>
+                {sensorsLoading ? 'Loading...' : 
+                 sensors && sensors.length > 0 ? `${sensors.length} Sensors` : 
+                 'No Data'}
+              </span>
+            </button>
+
+            {/* 4. EXPORT Button (Collapsible) */}
             <button
               onClick={() => {
                 console.log('🔵 EXPORT CLICKED!', dataExportExpanded);
@@ -1426,6 +1477,16 @@ export default function AGPGenerator() {
             onClose={() => setDayProfilesOpen(false)}
             dayProfiles={dayProfiles}
             patientInfo={patientInfo}
+          />,
+          document.body
+        )}
+
+        {/* Sensor History Modal - Portal */}
+        {sensorHistoryOpen && ReactDOM.createPortal(
+          <SensorHistoryModal 
+            isOpen={sensorHistoryOpen}
+            onClose={() => setSensorHistoryOpen(false)}
+            sensors={sensors}
           />,
           document.body
         )}
