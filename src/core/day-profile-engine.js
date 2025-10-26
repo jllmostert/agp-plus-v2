@@ -183,6 +183,56 @@ function generate24HourCurve(dayData) {
  * @returns {Array} Array of sensor change markers with {timestamp, date, minuteOfDay, gapMinutes, type}
  */
 function detectSensorChanges(allData, targetDate) {
+  const allChanges = [];
+  
+  // PRIORITY 1: Check sensor database (high confidence)
+  try {
+    const { getSensorDatabase } = require('../storage/sensorStorage.js');
+    const sensorDb = getSensorDatabase();
+    
+    if (sensorDb && sensorDb.sensors) {
+      // Find sensors that started on this day
+      const targetDateObj = utils.parseDate(targetDate, '00:00:00');
+      const nextDayObj = new Date(targetDateObj);
+      nextDayObj.setDate(nextDayObj.getDate() + 1);
+      
+      for (const sensor of sensorDb.sensors) {
+        const sensorStart = new Date(sensor.start_timestamp);
+        
+        // Check if sensor start is within target day
+        if (sensorStart >= targetDateObj && sensorStart < nextDayObj) {
+          const minuteOfDay = sensorStart.getHours() * 60 + sensorStart.getMinutes();
+          
+          // Skip midnight timestamps
+          if (minuteOfDay === 0) continue;
+          
+          allChanges.push({
+            timestamp: sensorStart,
+            date: targetDate,
+            minuteOfDay,
+            type: 'start',
+            confidence: 'high',
+            source: 'database',
+            metadata: {
+              lotNumber: sensor.lot_number,
+              duration: sensor.duration_days
+            }
+          });
+        }
+      }
+      
+      // If we found database matches, return them (high confidence)
+      if (allChanges.length > 0) {
+        console.log('[detectSensorChanges] Found', allChanges.length, 'sensors from database for', targetDate);
+        return allChanges;
+      }
+    }
+  } catch (err) {
+    // Sensor database not available or error, fall through to gap detection
+    console.log('[detectSensorChanges] Sensor database not available, using gap detection');
+  }
+  
+  // FALLBACK: Gap detection (medium confidence)
   // Filter data for this specific day first
   const dayData = allData.filter(row => row.date === targetDate);
   
@@ -213,28 +263,21 @@ function detectSensorChanges(allData, targetDate) {
   }
   
   // Filter for sensor change gaps: 3-10 hours
-  // - >3 hours: true sensor changes (warmup + placement time)
-  // - <10 hours: excludes normal overnight gaps or multi-day absences
-  // Note: 2-hour gaps are often BG tests or brief sensor issues, not replacements
   const majorGaps = gaps.filter(g => g.gapMinutes > 180 && g.gapMinutes < 600);
   
-  const allChanges = [];
   for (const gap of majorGaps) {
-    // Add marker at START of gap ONLY (sensor went offline)
-    // No marker at END - data resuming is visually obvious
-    
-    // Skip markers at exact midnight (00:00:00) - these are day-boundary artifacts
+    // Skip markers at exact midnight (00:00:00)
     const minuteOfDay = gap.prev.getHours() * 60 + gap.prev.getMinutes();
-    if (minuteOfDay === 0) {
-      continue; // Skip midnight timestamps
-    }
+    if (minuteOfDay === 0) continue;
     
     allChanges.push({
       timestamp: gap.prev,
       date: gap.prevDate,
       minuteOfDay: minuteOfDay,
       gapMinutes: Math.round(gap.gapMinutes),
-      type: 'start'
+      type: 'start',
+      confidence: 'medium',
+      source: 'gap'
     });
   }
   
