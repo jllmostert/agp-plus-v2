@@ -109,7 +109,7 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
           color: 'var(--color-white)',
           textTransform: 'uppercase'
         }}>
-          📅 Date Range
+          DATE RANGE
         </h3>
         
         <button
@@ -134,7 +134,7 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
             e.target.style.transform = 'scale(1)';
           }}
         >
-          {customMode ? '⚡ Quick Ranges' : '🎯 Custom Range'}
+          {customMode ? 'QUICK RANGES' : 'CUSTOM RANGE'}
         </button>
       </div>
       {/* Quick ranges */}
@@ -145,9 +145,9 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
           gap: '1rem'
         }}>
           {[
-            { label: '⏱️ Last 14D', days: 14 },
-            { label: '📆 Last 30D', days: 30 },
-            { label: '📊 Last 90D', days: 90 }
+            { label: 'LAST 14D', days: 14 },
+            { label: 'LAST 30D', days: 30 },
+            { label: 'LAST 90D', days: 90 }
           ].map(({ label, days }) => (
             <button
               key={label}
@@ -199,7 +199,7 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
               letterSpacing: '0.15em',
               textTransform: 'uppercase'
             }}>
-              📍 Start Date
+              START DATE
             </label>
             <input
               type="date"
@@ -228,7 +228,7 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
               letterSpacing: '0.15em',
               textTransform: 'uppercase'
             }}>
-              🏁 End Date
+              END DATE
             </label>
             <input
               type="date"
@@ -272,7 +272,7 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
               e.target.style.transform = 'scale(1)';
             }}
           >
-            ⚡ Apply
+            APPLY
           </button>
         </div>
       )}
@@ -289,7 +289,7 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
           fontWeight: 600,
           letterSpacing: '0.05em'
         }}>
-          <span style={{ color: 'var(--color-orange)', fontWeight: 700 }}>📊 DATASET RANGE:</span>{' '}
+          <span style={{ color: 'var(--color-orange)', fontWeight: 700 }}>DATASET RANGE:</span>{' '}
           {new Date(currentRange.min).toLocaleDateString()} → {new Date(currentRange.max).toLocaleDateString()}
         </div>
       )}

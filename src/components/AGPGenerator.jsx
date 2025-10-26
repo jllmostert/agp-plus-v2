@@ -147,7 +147,7 @@ export default function AGPGenerator() {
       start.setDate(start.getDate() - 13); // 14 days total (today + 13 previous)
       start.setHours(0, 0, 0, 0); // Start of day
       
-      console.log('[AGPGenerator] 🚀 Auto-selecting last 14 days:', {
+      console.log('[AGPGenerator] Auto-selecting last 14 days:', {
         start: start.toISOString().split('T')[0],
         end: end.toISOString().split('T')[0],
         dayCount: Math.round((end - start) / (1000 * 60 * 60 * 24))
@@ -713,27 +713,27 @@ export default function AGPGenerator() {
                   fontWeight: 600,
                   opacity: 0.9
                 }}>
-                  V3.7.2
+                  V3.0
                 </div>
               </div>
 
-              {/* Patient Button - Green accent */}
+              {/* Patient Button - Compact */}
               <button
                 onClick={() => setPatientInfoOpen(true)}
                 style={{
-                  padding: '1rem',
+                  padding: '0.5rem 0.75rem',
                   background: 'var(--color-green)',
-                  border: '3px solid var(--paper)',
+                  border: '2px solid var(--paper)',
                   color: 'var(--paper)',
                   cursor: 'pointer',
-                  fontSize: '0.875rem',
+                  fontSize: '0.625rem',
                   fontWeight: 700,
                   letterSpacing: '0.15em',
                   textTransform: 'uppercase',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.75rem',
+                  gap: '0.5rem',
                   transition: 'all 0.15s ease'
                 }}
                 onMouseEnter={(e) => {
@@ -747,7 +747,7 @@ export default function AGPGenerator() {
                   e.target.style.borderColor = 'var(--paper)';
                 }}
               >
-                <User size={18} />
+                <User size={12} />
                 PATIËNT
               </button>
 
@@ -1433,7 +1433,7 @@ export default function AGPGenerator() {
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
           <p>
-            AGP+ v2.2.1 | Built for Medtronic CareLink CSV exports
+            AGP+ v3.0 FUSION | Built for Medtronic CareLink CSV exports
           </p>
           <p className="mt-2">
             Following{' '}
