@@ -15,6 +15,7 @@ import { useDataStatus } from '../hooks/useDataStatus';
 import { parseProTime } from '../core/parsers';
 import { downloadHTML } from '../core/html-exporter';
 import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
+import { exportAndDownload } from '../storage/export';
 
 // UI Components
 import FileUpload from './FileUpload';
@@ -1233,6 +1234,33 @@ export default function AGPGenerator() {
                   title="Export day profiles as HTML"
                 >
                   📅 Day Profiles (HTML)
+                </button>
+
+                <button
+                  onClick={async () => {
+                    const result = await exportAndDownload();
+                    if (result.success) {
+                      alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
+                    } else {
+                      alert(`❌ Export failed: ${result.error}`);
+                    }
+                  }}
+                  disabled={!masterDataset || masterDataset.totalReadings === 0}
+                  style={{
+                    background: 'var(--bg-primary)',
+                    border: '2px solid var(--border-primary)',
+                    color: masterDataset && masterDataset.totalReadings > 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    cursor: masterDataset && masterDataset.totalReadings > 0 ? 'pointer' : 'not-allowed',
+                    padding: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    opacity: masterDataset && masterDataset.totalReadings > 0 ? 1 : 0.5
+                  }}
+                  title="Export complete IndexedDB dataset as JSON"
+                >
+                  💾 Database (JSON)
                 </button>
 
                 <button

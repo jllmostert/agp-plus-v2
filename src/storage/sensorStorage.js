@@ -196,3 +196,14 @@ export function hasSensorDatabase() {
   const db = getSensorDatabase();
   return db !== null && db.sensors?.length > 0;
 }
+
+/**
+ * Get sensor history for export
+ * Returns array of sensors or empty array
+ * 
+ * @returns {Array}
+ */
+export function getSensorHistory() {
+  const db = getSensorDatabase();
+  return db?.sensors || [];
+}

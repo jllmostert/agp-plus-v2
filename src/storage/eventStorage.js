@@ -175,3 +175,14 @@ export function getEventStats() {
     cartridgeCount: events.cartridgeChanges?.length || 0
   };
 }
+
+/**
+ * Get cartridge history for export
+ * Returns array of cartridge changes or empty array
+ * 
+ * @returns {Array}
+ */
+export function getCartridgeHistory() {
+  const events = getAllEvents();
+  return events?.cartridgeChanges || [];
+}

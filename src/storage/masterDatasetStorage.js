@@ -221,6 +221,14 @@ export async function invalidateCache() {
 }
 
 /**
+ * Get all month buckets for export
+ * @returns {Promise<Array>} Array of month bucket objects
+ */
+export async function getAllMonthBuckets() {
+  return await getAllRecords(STORES.READING_BUCKETS);
+}
+
+/**
  * Get stats about stored data
  * @returns {Object} { bucketCount, totalReadings, dateRange }
  */
