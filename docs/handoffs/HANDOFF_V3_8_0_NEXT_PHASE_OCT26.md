@@ -1,57 +1,82 @@
 # 🚀 HANDOFF: V3.8.0 Next Phase Planning
 
-**Date**: October 26, 2025, 23:30 CET  
-**Status**: 📋 PLANNING  
+**Date**: October 27, 2025, 00:15 CET  
+**Status**: ✅ READY - Phase 0 Complete  
 **Version**: AGP+ v3.8.0-dev
+
+---
+
+## 🎯 START HERE - Next Session
+
+**Phase 0**: ✅ Complete  
+**Next**: Phase 1 - Database Export (JSON)
+
+### Quick Start:
+```bash
+# 1. Start server
+cd /Users/jomostert/Documents/Projects/agp-plus
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+
+# 2. Open Chrome
+# http://localhost:3001
+
+# 3. Begin Phase 1 implementation
+# Create: src/storage/export.js
+```
+
+**Current State**: Clean UI, file uploads working, ready for database export
 
 ---
 
 ## 📋 SUMMARY
 
-Planning document for v3.8.0 development cycle. Focuses on database export, sensor history integration, and visual polish based on user feedback.
+Planning document for v3.8.0 development cycle. Phase 0 (UI cleanup) complete. Ready for Phase 1 (database export), sensor history integration, and visual polish.
 
 ---
 
-## ✅ V3.7.2 ACCOMPLISHMENTS
+## ✅ PHASE 0 COMPLETE (Oct 27, 00:15)
 
-### UI/UX Cleanup Complete:
+### UI/UX Cleanup:
 - ✅ Status indicator: Compact, less intrusive
 - ✅ Three-button layout: IMPORT/DAGPROFIELEN/EXPORT
 - ✅ Collapsible sections: Progressive disclosure
-- ✅ Day profiles modal: Button order fixed
+- ✅ Clean interface: Only 3 buttons + checkmarks
+- ✅ File uploads: Working (CSV + ProTime PDFs)
 
-### User Satisfaction Check:
-> "Is de status indicator nu compacter en minder opdringerig? JA PERFECT"
-> "Zijn IMPORT/DAGPROFIELEN/EXPORT duidelijk zichtbaar? JA PERFECT"
-> "Kun je IMPORT uitklappen en zien of de 3 sub-buttons verschijnen? Die verschijnen."
+### Commits:
+- `064b68a` - UI cleanup (remove clutter)
+- `7695122` - File upload functionality fix
+- `01c83d2` - Complete session documentation
 
-✅ **Core layout goals achieved!**
+### User Verification:
+> "er komen file pickers" ✅ CONFIRMED
+
+**All systems operational!** 🎉
 
 ---
 
-## 🐛 IMMEDIATE ISSUES IDENTIFIED
+## 🐛 ISSUES RESOLVED
 
-### ✅ FIXED: Import Section Clutter
+### ✅ Import Section Clutter (FIXED)
 **Problem**: Too much UI "rommel" below the three buttons  
-**Solution**: ✅ **COMPLETE** - Cleaned up to show only:
-- Upload CSV (with ✓ indicator)
-- Import Database (disabled, placeholder)
-- ProTime PDFs (with ✓ indicator)
+**Solution**: Cleaned up - only 3 buttons + checkmarks visible
+- Removed: FileUpload headers, SensorImport stats, SavedUploadsList
+- Kept: Error messages (when applicable)
+- Git Commit: `064b68a`
 
-**Removed**:
-- FileUpload component visual elements (kept hidden inputs)
-- SensorImport database stats display
-- SavedUploadsList component
-- Kept only: Error messages (when applicable)
+### ✅ File Upload Functionality (FIXED)
+**Problem**: Buttons clicked but file pickers didn't open  
+**Root Cause**: File inputs hidden in component, unreachable by ID  
+**Solution**: Created dedicated hidden inputs in AGPGenerator
+- `csv-upload-input` → CSV file picker
+- `protime-upload-input` → PDF file picker (multi-select)
+- Direct onChange handlers call handleCSVLoad/handleProTimeLoad
+- Git Commit: `7695122`
 
-**Git Commit**: `064b68a` - "refactor: clean up IMPORT section UI"  
-**Status**: ✅ COMPLETE (Oct 26, 23:50)
-
-### 1. Import Database Button (Non-Functional)
-**Problem**: Button visible but shows alert "Coming in Phase 4"  
-**Current State**: Acceptable - clearly disabled and labeled
-**Decision**: Keep as placeholder for Phase 4 direct CSV→V3 upload
-**Priority**: P2 (acceptable UX, will implement in Phase 4)
+### ✅ Import Database Button
+**Status**: Correctly disabled (placeholder for Phase 4)
+**Decision**: Keep as placeholder for future direct CSV→V3 upload
 
 ---
 
