@@ -4,29 +4,46 @@
  * Allows user to import master_sensors.db (SQLite) into IndexedDB.
  * Shows import status and sensor count.
  * 
- * @version 3.6.0
+ * @version 3.7.0 - PHASE 2: IndexedDB migration
  */
 
-import React, { useState } from 'react';
-import { parseSQLiteDatabase } from '../utils/sqliteParser.js';
-import { importSensorDatabase, hasSensorDatabase, getSensorStats } from '../storage/sensorStorage.js';
+import React, { useState, useEffect } from 'react';
+import { importSensorsFromFile } from '../storage/sensorImport.js';
+import { getSensorHistory } from '../storage/sensorStorage.js';
 
 export default function SensorImport() {
   const [importing, setImporting] = useState(false);
-  const [hasDb, setHasDb] = useState(false);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
   
-  // Check if database exists on mount
-  React.useEffect(() => {
-    const exists = hasSensorDatabase();
-    setHasDb(exists);
-    
-    if (exists) {
-      const dbStats = getSensorStats();
-      setStats(dbStats);
-    }
+  // Load stats on mount
+  useEffect(() => {
+    loadStats();
   }, []);
+  
+  async function loadStats() {
+    try {
+      const sensors = await getSensorHistory();
+      if (sensors && sensors.length > 0) {
+        // Extract valid timestamps
+        const validTimestamps = sensors
+          .map(s => s.start_timestamp || s.startTimestamp)
+          .filter(t => t && !isNaN(new Date(t).getTime()))
+          .map(t => new Date(t))
+          .sort((a,b) => a - b);
+        
+        if (validTimestamps.length > 0) {
+          setStats({
+            total: sensors.length,
+            oldest: validTimestamps[0].toISOString().split('T')[0],
+            newest: validTimestamps[validTimestamps.length - 1].toISOString().split('T')[0]
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[SensorImport] Failed to load stats:', err);
+    }
+  }
   
   async function handleFileSelect(event) {
     const file = event.target.files[0];
@@ -36,18 +53,14 @@ export default function SensorImport() {
     setError(null);
     
     try {
-      // Parse SQLite file
-      const parsed = await parseSQLiteDatabase(file);
+      const result = await importSensorsFromFile(file);
       
-      // Import to localStorage (sync operation)
-      const result = importSensorDatabase(parsed);
-      
-      // Update UI
-      setHasDb(true);
-      const dbStats = getSensorStats();
-      setStats(dbStats);
-      
-      alert(`✅ Import succesvol!\n${result.sensorsImported} sensors geïmporteerd`);
+      if (result.success) {
+        await loadStats();
+        alert(`✅ Import succesvol!\n${result.count} sensors geïmporteerd`);
+      } else {
+        throw new Error(result.errors?.[0] || 'Unknown error');
+      }
     } catch (err) {
       console.error('[SensorImport] Error:', err);
       setError(err.message);
@@ -74,18 +87,16 @@ export default function SensorImport() {
         SENSOR DATABASE
       </div>
       
-      {hasDb && stats ? (
+      {stats ? (
         <div style={{
           fontFamily: '"Courier New", Courier, monospace',
           fontSize: '12px',
           marginBottom: '0.5rem',
           color: 'var(--text-primary)'
         }}>
-          <div>✓ {stats.total} sensors geïmporteerd</div>
-          <div>✓ Success rate: {stats.successRate.toFixed(1)}%</div>
-          <div>✓ Gem. duur: {stats.avgDuration.toFixed(1)} dagen</div>
-          <div style={{ fontSize: '10px', opacity: 0.6, marginTop: '0.25rem' }}>
-            Laatst bijgewerkt: {new Date(stats.lastUpdated).toLocaleDateString('nl-NL')}
+          <div>✓ {stats.total} sensors in database</div>
+          <div style={{ fontSize: '10px', opacity: 0.6 }}>
+            Range: {stats.oldest} → {stats.newest}
           </div>
         </div>
       ) : (
@@ -112,7 +123,7 @@ export default function SensorImport() {
         opacity: importing ? 0.5 : 1,
         color: 'var(--text-primary)'
       }}>
-        {importing ? 'IMPORTEREN...' : hasDb ? 'UPDATE DATABASE' : 'IMPORTEER DATABASE'}
+        {importing ? 'IMPORTEREN...' : stats ? '🔄 RE-IMPORT' : '📥 IMPORT DATABASE'}
         <input
           type="file"
           accept=".db"

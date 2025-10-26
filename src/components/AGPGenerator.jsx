@@ -1054,25 +1054,9 @@ export default function AGPGenerator() {
                   {csvData && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
                 </button>
 
-                <button
-                  onClick={() => alert('Database import coming in Phase 4')}
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '2px solid var(--border-primary)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'not-allowed',
-                    padding: '1rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    opacity: 0.5
-                  }}
-                  disabled
-                  title="Coming in Phase 4"
-                >
-                  🗄️ Import Database
-                </button>
+                <div>
+                  <SensorImport />
+                </div>
 
                 <button
                   onClick={() => document.getElementById('protime-upload-input')?.click()}
