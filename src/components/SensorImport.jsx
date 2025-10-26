@@ -19,21 +19,13 @@ export default function SensorImport() {
   
   // Check if database exists on mount
   React.useEffect(() => {
-    async function checkDb() {
-      try {
-        const exists = await hasSensorDatabase();
-        setHasDb(exists);
-        
-        if (exists) {
-          const dbStats = await getSensorStats();
-          setStats(dbStats);
-        }
-      } catch (err) {
-        console.warn('[SensorImport] Database check failed (may need upgrade):', err);
-        // Don't show error to user - database might just need upgrade
-      }
+    const exists = hasSensorDatabase();
+    setHasDb(exists);
+    
+    if (exists) {
+      const dbStats = getSensorStats();
+      setStats(dbStats);
     }
-    checkDb();
   }, []);
   
   async function handleFileSelect(event) {
@@ -47,12 +39,12 @@ export default function SensorImport() {
       // Parse SQLite file
       const parsed = await parseSQLiteDatabase(file);
       
-      // Import to IndexedDB
-      const result = await importSensorDatabase(parsed);
+      // Import to localStorage (sync operation)
+      const result = importSensorDatabase(parsed);
       
       // Update UI
       setHasDb(true);
-      const dbStats = await getSensorStats();
+      const dbStats = getSensorStats();
       setStats(dbStats);
       
       alert(`✅ Import succesvol!\n${result.sensorsImported} sensors geïmporteerd`);

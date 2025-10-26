@@ -1,8 +1,8 @@
 /**
- * SENSOR STORAGE MODULE
+ * SENSOR STORAGE MODULE - LOCALSTORAGE APPROACH
  * 
- * Manages Guardian 4 sensor database in IndexedDB.
- * Imports from master_sensors.db (SQLite) → IndexedDB for browser access.
+ * Manages Guardian 4 sensor database using localStorage instead of IndexedDB.
+ * Simpler, no versioning conflicts, perfect for sensor tracking.
  * 
  * Architecture:
  * - sensors: Array of sensor records (start, end, lot, hardware, etc.)
@@ -13,44 +13,15 @@
  * @version 3.6.0
  */
 
-import { openDB, STORES } from './db.js';
-
-const SENSOR_STORE = STORES.SENSOR_DATA;
-const SENSOR_KEY = 'sensorDatabase';
-
-/**
- * Initialize sensor storage in IndexedDB
- * Store is automatically created by db.js v4 upgrade
- */
-export async function initSensorStorage() {
-  // Just ensure db is ready - store is created by db.js
-  const db = await openDB();
-  return db;
-}
+const STORAGE_KEY = 'agp-sensor-database';
 
 /**
  * Import sensor database from parsed SQLite data
  * 
- * Expected format:
- * {
- *   sensors: [
- *     {
- *       id, start_timestamp, end_timestamp, duration_hours, duration_days,
- *       reason_stop, status, confidence, lot_number, hardware_version,
- *       firmware_version, notes, csv_source
- *     }
- *   ],
- *   inventory: [
- *     { lot_number, quantity, expiry_date, box_size, notes }
- *   ]
- * }
- * 
- * @param {Object} data - Parsed sensor database
- * @returns {Promise<Object>} Import result with counts
+ * @param {Object} data - Parsed database with sensors and inventory
+ * @returns {Object} Import result with counts
  */
-export async function importSensorDatabase(data) {
-  const db = await initSensorStorage();
-  
+export function importSensorDatabase(data) {
   const sensorDb = {
     sensors: data.sensors || [],
     inventory: data.inventory || [],
@@ -68,9 +39,8 @@ export async function importSensorDatabase(data) {
     }
   };
   
-  const tx = db.transaction(SENSOR_STORE, 'readwrite');
-  await tx.store.put(sensorDb, SENSOR_KEY);
-  await tx.done;
+  // Store in localStorage
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sensorDb));
   
   return {
     sensorsImported: sensorDb.sensors.length,
@@ -80,25 +50,14 @@ export async function importSensorDatabase(data) {
 }
 
 /**
- * Get full sensor database from IndexedDB
+ * Get full sensor database from localStorage
  * 
- * @returns {Promise<Object|null>} Sensor database or null if not found
+ * @returns {Object|null} Sensor database or null if not found
  */
-export async function getSensorDatabase() {
+export function getSensorDatabase() {
   try {
-    const db = await openDB();
-    
-    // Check if store exists before trying to access it
-    if (!db.objectStoreNames.contains(SENSOR_STORE)) {
-      console.warn('[sensorStorage] Store not found, database needs upgrade');
-      return null;
-    }
-    
-    const tx = db.transaction(SENSOR_STORE, 'readonly');
-    const data = await tx.store.get(SENSOR_KEY);
-    await tx.done;
-    
-    return data || null;
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : null;
   } catch (err) {
     console.error('[sensorStorage] Error getting database:', err);
     return null;
@@ -109,10 +68,10 @@ export async function getSensorDatabase() {
  * Get sensor active at a specific date
  * 
  * @param {Date|string} date - Date to check
- * @returns {Promise<Object|null>} Sensor object or null
+ * @returns {Object|null} Sensor object or null
  */
-export async function getSensorAtDate(date) {
-  const db = await getSensorDatabase();
+export function getSensorAtDate(date) {
+  const db = getSensorDatabase();
   if (!db) return null;
   
   const targetDate = new Date(date);
@@ -133,10 +92,10 @@ export async function getSensorAtDate(date) {
  * 
  * @param {Date|string} startDate - Start of range
  * @param {Date|string} endDate - End of range
- * @returns {Promise<Array>} Array of sensors
+ * @returns {Array} Array of sensors
  */
-export async function getSensorsInRange(startDate, endDate) {
-  const db = await getSensorDatabase();
+export function getSensorsInRange(startDate, endDate) {
+  const db = getSensorDatabase();
   if (!db) return [];
   
   const start = new Date(startDate);
@@ -154,20 +113,20 @@ export async function getSensorsInRange(startDate, endDate) {
 /**
  * Get inventory from sensor database
  * 
- * @returns {Promise<Array>} Array of inventory items
+ * @returns {Array} Array of inventory items
  */
-export async function getInventory() {
-  const db = await getSensorDatabase();
+export function getInventory() {
+  const db = getSensorDatabase();
   return db?.inventory || [];
 }
 
 /**
  * Get sensor statistics
  * 
- * @returns {Promise<Object>} Stats object
+ * @returns {Object} Stats object
  */
-export async function getSensorStats() {
-  const db = await getSensorDatabase();
+export function getSensorStats() {
+  const db = getSensorDatabase();
   if (!db || !db.sensors.length) {
     return {
       total: 0,
@@ -220,23 +179,20 @@ export async function getSensorStats() {
 }
 
 /**
- * Clear sensor database from IndexedDB
+ * Clear sensor database from localStorage
  * 
- * @returns {Promise<void>}
+ * @returns {void}
  */
-export async function clearSensorDatabase() {
-  const db = await initSensorStorage();
-  const tx = db.transaction(SENSOR_STORE, 'readwrite');
-  await tx.store.delete(SENSOR_KEY);
-  await tx.done;
+export function clearSensorDatabase() {
+  localStorage.removeItem(STORAGE_KEY);
 }
 
 /**
- * Check if sensor database exists in IndexedDB
+ * Check if sensor database exists in localStorage
  * 
- * @returns {Promise<boolean>}
+ * @returns {boolean}
  */
-export async function hasSensorDatabase() {
-  const db = await getSensorDatabase();
+export function hasSensorDatabase() {
+  const db = getSensorDatabase();
   return db !== null && db.sensors?.length > 0;
 }
