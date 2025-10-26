@@ -1,16 +1,18 @@
-# AGP+ v2.2 - Ambulatory Glucose Profile Analyzer
+# AGP+ v3.6 - Ambulatory Glucose Profile Analyzer
 
 > ⚠️ **v3.0 DEVELOPMENT BRANCH** - This branch contains experimental features and breaking changes. For stable production version, use `main` branch.
+
+> 🔧 **v3.6 IN PROGRESS** - Sensor database integration. See HANDOFF_V3_6_SENSORS_PART1.md for status.
 
 > **Professional diabetes data analysis tool following ADA/ATTD 2019 clinical guidelines**
 
 ## Overview
 
-AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **and individual day profiles** following international clinical standards.
+AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **individual day profiles**, and **sensor tracking database integration** following international clinical standards.
 
-**Version:** 2.2.1  
-**Status:** Production Ready  
-**Last Updated:** October 2025
+**Version:** 3.6.0-dev  
+**Status:** Development (Sensor Integration)  
+**Last Updated:** October 26, 2025
 
 ---
 
@@ -58,6 +60,13 @@ http://localhost:5173
 - ✅ **Event Markers**: Visual hypo L1/L2, hyper events, sensor changes
 - ✅ **AGP Reference**: Period median overlay for context
 - ✅ **Print Export**: Optimized HTML for A4 printing (max 2 pages)
+
+### Sensor Tracking (v3.6) 🚧 IN DEVELOPMENT
+- ⏳ **Database Import**: Load master_sensors.db (SQLite) into browser
+- ⏳ **Accurate Markers**: Database-backed sensor change detection
+- ⏳ **3-Tier Detection**: Database → Alerts → Gap analysis fallback
+- ⏳ **Sensor Overview**: Stats, performance, inventory management
+- 📝 See HANDOFF_V3_6_SENSORS_PART1.md for current status
 - ✅ **Per-Day Metrics**: TIR, TAR, TBR, Mean±SD, CV for each day
 
 ### User Experience
