@@ -1,8 +1,8 @@
 #!/bin/bash
-# AGP+ v3.8 - Quick Start Script
+# AGP+ v3.0 - Quick Start Script
 # Usage: ./start.sh
 
-echo "🚀 Starting AGP+ v3.8..."
+echo "🚀 Starting AGP+ v3.0..."
 echo ""
 
 # Kill any existing processes on port 3001

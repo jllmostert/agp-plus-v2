@@ -1,6 +1,6 @@
-# AGP+ v3.8 Deployment Plan
+# AGP+ v3.0 Deployment Plan
 
-**Version:** 3.8.0  
+**Version:** 3.0.0  
 **Status:** Production Ready  
 **Date:** October 26, 2025
 
@@ -66,7 +66,7 @@ git checkout main
 git pull origin main
 
 # Merge v3.0-dev into main
-git merge v3.0-dev -m "Merge v3.8.0 - Production ready with comparison fixes and compact UI"
+git merge v3.0-dev -m "Merge v3.0.0 - Production ready with master dataset architecture"
 
 # Push to remote
 git push origin main
@@ -74,14 +74,14 @@ git push origin main
 
 ### Step 3: Tag Release
 ```bash
-git tag -a v3.8.0 -m "AGP+ v3.8.0 - Production Ready
-- Fixed comparison date calculations
-- Added ProTime IndexedDB persistence
-- Improved cartridge change detection
-- Compact date range selector
-- Enhanced comparison section styling"
+git tag -a v3.0.0 -m "AGP+ v3.0.0 - Production Ready
+- Complete rewrite with master dataset architecture
+- IndexedDB persistent storage
+- Period/Day-Night/Workday comparisons
+- Device event tracking and export
+- Compact UI and brutalist design"
 
-git push origin v3.8.0
+git push origin v3.0.0
 ```
 
 ### Step 4: Archive v2.2
@@ -247,7 +247,7 @@ git push origin main
 
 ## 🎓 Future Improvements
 
-### Short-term (v3.9)
+### Short-term (v3.1)
 - [ ] Adaptive Y-axis scaling in day profiles
 - [ ] Advanced sensor alert detection from CSV
 - [ ] Historical sensor database integration

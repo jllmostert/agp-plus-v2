@@ -1,7 +1,7 @@
 {
   "name": "agp-plus",
-  "version": "3.8.0",
-  "description": "AGP+ v3.8 - Ambulatory Glucose Profile with Database Export",
+  "version": "3.0.0",
+  "description": "AGP+ v3.0 - Ambulatory Glucose Profile with Master Dataset Architecture",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1,6 +1,6 @@
-# AGP+ v3.8 - Ambulatory Glucose Profile Analyzer
+# AGP+ v3.0 - Ambulatory Glucose Profile Analyzer
 
-> ✅ **v3.8.0 PRODUCTION READY** - Full feature set complete with comparison fixes, compact UI, and stable data persistence.
+> ✅ **v3.0.0 PRODUCTION READY** - Complete rewrite with master dataset architecture, persistent storage, and clinical-grade analysis.
 
 > **Professional diabetes data analysis tool following ADA/ATTD 2025 clinical guidelines**
 
@@ -8,7 +8,7 @@
 
 AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **individual day profiles**, **device event tracking**, and **complete database export** following international clinical standards.
 
-**Version:** 3.8.0  
+**Version:** 3.0.0  
 **Status:** Production Ready  
 **Last Updated:** October 26, 2025
 
