@@ -43,15 +43,41 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   const [sortColumn, setSortColumn] = useState('start_date');
   const [sortDirection, setSortDirection] = useState('desc');
 
+  // Add chronological index (1 = oldest = March 2022, 219 = newest)
+  const sensorsWithIndex = useMemo(() => {
+    if (!sensors || sensors.length === 0) return [];
+    
+    // Sort by start_date ascending (oldest first)
+    const sorted = [...sensors].sort((a, b) => {
+      const dateA = new Date(a.start_date).getTime();
+      const dateB = new Date(b.start_date).getTime();
+      return dateA - dateB; // Ascending: oldest to newest
+    });
+    
+    // Assign index 1, 2, 3, ... chronologically
+    const withIndex = sorted.map((sensor, idx) => ({
+      ...sensor,
+      chronological_index: idx + 1 // 1-based index
+    }));
+    
+    console.log('🟢 [SensorHistoryModal] Chronological indexing:', {
+      total: withIndex.length,
+      first: { id: withIndex[0]?.chronological_index, date: withIndex[0]?.start_date },
+      last: { id: withIndex[withIndex.length - 1]?.chronological_index, date: withIndex[withIndex.length - 1]?.start_date }
+    });
+    
+    return withIndex;
+  }, [sensors]);
+
   // Calculate stats (memoized for performance)
-  const overallStats = useMemo(() => calculateOverallStats(sensors), [sensors]);
-  const hwStats = useMemo(() => calculateHWVersionStats(sensors), [sensors]);
-  const lotStats = useMemo(() => calculateLotPerformance(sensors), [sensors]);
+  const overallStats = useMemo(() => calculateOverallStats(sensorsWithIndex), [sensorsWithIndex]);
+  const hwStats = useMemo(() => calculateHWVersionStats(sensorsWithIndex), [sensorsWithIndex]);
+  const lotStats = useMemo(() => calculateLotPerformance(sensorsWithIndex), [sensorsWithIndex]);
 
   // Filtered sensors
   const filteredSensors = useMemo(() => {
-    return filterSensors(sensors, filters);
-  }, [sensors, filters]);
+    return filterSensors(sensorsWithIndex, filters);
+  }, [sensorsWithIndex, filters]);
 
   // Sorted sensors
   const sortedSensors = useMemo(() => {
@@ -446,7 +472,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
               }}>
                 <tr>
                   <th 
-                    onClick={() => handleSort('sensor_id')}
+                    onClick={() => handleSort('chronological_index')}
                     style={{
                       padding: '12px',
                       textAlign: 'left',
@@ -458,7 +484,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       borderRight: '1px solid var(--paper)'
                     }}
                   >
-                    #ID {sortColumn === 'sensor_id' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    #ID {sortColumn === 'chronological_index' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th 
                     onClick={() => handleSort('start_date')}
@@ -564,31 +590,58 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       color: 'var(--paper)',
                       fontWeight: 'bold'
                     }}>
-                      #{sensor.sensor_id}
+                      #{sensor.chronological_index}
                     </td>
                     <td style={{
                       padding: '10px 12px',
                       borderRight: '1px solid var(--grid-line)',
                       color: 'var(--paper)'
                     }}>
-                      {sensor.start_date ? new Date(sensor.start_date).toLocaleDateString('nl-NL') : '-'}
+                      {sensor.start_date ? new Date(sensor.start_date).toLocaleString('nl-NL', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : '-'}
                     </td>
                     <td style={{
                       padding: '10px 12px',
                       borderRight: '1px solid var(--grid-line)',
                       color: 'var(--paper)'
                     }}>
-                      {sensor.end_date ? new Date(sensor.end_date).toLocaleDateString('nl-NL') : '-'}
+                      {sensor.end_date ? new Date(sensor.end_date).toLocaleString('nl-NL', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : '-'}
                     </td>
                     <td style={{
                       padding: '10px 12px',
                       borderRight: '1px solid var(--grid-line)',
-                      color: sensor.duration_days >= 6.75 ? 'var(--color-green)' :
-                             sensor.duration_days >= 6 ? 'var(--color-orange)' :
-                             'var(--color-red)',
+                      color: (() => {
+                        // Recalculate duration from timestamps (don't trust DB)
+                        if (!sensor.start_date || !sensor.end_date) return 'var(--paper)';
+                        const startMs = new Date(sensor.start_date).getTime();
+                        const endMs = new Date(sensor.end_date).getTime();
+                        const durationDays = (endMs - startMs) / (1000 * 60 * 60 * 24);
+                        
+                        return durationDays >= 6.75 ? 'var(--color-green)' :
+                               durationDays >= 6 ? 'var(--color-orange)' :
+                               'var(--color-red)';
+                      })(),
                       fontWeight: 'bold'
                     }}>
-                      {sensor.duration_days ? sensor.duration_days.toFixed(1) : '0.0'}d
+                      {(() => {
+                        // Recalculate duration from timestamps (don't trust DB)
+                        if (!sensor.start_date || !sensor.end_date) return '0.0d';
+                        const startMs = new Date(sensor.start_date).getTime();
+                        const endMs = new Date(sensor.end_date).getTime();
+                        const durationDays = (endMs - startMs) / (1000 * 60 * 60 * 24);
+                        return durationDays.toFixed(1) + 'd';
+                      })()}
                     </td>
                     <td style={{
                       padding: '10px 12px',
@@ -612,7 +665,14 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       color: 'var(--paper)'
                     }}>
                       {(() => {
-                        const days = sensor.duration_days || 0;
+                        // Recalculate duration from timestamps (don't trust DB)
+                        let days = 0;
+                        if (sensor.start_date && sensor.end_date) {
+                          const startMs = new Date(sensor.start_date).getTime();
+                          const endMs = new Date(sensor.end_date).getTime();
+                          days = (endMs - startMs) / (1000 * 60 * 60 * 24);
+                        }
+                        
                         let statusColor, statusBg, statusText;
                         
                         if (days >= 6.75) {
