@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.7.2] - 2025-10-26
+
+### Changed - UI/UX Refactor
+- **Three-Button Layout**: Simplified main controls to IMPORT/DAGPROFIELEN/EXPORT
+  - Collapsible sections for progressive disclosure
+  - Visual feedback (checkmarks, disabled states)
+  - Clean information architecture
+- **Status Indicator**: Consolidated into compact right-aligned panel
+  - Shows total dataset (28,528 readings)
+  - Analysis period with reading count
+  - Patient information integrated
+  - Less intrusive than previous scattered display
+- **Day Profiles Modal**: Swapped button order (Close → Print)
+- **IMPORT Section**: Collapsible with 3 sub-options
+  - Upload CSV (with ✓ indicator)
+  - Import Database (placeholder for Phase 4)
+  - ProTime PDFs (with ✓ indicator)
+- **EXPORT Section**: New collapsible with 4 options
+  - AGP+ Profile (HTML)
+  - Day Profiles (HTML)
+  - Sensor Database (CSV) - coming soon
+  - View Sensor History (external link)
+
+### Documentation
+- **HANDOFF_V3_7_2_UI_REFACTOR_OCT26.md**: Complete UI refactor documentation
+- **HANDOFF_V3_8_0_NEXT_PHASE_OCT26.md**: Planning for database export + visual polish
+- **QUICKSTART.md**: Updated for v3.8.0 development cycle
+
+---
+
+## [3.7.1] - 2025-10-26
+
+### Added - Auto-Load Features
+- **Status Indicator**: Traffic light system (Green/Yellow/Red)
+  - Green: 28k+ readings, ready to analyze
+  - Yellow: Limited recent data, upload more
+  - Red: No data, upload required
+- **Automatic Last 14 Days**: Page refresh auto-loads recent period
+- **Automatic Comparison**: Previous 14 days calculated on load
+- **Chrome MCP Connector**: JavaScript execution for UI debugging
+
+### Documentation
+- **HANDOFF_V3_7_1_STATUS_INDICATOR_OCT26.md**: Complete implementation details
+
+---
+
+## [3.7.0] - 2025-10-26
+
+### Fixed - Critical Bugs
+- **Comparison Date Calculation**: Fixed period-to-period analysis
+- **ProTime Persistence**: Workday data now survives page refreshes (IndexedDB)
+- **Cartridge Change Detection**: Debug logging added for event display
+
+### Documentation
+- **HANDOFF_V3_7_FIXES_OCT26.md**: Bug fix documentation
+- **HANDOFF_V3_7_PERSISTENCE_OCT26.md**: ProTime persistence implementation
+
+---
+
 ## [3.6.0-dev] - 2025-10-26 (WIP)
 
 ### Added - Event Detection System
