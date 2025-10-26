@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.2] - 2025-10-26
+
+### Changed - Sensor Status Visual Improvements
+- **3-Tier Color Coding**: Status column now uses three semantic colors
+  - ✓ OK (Green): 6.75+ days - Full sensor lifecycle achieved  
+  - ⚠ SHORT (Orange): 6.0-6.75 days - Acceptable but suboptimal duration  
+  - ✗ FAIL (Red): <6.0 days - Premature failure requiring early replacement
+  - Replaces previous binary green/red system
+
+- **Duration Threshold Correction**: Changed from ≥7 days to ≥6.75 days
+  - Guardian 4 sensors rated for 7 days but real-world success threshold is 6d 18h (6.75d)
+  - Accounts for warmup/calibration periods (~2-6 hours)
+  - Aligns SQL success calculation with visual indicators
+
+- **Success Criteria Fix**: SQL query now uses `duration_days >= 6.75` instead of `status = 'success'`
+  - Breaking change: Database-driven success determination
+  - Ensures consistent clinical criteria across all sensor evaluations
+  - Eliminates discrepancy between status field and actual duration
+
+### Technical Details
+- **Modified Files**:
+  - `src/components/SensorHistoryModal.jsx`: 3-tier status badges (line 611-648)
+  - `src/hooks/useSensorDatabase.js`: SQL query logic update (line 84)
+  - `src/components/AGPGenerator.jsx`: Debug logging for sensor data flow
+
+- **Clinical Rationale**: 
+  - Medtronic Guardian 4 approved lifetime: 7 days
+  - Real-world success accounting for warmup: 6.75 days (162 hours)
+  - Orange zone (6.0-6.75d) represents sensors that worked but fell short of optimal lifecycle
+  - Red zone (<6.0d) triggers replacement eligibility per insurance guidelines
+
+---
+
 ## [3.8.2] - 2025-10-27
 
 ### Added - Sensor Visualization in Day Profiles (Phase 2B)
