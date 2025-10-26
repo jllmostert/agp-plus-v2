@@ -94,6 +94,14 @@ export async function getDayProfile(data, date) {
   // Parse date for display
   const dateObj = utils.parseDate(date, '00:00:00');
   
+  // Debug logging for events
+  console.log('[day-profile-engine] Profile for', date, ':', {
+    sensorChanges: sensorChanges?.length || 0,
+    cartridgeChanges: cartridgeChanges?.length || 0,
+    totalReadings: dayData.length,
+    sampleReading: dayData[0]
+  });
+  
   return {
     date,
     dateObj,

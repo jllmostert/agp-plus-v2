@@ -67,20 +67,46 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
       const prevStart = new Date(prevEnd);
       prevStart.setDate(prevStart.getDate() - currentPeriodDays + 1);
 
-      // Ensure dateRange.min is a Date object (might be string from V3)
-      const datasetMinDate = dateRange.min instanceof Date 
-        ? dateRange.min 
-        : new Date(dateRange.min);
+      // Ensure dateRange.min is a Date object
+      // Handle: Date object, Unix timestamp (number), or ISO string
+      let datasetMinDate;
+      if (dateRange.min instanceof Date) {
+        datasetMinDate = dateRange.min;
+      } else if (typeof dateRange.min === 'number') {
+        datasetMinDate = new Date(dateRange.min);
+      } else if (typeof dateRange.min === 'string') {
+        datasetMinDate = new Date(dateRange.min);
+      } else {
+        console.error('[useComparison] Invalid dateRange.min:', dateRange.min);
+        setComparisonData(null);
+        return;
+      }
+
+      // Validate Date object
+      if (isNaN(datasetMinDate.getTime())) {
+        console.error('[useComparison] Invalid date conversion:', dateRange.min);
+        setComparisonData(null);
+        return;
+      }
 
       // Check if previous period has sufficient data
       if (prevStart < datasetMinDate) {
         console.log('[useComparison] Insufficient history:', {
           prevStart: prevStart.toISOString(),
-          datasetMin: datasetMinDate.toISOString()
+          datasetMin: datasetMinDate.toISOString(),
+          currentPeriodDays,
+          datasetDays: Math.round((new Date() - datasetMinDate) / (1000 * 60 * 60 * 24))
         });
         setComparisonData(null);
         return;
       }
+
+      console.log('[useComparison] ✅ Date range check passed:', {
+        prevStart: prevStart.toISOString(),
+        prevEnd: prevEnd.toISOString(),
+        datasetMin: datasetMinDate.toISOString(),
+        datasetMax: (dateRange.max ? new Date(dateRange.max).toISOString() : 'unknown')
+      });
 
       // Calculate metrics for previous period
       const prevStartStr = formatDateForMetrics(prevStart);

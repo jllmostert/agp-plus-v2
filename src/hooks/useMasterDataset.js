@@ -70,7 +70,23 @@ export function useMasterDataset(options = {}) {
       
       // Get dataset stats
       const datasetStats = await getMasterDatasetStats();
-      setStats(datasetStats);
+      
+      // Load ProTime workdays from settings
+      let workdaySet = null;
+      try {
+        const { loadProTimeData } = await import('../storage/masterDatasetStorage');
+        workdaySet = await loadProTimeData();
+        if (workdaySet) {
+          console.log('[useMasterDataset] ✅ Loaded ProTime workdays:', workdaySet.size);
+        }
+      } catch (err) {
+        console.warn('[useMasterDataset] ProTime load failed:', err);
+      }
+      
+      setStats({
+        ...datasetStats,
+        workdays: workdaySet  // Add workdays to stats
+      });
 
       // Apply date range filter if specified
       let filteredReadings = cache.allReadings;

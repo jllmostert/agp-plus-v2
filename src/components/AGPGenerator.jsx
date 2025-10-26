@@ -165,6 +165,14 @@ export default function AGPGenerator() {
     return readings;
   }, [hasV3Data, masterDataset.readings, masterDataset.isLoading, hadV3Mode, csvData]);
   
+  // Load ProTime workdays from master dataset on init
+  useEffect(() => {
+    if (useV3Mode && masterDataset.stats?.workdays) {
+      setWorkdays(masterDataset.stats.workdays);
+      console.log('[AGPGenerator] ✅ Restored ProTime workdays:', masterDataset.stats.workdays.size);
+    }
+  }, [useV3Mode, masterDataset.stats?.workdays]);
+  
   // Comparison needs FULL dataset (not filtered) to calculate previous periods
   const comparisonReadings = useMemo(() => {
     if (useV3Mode) {
@@ -189,6 +197,7 @@ export default function AGPGenerator() {
   // V3: Get FULL dataset range for comparison availability checks
   // This is needed so useComparison can check historical data availability
   const fullDatasetRange = useMemo(() => {
+    // Try V3 first
     if (useV3Mode && masterDataset.stats?.dateRange) {
       const { min, max } = masterDataset.stats.dateRange;
       if (min && max) {
@@ -198,7 +207,7 @@ export default function AGPGenerator() {
         };
       }
     }
-    // V2 mode: use CSV dateRange
+    // Fallback to V2 CSV dateRange (even if useV3Mode is true but no V3 data yet)
     if (dateRange && dateRange.min && dateRange.max) {
       return dateRange;
     }
