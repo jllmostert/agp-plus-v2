@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.8.2] - 2025-10-27
+
+### Added - Sensor Visualization in Day Profiles (Phase 2B)
+- **Database-Driven Detection**: Sensor changes prioritize imported database
+  - High confidence: Exact sensor start timestamps from master_sensors.db
+  - Medium confidence: Gap detection fallback (3-10 hour data gaps)
+  - Adds metadata: lot number, duration days, confidence level
+- **Visual Markers**: Red dashed lines in day profile charts
+  - Appears at exact sensor start time
+  - Label: "SENSOR VERVANGEN"
+  - Full-height vertical line with 4,4 dash pattern
+  - Color: #dc2626 (clinical red)
+- **Smart Detection**: Two-tier approach
+  1. Check sensor database first (imported via Phase 2A)
+  2. Fall back to gap analysis if database unavailable
+  3. Console logging shows which source was used
+
+### Changed
+- `detectSensorChanges()` in day-profile-engine.js now database-aware
+- Sensor change objects include `source` ('database' or 'gap') and `confidence` level
+- DayProfileCard.jsx already supported sensor markers (now receives real data)
+
+### Technical
+- Tested with 219 imported sensors (2022-2025)
+- Sensor on 2025-10-19 correctly displays in day profiles
+- Maintains backwards compatibility with gap-based detection
+- Ready for Phase 2C: sensor overview dashboard
+
+---
+
 ## [3.8.1] - 2025-10-27
 
 ### Added - Sensor Database Import (Phase 2A)

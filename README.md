@@ -296,8 +296,8 @@ npx gh-pages -d dist
 - [x] ~~Day profiles with print export~~ (✅ Implemented v2.2)
 - [x] ~~Database export (JSON)~~ (✅ Implemented v3.8.0)
 - [x] ~~Sensor database import~~ (✅ Implemented v3.8.1 - Phase 2A)
-- [ ] Sensor change visualization in day profiles (Phase 2B - In Progress)
-- [ ] Sensor overview dashboard (Phase 2C)
+- [x] ~~Sensor change visualization in day profiles~~ (✅ Implemented v3.8.2 - Phase 2B)
+- [ ] Sensor overview dashboard (Phase 2C - Next)
 - [ ] PDF export (in addition to HTML)
 - [ ] Multiple CSV comparison
 - [ ] Custom target ranges
