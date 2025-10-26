@@ -38,6 +38,28 @@ npx vite --port 3001
 
 **Chrome**: `CMD + SHIFT + R` for hard refresh
 
+**Chrome MCP**: Can auto-open via `Control Chrome:open_url` connector!
+
+---
+
+## 🌐 DEBUGGING WITH CHROME CONNECTOR
+
+**New Discovery**: Chrome MCP provides JavaScript execution!
+
+### Quick Debug Commands:
+```javascript
+// Check status indicator
+document.body.innerText.includes('28,528 readings')
+
+// Verify green light
+document.querySelector('h1').textContent // "AGP+ V3.7.1"
+
+// Check IndexedDB (advanced)
+indexedDB.databases()
+```
+
+**See full details in**: `docs/handoffs/HANDOFF_V3_7_1_STATUS_INDICATOR_OCT26.md`
+
 ---
 
 ## 🎯 NEXT SESSION PRIORITIES

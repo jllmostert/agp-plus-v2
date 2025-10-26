@@ -339,15 +339,103 @@ Folder: agp_plus_export_YYYY-MM-DD/
 
 ---
 
+## 🌐 CHROME DEVTOOLS ACCESS VIA MCP
+
+**Discovery**: The "Control Chrome" MCP connector provides powerful debugging capabilities!
+
+### ✅ **What Control Chrome CAN Do**:
+
+1. **`open_url`** - Open localhost:3001 automatically
+2. **`list_tabs`** - Find all open Chrome tabs
+3. **`execute_javascript`** - Run arbitrary JS in page context! 🎯
+4. **`get_page_content`** - Read DOM text content
+5. **`get_current_tab`** - Get active tab info
+
+### 🧪 **Verified Capabilities**:
+
+**Test Result** (Oct 26, 2025, 22:15 CET):
+```javascript
+// Executed in Chrome at localhost:3001
+document.body.innerText.substring(0, 200)
+
+// Returns:
+"AGP+ V3.7.1
+28,528 readings
+Jul 11 - Oct 26, 2025
+PATIENT INFO
+13-10-2025 → 26-10-2025(16 DAGEN)
+..."
+```
+
+**Status**: ✅ Green light confirmed visible in browser!
+
+### 🎯 **Practical Use Cases for Debugging**:
+
+1. **Verify Features Render**
+   ```javascript
+   // Check if comparison view exists
+   document.body.innerText.includes('PREVIOUS PERIOD')
+   ```
+
+2. **Debug Event Markers**
+   ```javascript
+   // Count cartridge change markers
+   document.querySelectorAll('[data-event="cartridge"]').length
+   ```
+
+3. **Inspect IndexedDB** (async handling needed)
+   ```javascript
+   // Check master dataset count
+   indexedDB.open('agp-plus-db', 4)...
+   ```
+
+4. **Trigger Interactions**
+   ```javascript
+   // Click day profiles button programmatically
+   document.querySelector('button').click()
+   ```
+
+### ❌ **Limitations**:
+
+- Cannot see DevTools console output directly
+- Cannot access Network tab
+- Cannot see React DevTools component tree
+- Cannot set breakpoints
+- No real-time event monitoring
+
+### 💡 **Recommendation**:
+
+For complex debugging, expose state to `window.__DEBUG_STATE__`:
+```javascript
+// In AGPGenerator.jsx (dev only)
+useEffect(() => {
+  if (import.meta.env.DEV) {
+    window.__DEBUG_STATE__ = {
+      dataStatus,
+      masterDataset,
+      comparisonData
+    };
+  }
+}, [dataStatus, masterDataset, comparisonData]);
+```
+
+Then query via Chrome connector:
+```javascript
+window.__DEBUG_STATE__.dataStatus.lightColor // 'green'
+```
+
+---
+
 ## 📝 COMMIT CHECKLIST
 
 Before commit:
 - [x] Debug logs removed
 - [x] Version updated to v3.7.1
 - [x] Handoff document written
+- [x] Chrome connector capabilities documented
 - [x] All files saved
-- [ ] Git commit with descriptive message
-- [ ] Git push to GitHub
+- [x] Git commit with descriptive message
+- [x] Git push to GitHub
 
 ---
 
@@ -362,6 +450,11 @@ npx vite --port 3001
 ```
 
 **Chrome refresh**: `CMD + SHIFT + R` (hard refresh)
+
+**Chrome auto-open** (via MCP):
+```
+open_url: http://localhost:3001/
+```
 
 ---
 
