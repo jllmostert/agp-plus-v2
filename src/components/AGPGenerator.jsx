@@ -1091,18 +1091,17 @@ export default function AGPGenerator() {
                 </button>
               </div>
 
-              {/* File Upload Section (hidden inputs) */}
-              <FileUpload
-                onCSVLoad={handleCSVLoad}
-                onProTimeLoad={handleProTimeLoad}
-                csvLoaded={!!csvData}
-                proTimeLoaded={!!workdays}
-              />
+              {/* Hidden file inputs only */}
+              <div style={{ display: 'none' }}>
+                <FileUpload
+                  onCSVLoad={handleCSVLoad}
+                  onProTimeLoad={handleProTimeLoad}
+                  csvLoaded={!!csvData}
+                  proTimeLoaded={!!workdays}
+                />
+              </div>
               
-              {/* Sensor Database Import */}
-              <SensorImport />
-              
-              {/* CSV Error Display (V2 or V3) */}
+              {/* CSV Error Display (V2 or V3) - Only show errors */}
               {(csvError || v3UploadError) && (
                 <div className="card mt-4" style={{ 
                   background: 'rgba(220, 38, 38, 0.1)', 
@@ -1127,31 +1126,8 @@ export default function AGPGenerator() {
                 </div>
               )}
 
-              {/* Saved Uploads List */}
-              {savedUploads.length > 0 && (
-                <div style={{ marginTop: '1.5rem' }}>
-                  <h3 style={{
-                    fontSize: '0.875rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    marginBottom: '0.75rem',
-                    paddingBottom: '0.5rem',
-                    borderBottom: '2px solid var(--border-primary)'
-                  }}>
-                    Saved Uploads
-                  </h3>
-                  <SavedUploadsList
-                    uploads={savedUploads}
-                    activeId={activeUploadId}
-                    storageInfo={storageInfo}
-                    onLoad={handleLoadSavedUpload}
-                    onToggleLock={toggleLock}
-                    onDelete={deleteUpload}
-                    onRename={renameUpload}
-                  />
-                </div>
-              )}
+              {/* Saved Uploads List - REMOVED for clean UI */}
+              {/* User can access via localStorage if needed */}
             </div>
           )}
 
