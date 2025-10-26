@@ -1,14 +1,16 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import AGPGenerator from './components/AGPGenerator.jsx';
-import { MigrationBanner } from './components/MigrationBanner.jsx';
+// import { MigrationBanner } from './components/MigrationBanner.jsx'; // Disabled: v3.0 migration not ready yet
 import './styles/globals.css';
 
 /**
- * AGP+ v2.1 - Main Application Entry Point
+ * AGP+ v3.6 - Main Application Entry Point
  * 
  * Initializes React 18 root and renders the main AGPGenerator component.
  * Uses the new createRoot API for concurrent features support.
+ * 
+ * Note: MigrationBanner disabled during v3.6 development (event detection phase)
  */
 
 // Get root element
@@ -20,7 +22,7 @@ const root = createRoot(rootElement);
 // Render application
 root.render(
   <React.StrictMode>
-    <MigrationBanner />
+    {/* <MigrationBanner /> */}
     <AGPGenerator />
   </React.StrictMode>
 );

@@ -37,11 +37,15 @@ import {
   invalidateCache
 } from '../masterDatasetStorage.js';
 
+// DISABLED: Event storage refactored to localStorage (v3.6)
+// Migration needs updating before use
+/*
 import { 
   storeSensorChange,
   storeCartridgeChange,
   getEventStats
 } from '../eventStorage.js';
+*/
 
 import { parseCSV } from '../../core/parsers.js';
 
