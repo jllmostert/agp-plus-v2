@@ -69,6 +69,14 @@ export function useMasterDataset(options = {}) {
       // Load cached dataset
       const cache = await loadOrRebuildCache();
       
+      // Initialize events from master dataset if not already present
+      try {
+        const { initEventsFromMasterDataset } = await import('../storage/masterDatasetStorage');
+        await initEventsFromMasterDataset();
+      } catch (err) {
+        console.warn('[useMasterDataset] Event initialization failed:', err);
+      }
+      
       // AUTO-LOAD LAST 14 DAYS: If no date range specified, default to last 14 days
       // This ensures instant data availability on app startup
       if (!dateRange.start && !dateRange.end && cache.allReadings.length > 0) {

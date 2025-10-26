@@ -287,6 +287,96 @@ export async function loadProTimeData() {
 }
 
 /**
+ * Detect and store device events from CSV readings
+ * @param {Array} readings - Parsed CSV readings
+ */
+async function detectAndStoreEvents(readings) {
+  const { storeSensorChange, storeCartridgeChange } = await import('./eventStorage.js');
+  
+  // Detect cartridge changes (Rewind events)
+  const rewindEvents = readings
+    .filter(row => row.rewind === true && row.date && row.time)
+    .map(row => {
+      const [year, month, day] = row.date.split('/').map(Number);
+      const [hours, minutes, seconds] = row.time.split(':').map(Number);
+      return new Date(year, month - 1, day, hours, minutes, seconds);
+    })
+    .filter(date => !isNaN(date.getTime()));
+  
+  // Store cartridge changes
+  for (const timestamp of rewindEvents) {
+    try {
+      await storeCartridgeChange(timestamp, 'Rewind', 'CSV Upload');
+    } catch (err) {
+      // Ignore duplicate events
+      if (!err.message.includes('duplicate')) {
+        console.warn('[detectAndStoreEvents] Failed to store cartridge change:', err);
+      }
+    }
+  }
+  
+  console.log(`[detectAndStoreEvents] Detected ${rewindEvents.length} cartridge changes`);
+}
+
+/**
+ * Initialize events from existing master dataset
+ * Called on page load if no events exist in localStorage
+ */
+export async function initEventsFromMasterDataset() {
+  const { hasEvents } = await import('./eventStorage.js');
+  
+  // Check if events already exist
+  if (hasEvents()) {
+    console.log('[initEventsFromMasterDataset] Events already exist, skipping scan');
+    return;
+  }
+  
+  console.log('[initEventsFromMasterDataset] No events found, scanning master dataset...');
+  
+  // Load all readings from cache
+  const cache = await loadOrRebuildCache();
+  
+  if (!cache || cache.allReadings.length === 0) {
+    console.log('[initEventsFromMasterDataset] No readings in master dataset');
+    return;
+  }
+  
+  // Transform to CSV format for detectAndStoreEvents
+  const readings = cache.allReadings.map(reading => ({
+    date: formatDateFromTimestamp(reading.timestamp),
+    time: formatTimeFromTimestamp(reading.timestamp),
+    rewind: reading.rewind || false
+  }));
+  
+  // Detect and store events
+  await detectAndStoreEvents(readings);
+  
+  console.log('[initEventsFromMasterDataset] ✅ Events initialized from master dataset');
+}
+
+/**
+ * Helper: Format timestamp to YYYY/MM/DD
+ */
+function formatDateFromTimestamp(timestamp) {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}/${month}/${day}`;
+}
+
+/**
+ * Helper: Format timestamp to HH:MM:SS
+ */
+function formatTimeFromTimestamp(timestamp) {
+  const date = new Date(timestamp);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+/**
  * Upload CSV directly to V3 storage (bypasses V2 completely)
  * @param {string} csvText - Raw CSV text from CareLink export
  * @returns {Object} Upload result with stats
@@ -328,6 +418,9 @@ export async function uploadCSVToV3(csvText) {
   
   // Append readings to master dataset (handles bucketing, deduplication, etc.)
   await appendReadingsToMaster(readingsWithTimestamps);
+  
+  // Detect and store device events (sensor/cartridge changes)
+  await detectAndStoreEvents(readings);
   
   // Rebuild cache for immediate access
   await rebuildSortedCache();

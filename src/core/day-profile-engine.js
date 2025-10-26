@@ -12,6 +12,7 @@
 
 import { CONFIG, utils, calculateMetrics, detectEvents } from './metrics-engine.js';
 import { getSensorAtDate } from '../storage/sensorStorage.js';
+import { getEventsForDate } from '../storage/eventStorage.js';
 
 /**
  * Get the last 7 days from the dataset
@@ -77,8 +78,12 @@ export function getDayProfile(data, date) {
   // Detect sensor changes (pass full dataset to detect cross-day gaps)
   const sensorChanges = detectSensorChanges(data, date);
   
-  // Detect cartridge/reservoir changes (Rewind events)
-  const cartridgeChanges = detectCartridgeChanges(dayData);
+  // Get cartridge changes from stored events (v3.7 fix)
+  const storedEvents = getEventsForDate(date);
+  const cartridgeChanges = storedEvents.cartridgeChanges.map(event => ({
+    timestamp: new Date(event.timestamp),
+    minuteOfDay: new Date(event.timestamp).getHours() * 60 + new Date(event.timestamp).getMinutes()
+  }));
   
   // Detect badges
   const badges = detectBadges(metrics, events);
