@@ -14,6 +14,7 @@ import { useDataStatus } from '../hooks/useDataStatus';
 // Core utilities
 import { parseProTime } from '../core/parsers';
 import { downloadHTML } from '../core/html-exporter';
+import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
 
 // UI Components
 import FileUpload from './FileUpload';
@@ -93,7 +94,8 @@ export default function AGPGenerator() {
   
   const [workdays, setWorkdays] = useState(null); // Set of workday date strings
   const [dayNightEnabled, setDayNightEnabled] = useState(false);
-  const [dataImportExpanded, setDataImportExpanded] = useState(true); // Collapsible data import
+  const [dataImportExpanded, setDataImportExpanded] = useState(false); // Collapsible data import (closed by default)
+  const [dataExportExpanded, setDataExportExpanded] = useState(false); // Collapsible data export (closed by default)
   const [patientInfoOpen, setPatientInfoOpen] = useState(false);
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
@@ -665,184 +667,184 @@ export default function AGPGenerator() {
           </div>
         )}
         
-        {/* Header - Brutalist Box */}
+        {/* Header - Compact Brutalist Box */}
         <header className="section">
           <div className="card" style={{ 
             padding: '1.5rem',
-            display: 'grid',
-            gridTemplateColumns: '1fr auto',
-            gridTemplateRows: 'auto auto',
-            gap: '1rem',
-            alignItems: 'center'
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '2rem'
           }}>
-            {/* Row 1: Title + Patient Info Button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {/* Left: Title + Subtitle */}
+            <div>
               <h1 style={{ 
                 letterSpacing: '0.15em', 
                 fontWeight: 700, 
                 fontSize: '1.5rem',
-                marginBottom: 0
+                marginBottom: '0.5rem'
               }}>
-                AGP+ V3.7.1
+                AGP+ V3.7.2
               </h1>
-              
-              {/* Data Status Indicator */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 0.75rem',
-                background: 'var(--bg-secondary)',
-                border: '3px solid var(--border-primary)',
-                fontSize: '0.75rem',
-                fontFamily: 'monospace'
+              <p style={{ 
+                fontSize: '0.75rem', 
+                color: 'var(--text-secondary)',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                margin: 0
               }}>
-                {/* Status Light */}
-                <div style={{
-                  width: '12px',
-                  height: '12px',
-                  border: '2px solid #000',
-                  background: dataStatus.lightColor === 'green' 
-                    ? 'var(--color-green)' 
-                    : dataStatus.lightColor === 'yellow' 
-                    ? 'var(--color-yellow)' 
-                    : 'var(--color-red)',
-                  flexShrink: 0
-                }} />
-                
-                {/* Status Text */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.125rem'
+                Ambulatory Glucose Profile Generator
+              </p>
+            </div>
+
+            {/* Right: Status Panel + Patient Info Button */}
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+              {/* Status Panel - Compact */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: '2px solid var(--border-primary)',
+                padding: '0.75rem 1rem',
+                fontFamily: 'monospace',
+                fontSize: '0.75rem',
+                minWidth: '280px'
+              }}>
+                {/* Status Light + Main Info */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.75rem',
+                  marginBottom: '0.5rem'
                 }}>
-                  <div style={{ 
-                    fontWeight: 700, 
-                    letterSpacing: '0.05em',
-                    color: 'var(--text-primary)'
-                  }}>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid #000',
+                    background: dataStatus.lightColor === 'green' 
+                      ? 'var(--color-green)' 
+                      : dataStatus.lightColor === 'yellow' 
+                      ? 'var(--color-yellow)' 
+                      : 'var(--color-red)',
+                    flexShrink: 0
+                  }} />
+                  <div style={{ fontWeight: 700, letterSpacing: '0.05em' }}>
                     {dataStatus.hasData ? (
-                      <>{dataStatus.readingCount.toLocaleString()} readings</>
+                      <>{dataStatus.readingCount.toLocaleString()} READINGS</>
                     ) : (
                       <>NO DATA</>
                     )}
                   </div>
-                  {dataStatus.hasData && (
-                    <div style={{ 
-                      fontSize: '0.625rem',
-                      color: 'var(--text-secondary)',
-                      letterSpacing: '0.05em'
-                    }}>
-                      {dataStatus.dateRangeFormatted}
-                    </div>
-                  )}
                 </div>
-              </div>
-            </div>
-            
-            <button
-              onClick={() => {
-                setPatientInfoOpen(true);
-              }}
-              style={{
-                padding: '0.75rem 1rem',
-                background: 'var(--bg-secondary)',
-                border: '2px solid var(--border-primary)',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                justifySelf: 'end',
-                height: 'fit-content'
-              }}
-            >
-              <User size={16} />
-              PATIENT INFO
-            </button>
 
-            {/* Row 2: Patient Info + Date Range (spans both columns) */}
-            <div style={{ 
-              gridColumn: '1 / -1',
-              borderTop: '2px solid var(--border-primary)',
-              paddingTop: '1rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem'
-            }}>
-              {/* Data Status Warning (Red/Yellow) */}
-              {dataStatus.actionRequired && (
-                <div style={{
-                  padding: '0.75rem',
-                  background: dataStatus.lightColor === 'red' 
-                    ? 'var(--color-red)' 
-                    : 'var(--color-yellow)',
-                  border: '3px solid #000',
-                  color: '#000',
-                  fontWeight: 700,
-                  fontSize: '0.875rem',
-                  letterSpacing: '0.05em',
-                  textAlign: 'center'
-                }}>
-                  ⚠️ {dataStatus.message}
-                </div>
-              )}
-              
-              {/* Patient Info Display */}
-              {patientInfo && patientInfo.name && (
-                <div style={{
-                  fontSize: '0.875rem',
-                  color: 'var(--text-primary)',
-                  fontWeight: 600,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                  fontFamily: 'monospace'
-                }}>
-                  {patientInfo.name}
-                  {patientInfo.dob && ` • DOB ${new Date(patientInfo.dob).toLocaleDateString('nl-NL')}`}
-                  {patientInfo.cgm && ` • ${patientInfo.cgm}`}
-                </div>
-              )}
-              
-              {/* Active Period Display */}
-              {startDate && endDate && (
-                <div style={{ 
-                  fontSize: '0.875rem', 
-                  color: 'var(--text-primary)',
-                  fontWeight: 600,
-                  letterSpacing: '0.05em',
-                  fontFamily: 'monospace'
-                }}>
-                  {startDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  {' → '}
-                  {endDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  <span style={{ 
-                    marginLeft: '0.5rem', 
+                {/* Date Range - Total Dataset */}
+                {dataStatus.hasData && (
+                  <div style={{ 
+                    fontSize: '0.625rem',
                     color: 'var(--text-secondary)',
-                    fontWeight: 400,
-                    textTransform: 'uppercase'
+                    letterSpacing: '0.05em',
+                    marginBottom: '0.5rem',
+                    paddingLeft: '24px'
                   }}>
-                    ({Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1} DAGEN)
-                  </span>
-                </div>
-              )}
+                    Dataset: {dataStatus.dateRangeFormatted}
+                  </div>
+                )}
+
+                {/* Active Period */}
+                {startDate && endDate && (
+                  <>
+                    <div style={{
+                      borderTop: '1px solid var(--border-primary)',
+                      marginTop: '0.5rem',
+                      paddingTop: '0.5rem'
+                    }}>
+                      <div style={{ 
+                        fontSize: '0.625rem',
+                        color: 'var(--text-secondary)',
+                        marginBottom: '0.25rem'
+                      }}>
+                        ANALYSIS PERIOD:
+                      </div>
+                      <div style={{ 
+                        fontWeight: 600,
+                        letterSpacing: '0.05em'
+                      }}>
+                        {startDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {' → '}
+                        {endDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.625rem',
+                        color: 'var(--text-secondary)',
+                        marginTop: '0.25rem'
+                      }}>
+                        {Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1} dagen
+                        {activeReadings && <> • {activeReadings.length.toLocaleString()} readings</>}
+                        {workdays && <> • {workdays.size} ProTime workdays</>}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Patient Info */}
+                {patientInfo && patientInfo.name && (
+                  <div style={{
+                    borderTop: '1px solid var(--border-primary)',
+                    marginTop: '0.5rem',
+                    paddingTop: '0.5rem',
+                    fontSize: '0.625rem',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    {patientInfo.name}
+                    {patientInfo.dob && <> • DOB {new Date(patientInfo.dob).toLocaleDateString('nl-NL')}</>}
+                    {patientInfo.cgm && <> • {patientInfo.cgm}</>}
+                  </div>
+                )}
+              </div>
+
+              {/* Patient Info Button */}
+              <button
+                onClick={() => setPatientInfoOpen(true)}
+                style={{
+                  padding: '0.75rem 1rem',
+                  background: 'var(--bg-secondary)',
+                  border: '2px solid var(--border-primary)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  height: 'fit-content',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <User size={16} />
+                EDIT
+              </button>
             </div>
           </div>
-          
-          <p style={{ 
-            marginTop: '1rem',
-            fontSize: '0.75rem', 
-            color: 'var(--text-secondary)',
-            fontWeight: 600,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase'
-          }}>
-            AMBULATORY GLUCOSE PROFILE GENERATOR
-          </p>
+
+          {/* Data Status Warning (Red/Yellow) - Below header when needed */}
+          {dataStatus.actionRequired && (
+            <div style={{
+              padding: '0.75rem',
+              marginTop: '1rem',
+              background: dataStatus.lightColor === 'red' 
+                ? 'var(--color-red)' 
+                : 'var(--color-yellow)',
+              border: '3px solid #000',
+              color: '#000',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              letterSpacing: '0.05em',
+              textAlign: 'center'
+            }}>
+              ⚠️ {dataStatus.message}
+            </div>
+          )}
         </header>
 
         {/* V3 Migration Banner - Auto-detects and triggers migration */}
@@ -868,7 +870,7 @@ export default function AGPGenerator() {
           </section>
         )}
 
-        {/* Control Buttons: 3-button clean layout (V3-first) */}
+        {/* Control Buttons: IMPORT - DAGPROFIELEN - EXPORT */}
         <section className="section">
           <div style={{ 
             display: 'grid', 
@@ -877,12 +879,13 @@ export default function AGPGenerator() {
             marginBottom: '1rem'
           }}>
             
-            {/* 1. Upload CSV Button */}
+            {/* 1. IMPORT Button (Collapsible) */}
             <button
               onClick={() => setDataImportExpanded(!dataImportExpanded)}
               style={{
-                background: 'var(--bg-secondary)',
+                background: dataImportExpanded ? '#000' : 'var(--bg-secondary)',
                 border: '3px solid var(--border-primary)',
+                color: dataImportExpanded ? '#fff' : 'var(--text-primary)',
                 cursor: 'pointer',
                 padding: '1.5rem 1rem',
                 display: 'flex',
@@ -892,26 +895,25 @@ export default function AGPGenerator() {
                 gap: '0.5rem',
                 minHeight: '100px'
               }}
-              title="Upload CareLink CSV export"
+              title="Upload and import data"
             >
               <h2 style={{ 
                 fontSize: '0.875rem',
                 fontWeight: 700, 
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
-                color: 'var(--text-primary)',
                 marginBottom: 0
               }}>
-                UPLOAD CSV
+                {dataImportExpanded ? '▼' : '▶'} IMPORT
               </h2>
               <span style={{ 
                 fontSize: '0.625rem',
-                color: 'var(--text-secondary)',
+                color: dataImportExpanded ? '#fff' : 'var(--text-secondary)',
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase'
               }}>
-                CareLink Data
+                Data Sources
               </span>
               {csvData && (
                 <span style={{ 
@@ -924,7 +926,7 @@ export default function AGPGenerator() {
               )}
             </button>
 
-            {/* 2. Day Profiles Button */}
+            {/* 2. DAGPROFIELEN Button (Direct Action) */}
             <button
               onClick={handleDayProfilesOpen}
               disabled={!activeReadings || activeReadings.length === 0}
@@ -964,14 +966,14 @@ export default function AGPGenerator() {
               </span>
             </button>
 
-            {/* 3. Export HTML Button */}
+            {/* 3. EXPORT Button (Collapsible) */}
             <button
-              onClick={handleExportHTML}
+              onClick={() => setDataExportExpanded(!dataExportExpanded)}
               disabled={!metricsResult || !startDate || !endDate}
               style={{
-                background: metricsResult && startDate && endDate ? '#000' : 'var(--bg-primary)',
-                border: '3px solid #000',
-                color: metricsResult && startDate && endDate ? '#fff' : 'var(--text-secondary)',
+                background: dataExportExpanded ? '#000' : (metricsResult && startDate && endDate ? 'var(--bg-secondary)' : 'var(--bg-primary)'),
+                border: '3px solid var(--border-primary)',
+                color: dataExportExpanded ? '#fff' : (metricsResult && startDate && endDate ? 'var(--text-primary)' : 'var(--text-secondary)'),
                 cursor: metricsResult && startDate && endDate ? 'pointer' : 'not-allowed',
                 padding: '1.5rem 1rem',
                 display: 'flex',
@@ -982,7 +984,7 @@ export default function AGPGenerator() {
                 minHeight: '100px',
                 opacity: metricsResult && startDate && endDate ? 1 : 0.5
               }}
-              title={!metricsResult ? "Generate metrics first" : "Export as HTML report"}
+              title={!metricsResult ? "Generate metrics first" : "Export options"}
             >
               <h2 style={{ 
                 fontSize: '0.875rem',
@@ -991,22 +993,22 @@ export default function AGPGenerator() {
                 textTransform: 'uppercase',
                 marginBottom: 0
               }}>
-                EXPORT HTML
+                {dataExportExpanded ? '▼' : '▶'} EXPORT
               </h2>
               <span style={{ 
                 fontSize: '0.625rem',
-                color: metricsResult && startDate && endDate ? '#fff' : 'var(--text-secondary)',
+                color: dataExportExpanded ? '#fff' : (metricsResult && startDate && endDate ? 'var(--text-secondary)' : 'var(--text-secondary)'),
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase'
               }}>
-                Print Report
+                Reports & Data
               </span>
             </button>
             
           </div>
 
-          {/* Expanded Import Content - full width below */}
+          {/* IMPORT Expanded Content */}
           {dataImportExpanded && (
             <div className="mb-4" style={{ 
               background: 'var(--bg-secondary)',
@@ -1015,7 +1017,81 @@ export default function AGPGenerator() {
               padding: '1rem',
               marginTop: '1rem'
             }}>
-              {/* File Upload Section */}
+              {/* Sub-buttons for import options */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '0.75rem',
+                marginBottom: '1rem'
+              }}>
+                <button
+                  onClick={() => document.getElementById('csv-upload-input')?.click()}
+                  style={{
+                    background: 'var(--bg-primary)',
+                    border: '2px solid var(--border-primary)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    padding: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  title="Upload CareLink CSV"
+                >
+                  📄 Upload CSV
+                  {csvData && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
+                </button>
+
+                <button
+                  onClick={() => alert('Database import coming in Phase 4')}
+                  style={{
+                    background: 'var(--bg-primary)',
+                    border: '2px solid var(--border-primary)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'not-allowed',
+                    padding: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    opacity: 0.5
+                  }}
+                  disabled
+                  title="Coming in Phase 4"
+                >
+                  🗄️ Import Database
+                </button>
+
+                <button
+                  onClick={() => document.getElementById('protime-upload-input')?.click()}
+                  style={{
+                    background: 'var(--bg-primary)',
+                    border: '2px solid var(--border-primary)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    padding: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  title="Upload ProTime PDF for workday analysis"
+                >
+                  📋 ProTime PDFs
+                  {workdays && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
+                </button>
+              </div>
+
+              {/* File Upload Section (hidden inputs) */}
               <FileUpload
                 onCSVLoad={handleCSVLoad}
                 onProTimeLoad={handleProTimeLoad}
@@ -1076,6 +1152,108 @@ export default function AGPGenerator() {
                   />
                 </div>
               )}
+            </div>
+          )}
+
+          {/* EXPORT Expanded Content */}
+          {dataExportExpanded && metricsResult && startDate && endDate && (
+            <div className="mb-4" style={{ 
+              background: 'var(--bg-secondary)',
+              border: '2px solid var(--border-primary)',
+              borderRadius: '4px',
+              padding: '1rem',
+              marginTop: '1rem'
+            }}>
+              {/* Sub-buttons for export options */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '0.75rem'
+              }}>
+                <button
+                  onClick={handleExportHTML}
+                  style={{
+                    background: 'var(--bg-primary)',
+                    border: '2px solid var(--border-primary)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    padding: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase'
+                  }}
+                  title="Export AGP+ profile as HTML"
+                >
+                  📊 AGP+ Profile (HTML)
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (dayProfiles && dayProfiles.length > 0) {
+                      downloadDayProfilesHTML(dayProfiles, patientInfo);
+                    } else {
+                      alert('No day profiles available');
+                    }
+                  }}
+                  disabled={!dayProfiles || dayProfiles.length === 0}
+                  style={{
+                    background: 'var(--bg-primary)',
+                    border: '2px solid var(--border-primary)',
+                    color: dayProfiles && dayProfiles.length > 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    cursor: dayProfiles && dayProfiles.length > 0 ? 'pointer' : 'not-allowed',
+                    padding: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    opacity: dayProfiles && dayProfiles.length > 0 ? 1 : 0.5
+                  }}
+                  title="Export day profiles as HTML"
+                >
+                  📅 Day Profiles (HTML)
+                </button>
+
+                <button
+                  onClick={() => alert('Sensor database export coming soon')}
+                  style={{
+                    background: 'var(--bg-primary)',
+                    border: '2px solid var(--border-primary)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'not-allowed',
+                    padding: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    opacity: 0.5
+                  }}
+                  disabled
+                  title="Coming soon"
+                >
+                  💾 Sensor Database (CSV)
+                </button>
+
+                <button
+                  onClick={() => {
+                    window.open('/Users/jomostert/Documents/Projects/Sensoren/sensor_database_brutalist.html', '_blank');
+                  }}
+                  style={{
+                    background: 'var(--bg-primary)',
+                    border: '2px solid var(--border-primary)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    padding: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase'
+                  }}
+                  title="View sensor history database"
+                >
+                  🔍 View Sensor History →
+                </button>
+              </div>
             </div>
           )}
         </section>
