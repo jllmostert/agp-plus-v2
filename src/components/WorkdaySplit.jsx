@@ -19,10 +19,40 @@ export default function WorkdaySplit({ workdayMetrics, restdayMetrics }) {
   ];
 
   return (
-    <div className="card" style={{ padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Work Schedule Analysis</h3>
-        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{workdayCount} workdays vs {restdayCount} rest days</div>
+    <div style={{
+      backgroundColor: 'var(--bg-secondary)',
+      border: '4px solid var(--color-black)',
+      padding: '2rem',
+      marginBottom: '2rem'
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '2rem',
+        padding: '1.5rem',
+        backgroundColor: 'var(--color-black)',
+        border: '3px solid var(--color-orange)'
+      }}>
+        <h3 style={{
+          fontSize: '1.25rem',
+          fontWeight: 700,
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          color: 'var(--color-white)',
+          margin: 0
+        }}>
+          Work Schedule Analysis
+        </h3>
+        <div style={{
+          fontSize: '1rem',
+          color: 'var(--color-orange)',
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          fontFamily: 'monospace'
+        }}>
+          {workdayCount} workdays vs {restdayCount} rest days
+        </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr 1fr', gap: '1rem', alignItems: 'stretch' }}>
         {comparisons.map((comp) => (<WorkdayRow key={comp.id} {...comp} />))}
@@ -44,48 +74,169 @@ function WorkdayRow({ label, sublabel, workday, restday, unit, format, workdaySD
   return (
     <>
       {/* Label */}
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.25rem' }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{label}</div>
-        {sublabel && <div style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{sublabel}</div>}
+      <div style={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        backgroundColor: 'var(--color-orange)',
+        padding: '1rem',
+        border: '3px solid var(--color-black)'
+      }}>
+        <div style={{ 
+          fontSize: '0.875rem',
+          fontWeight: 700,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          color: 'var(--color-black)'
+        }}>
+          {label}
+        </div>
+        {sublabel && (
+          <div style={{ 
+            fontSize: '0.75rem',
+            color: 'var(--color-black)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            fontWeight: 600,
+            opacity: 0.8
+          }}>
+            {sublabel}
+          </div>
+        )}
       </div>
       
       {/* Workday Card - DARK BRUTALIST */}
-      <div style={{ backgroundColor: 'var(--bg-card-dark)', color: 'var(--text-inverse)', padding: '1.25rem', borderRadius: '4px', border: '2px solid var(--border-primary)' }}>
-        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: 'var(--text-inverse)' }}>
+      <div style={{
+        backgroundColor: 'var(--bg-card-dark)',
+        color: 'var(--color-white)',
+        padding: '1.5rem',
+        borderRadius: '0',
+        border: '3px solid var(--color-blue)',
+        transition: 'all 100ms linear'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.02)';
+        e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-blue) inset';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+      >
+        <div style={{ 
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          marginBottom: '1rem',
+          color: 'var(--color-blue)',
+          borderBottom: '2px solid var(--color-blue)',
+          paddingBottom: '0.5rem'
+        }}>
           Workdays
         </div>
-        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-inverse)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+        <div style={{ 
+          fontSize: '2.5rem',
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          color: 'var(--color-white)',
+          fontVariantNumeric: 'tabular-nums',
+          lineHeight: 1
+        }}>
           {format(workday)}
-          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: 'var(--text-tertiary)' }}>{unit}</span>
+          <span style={{ fontSize: '1.25rem', marginLeft: '0.5rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{unit}</span>
         </div>
         {workdaySD != null && (
-          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: 'var(--text-tertiary)' }}>
+          <div style={{ 
+            fontSize: '1rem',
+            fontWeight: 600,
+            marginTop: '0.75rem',
+            color: 'var(--text-tertiary)'
+          }}>
             ± {safeFormat(workdaySD, 0)} SD
           </div>
         )}
-        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.25rem', color: trendColor }}>{trendIcon}</span>
-          <span style={{ fontSize: '0.875rem', color: trendColor, fontWeight: 600 }}>
+        
+        {/* Trend Indicator */}
+        <div style={{ 
+          marginTop: '1rem',
+          paddingTop: '1rem',
+          borderTop: '2px solid var(--text-tertiary)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem'
+        }}>
+          <span style={{ fontSize: '1.5rem', color: trendColor }}>{trendIcon}</span>
+          <span style={{ fontSize: '1rem', color: trendColor, fontWeight: 700, letterSpacing: '0.05em' }}>
             {delta > 0 ? '+' : ''}{deltaFormatted} {unit} vs rest
           </span>
         </div>
       </div>
       
       {/* Rest Day Card - DARK BRUTALIST */}
-      <div style={{ backgroundColor: 'var(--bg-card-dark)', color: 'var(--text-inverse)', padding: '1.25rem', borderRadius: '4px', border: '2px solid var(--border-secondary)' }}>
-        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem', color: 'var(--text-inverse)' }}>
+      <div style={{
+        backgroundColor: 'var(--bg-card-dark)',
+        color: 'var(--color-white)',
+        padding: '1.5rem',
+        borderRadius: '0',
+        border: '3px solid var(--text-tertiary)',
+        transition: 'all 100ms linear'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.02)';
+        e.currentTarget.style.boxShadow = '0 0 0 3px var(--text-tertiary) inset';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+      >
+        <div style={{ 
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          marginBottom: '1rem',
+          color: 'var(--text-tertiary)',
+          borderBottom: '2px solid var(--text-tertiary)',
+          paddingBottom: '0.5rem'
+        }}>
           Rest Days
         </div>
-        <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-inverse)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+        <div style={{ 
+          fontSize: '2.5rem',
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          color: 'var(--color-white)',
+          fontVariantNumeric: 'tabular-nums',
+          lineHeight: 1
+        }}>
           {format(restday)}
-          <span style={{ fontSize: '1rem', marginLeft: '0.25rem', color: 'var(--text-tertiary)' }}>{unit}</span>
+          <span style={{ fontSize: '1.25rem', marginLeft: '0.5rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{unit}</span>
         </div>
         {restdaySD != null && (
-          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', color: 'var(--text-tertiary)' }}>
+          <div style={{ 
+            fontSize: '1rem',
+            fontWeight: 600,
+            marginTop: '0.75rem',
+            color: 'var(--text-tertiary)'
+          }}>
             ± {safeFormat(restdaySD, 0)} SD
           </div>
         )}
-        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-tertiary)', fontSize: '0.6875rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        
+        {/* Footer Info */}
+        <div style={{ 
+          marginTop: '1rem',
+          paddingTop: '1rem',
+          borderTop: '2px solid var(--text-tertiary)',
+          fontSize: '0.75rem',
+          color: 'var(--text-tertiary)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          fontWeight: 700
+        }}>
           Non-work days
         </div>
       </div>

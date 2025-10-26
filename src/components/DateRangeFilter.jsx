@@ -88,22 +88,22 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
     <div style={{
       background: 'var(--bg-card-dark)', // Dark brutalist
       border: '4px solid var(--color-black)', // THICK border
-      padding: '1.5rem',
+      padding: '1rem',
       marginBottom: '1.5rem',
       fontFamily: 'monospace'
     }}>
-      {/* Header */}
+      {/* Header - COMPACT */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '1rem',
-        paddingBottom: '1rem',
+        marginBottom: '0.75rem',
+        paddingBottom: '0.75rem',
         borderBottom: '3px solid var(--color-orange)' // Orange accent
       }}>
         <h3 style={{ 
           margin: 0, 
-          fontSize: '1rem',
+          fontSize: '0.875rem',
           fontWeight: 700,
           letterSpacing: '0.2em',
           color: 'var(--color-white)',
@@ -111,38 +111,14 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
         }}>
           DATE RANGE
         </h3>
-        
-        <button
-          onClick={toggleCustomMode}
-          style={{
-            background: customMode ? 'var(--color-orange)' : 'var(--color-black)',
-            border: '3px solid var(--color-orange)',
-            color: 'var(--color-white)',
-            padding: '0.75rem 1.5rem',
-            cursor: 'pointer',
-            fontSize: '0.875rem',
-            fontFamily: 'monospace',
-            fontWeight: 700,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            transition: 'all 100ms linear'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'scale(1.05)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'scale(1)';
-          }}
-        >
-          {customMode ? 'QUICK RANGES' : 'CUSTOM RANGE'}
-        </button>
       </div>
-      {/* Quick ranges */}
+
+      {/* 4-button grid: 14d, 30d, 90d, Custom */}
       {!customMode && (
         <div style={{ 
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '1rem'
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '0.75rem'
         }}>
           {[
             { label: 'LAST 14D', days: 14 },
@@ -156,9 +132,9 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
                 background: 'var(--color-black)',
                 border: '3px solid var(--color-white)',
                 color: 'var(--color-white)',
-                padding: '1rem',
+                padding: '0.875rem',
                 cursor: 'pointer',
-                fontSize: '0.875rem',
+                fontSize: '0.75rem',
                 fontFamily: 'monospace',
                 fontWeight: 700,
                 letterSpacing: '0.1em',
@@ -179,112 +155,176 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
               {label}
             </button>
           ))}
-        </div>
-      )}
-      {/* Custom date pickers */}
-      {customMode && (
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr auto',
-          gap: '1rem',
-          alignItems: 'end'
-        }}>
-          <div>
-            <label style={{ 
-              display: 'block',
-              fontSize: '0.75rem',
-              color: 'var(--color-orange)',
-              marginBottom: '0.5rem',
-              fontWeight: 700,
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase'
-            }}>
-              START DATE
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'var(--color-black)',
-                border: '3px solid var(--color-white)',
-                color: 'var(--color-white)',
-                padding: '1rem',
-                fontSize: '1rem',
-                fontFamily: 'monospace',
-                fontWeight: 600
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={{ 
-              display: 'block',
-              fontSize: '0.75rem',
-              color: 'var(--color-orange)',
-              marginBottom: '0.5rem',
-              fontWeight: 700,
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase'
-            }}>
-              END DATE
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'var(--color-black)',
-                border: '3px solid var(--color-white)',
-                color: 'var(--color-white)',
-                padding: '1rem',
-                fontSize: '1rem',
-                fontFamily: 'monospace',
-                fontWeight: 600
-              }}
-            />
-          </div>
+          
+          {/* Custom Range Button */}
           <button
-            onClick={handleCustomRange}
-            disabled={!startDate || !endDate}
+            onClick={toggleCustomMode}
             style={{
-              background: startDate && endDate ? 'var(--color-green)' : 'var(--color-black)',
-              border: '3px solid var(--color-green)',
-              color: 'var(--color-white)',
-              padding: '1rem 2rem',
-              cursor: startDate && endDate ? 'pointer' : 'not-allowed',
-              fontSize: '1rem',
+              background: 'var(--color-black)',
+              border: '3px solid var(--color-orange)',
+              color: 'var(--color-orange)',
+              padding: '0.875rem',
+              cursor: 'pointer',
+              fontSize: '0.75rem',
               fontFamily: 'monospace',
               fontWeight: 700,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              opacity: startDate && endDate ? 1 : 0.5,
               transition: 'all 100ms linear'
             }}
             onMouseEnter={(e) => {
-              if (startDate && endDate) {
-                e.target.style.transform = 'scale(1.05)';
-              }
+              e.target.style.background = 'var(--color-orange)';
+              e.target.style.color = 'var(--color-black)';
+              e.target.style.transform = 'scale(1.05)';
             }}
             onMouseLeave={(e) => {
+              e.target.style.background = 'var(--color-black)';
+              e.target.style.color = 'var(--color-orange)';
               e.target.style.transform = 'scale(1)';
             }}
           >
-            APPLY
+            CUSTOM RANGE
           </button>
         </div>
       )}
+      {/* Custom date pickers - COMPACT */}
+      {customMode && (
+        <>
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr auto',
+            gap: '0.75rem',
+            alignItems: 'end',
+            marginTop: '0.75rem'
+          }}>
+            <div>
+              <label style={{ 
+                display: 'block',
+                fontSize: '0.625rem',
+                color: 'var(--color-orange)',
+                marginBottom: '0.375rem',
+                fontWeight: 700,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase'
+              }}>
+                START DATE
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: 'var(--color-black)',
+                  border: '3px solid var(--color-white)',
+                  color: 'var(--color-white)',
+                  padding: '0.75rem',
+                  fontSize: '0.875rem',
+                  fontFamily: 'monospace',
+                  fontWeight: 600
+                }}
+              />
+            </div>
 
-      {/* Current range info */}
+            <div>
+              <label style={{ 
+                display: 'block',
+                fontSize: '0.625rem',
+                color: 'var(--color-orange)',
+                marginBottom: '0.375rem',
+                fontWeight: 700,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase'
+              }}>
+                END DATE
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: 'var(--color-black)',
+                  border: '3px solid var(--color-white)',
+                  color: 'var(--color-white)',
+                  padding: '0.75rem',
+                  fontSize: '0.875rem',
+                  fontFamily: 'monospace',
+                  fontWeight: 600
+                }}
+              />
+            </div>
+            
+            <button
+              onClick={handleCustomRange}
+              disabled={!startDate || !endDate}
+              style={{
+                background: startDate && endDate ? 'var(--color-green)' : 'var(--color-black)',
+                border: '3px solid var(--color-green)',
+                color: 'var(--color-white)',
+                padding: '0.875rem 1.5rem',
+                cursor: startDate && endDate ? 'pointer' : 'not-allowed',
+                fontSize: '0.75rem',
+                fontFamily: 'monospace',
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                opacity: startDate && endDate ? 1 : 0.5,
+                transition: 'all 100ms linear'
+              }}
+              onMouseEnter={(e) => {
+                if (startDate && endDate) {
+                  e.target.style.transform = 'scale(1.05)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'scale(1)';
+              }}
+            >
+              APPLY
+            </button>
+          </div>
+          
+          {/* Back button */}
+          <button
+            onClick={toggleCustomMode}
+            style={{
+              background: 'var(--color-black)',
+              border: '3px solid var(--color-white)',
+              color: 'var(--color-white)',
+              padding: '0.75rem',
+              cursor: 'pointer',
+              fontSize: '0.75rem',
+              fontFamily: 'monospace',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              transition: 'all 100ms linear',
+              marginTop: '0.75rem',
+              width: '100%'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'var(--color-white)';
+              e.target.style.color = 'var(--color-black)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'var(--color-black)';
+              e.target.style.color = 'var(--color-white)';
+            }}
+          >
+            ← BACK TO QUICK RANGES
+          </button>
+        </>
+      )}
+
+      {/* Current range info - COMPACT */}
       {currentRange && (
         <div style={{ 
-          marginTop: '1.5rem',
-          padding: '1rem',
+          marginTop: '0.75rem',
+          padding: '0.75rem',
           background: 'var(--color-black)',
           border: '3px solid var(--color-orange)',
-          fontSize: '0.875rem',
+          fontSize: '0.75rem',
           color: 'var(--color-white)',
           fontWeight: 600,
           letterSpacing: '0.05em'

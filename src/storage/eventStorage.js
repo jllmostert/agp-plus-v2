@@ -186,3 +186,45 @@ export function getCartridgeHistory() {
   const events = getAllEvents();
   return events?.cartridgeChanges || [];
 }
+
+
+/**
+ * DELETE CARTRIDGE CHANGES IN DATE RANGE
+ * 
+ * Removes cartridge change events within specified date range from localStorage.
+ * Updates event storage accordingly.
+ * 
+ * @param {Date} startDate - Start of deletion range (inclusive)
+ * @param {Date} endDate - End of deletion range (inclusive)
+ * @returns {Promise<number>} Count of events deleted
+ */
+export async function deleteCartridgeChangesInRange(startDate, endDate) {
+  console.log('[deleteCartridgeChangesInRange] START', {
+    start: startDate.toISOString(),
+    end: endDate.toISOString()
+  });
+
+  const events = getAllEvents();
+  if (!events || !events.cartridgeChanges) {
+    console.log('[deleteCartridgeChangesInRange] No cartridge events found');
+    return 0;
+  }
+  
+  const startTime = startDate.getTime();
+  const endTime = endDate.getTime();
+  
+  const originalCount = events.cartridgeChanges.length;
+  const filtered = events.cartridgeChanges.filter(event => {
+    const ts = new Date(event.timestamp).getTime();
+    return ts < startTime || ts > endTime;
+  });
+  
+  const deleted = originalCount - filtered.length;
+  
+  // Update events in storage
+  events.cartridgeChanges = filtered;
+  storeEvents(events);
+  
+  console.log(`[deleteCartridgeChangesInRange] COMPLETE - Deleted ${deleted}/${originalCount} events`);
+  return deleted;
+}

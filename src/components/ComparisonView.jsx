@@ -89,7 +89,7 @@ export default function ComparisonView({
 
   return (
     <div style={{ 
-      backgroundColor: 'var(--bg-card-dark)',
+      backgroundColor: 'var(--bg-secondary)',
       border: '4px solid var(--color-black)',
       padding: '2rem',
       marginBottom: '2rem'
@@ -100,8 +100,9 @@ export default function ComparisonView({
         justifyContent: 'space-between', 
         alignItems: 'center',
         marginBottom: '2rem',
-        paddingBottom: '1rem',
-        borderBottom: '3px solid var(--color-orange)'
+        padding: '1.5rem',
+        backgroundColor: 'var(--color-black)',
+        border: '3px solid var(--color-orange)'
       }}>
         <h3 style={{ 
           fontSize: '1.25rem',
@@ -110,7 +111,7 @@ export default function ComparisonView({
           textTransform: 'uppercase',
           color: 'var(--color-white)'
         }}>
-          🔄 Period Comparison
+          Period Comparison
         </h3>
         <div style={{ 
           fontSize: '1rem',
@@ -237,7 +238,7 @@ function ComparisonRow({
           borderBottom: '2px solid var(--color-green)',
           paddingBottom: '0.5rem'
         }}>
-          📍 Current Period
+          Current Period
         </div>
         <div style={{ 
           fontSize: '2.5rem',
@@ -305,7 +306,7 @@ function ComparisonRow({
           borderBottom: '2px solid var(--text-tertiary)',
           paddingBottom: '0.5rem'
         }}>
-          ⏮️ Previous Period
+          Previous Period
         </div>
         <div style={{ 
           fontSize: '2.5rem',
@@ -341,7 +342,7 @@ function ComparisonRow({
             letterSpacing: '0.1em',
             fontWeight: 700
           }}>
-            🎯 {target}
+            {target}
           </div>
         )}
       </div>

@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.8.0] - 2025-10-26 - PRODUCTION READY 🎉
+
+### Fixed - Critical Bugs
+- **Comparison Date Calculations**: Fixed period-to-period comparison date ranges
+  - Previous periods now calculate correctly relative to selected period
+  - 14d comparison: Last 14d vs Previous 14d (days -28 to -15)
+  - Eliminates "Invalid Date" errors in comparison views
+
+- **ProTime Workday Persistence**: Fixed workday data not surviving page refresh
+  - Workday dates now properly stored in IndexedDB (was localStorage only)
+  - Data persists across sessions and browser restarts
+  - Full integration with v3 master dataset architecture
+
+- **Cartridge Change Detection**: Improved event detection and display
+  - Events now display correctly in day profiles with red dashed lines
+  - Fixed cross-day gap detection (00:00 boundary handling)
+  - Eliminated false positives from data processing artifacts
+
+### Changed - UI/UX Improvements
+- **Comparison Headers**: Enhanced visual hierarchy with dark backgrounds
+  - All three comparison sections (Period, Day/Night, Workday) now have black headers with orange borders
+  - Improved readability and professional appearance
+
+- **Comparison Labels**: Consistent orange label blocks across all comparisons
+  - Day/Night Analysis labels now match Workday and Period comparison styling
+  - High-contrast design for clinical scanning
+
+- **Compact Date Range Selector**: Reduced vertical space by ~30%
+  - 4-button grid layout: Last 14D, Last 30D, Last 90D, Custom Range
+  - Smaller padding and typography throughout
+  - Uniform spacing matching button grid below
+  - Custom mode with "Back to Quick Ranges" button for better UX
+
+### Technical Details
+- **Modified Files**:
+  - `src/hooks/useComparison.js`: Fixed date calculations for previous periods
+  - `src/storage/workdayStorage.js`: Added IndexedDB persistence layer
+  - `src/components/ComparisonView.jsx`: Enhanced header styling
+  - `src/components/DayNightSplit.jsx`: Added orange label blocks + header styling
+  - `src/components/WorkdaySplit.jsx`: Updated header styling
+  - `src/components/DateRangeFilter.jsx`: Complete compact redesign
+  - `src/hooks/useDataStatus.js`: Improved error handling
+
+- **Architecture**:
+  - ProTime workdays now in dual storage (IndexedDB primary, localStorage backup)
+  - Comparison calculations use consistent date math with proper timezone handling
+  - Event detection uses filtered datasets to avoid header row contamination
+
+---
+
 ## [3.8.4] - 2025-10-27
 
 ### Changed - Sensor Table Display Improvements

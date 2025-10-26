@@ -31,6 +31,7 @@ import SavedUploadsList from './SavedUploadsList';
 import PatientInfo from './PatientInfo';
 import DayProfilesModal from './DayProfilesModal';
 import SensorHistoryModal from './SensorHistoryModal';
+import DataManagementModal from './DataManagementModal';
 import { MigrationBanner } from './MigrationBanner';
 import { DateRangeFilter } from './DateRangeFilter';
 
@@ -117,6 +118,7 @@ export default function AGPGenerator() {
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
   const [dayProfilesOpen, setDayProfilesOpen] = useState(false); // Day profiles modal state
   const [sensorHistoryOpen, setSensorHistoryOpen] = useState(false); // Sensor history modal state
+  const [dataManagementOpen, setDataManagementOpen] = useState(false); // Data management modal state
 
   // Load patient info from storage
   useEffect(() => {
@@ -499,6 +501,42 @@ export default function AGPGenerator() {
     }
   };
 
+  /**
+   * Handle ProTime data deletion - async!
+   */
+  const handleProTimeDelete = async () => {
+    try {
+      // Clear workdays from state
+      setWorkdays(null);
+      
+      // V3 mode: Delete from master dataset settings
+      if (useV3Mode) {
+        try {
+          const { deleteProTimeData } = await import('../storage/masterDatasetStorage');
+          await deleteProTimeData();
+          console.log('[ProTime] ✅ Deleted from V3 master dataset');
+        } catch (err) {
+          console.error('[ProTime] Failed to delete from V3:', err);
+          throw err;
+        }
+      }
+      // V2 mode: Clear from active upload
+      else if (activeUploadId) {
+        try {
+          await updateProTimeData(activeUploadId, null);
+          console.log('[ProTime] ✅ Deleted from V2 upload');
+        } catch (err) {
+          console.error('[ProTime] Failed to delete from V2 upload:', err);
+          throw err;
+        }
+      }
+      
+    } catch (err) {
+      console.error('ProTime deletion failed:', err);
+      throw err; // Re-throw so modal can show error
+    }
+  };
+
   // ============================================
   // EVENT HANDLERS: Period Selection
   // ============================================
@@ -653,6 +691,61 @@ export default function AGPGenerator() {
     setDayProfilesOpen(true);
   };
 
+  /**
+   * Handle data management deletion
+   * Deletes selected data types within specified date range
+   * Refreshes V3 dataset and workdays after deletion
+   */
+  const handleDataManagementDelete = async (deleteConfig) => {
+    const { dateRange, deleteTypes } = deleteConfig;
+    
+    console.log('[DataManagement] Delete requested:', {
+      range: `${dateRange.start.toISOString()} - ${dateRange.end.toISOString()}`,
+      types: deleteTypes
+    });
+
+    try {
+      let deletedCounts = {
+        glucose: 0,
+        proTime: 0,
+        cartridge: 0
+      };
+      
+      // Delete glucose readings
+      if (deleteTypes.glucose) {
+        const { deleteGlucoseDataInRange } = await import('../storage/masterDatasetStorage');
+        deletedCounts.glucose = await deleteGlucoseDataInRange(dateRange.start, dateRange.end);
+      }
+      
+      // Delete ProTime workdays
+      if (deleteTypes.proTime) {
+        const { deleteProTimeDataInRange } = await import('../storage/masterDatasetStorage');
+        deletedCounts.proTime = await deleteProTimeDataInRange(dateRange.start, dateRange.end);
+        
+        // Reload workdays state from storage
+        const { loadProTimeData } = await import('../storage/masterDatasetStorage');
+        const newWorkdays = await loadProTimeData();
+        setWorkdays(newWorkdays || new Set());
+      }
+      
+      // Delete cartridge events
+      if (deleteTypes.cartridge) {
+        const { deleteCartridgeChangesInRange } = await import('../storage/eventStorage');
+        deletedCounts.cartridge = await deleteCartridgeChangesInRange(dateRange.start, dateRange.end);
+      }
+      
+      // Force reload V3 data to update UI
+      masterDataset.refresh();
+      
+      console.log('[DataManagement] ✅ Deletion complete:', deletedCounts);
+      return deletedCounts;
+      
+    } catch (err) {
+      console.error('[DataManagement] ❌ Delete failed:', err);
+      throw err;
+    }
+  };
+
   // ============================================
   // RENDER: Main UI
   // ============================================
@@ -797,57 +890,86 @@ export default function AGPGenerator() {
               flexDirection: 'column',
               gap: '0' // No gap, divider handles spacing
             }}>
-              {/* Top Section: Dataset overview */}
-              <div style={{ paddingBottom: '1.5rem' }}>
-                <div style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--text-secondary)',
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  marginBottom: '0.5rem'
-                }}>
-                  Dataset
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  marginBottom: '0.5rem'
-                }}>
-                  {/* Status light */}
+              {/* Top Section: Dataset overview + Cleanup button */}
+              <div style={{ 
+                paddingBottom: '1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div style={{ flex: 1 }}>
                   <div style={{
-                    width: '20px',
-                    height: '20px',
-                    border: '3px solid var(--ink)',
-                    background: dataStatus.lightColor === 'green' 
-                      ? 'var(--color-green)' 
-                      : dataStatus.lightColor === 'yellow' 
-                      ? 'var(--color-yellow)' 
-                      : 'var(--color-red)',
-                    flexShrink: 0
-                  }} />
-                  <div style={{ 
-                    fontWeight: 700, 
-                    fontSize: '1.125rem',
-                    letterSpacing: '0.05em' 
-                  }}>
-                    {dataStatus.hasData ? (
-                      <>{dataStatus.readingCount.toLocaleString()} READINGS</>
-                    ) : (
-                      <>NO DATA</>
-                    )}
-                  </div>
-                </div>
-                {dataStatus.hasData && (
-                  <div style={{ 
-                    fontSize: '0.875rem',
+                    fontSize: '0.75rem',
                     color: 'var(--text-secondary)',
-                    letterSpacing: '0.05em',
-                    paddingLeft: '32px'
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.5rem'
                   }}>
-                    {dataStatus.dateRangeFormatted}
+                    Dataset
                   </div>
-                )}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {/* Status light */}
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      border: '3px solid var(--ink)',
+                      background: dataStatus.lightColor === 'green' 
+                        ? 'var(--color-green)' 
+                        : dataStatus.lightColor === 'yellow' 
+                        ? 'var(--color-yellow)' 
+                        : 'var(--color-red)',
+                      flexShrink: 0
+                    }} />
+                    <div style={{ 
+                      fontWeight: 700, 
+                      fontSize: '1.125rem',
+                      letterSpacing: '0.05em' 
+                    }}>
+                      {dataStatus.hasData ? (
+                        <>{dataStatus.readingCount.toLocaleString()} READINGS</>
+                      ) : (
+                        <>NO DATA</>
+                      )}
+                    </div>
+                  </div>
+                  {dataStatus.hasData && (
+                    <div style={{ 
+                      fontSize: '0.875rem',
+                      color: 'var(--text-secondary)',
+                      letterSpacing: '0.05em',
+                      paddingLeft: '32px'
+                    }}>
+                      {dataStatus.dateRangeFormatted}
+                    </div>
+                  )}
+                </div>
+                
+                {/* CLEANUP button */}
+                <button
+                  onClick={() => setDataManagementOpen(true)}
+                  disabled={!dataStatus.hasData}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: '3px solid var(--ink)',
+                    background: dataStatus.hasData ? 'var(--color-red)' : 'transparent',
+                    color: dataStatus.hasData ? 'var(--color-white)' : 'var(--text-secondary)',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    cursor: dataStatus.hasData ? 'pointer' : 'not-allowed',
+                    opacity: dataStatus.hasData ? 1 : 0.4,
+                    whiteSpace: 'nowrap'
+                  }}
+                  title={!dataStatus.hasData ? "Load data first" : "Clean up database"}
+                >
+                  🗑️ CLEANUP
+                </button>
               </div>
 
               {/* Divider - Double line */}
@@ -1245,6 +1367,7 @@ export default function AGPGenerator() {
                 <FileUpload
                   onCSVLoad={handleCSVLoad}
                   onProTimeLoad={handleProTimeLoad}
+                  onProTimeDelete={handleProTimeDelete}
                   csvLoaded={!!csvData}
                   proTimeLoaded={!!workdays}
                 />
@@ -1497,6 +1620,16 @@ export default function AGPGenerator() {
             isOpen={sensorHistoryOpen}
             onClose={() => setSensorHistoryOpen(false)}
             sensors={sensors}
+          />,
+          document.body
+        )}
+
+        {/* Data Management Modal - Portal */}
+        {dataManagementOpen && ReactDOM.createPortal(
+          <DataManagementModal 
+            onClose={() => setDataManagementOpen(false)}
+            onDelete={handleDataManagementDelete}
+            currentDataStats={dataStatus}
           />,
           document.body
         )}

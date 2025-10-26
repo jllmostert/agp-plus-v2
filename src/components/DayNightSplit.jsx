@@ -17,7 +17,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
 
   return (
     <div style={{
-      backgroundColor: 'var(--bg-card-dark)',
+      backgroundColor: 'var(--bg-secondary)',
       border: '4px solid var(--color-black)',
       padding: '2rem',
       marginBottom: '2rem'
@@ -27,8 +27,9 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: '2rem',
-        paddingBottom: '1rem',
-        borderBottom: '3px solid var(--color-orange)'
+        padding: '1.5rem',
+        backgroundColor: 'var(--color-black)',
+        border: '3px solid var(--color-orange)'
       }}>
         <h3 style={{
           fontSize: '1.25rem',
@@ -38,7 +39,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
           color: 'var(--color-white)',
           margin: 0
         }}>
-          ☀️🌙 Day/Night Analysis
+          Day/Night Analysis
         </h3>
         <div style={{
           fontSize: '1rem',
@@ -70,9 +71,34 @@ function DayNightRow({ label, sublabel, day, night, unit, format, daySD, nightSD
   return (
     <>
       {/* Label */}
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.25rem' }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{label}</div>
-        {sublabel && <div style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{sublabel}</div>}
+      <div style={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        backgroundColor: 'var(--color-orange)',
+        padding: '1rem',
+        border: '3px solid var(--color-black)'
+      }}>
+        <div style={{ 
+          fontSize: '0.875rem',
+          fontWeight: 700,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          color: 'var(--color-black)'
+        }}>
+          {label}
+        </div>
+        {sublabel && (
+          <div style={{ 
+            fontSize: '0.75rem',
+            color: 'var(--color-black)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            {sublabel}
+          </div>
+        )}
       </div>
       
       {/* Day Card - DARK BRUTALIST */}

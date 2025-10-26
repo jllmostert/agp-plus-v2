@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Calendar, X, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Calendar, X, AlertCircle, Trash2 } from 'lucide-react';
 
 /**
  * FileUpload - Interactive file upload component
@@ -10,6 +10,7 @@ import { Upload, FileText, Calendar, X, AlertCircle } from 'lucide-react';
  * 
  * @param {Function} props.onCSVLoad - Callback when CSV is loaded: (text) => void
  * @param {Function} props.onProTimeLoad - Callback when ProTime data is loaded: (text) => void
+ * @param {Function} props.onProTimeDelete - Callback when ProTime data is deleted: () => void
  * @param {boolean} props.csvLoaded - Whether CSV has been loaded
  * @param {boolean} props.proTimeLoaded - Whether ProTime has been loaded
  * 
@@ -17,7 +18,8 @@ import { Upload, FileText, Calendar, X, AlertCircle } from 'lucide-react';
  */
 export default function FileUpload({ 
   onCSVLoad, 
-  onProTimeLoad, 
+  onProTimeLoad,
+  onProTimeDelete, 
   csvLoaded = false,
   proTimeLoaded = false 
 }) {
@@ -144,7 +146,9 @@ export default function FileUpload({
         <ProTimeModal
           onClose={() => setIsProTimeModalOpen(false)}
           onLoad={onProTimeLoad}
+          onDelete={onProTimeDelete}
           setError={setError}
+          hasData={proTimeLoaded}
         />
       )}
     </div>
@@ -253,8 +257,9 @@ function ProTimeButton({ onClick, isLoaded }) {
 /**
  * ProTimeModal - Simplified modal for ProTime PDF upload only
  */
-function ProTimeModal({ onClose, onLoad, setError }) {
+function ProTimeModal({ onClose, onLoad, onDelete, setError, hasData }) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const pdfFileInputRef = useRef(null);
 
   const handlePDFUpload = async (event) => {
@@ -302,6 +307,27 @@ function ProTimeModal({ onClose, onLoad, setError }) {
     event.target.value = '';
   };
 
+  const handleDelete = async () => {
+    if (!hasData) return;
+    
+    // Confirm deletion
+    if (!window.confirm('Are you sure you want to delete all ProTime workday data? This cannot be undone.')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      await onDelete();
+      onClose();
+    } catch (err) {
+      console.error('Delete error:', err);
+      setError(`Failed to delete ProTime data: ${err.message}`);
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 border border-gray-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -310,12 +336,29 @@ function ProTimeModal({ onClose, onLoad, setError }) {
           <h3 className="text-lg font-semibold text-gray-100">
             Upload ProTime PDF
           </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-300"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Delete Button - only show if data exists */}
+            {hasData && (
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Delete all ProTime data"
+              >
+                {isDeleting ? (
+                  <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Trash2 className="w-5 h-5" />
+                )}
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-300"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* PDF Upload Content - No tabs, direct upload */}

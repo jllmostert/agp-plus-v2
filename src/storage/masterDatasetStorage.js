@@ -295,6 +295,16 @@ export async function loadProTimeData() {
 }
 
 /**
+ * Delete ProTime workdays from settings (V3)
+ * Removes all stored ProTime data
+ */
+export async function deleteProTimeData() {
+  const { deleteRecord } = await import('./db.js');
+  await deleteRecord(STORES.SETTINGS, 'protime_workdays');
+  console.log('[deleteProTimeData] ✅ ProTime data deleted');
+}
+
+/**
  * Detect and store device events from CSV readings
  * @param {Array} readings - Parsed CSV readings
  */
@@ -442,4 +452,110 @@ export async function uploadCSVToV3(csvText) {
     totalReadings: stats.totalReadings,
     dateRange: stats.dateRange
   };
+}
+
+
+/**
+ * DELETE GLUCOSE DATA IN DATE RANGE
+ * 
+ * Removes glucose readings within specified date range from all month buckets.
+ * Handles bucket cleanup (deletes empty buckets) and cache invalidation.
+ * 
+ * @param {Date} startDate - Start of deletion range (inclusive)
+ * @param {Date} endDate - End of deletion range (inclusive)
+ * @returns {Promise<number>} Count of readings deleted
+ */
+export async function deleteGlucoseDataInRange(startDate, endDate) {
+  console.log('[deleteGlucoseDataInRange] START', {
+    start: startDate.toISOString(),
+    end: endDate.toISOString()
+  });
+
+  const startTime = startDate.getTime();
+  const endTime = endDate.getTime();
+  
+  // Load all month buckets
+  const buckets = await getAllRecords(STORES.READING_BUCKETS);
+  let totalDeleted = 0;
+  
+  for (const bucket of buckets) {
+    // Filter out readings in range
+    const originalCount = bucket.readings.length;
+    bucket.readings = bucket.readings.filter(r => {
+      const ts = new Date(r.timestamp).getTime();
+      return ts < startTime || ts > endTime;
+    });
+    
+    const deleted = originalCount - bucket.readings.length;
+    totalDeleted += deleted;
+    
+    if (deleted > 0) {
+      console.log(`[deleteGlucoseDataInRange] Bucket ${bucket.monthKey}: deleted ${deleted}/${originalCount}`);
+    }
+    
+    // Update bucket metadata
+    bucket.count = bucket.readings.length;
+    if (bucket.count > 0) {
+      bucket.dateRange = {
+        min: bucket.readings[0].timestamp,
+        max: bucket.readings[bucket.readings.length - 1].timestamp
+      };
+      bucket.lastUpdated = new Date();
+      await putRecord(STORES.READING_BUCKETS, bucket);
+    } else {
+      // Bucket empty - delete it
+      console.log(`[deleteGlucoseDataInRange] Bucket ${bucket.monthKey} now empty - deleting`);
+      await deleteRecord(STORES.READING_BUCKETS, bucket.monthKey);
+    }
+  }
+  
+  // Invalidate cache
+  await invalidateCache();
+  
+  console.log(`[deleteGlucoseDataInRange] COMPLETE - Deleted ${totalDeleted} readings`);
+  return totalDeleted;
+}
+
+/**
+ * DELETE PROTIME WORKDAYS IN DATE RANGE
+ * 
+ * Removes ProTime workday entries within specified date range.
+ * Updates IndexedDB storage accordingly.
+ * 
+ * @param {Date} startDate - Start of deletion range (inclusive)
+ * @param {Date} endDate - End of deletion range (inclusive)
+ * @returns {Promise<number>} Count of workdays deleted
+ */
+export async function deleteProTimeDataInRange(startDate, endDate) {
+  console.log('[deleteProTimeDataInRange] START', {
+    start: startDate.toISOString(),
+    end: endDate.toISOString()
+  });
+
+  const workdaySet = await loadProTimeData();
+  if (!workdaySet) {
+    console.log('[deleteProTimeDataInRange] No ProTime data found');
+    return 0;
+  }
+  
+  let deleted = 0;
+  for (const dateStr of workdaySet) {
+    const [year, month, day] = dateStr.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    if (date >= startDate && date <= endDate) {
+      workdaySet.delete(dateStr);
+      deleted++;
+    }
+  }
+  
+  // Save updated set
+  if (workdaySet.size > 0) {
+    await saveProTimeData(workdaySet);
+  } else {
+    await deleteProTimeData();
+  }
+  
+  console.log(`[deleteProTimeDataInRange] COMPLETE - Deleted ${deleted} workdays`);
+  return deleted;
 }
