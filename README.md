@@ -1,18 +1,18 @@
-# AGP+ v3.6 - Ambulatory Glucose Profile Analyzer
+# AGP+ v3.8 - Ambulatory Glucose Profile Analyzer
 
 > ⚠️ **v3.0 DEVELOPMENT BRANCH** - This branch contains experimental features and breaking changes. For stable production version, use `main` branch.
 
-> 🔧 **v3.6 IN PROGRESS** - Event detection system (sensor/cartridge tracking). See `docs/handoffs/HANDOFF_V3_6_EVENTS_OCT26.md` for status.
+> ✅ **v3.8.0 COMPLETE** - Database export system. See `HANDOFF_V3_8_0_DATABASE_EXPORT_OCT27.md` for details.
 
 > **Professional diabetes data analysis tool following ADA/ATTD 2019 clinical guidelines**
 
 ## Overview
 
-AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **individual day profiles**, and **device event tracking** following international clinical standards.
+AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **individual day profiles**, **device event tracking**, and **complete database export** following international clinical standards.
 
-**Version:** 3.6.0-dev  
-**Status:** Development (Event Detection System)  
-**Last Updated:** October 26, 2025
+**Version:** 3.8.0  
+**Status:** Development (Database Export Complete)  
+**Last Updated:** October 27, 2025
 
 ---
 
@@ -42,6 +42,7 @@ http://localhost:5173
 - ✅ ProTime workday data integration (PDF/JSON)
 - ✅ **IndexedDB persistent storage** (save/load unlimited uploads)
 - ✅ **Patient information management** (auto-extraction + manual entry)
+- ✅ **Database Export** ⭐ NEW: Complete JSON export of master dataset
 - ✅ Automatic data validation & error handling
 
 ### Clinical Analysis
@@ -79,6 +80,7 @@ http://localhost:5173
 - ✅ Dark theme optimized interface
 - ✅ Responsive design (desktop/tablet/mobile)
 - ✅ HTML report export (AGP + Day Profiles)
+- ✅ **JSON database export** ⭐ NEW: Complete dataset backup
 
 ---
 
@@ -292,6 +294,10 @@ npx gh-pages -d dist
 - [x] ~~Save/load sessions~~ (✅ Implemented v2.1 - IndexedDB)
 - [x] ~~Patient information management~~ (✅ Implemented v2.1)
 - [x] ~~Day profiles with print export~~ (✅ Implemented v2.2)
+- [x] ~~Database export (JSON)~~ (✅ Implemented v3.8.0)
+- [x] ~~Sensor database import~~ (✅ Implemented v3.8.1 - Phase 2A)
+- [ ] Sensor change visualization in day profiles (Phase 2B - In Progress)
+- [ ] Sensor overview dashboard (Phase 2C)
 - [ ] PDF export (in addition to HTML)
 - [ ] Multiple CSV comparison
 - [ ] Custom target ranges

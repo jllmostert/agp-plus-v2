@@ -7,6 +7,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.8.1] - 2025-10-27
+
+### Added - Sensor Database Import (Phase 2A)
+- **SQLite Import**: Import sensor history from external SQLite database
+  - Reads `master_sensors.db` file via sql.js WebAssembly
+  - Parses 219 sensors spanning 2022-2025
+  - Stores in localStorage via existing sensorStorage system
+  - Schema: id, timestamps, duration, lot number, hardware version, notes
+- **Import UI**: Updated SensorImport component
+  - File picker accepts .db files
+  - Shows import progress and success feedback
+  - Displays sensor count and date range after import
+  - Re-import capability to update database
+- **Storage Layer**: New `/src/storage/sensorImport.js` module
+  - `importSensorsFromFile()`: Async SQLite parsing and storage
+  - Converts SQLite schema to localStorage format
+  - Error handling with detailed feedback
+  - Compatible with existing sensor detection system
+
+### Changed
+- Sensor Import button now functional (was placeholder in Phase 1)
+- Updated SensorImport.jsx from localStorage-only to SQLite import
+- Fixed stats calculation to handle snake_case timestamps from SQLite
+
+### Technical
+- Added sql.js dependency for browser-based SQLite parsing
+- Maintains backward compatibility with existing sensor data
+- Ready for Phase 2B: sensor change visualization in day profiles
+
+---
+
+## [3.8.0] - 2025-10-27
+
+### Added - Database Export System
+- **JSON Export**: Complete IndexedDB dump to portable JSON format
+  - Exports all month buckets with glucose readings
+  - Includes sensor history from localStorage
+  - Includes cartridge change history
+  - Automatic filename generation with timestamp (`agp-master-{timestamp}.json`)
+- **Export Metadata**: JSON includes comprehensive header
+  - Version identifier ("3.0")
+  - Export timestamp (ISO format)
+  - Generator version ("AGP+ v3.8.0")
+  - Record counts (readings, months, sensors, cartridges)
+- **Export Button**: New option in EXPORT section
+  - 💾 Database (JSON) - fourth export option
+  - Disabled state when no data available
+  - Success/error feedback with alert dialogs
+  - Shows record count in success message
+- **Storage Layer**: New `/src/storage/export.js` module
+  - `exportMasterDataset()`: Fetches all IndexedDB data
+  - `downloadJSON()`: Browser download with blob URL
+  - `generateExportFilename()`: Timestamp-based naming
+  - `exportAndDownload()`: Complete export flow
+
+### Technical Details
+- **New File**: `/src/storage/export.js` (102 lines)
+- **Modified Files**: 
+  - `AGPGenerator.jsx`: Import export function, add button
+- **Data Structure**: JSON preserves month-bucket architecture
+  - Top-level: version, timestamps, totals
+  - `months[]`: Array of month bucket objects
+  - `sensors[]`: Sensor history from localStorage
+  - `cartridges[]`: Cartridge change history
+- **Performance**: Efficient async/await pattern for IndexedDB reads
+- **Error Handling**: Try/catch with console logging and user feedback
+
+### Why JSON over CSV?
+- **Human-readable**: Easy to inspect and validate
+- **Flexible structure**: Preserves nested objects and arrays
+- **Future-proof**: Simple to add new fields without breaking format
+- **No data loss**: Maintains exact structure from IndexedDB
+- **Backup strategy**: Complete dataset restoration capability
+
+### Known Limitations
+- Large datasets (100k+ readings) may take 2-3 seconds to export
+- Browser download dialog timing depends on user settings
+- No import functionality yet (planned for future version)
+
+---
+
 ## [3.7.2] - 2025-10-26
 
 ### Changed - UI/UX Refactor
