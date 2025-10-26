@@ -1,7 +1,7 @@
 {
   "name": "agp-plus",
-  "version": "2.2.1",
-  "description": "AGP+ v2.2 - Ambulatory Glucose Profile Generator for Medtronic 780G CGM data with Day Profiles",
+  "version": "3.7.1",
+  "description": "AGP+ v3.7 - Ambulatory Glucose Profile with Auto-Load & Status Indicator",
   "type": "module",
   "scripts": {
     "dev": "vite",

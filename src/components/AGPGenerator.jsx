@@ -9,6 +9,7 @@ import { useComparison } from '../hooks/useComparison';
 import { useUploadStorage } from '../hooks/useUploadStorage';
 import { useDayProfiles } from '../hooks/useDayProfiles';
 import { useMasterDataset } from '../hooks/useMasterDataset';
+import { useDataStatus } from '../hooks/useDataStatus';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
@@ -48,6 +49,9 @@ export default function AGPGenerator() {
   
   // V3: Master dataset (incremental storage)
   const masterDataset = useMasterDataset();
+  
+  // Data status monitoring (green/yellow/red light)
+  const dataStatus = useDataStatus(masterDataset.allReadings);
   
   // V2: Legacy CSV uploads (fallback during transition)
   const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
@@ -113,6 +117,43 @@ export default function AGPGenerator() {
       loadPatientInfo();
     }
   }, [patientInfoOpen]);
+
+  /**
+   * Auto-select last 14 days when data becomes ready (green light)
+   * This provides instant visualization on app startup
+   */
+  useEffect(() => {
+    // Only auto-select if:
+    // 1. Status is green (data ready)
+    // 2. No period currently selected (user hasn't chosen yet)
+    // 3. We have a valid date range
+    if (
+      dataStatus.lightColor === 'green' && 
+      !startDate && 
+      !endDate && 
+      dataStatus.dateRange
+    ) {
+      const latest = dataStatus.dateRange.latest;
+      
+      // CRITICAL: Set to EXACTLY 14 days to trigger comparison
+      // Use midnight timestamps to ensure clean day boundaries
+      const end = new Date(latest);
+      end.setHours(23, 59, 59, 999); // End of day
+      
+      const start = new Date(end);
+      start.setDate(start.getDate() - 13); // 14 days total (today + 13 previous)
+      start.setHours(0, 0, 0, 0); // Start of day
+      
+      console.log('[AGPGenerator] 🚀 Auto-selecting last 14 days:', {
+        start: start.toISOString().split('T')[0],
+        end: end.toISOString().split('T')[0],
+        dayCount: Math.round((end - start) / (1000 * 60 * 60 * 24))
+      });
+      
+      setStartDate(start);
+      setEndDate(end);
+    }
+  }, [dataStatus.lightColor, dataStatus.dateRange, startDate, endDate]);
 
   /**
    * Auto-expand import section if no data loaded but saved uploads exist
@@ -259,16 +300,6 @@ export default function AGPGenerator() {
   // CRITICAL: Use comparisonReadings (full dataset) not activeReadings (filtered)
   // This ensures previous period data is available for comparison calculations
   const comparisonData = useComparison(comparisonReadings, startDate, endDate, fullDatasetRange);
-  
-  // Debug: Check comparison data
-  if (comparisonData) {
-    console.log('[AGPGenerator] Comparison check:', {
-      hasComparison: !!comparisonData.comparisonAGP,
-      comparisonBins: comparisonData.comparisonAGP?.length,
-      previousPeriod: comparisonData.previousPeriod,
-      comparisonReadings: comparisonReadings?.length
-    });
-  }
   
   // Generate day profiles using custom hook (replaces manual generation)
   const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult);
@@ -645,15 +676,68 @@ export default function AGPGenerator() {
             alignItems: 'center'
           }}>
             {/* Row 1: Title + Patient Info Button */}
-            <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <h1 style={{ 
                 letterSpacing: '0.15em', 
                 fontWeight: 700, 
                 fontSize: '1.5rem',
                 marginBottom: 0
               }}>
-                AGP+ V2.2.1
+                AGP+ V3.7.1
               </h1>
+              
+              {/* Data Status Indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 0.75rem',
+                background: 'var(--bg-secondary)',
+                border: '3px solid var(--border-primary)',
+                fontSize: '0.75rem',
+                fontFamily: 'monospace'
+              }}>
+                {/* Status Light */}
+                <div style={{
+                  width: '12px',
+                  height: '12px',
+                  border: '2px solid #000',
+                  background: dataStatus.lightColor === 'green' 
+                    ? 'var(--color-green)' 
+                    : dataStatus.lightColor === 'yellow' 
+                    ? 'var(--color-yellow)' 
+                    : 'var(--color-red)',
+                  flexShrink: 0
+                }} />
+                
+                {/* Status Text */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.125rem'
+                }}>
+                  <div style={{ 
+                    fontWeight: 700, 
+                    letterSpacing: '0.05em',
+                    color: 'var(--text-primary)'
+                  }}>
+                    {dataStatus.hasData ? (
+                      <>{dataStatus.readingCount.toLocaleString()} readings</>
+                    ) : (
+                      <>NO DATA</>
+                    )}
+                  </div>
+                  {dataStatus.hasData && (
+                    <div style={{ 
+                      fontSize: '0.625rem',
+                      color: 'var(--text-secondary)',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {dataStatus.dateRangeFormatted}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             
             <button
@@ -690,6 +774,24 @@ export default function AGPGenerator() {
               flexDirection: 'column',
               gap: '0.5rem'
             }}>
+              {/* Data Status Warning (Red/Yellow) */}
+              {dataStatus.actionRequired && (
+                <div style={{
+                  padding: '0.75rem',
+                  background: dataStatus.lightColor === 'red' 
+                    ? 'var(--color-red)' 
+                    : 'var(--color-yellow)',
+                  border: '3px solid #000',
+                  color: '#000',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  letterSpacing: '0.05em',
+                  textAlign: 'center'
+                }}>
+                  ⚠️ {dataStatus.message}
+                </div>
+              )}
+              
               {/* Patient Info Display */}
               {patientInfo && patientInfo.name && (
                 <div style={{

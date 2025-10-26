@@ -32,6 +32,7 @@
   /* Accent Colors - Soviet Inspired */
   --color-red: #c70000;        /* Soviet red - warnings, critical */
   --color-yellow: #f4e300;     /* Data highlight - caution */
+  --color-green: #00c700;      /* Success - data ready */
   
   /* Glucose Ranges */
   --color-tbr: #c70000;        /* Time Below Range <70 */

@@ -59,6 +59,7 @@ export function useMasterDataset(options = {}) {
 
   /**
    * Load and filter master dataset
+   * Auto-loads last 14 days on initial mount for instant rendering
    */
   const loadData = useCallback(async () => {
     try {
@@ -67,6 +68,29 @@ export function useMasterDataset(options = {}) {
 
       // Load cached dataset
       const cache = await loadOrRebuildCache();
+      
+      // AUTO-LOAD LAST 14 DAYS: If no date range specified, default to last 14 days
+      // This ensures instant data availability on app startup
+      if (!dateRange.start && !dateRange.end && cache.allReadings.length > 0) {
+        const latest = cache.dateRange.max;
+        const cutoff14Days = new Date(latest);
+        cutoff14Days.setDate(cutoff14Days.getDate() - 14);
+        
+        // Set date range to last 14 days (will be used in filtering below)
+        const autoDateRange = {
+          start: cutoff14Days,
+          end: latest
+        };
+        
+        // Update state to reflect auto-loaded range
+        setDateRange(autoDateRange);
+        
+        console.log(`[useMasterDataset] ✅ Auto-loaded last 14 days: ${cutoff14Days.toISOString().split('T')[0]} to ${latest.toISOString().split('T')[0]}`);
+        
+        // Continue with this auto-range (will be applied in filtering below)
+        dateRange.start = cutoff14Days;
+        dateRange.end = latest;
+      }
       
       // Get dataset stats
       const datasetStats = await getMasterDatasetStats();
