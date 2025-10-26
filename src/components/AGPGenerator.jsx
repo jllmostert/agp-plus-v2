@@ -16,6 +16,7 @@ import { downloadHTML } from '../core/html-exporter';
 
 // UI Components
 import FileUpload from './FileUpload';
+import SensorImport from './SensorImport';
 import PeriodSelector from './PeriodSelector';
 import MetricsDisplay from './MetricsDisplay';
 import AGPChart from './AGPChart';
@@ -50,6 +51,9 @@ export default function AGPGenerator() {
   
   // V2: Legacy CSV uploads (fallback during transition)
   const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
+  
+  // V3 Upload error state
+  const [v3UploadError, setV3UploadError] = useState(null);
   
   // Upload storage management
   const {
@@ -130,9 +134,10 @@ export default function AGPGenerator() {
   const prevV3ModeRef = useRef(false);
   
   // Determine mode: V3 if we have readings OR if we had V3 mode before (sticky during loads)
+  // ALWAYS use V3 for new uploads (Phase 4.0)
   const hasV3Data = masterDataset.readings.length > 0;
   const hadV3Mode = prevV3ModeRef.current;
-  const useV3Mode = hasV3Data || (masterDataset.isLoading && hadV3Mode);
+  const useV3Mode = true; // Force V3 mode for all new uploads
   
   // Update ref for next render
   if (hasV3Data) {
@@ -164,11 +169,17 @@ export default function AGPGenerator() {
   const comparisonReadings = useMemo(() => {
     if (useV3Mode) {
       // V3: Use unfiltered dataset
-      return masterDataset.allReadings || [];
+      const allReadings = masterDataset.allReadings || [];
+      console.log('[AGPGenerator] Comparison readings:', {
+        count: allReadings.length,
+        sample: allReadings[0],
+        isLoading: masterDataset.isLoading
+      });
+      return allReadings;
     }
     // V2: Use current csvData (not filtered in V2)
     return csvData;
-  }, [useV3Mode, masterDataset.allReadings, csvData]);
+  }, [useV3Mode, masterDataset.allReadings, masterDataset.isLoading, csvData]);
   
   const activeDateRange = useV3Mode ? masterDataset.stats?.dateRange : dateRange;
   
@@ -225,13 +236,51 @@ export default function AGPGenerator() {
   // Calculate metrics for current period
   const metricsResult = useMetrics(activeReadings, startDate, endDate, workdays);
   
+  // Debug: Check if AGP data exists
+  if (metricsResult && activeReadings && activeReadings.length > 0) {
+    console.log('[AGPGenerator] AGP data check:', {
+      hasAGP: !!metricsResult.agp,
+      agpBins: metricsResult.agp?.length,
+      sampleBin: metricsResult.agp?.[144], // Noon
+      readingsCount: activeReadings.length
+    });
+  }
+  
   // Auto-calculate comparison for preset periods
   // CRITICAL: Use comparisonReadings (full dataset) not activeReadings (filtered)
   // This ensures previous period data is available for comparison calculations
   const comparisonData = useComparison(comparisonReadings, startDate, endDate, fullDatasetRange);
   
+  // Debug: Check comparison data
+  if (comparisonData) {
+    console.log('[AGPGenerator] Comparison check:', {
+      hasComparison: !!comparisonData.comparisonAGP,
+      comparisonBins: comparisonData.comparisonAGP?.length,
+      previousPeriod: comparisonData.previousPeriod,
+      comparisonReadings: comparisonReadings?.length
+    });
+  }
+  
   // Generate day profiles using custom hook (replaces manual generation)
   const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult);
+  
+  // Debug: Check day profiles
+  if (dayProfiles && dayProfiles.length > 0) {
+    const profile = dayProfiles[0];
+    console.log('[AGPGenerator] Day profile details:', {
+      date: profile?.date,
+      readingCount: profile?.readingCount,
+      sensorChanges: profile?.sensorChanges,
+      cartridgeChanges: profile?.cartridgeChanges,
+      hasCurve: !!profile?.curve,
+      sampleCurveBin: profile?.curve?.[144]
+    });
+    
+    // Also log a sample reading to verify rewind field
+    if (activeReadings && activeReadings.length > 0) {
+      console.log('[AGPGenerator] Sample reading for events:', activeReadings[0]);
+    }
+  }
 
   // ============================================
   // EVENT HANDLERS: Date Range Filter (V3)
@@ -305,7 +354,6 @@ export default function AGPGenerator() {
           
           if (savedWorkdays && savedWorkdays.size > 0) {
             setWorkdays(savedWorkdays);
-            console.log(`[ProTime] Loaded ${savedWorkdays.size} workdays from V3 storage`);
           }
         } catch (err) {
           console.error('[ProTime] Failed to load from V3:', err);
@@ -319,8 +367,24 @@ export default function AGPGenerator() {
   /**
    * Handle CSV file upload
    */
-  const handleCSVLoad = (text) => {
-    loadCSV(text);
+  const handleCSVLoad = async (text) => {
+    if (useV3Mode) {
+      // V3: Direct upload to IndexedDB (bypasses localStorage)
+      try {
+        setV3UploadError(null); // Clear previous errors
+        const { uploadCSVToV3 } = await import('../storage/masterDatasetStorage');
+        const result = await uploadCSVToV3(text);
+        
+        // Trigger cache reload to update UI
+        masterDataset.refresh();
+      } catch (err) {
+        console.error('[CSV Upload] V3 upload failed:', err);
+        setV3UploadError(err.message);
+      }
+    } else {
+      // V2: Original flow (localStorage)
+      loadCSV(text);
+    }
     
     // Reset period selection when new CSV is loaded
     setStartDate(null);
@@ -348,7 +412,6 @@ export default function AGPGenerator() {
         try {
           const { saveProTimeData } = await import('../storage/masterDatasetStorage');
           await saveProTimeData(workdaySet);
-          console.log('[ProTime] Saved to V3 master dataset');
         } catch (err) {
           console.error('[ProTime] Failed to save to V3:', err);
         }
@@ -357,7 +420,6 @@ export default function AGPGenerator() {
       else if (activeUploadId) {
         try {
           await updateProTimeData(activeUploadId, workdaySet);
-          console.log('[ProTime] Saved to V2 upload');
         } catch (err) {
           console.error('[ProTime] Failed to save to V2 upload:', err);
         }
@@ -695,16 +757,16 @@ export default function AGPGenerator() {
           </section>
         )}
 
-        {/* Control Buttons: 5-column grid */}
+        {/* Control Buttons: 3-button clean layout (V3-first) */}
         <section className="section">
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(5, 1fr)',
+            gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '1rem',
             marginBottom: '1rem'
           }}>
             
-            {/* 1. Import Button */}
+            {/* 1. Upload CSV Button */}
             <button
               onClick={() => setDataImportExpanded(!dataImportExpanded)}
               style={{
@@ -719,6 +781,7 @@ export default function AGPGenerator() {
                 gap: '0.5rem',
                 minHeight: '100px'
               }}
+              title="Upload CareLink CSV export"
             >
               <h2 style={{ 
                 fontSize: '0.875rem',
@@ -728,63 +791,29 @@ export default function AGPGenerator() {
                 color: 'var(--text-primary)',
                 marginBottom: 0
               }}>
-                IMPORT
-              </h2>
-              {csvData && (
-                <span style={{ 
-                  fontSize: '1.25rem',
-                  color: 'var(--color-green)'
-                }}>
-                  ✓
-                </span>
-              )}
-              {!csvData && (
-                <span style={{ 
-                  fontSize: '1.25rem',
-                  color: 'var(--text-secondary)'
-                }}>
-                  ›
-                </span>
-              )}
-            </button>
-
-            {/* 2. Save Button - LEGACY (V3 auto-saves to IndexedDB) */}
-            <div
-              style={{
-                background: 'var(--bg-primary)',
-                border: '3px solid var(--border-primary)',
-                padding: '1.5rem 1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                minHeight: '100px',
-                opacity: 0.3
-              }}
-              title="V3: Data auto-saves to IndexedDB"
-            >
-              <h2 style={{ 
-                fontSize: '0.875rem',
-                fontWeight: 700, 
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                color: 'var(--text-secondary)',
-                marginBottom: 0
-              }}>
-                SAVE
+                UPLOAD CSV
               </h2>
               <span style={{ 
                 fontSize: '0.625rem',
                 color: 'var(--text-secondary)',
                 fontWeight: 600,
-                letterSpacing: '0.1em'
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase'
               }}>
-                (AUTO)
+                CareLink Data
               </span>
-            </div>
+              {csvData && (
+                <span style={{ 
+                  fontSize: '1.25rem',
+                  color: 'var(--color-green)',
+                  marginTop: '0.25rem'
+                }}>
+                  ✓
+                </span>
+              )}
+            </button>
 
-            {/* 3. Day Profiles Button */}
+            {/* 2. Day Profiles Button */}
             <button
               onClick={handleDayProfilesOpen}
               disabled={!activeReadings || activeReadings.length === 0}
@@ -817,13 +846,14 @@ export default function AGPGenerator() {
                 fontSize: '0.625rem',
                 color: 'var(--text-secondary)',
                 fontWeight: 600,
-                letterSpacing: '0.1em'
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase'
               }}>
-                (7D)
+                Last 7 Days
               </span>
             </button>
 
-            {/* 4. Export Button */}
+            {/* 3. Export HTML Button */}
             <button
               onClick={handleExportHTML}
               disabled={!metricsResult || !startDate || !endDate}
@@ -850,43 +880,18 @@ export default function AGPGenerator() {
                 textTransform: 'uppercase',
                 marginBottom: 0
               }}>
-                EXPORT
-              </h2>
-            </button>
-
-            {/* 5. Period Display - LEGACY (V3 uses Date Range Filter above) */}
-            <div style={{
-              background: 'var(--bg-primary)',
-              border: '3px solid var(--border-primary)',
-              padding: '1.5rem 1rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '100px',
-              opacity: 0.3
-            }}
-            title="V3: Use Date Range Filter above (14D/30D/90D buttons)"
-            >
-              <h2 style={{ 
-                fontSize: '0.875rem',
-                fontWeight: 700, 
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                color: 'var(--text-secondary)',
-                marginBottom: 0
-              }}>
-                PERIOD
+                EXPORT HTML
               </h2>
               <span style={{ 
                 fontSize: '0.625rem',
-                color: 'var(--text-secondary)',
+                color: metricsResult && startDate && endDate ? '#fff' : 'var(--text-secondary)',
                 fontWeight: 600,
-                letterSpacing: '0.1em'
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase'
               }}>
-                (↑ FILTER)
+                Print Report
               </span>
-            </div>
+            </button>
             
           </div>
 
@@ -907,8 +912,11 @@ export default function AGPGenerator() {
                 proTimeLoaded={!!workdays}
               />
               
-              {/* CSV Error Display */}
-              {csvError && (
+              {/* Sensor Database Import */}
+              <SensorImport />
+              
+              {/* CSV Error Display (V2 or V3) */}
+              {(csvError || v3UploadError) && (
                 <div className="card mt-4" style={{ 
                   background: 'rgba(220, 38, 38, 0.1)', 
                   color: 'var(--color-red)',
@@ -922,7 +930,7 @@ export default function AGPGenerator() {
                         CSV Import Error
                       </p>
                       <p style={{ fontSize: '0.875rem', lineHeight: '1.5' }}>
-                        {csvError}
+                        {csvError || v3UploadError}
                       </p>
                       <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.8 }}>
                         Please ensure you're uploading a valid CareLink CSV export.
