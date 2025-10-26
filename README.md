@@ -2,16 +2,16 @@
 
 > ⚠️ **v3.0 DEVELOPMENT BRANCH** - This branch contains experimental features and breaking changes. For stable production version, use `main` branch.
 
-> 🔧 **v3.6 IN PROGRESS** - Sensor database integration. See HANDOFF_V3_6_SENSORS_PART1.md for status.
+> 🔧 **v3.6 IN PROGRESS** - Event detection system (sensor/cartridge tracking). See `docs/handoffs/HANDOFF_V3_6_EVENTS_OCT26.md` for status.
 
 > **Professional diabetes data analysis tool following ADA/ATTD 2019 clinical guidelines**
 
 ## Overview
 
-AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **individual day profiles**, and **sensor tracking database integration** following international clinical standards.
+AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **individual day profiles**, and **device event tracking** following international clinical standards.
 
 **Version:** 3.6.0-dev  
-**Status:** Development (Sensor Integration)  
+**Status:** Development (Event Detection System)  
 **Last Updated:** October 26, 2025
 
 ---
@@ -51,23 +51,26 @@ http://localhost:5173
 - ✅ **Period Comparison**: Auto-comparison for 14/30/90-day periods
 - ✅ **Day/Night Analysis**: Separate metrics for 06:00-22:00 vs 22:00-06:00
 - ✅ **Workday Split**: Compare workdays vs rest days (ProTime integration)
-- ✅ **Day Profiles** ⭐ NEW: Individual day analysis with 24h glucose curves
+- ✅ **Day Profiles** ⭐: Individual day analysis with 24h glucose curves
 
 ### Day Profiles (v2.2)
 - ✅ **Last 7 Days View**: Individual cards per day with full context
 - ✅ **24h Glucose Curves**: High-resolution 5-minute data visualization
 - ✅ **Achievement Badges**: Perfect Day, Zen Master, exceptional performance
-- ✅ **Event Markers**: Visual hypo L1/L2, hyper events, sensor changes
+- ✅ **Event Markers**: Visual hypo L1/L2, hyper events
 - ✅ **AGP Reference**: Period median overlay for context
 - ✅ **Print Export**: Optimized HTML for A4 printing (max 2 pages)
-
-### Sensor Tracking (v3.6) 🚧 IN DEVELOPMENT
-- ⏳ **Database Import**: Load master_sensors.db (SQLite) into browser
-- ⏳ **Accurate Markers**: Database-backed sensor change detection
-- ⏳ **3-Tier Detection**: Database → Alerts → Gap analysis fallback
-- ⏳ **Sensor Overview**: Stats, performance, inventory management
-- 📝 See HANDOFF_V3_6_SENSORS_PART1.md for current status
 - ✅ **Per-Day Metrics**: TIR, TAR, TBR, Mean±SD, CV for each day
+
+### Event Detection (v3.6) 🚧 IN DEVELOPMENT
+- ✅ **Sensor Database Import**: Load master_sensors.db (SQLite) from Sensoren project
+- ✅ **localStorage Storage**: Fast synchronous event access
+- ✅ **Event Caching**: Scan once, read many times (no render lag)
+- ⏳ **3-Tier Detection**: Database (high) → Alerts (medium) → Gaps (low)
+- ⏳ **JSON Export/Import**: Portable event backups (.agp-events.json)
+- ⏳ **Event Manager UI**: Rescan, export, import controls
+- ⏳ **Day Profile Integration**: Database-backed sensor/cartridge markers
+- 📝 See `docs/handoffs/HANDOFF_V3_6_EVENTS_OCT26.md` for implementation plan
 
 ### User Experience
 - ✅ Preset period buttons (14/30/90 days)

@@ -1,180 +1,92 @@
 /**
- * Device Event Storage Engine for AGP+ v3.0
+ * EVENT STORAGE MODULE
  * 
- * Manages persistent storage of sensor and cartridge changes:
- * - Idempotent IDs prevent duplicates on CSV re-upload
- * - User can confirm/reject false positives
- * - Query by date range for visualization
+ * Manages device events (sensor changes, cartridge changes) in localStorage.
+ * Events are detected once during CSV processing and cached for fast lookups.
  * 
- * Event Types:
- * - sensor_change: Detected from gaps (2-10 hours)
- * - cartridge_change: Detected from "Rewind" alarms
+ * Architecture:
+ * - Single scan per CSV upload/page load
+ * - Fast date-based lookups for day profiles
+ * - No runtime detection overhead
+ * 
+ * @module eventStorage
+ * @version 3.6.0
  */
 
-import { STORES, openDB, getRecord, putRecord, queryByIndex } from './db.js';
-
-/**
- * Generate idempotent event ID from timestamp
- * Same timestamp = same ID = no duplicates
- * 
- * @param {Date} timestamp
- * @param {string} type - 'sensor' or 'cartridge'
- * @returns {string} "sensor_20251015_143000" or "cartridge_20251020_091500"
- */
-function generateEventId(timestamp, type) {
-  const dateStr = timestamp.toISOString()
-    .replace(/[:-]/g, '')
-    .replace(/\.\d{3}Z/, '');  // "2025-10-15T14:30:00.000Z" → "20251015T143000"
-  
-  return `${type}_${dateStr}`;
-}
+const EVENTS_KEY = 'agp-device-events';
 
 /**
- * Store sensor change event
- * Idempotent: same timestamp = update, not duplicate
+ * Store device events in localStorage
  * 
- * @param {Date} timestamp - When sensor was changed
- * @param {number} gapMinutes - Duration of gap (for validation)
- * @param {string} sourceFile - CSV filename
+ * @param {Object} events - { sensorChanges: [], cartridgeChanges: [], lastScanned: ISO timestamp }
  */
-export async function storeSensorChange(timestamp, gapMinutes, sourceFile) {
-  const id = generateEventId(timestamp, 'sensor');
-  
-  const event = {
-    id,
-    timestamp,
-    type: 'sensor_change',
-    gapMinutes,
-    sourceFile,
-    confirmed: true,  // Default: assume valid, user can override
-    notes: null,
-    createdAt: new Date()
+export function storeEvents(events) {
+  const data = {
+    ...events,
+    lastScanned: new Date().toISOString()
   };
-  
-  await putRecord(STORES.SENSOR_EVENTS, event);
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(data));
 }
 
 /**
- * Store cartridge change event
+ * Get all stored events
  * 
- * @param {Date} timestamp - When cartridge was changed
- * @param {string} alarmText - CSV alarm string ("Rewind")
- * @param {string} sourceFile - CSV filename
+ * @returns {Object|null} Events object or null if not found
  */
-export async function storeCartridgeChange(timestamp, alarmText, sourceFile) {
-  const id = generateEventId(timestamp, 'cartridge');
-  
-  const event = {
-    id,
-    timestamp,
-    type: 'cartridge_change',
-    sourceAlarm: alarmText,
-    sourceFile,
-    confirmed: true,
-    notes: null,
-    createdAt: new Date()
-  };
-  
-  await putRecord(STORES.CARTRIDGE_EVENTS, event);
-}
-
-/**
- * Get all sensor changes in date range
- * 
- * @param {Date} startDate
- * @param {Date} endDate
- * @returns {Array} Confirmed sensor change events
- */
-export async function getSensorChangesInRange(startDate, endDate) {
-  const range = IDBKeyRange.bound(startDate, endDate);
-  const events = await queryByIndex(STORES.SENSOR_EVENTS, 'timestamp', range);
-  
-  // Filter to confirmed only
-  return events.filter(e => e.confirmed);
-}
-
-/**
- * Get all cartridge changes in date range
- * 
- * @param {Date} startDate
- * @param {Date} endDate
- * @returns {Array} Confirmed cartridge change events
- */
-export async function getCartridgeChangesInRange(startDate, endDate) {
-  const range = IDBKeyRange.bound(startDate, endDate);
-  const events = await queryByIndex(STORES.CARTRIDGE_EVENTS, 'timestamp', range);
-  
-  return events.filter(e => e.confirmed);
-}
-
-/**
- * Get all events for a specific day (for DayProfileCard)
- * 
- * @param {Date} date - Any time on the target day
- * @returns {Object} { sensorChanges: Array, cartridgeChanges: Array }
- */
-export async function getEventsForDay(date) {
-  const dayStart = new Date(date);
-  dayStart.setHours(0, 0, 0, 0);
-  
-  const dayEnd = new Date(date);
-  dayEnd.setHours(23, 59, 59, 999);
-  
-  const [sensors, cartridges] = await Promise.all([
-    getSensorChangesInRange(dayStart, dayEnd),
-    getCartridgeChangesInRange(dayStart, dayEnd)
-  ]);
-  
-  return {
-    sensorChanges: sensors,
-    cartridgeChanges: cartridges
-  };
-}
-
-/**
- * Toggle event confirmation (user marks false positive)
- * 
- * @param {string} eventId
- * @param {string} eventType - 'sensor' or 'cartridge'
- */
-export async function toggleEventConfirmation(eventId, eventType) {
-  const storeName = eventType === 'sensor' 
-    ? STORES.SENSOR_EVENTS 
-    : STORES.CARTRIDGE_EVENTS;
-  
-  const event = await getRecord(storeName, eventId);
-  
-  if (event) {
-    event.confirmed = !event.confirmed;
-    await putRecord(storeName, event);
-    console.log(`[ToggleEvent] ${eventId}: confirmed=${event.confirmed}`);
+export function getAllEvents() {
+  try {
+    const data = localStorage.getItem(EVENTS_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    console.error('[eventStorage] Error getting events:', err);
+    return null;
   }
 }
 
 /**
- * Get event statistics
- * @returns {Object} { totalSensors, totalCartridges, dateRange }
+ * Get events for a specific date
+ * 
+ * @param {string} date - Date in YYYY/MM/DD format
+ * @returns {Object} { sensorChanges: [], cartridgeChanges: [] }
  */
-export async function getEventStats() {
-  const db = await openDB();
+export function getEventsForDate(date) {
+  const allEvents = getAllEvents();
   
-  // Count events
-  const sensorTx = db.transaction(STORES.SENSOR_EVENTS, 'readonly');
-  const sensorCount = await new Promise((resolve, reject) => {
-    const req = sensorTx.objectStore(STORES.SENSOR_EVENTS).count();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
+  if (!allEvents) {
+    return { sensorChanges: [], cartridgeChanges: [] };
+  }
   
-  const cartridgeTx = db.transaction(STORES.CARTRIDGE_EVENTS, 'readonly');
-  const cartridgeCount = await new Promise((resolve, reject) => {
-    const req = cartridgeTx.objectStore(STORES.CARTRIDGE_EVENTS).count();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
+  // Filter events for this specific date
+  const sensorChanges = (allEvents.sensorChanges || []).filter(e => e.date === date);
+  const cartridgeChanges = (allEvents.cartridgeChanges || []).filter(e => e.date === date);
   
-  return {
-    totalSensors: sensorCount,
-    totalCartridges: cartridgeCount
-  };
+  return { sensorChanges, cartridgeChanges };
+}
+
+/**
+ * Check if events exist for current dataset
+ * 
+ * @returns {boolean}
+ */
+export function hasEvents() {
+  const events = getAllEvents();
+  return events !== null && 
+         (events.sensorChanges?.length > 0 || events.cartridgeChanges?.length > 0);
+}
+
+/**
+ * Clear all stored events
+ */
+export function clearEvents() {
+  localStorage.removeItem(EVENTS_KEY);
+}
+
+/**
+ * Get last scanned timestamp
+ * 
+ * @returns {string|null} ISO timestamp or null
+ */
+export function getLastScanned() {
+  const events = getAllEvents();
+  return events?.lastScanned || null;
 }

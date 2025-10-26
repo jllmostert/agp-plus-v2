@@ -105,12 +105,103 @@ async function appendReadingsToMaster(newReadings, sourceFile) {
 
 ---
 
+## 🔔 EVENT DETECTION ARCHITECTURE (Phase 3.6)
+
+### localStorage-Based Event Cache
+
+**Decision:** Use localStorage instead of IndexedDB for device events
+
+**Rationale:**
+- Events are small (<1MB JSON)
+- Synchronous access = no render lag
+- Simple API (getItem/setItem)
+- Perfect for scan-once-read-many pattern
+
+### 3-Tier Detection System
+
+**Priority Order:**
+1. **Sensor Database** (imported from Sensoren project)
+   - Source: master_sensors.db (SQLite)
+   - Confidence: HIGH
+   - Includes lot numbers, hardware versions
+
+2. **CSV Alerts** ("SENSOR CONNECTED", "Rewind")
+   - Source: CSV alert columns
+   - Confidence: MEDIUM
+   - Real-time device events
+
+3. **Gap Detection** (3-10 hour data gaps)
+   - Source: Timestamp analysis
+   - Confidence: LOW
+   - Fallback for old CSVs
+
+### Event Storage Format
+
+```javascript
+// localStorage key: 'agp-device-events'
+{
+  sensorChanges: [
+    {
+      date: "2025/10/19",
+      timestamp: "2025-10-19T01:01:13Z",
+      minuteOfDay: 61,
+      source: "database|alert|gap",
+      confidence: "high|medium|low",
+      lotNumber: "MMT-7030A1.01-2024W37" // optional
+    }
+  ],
+  cartridgeChanges: [
+    {
+      date: "2025/10/22",
+      timestamp: "2025-10-22T17:59:00Z",
+      minuteOfDay: 1079
+    }
+  ],
+  version: "1.0",
+  lastUpdated: "2025-10-26T15:30:00Z",
+  lastScanned: "2025-10-26T15:30:00Z"
+}
+```
+
+### Detection Flow
+
+```
+CSV Upload
+    ↓
+detectAllEvents(csvData) - ONE TIME SCAN
+    ├─ Check sensor database (if imported)
+    ├─ Check CSV alerts
+    └─ Check data gaps
+    ↓
+Deduplicate (keep highest confidence per date)
+    ↓
+storeEvents(events) - CACHE IN LOCALSTORAGE
+    ↓
+Day Profiles: getEventsForDate(date) - INSTANT LOOKUP
+    ↓
+Render markers (no detection logic)
+```
+
+### JSON Export/Import
+
+**Portable Format:** Events can be exported/imported as `.agp-events.json`
+
+**Benefits:**
+- Backup & restore
+- Share event annotations
+- Version control
+- Cross-platform compatible
+
+---
+
 ## ✅ IMPLEMENTATION PHASES
 
 ### Phase 1: Storage Foundation
 - [x] Create v3.0-dev branch
-- [ ] Update Dexie schema
-- [ ] Build month-bucketing functions
+- [x] Update Dexie schema
+- [x] Build month-bucketing functions
+- [x] Create eventStorage.js (localStorage)
+- [x] Create sensorStorage.js (localStorage)
 
 ### Phase 2: Migration
 - [ ] Build migration script
@@ -121,6 +212,15 @@ async function appendReadingsToMaster(newReadings, sourceFile) {
 - [ ] Create useMasterDataset hook
 - [ ] Update AGPGenerator
 - [ ] Add date range filter
+
+### Phase 3.6: Event Detection (Current)
+- [x] SensorImport component
+- [x] SQLite parser (sql.js)
+- [x] Event storage layer
+- [ ] Event detection engine (3-tier)
+- [ ] EventManager component
+- [ ] JSON export/import
+- [ ] Day profile integration
 
 ### Phase 4: Release
 - [ ] Performance profiling
