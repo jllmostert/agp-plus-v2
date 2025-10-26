@@ -223,13 +223,11 @@ function detectSensorChanges(allData, targetDate) {
       
       // If we found database matches, return them (high confidence)
       if (allChanges.length > 0) {
-        console.log('[detectSensorChanges] Found', allChanges.length, 'sensors from database for', targetDate);
         return allChanges;
       }
     }
   } catch (err) {
     // Sensor database not available or error, fall through to gap detection
-    console.log('[detectSensorChanges] Sensor database not available, using gap detection');
   }
   
   // FALLBACK: Gap detection (medium confidence)

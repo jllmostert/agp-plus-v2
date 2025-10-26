@@ -17,13 +17,6 @@ export default function DayProfileCard({ profile }) {
 
   const { date, dayOfWeek, metrics, curve, events, sensorChanges, cartridgeChanges, badges, readingCount } = profile;
 
-  // Debug logging for received props
-  console.log('[DayProfileCard] Rendering card for', date, ':', {
-    sensorChanges: sensorChanges?.length || 0,
-    cartridgeChanges: cartridgeChanges?.length || 0,
-    readingCount
-  });
-
   return (
     <div
       className="day-profile-card"

@@ -198,6 +198,46 @@ export function hasSensorDatabase() {
 }
 
 /**
+ * Add a single sensor to the database
+ * 
+ * @param {Object} sensorData - Sensor record
+ * @returns {Promise<void>}
+ */
+export async function addSensor(sensorData) {
+  const db = getSensorDatabase() || { sensors: [], inventory: [], lastUpdated: new Date().toISOString() };
+  
+  // Check if sensor already exists (by id or start_timestamp)
+  const exists = db.sensors.some(s => 
+    s.id === sensorData.id || 
+    s.start_timestamp === sensorData.startTimestamp
+  );
+  
+  if (!exists) {
+    // Convert camelCase to snake_case for storage consistency
+    const sensor = {
+      id: sensorData.id,
+      start_timestamp: sensorData.startTimestamp,
+      end_timestamp: sensorData.endTimestamp,
+      duration_hours: sensorData.durationHours,
+      duration_days: sensorData.durationDays,
+      reason_stop: sensorData.reasonStop,
+      status: sensorData.status,
+      confidence: sensorData.confidence,
+      lot_number: sensorData.lotNumber,
+      hardware_version: sensorData.hardwareVersion,
+      firmware_version: sensorData.firmwareVersion,
+      notes: sensorData.notes,
+      sequence: sensorData.sequence
+    };
+    
+    db.sensors.push(sensor);
+    db.lastUpdated = new Date().toISOString();
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  }
+}
+
+/**
  * Get sensor history for export
  * Returns array of sensors or empty array
  * 

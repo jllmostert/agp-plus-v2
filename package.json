@@ -1,7 +1,7 @@
 {
   "name": "agp-plus",
-  "version": "3.7.1",
-  "description": "AGP+ v3.7 - Ambulatory Glucose Profile with Auto-Load & Status Indicator",
+  "version": "3.8.0",
+  "description": "AGP+ v3.8 - Ambulatory Glucose Profile with Database Export",
   "type": "module",
   "scripts": {
     "dev": "vite",
