@@ -1245,18 +1245,16 @@ export default function AGPGenerator() {
                       alert(`❌ Export failed: ${result.error}`);
                     }
                   }}
-                  disabled={!masterDataset || masterDataset.totalReadings === 0}
                   style={{
                     background: 'var(--bg-primary)',
                     border: '2px solid var(--border-primary)',
-                    color: masterDataset && masterDataset.totalReadings > 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    cursor: masterDataset && masterDataset.totalReadings > 0 ? 'pointer' : 'not-allowed',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
                     padding: '1rem',
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    opacity: masterDataset && masterDataset.totalReadings > 0 ? 1 : 0.5
+                    textTransform: 'uppercase'
                   }}
                   title="Export complete IndexedDB dataset as JSON"
                 >
