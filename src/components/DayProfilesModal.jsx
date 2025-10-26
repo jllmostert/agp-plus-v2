@@ -39,9 +39,36 @@ export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patient
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button - top right, sticky */}
+        {/* Control buttons - top right, sticky */}
         <div className="sticky top-0 z-10 flex justify-end gap-4 p-6 bg-black bg-opacity-90">
-          {/* Print button */}
+          {/* Close button - NOW FIRST */}
+          <button
+            onClick={onClose}
+            style={{
+              fontFamily: 'Courier New, monospace',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              padding: '12px 24px',
+              border: '3px solid #ffffff',
+              backgroundColor: '#000000',
+              color: '#ffffff',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              letterSpacing: '2px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#ffffff';
+              e.target.style.color = '#000000';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#000000';
+              e.target.style.color = '#ffffff';
+            }}
+          >
+            ← Sluiten
+          </button>
+
+          {/* Print button - NOW SECOND */}
           <button
             onClick={() => {
               try {
@@ -73,33 +100,6 @@ export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patient
             }}
           >
             🖨 Print
-          </button>
-
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            style={{
-              fontFamily: 'Courier New, monospace',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              padding: '12px 24px',
-              border: '3px solid #ffffff',
-              backgroundColor: '#000000',
-              color: '#ffffff',
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              letterSpacing: '2px'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#ffffff';
-              e.target.style.color = '#000000';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#000000';
-              e.target.style.color = '#ffffff';
-            }}
-          >
-            ← Sluiten
           </button>
         </div>
 
