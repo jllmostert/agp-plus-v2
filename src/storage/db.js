@@ -14,7 +14,7 @@
  */
 
 const DB_NAME = 'agp-plus-db';
-const DB_VERSION = 3;  // Increment from v2.x version 1 → v3.0 version 3
+const DB_VERSION = 4;  // Increment for sensorData store
 
 // Store names
 export const STORES = {
@@ -23,7 +23,8 @@ export const STORES = {
   READING_BUCKETS: 'readingBuckets',     // NEW v3.0
   SENSOR_EVENTS: 'sensorEvents',         // NEW v3.0
   CARTRIDGE_EVENTS: 'cartridgeEvents',   // NEW v3.0
-  MASTER_DATASET: 'masterDataset'        // NEW v3.0
+  MASTER_DATASET: 'masterDataset',       // NEW v3.0
+  SENSOR_DATA: 'sensorData'              // NEW v3.6
 };
 
 /**
@@ -87,6 +88,11 @@ export function openDB() {
       if (!db.objectStoreNames.contains(STORES.MASTER_DATASET)) {
         db.createObjectStore(STORES.MASTER_DATASET, { keyPath: 'id' });
         console.log('[DB] Created masterDataset store');
+      }
+      
+      if (!db.objectStoreNames.contains(STORES.SENSOR_DATA)) {
+        db.createObjectStore(STORES.SENSOR_DATA);
+        console.log('[DB] Created sensorData store (v3.6)');
       }
     };
   });

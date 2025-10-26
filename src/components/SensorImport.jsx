@@ -20,12 +20,17 @@ export default function SensorImport() {
   // Check if database exists on mount
   React.useEffect(() => {
     async function checkDb() {
-      const exists = await hasSensorDatabase();
-      setHasDb(exists);
-      
-      if (exists) {
-        const dbStats = await getSensorStats();
-        setStats(dbStats);
+      try {
+        const exists = await hasSensorDatabase();
+        setHasDb(exists);
+        
+        if (exists) {
+          const dbStats = await getSensorStats();
+          setStats(dbStats);
+        }
+      } catch (err) {
+        console.warn('[SensorImport] Database check failed (may need upgrade):', err);
+        // Don't show error to user - database might just need upgrade
       }
     }
     checkDb();
@@ -62,16 +67,17 @@ export default function SensorImport() {
   
   return (
     <div style={{
-      border: '3px solid #000',
+      border: '3px solid var(--border-primary)',
       padding: '1rem',
-      background: '#fff',
+      background: 'var(--bg-secondary)',
       marginBottom: '1rem'
     }}>
       <div style={{
         fontFamily: '"Courier New", Courier, monospace',
         fontSize: '14px',
         fontWeight: 'bold',
-        marginBottom: '0.5rem'
+        marginBottom: '0.5rem',
+        color: 'var(--text-primary)'
       }}>
         SENSOR DATABASE
       </div>
@@ -80,7 +86,8 @@ export default function SensorImport() {
         <div style={{
           fontFamily: '"Courier New", Courier, monospace',
           fontSize: '12px',
-          marginBottom: '0.5rem'
+          marginBottom: '0.5rem',
+          color: 'var(--text-primary)'
         }}>
           <div>✓ {stats.total} sensors geïmporteerd</div>
           <div>✓ Success rate: {stats.successRate.toFixed(1)}%</div>
@@ -94,7 +101,8 @@ export default function SensorImport() {
           fontFamily: '"Courier New", Courier, monospace',
           fontSize: '12px',
           marginBottom: '0.5rem',
-          opacity: 0.7
+          opacity: 0.7,
+          color: 'var(--text-secondary)'
         }}>
           Geen sensor database geïmporteerd
         </div>
@@ -102,14 +110,15 @@ export default function SensorImport() {
       
       <label style={{
         display: 'inline-block',
-        border: '3px solid #000',
+        border: '3px solid var(--border-primary)',
         padding: '0.5rem 1rem',
-        background: '#fff',
+        background: 'var(--bg-primary)',
         fontFamily: '"Courier New", Courier, monospace',
         fontSize: '12px',
         fontWeight: 'bold',
         cursor: importing ? 'wait' : 'pointer',
-        opacity: importing ? 0.5 : 1
+        opacity: importing ? 0.5 : 1,
+        color: 'var(--text-primary)'
       }}>
         {importing ? 'IMPORTEREN...' : hasDb ? 'UPDATE DATABASE' : 'IMPORTEER DATABASE'}
         <input
@@ -125,11 +134,11 @@ export default function SensorImport() {
         <div style={{
           marginTop: '0.5rem',
           padding: '0.5rem',
-          background: '#fee',
-          border: '2px solid #f00',
+          background: 'rgba(220, 38, 38, 0.1)',
+          border: '2px solid var(--color-red)',
           fontFamily: '"Courier New", Courier, monospace',
           fontSize: '11px',
-          color: '#c00'
+          color: 'var(--color-red)'
         }}>
           ERROR: {error}
         </div>

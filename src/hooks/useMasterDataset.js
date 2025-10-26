@@ -97,7 +97,6 @@ export function useMasterDataset(options = {}) {
         .filter(reading => {
           // Safety: Only include readings with valid timestamp and glucose
           if (!reading.timestamp || reading.glucose == null) {
-            console.warn('[useMasterDataset] Skipping invalid reading:', reading);
             return false;
           }
           return true;
@@ -109,11 +108,23 @@ export function useMasterDataset(options = {}) {
           sg: reading.glucose,
           glucose: reading.glucose,  // Both sg and glucose for compatibility
           
+          // Event detection fields (needed for day profiles)
+          bolus: reading.bolus || 0,
+          bg: reading.bg || null,
+          carbs: reading.carbs || 0,
+          rewind: reading.rewind || false,
+          
           // Keep V3 original for future use (optional)
           _v3Original: reading
         }));
 
       setReadings(normalizedReadings);
+      
+      // Debug: Log sample reading to verify fields
+      if (normalizedReadings.length > 0) {
+        console.log('[useMasterDataset] Sample reading:', normalizedReadings[0]);
+        console.log('[useMasterDataset] Total readings:', normalizedReadings.length);
+      }
       
       // ALSO store unfiltered readings (for comparison calculations)
       const allNormalizedReadings = cache.allReadings
@@ -123,6 +134,13 @@ export function useMasterDataset(options = {}) {
           time: formatTime(reading.timestamp),
           sg: reading.glucose,
           glucose: reading.glucose,
+          
+          // Event detection fields (needed for day profiles)
+          bolus: reading.bolus || 0,
+          bg: reading.bg || null,
+          carbs: reading.carbs || 0,
+          rewind: reading.rewind || false,
+          
           _v3Original: reading
         }));
       

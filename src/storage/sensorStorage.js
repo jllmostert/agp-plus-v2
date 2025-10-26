@@ -13,34 +13,18 @@
  * @version 3.6.0
  */
 
-import { openDB } from './db.js';
+import { openDB, STORES } from './db.js';
 
-const SENSOR_STORE = 'sensorData';
+const SENSOR_STORE = STORES.SENSOR_DATA;
 const SENSOR_KEY = 'sensorDatabase';
 
 /**
  * Initialize sensor storage in IndexedDB
- * Creates sensorData object store if it doesn't exist
+ * Store is automatically created by db.js v4 upgrade
  */
 export async function initSensorStorage() {
+  // Just ensure db is ready - store is created by db.js
   const db = await openDB();
-  
-  // Check if store exists
-  if (!db.objectStoreNames.contains(SENSOR_STORE)) {
-    db.close();
-    
-    // Reopen with version bump to create store
-    const newDb = await openDB(db.name, db.version + 1, {
-      upgrade(upgradeDb) {
-        if (!upgradeDb.objectStoreNames.contains(SENSOR_STORE)) {
-          upgradeDb.createObjectStore(SENSOR_STORE);
-        }
-      }
-    });
-    
-    return newDb;
-  }
-  
   return db;
 }
 
@@ -102,7 +86,14 @@ export async function importSensorDatabase(data) {
  */
 export async function getSensorDatabase() {
   try {
-    const db = await initSensorStorage();
+    const db = await openDB();
+    
+    // Check if store exists before trying to access it
+    if (!db.objectStoreNames.contains(SENSOR_STORE)) {
+      console.warn('[sensorStorage] Store not found, database needs upgrade');
+      return null;
+    }
+    
     const tx = db.transaction(SENSOR_STORE, 'readonly');
     const data = await tx.store.get(SENSOR_KEY);
     await tx.done;

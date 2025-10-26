@@ -154,20 +154,17 @@ function ProTimeButton({ onClick, isLoaded }) {
       `}
     >
       <Calendar className="w-4 h-4" />
-      {isLoaded ? 'ProTime Loaded ✓' : 'Import ProTime (Optional)'}
+      {isLoaded ? 'ProTime Loaded ✓' : 'Upload PDF'}
     </button>
   );
 }
 
 /**
- * ProTimeModal - Modal for ProTime data import (PDF upload, PDF text, or JSON)
+ * ProTimeModal - Simplified modal for ProTime PDF upload only
  */
 function ProTimeModal({ onClose, onLoad, setError }) {
-  const [activeTab, setActiveTab] = useState('pdf-upload'); // 'pdf-upload', 'pdf-text', or 'json'
-  const [pdfText, setPdfText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const pdfFileInputRef = useRef(null);
-  const jsonFileInputRef = useRef(null);
 
   const handlePDFUpload = async (event) => {
     const files = Array.from(event.target.files || []);
@@ -214,64 +211,13 @@ function ProTimeModal({ onClose, onLoad, setError }) {
     event.target.value = '';
   };
 
-  const handlePDFTextSubmit = () => {
-    if (!pdfText.trim()) {
-      setError('Please paste ProTime PDF text');
-      return;
-    }
-
-    onLoad(pdfText);
-    onClose();
-  };
-
-  const handleJSONUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.json')) {
-      setError('Please upload a JSON file');
-      return;
-    }
-
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-
-      // Validate JSON structure - accept multiple formats:
-      // 1. Direct array: ["2025/10/01", ...]
-      // 2. Object with workdays array: {workdays: ["2025/10/01", ...]}
-      // 3. Object with workdays object array: {workdays: [{date: "2025/10/01", is_workday: true}, ...]}
-      
-      let isValid = false;
-      
-      if (Array.isArray(data) && data.length > 0) {
-        isValid = true;
-      } else if (data && data.workdays && Array.isArray(data.workdays) && data.workdays.length > 0) {
-        isValid = true;
-      }
-      
-      if (!isValid) {
-        setError('Invalid ProTime JSON format. Expected array of dates or object with workdays property.');
-        return;
-      }
-
-      onLoad(JSON.stringify(data));
-      onClose();
-    } catch (err) {
-      setError(`Failed to read JSON file: ${err.message}`);
-    }
-
-    // Reset input
-    event.target.value = '';
-  };
-
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 border border-gray-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h3 className="text-lg font-semibold text-gray-100">
-            Import ProTime Data
+            Upload ProTime PDF
           </h3>
           <button
             onClick={onClose}
@@ -281,66 +227,13 @@ function ProTimeModal({ onClose, onLoad, setError }) {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-700">
-          <button
-            onClick={() => setActiveTab('pdf-upload')}
-            className={`
-              flex-1 px-4 py-3 text-sm font-medium transition-colors
-              ${activeTab === 'pdf-upload'
-                ? 'bg-gray-700 text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-gray-300'
-              }
-            `}
-          >
-            📄 PDF Upload
-          </button>
-          <button
-            onClick={() => setActiveTab('pdf-text')}
-            className={`
-              flex-1 px-4 py-3 text-sm font-medium transition-colors
-              ${activeTab === 'pdf-text'
-                ? 'bg-gray-700 text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-gray-300'
-              }
-            `}
-          >
-            📋 PDF Text
-          </button>
-          <button
-            onClick={() => setActiveTab('json')}
-            className={`
-              flex-1 px-4 py-3 text-sm font-medium transition-colors
-              ${activeTab === 'json'
-                ? 'bg-gray-700 text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-gray-300'
-              }
-            `}
-          >
-            📊 JSON File
-          </button>
-        </div>
-
-        {/* Tab Content */}
+        {/* PDF Upload Content - No tabs, direct upload */}
         <div className="flex-1 overflow-y-auto p-4">
-          {activeTab === 'pdf-upload' ? (
-            <PDFUploadTab 
-              fileInputRef={pdfFileInputRef}
-              onUpload={handlePDFUpload}
-              isProcessing={isProcessing}
-            />
-          ) : activeTab === 'pdf-text' ? (
-            <PDFTextTab 
-              pdfText={pdfText}
-              setPdfText={setPdfText}
-              onSubmit={handlePDFTextSubmit}
-            />
-          ) : (
-            <JSONFileTab 
-              fileInputRef={jsonFileInputRef}
-              onUpload={handleJSONUpload}
-            />
-          )}
+          <PDFUploadTab 
+            fileInputRef={pdfFileInputRef}
+            onUpload={handlePDFUpload}
+            isProcessing={isProcessing}
+          />
         </div>
       </div>
     </div>

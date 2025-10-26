@@ -28,6 +28,15 @@ import {
  * @returns {string} "YYYY-MM"
  */
 function getMonthKey(date) {
+  // Guard: Ensure we have a valid Date object
+  if (!(date instanceof Date)) {
+    throw new Error(`[getMonthKey] Expected Date object, got ${typeof date}: ${date}`);
+  }
+  
+  if (isNaN(date.getTime())) {
+    throw new Error(`[getMonthKey] Invalid Date object: ${date}`);
+  }
+  
   return date.toISOString().slice(0, 7);  // "2025-10-15..." → "2025-10"
 }
 
@@ -59,8 +68,6 @@ function groupByMonth(readings) {
  * @param {string} sourceFile - CSV filename for audit trail
  */
 async function appendToMonthBucket(monthKey, newReadings, sourceFile) {
-  console.log(`[AppendBucket] ${monthKey}: ${newReadings.length} readings from ${sourceFile}`);
-  
   // Load existing bucket (or create empty)
   let bucket = await getRecord(STORES.READING_BUCKETS, monthKey);
   
@@ -95,14 +102,8 @@ async function appendToMonthBucket(monthKey, newReadings, sourceFile) {
       const existing = existingMap.get(ts);
       
       if (Math.abs(existing.glucose - reading.glucose) > 1) {
-        // Significant difference - log warning
-        console.warn(
-          `[Conflict] ${reading.timestamp.toISOString()}: ` +
-          `${existing.glucose} (${existing.sourceFile}) vs ` +
-          `${reading.glucose} (${sourceFile})`
-        );
+        // Significant difference - keep first (existing), don't overwrite
         conflictCount++;
-        // Keep first (existing), don't overwrite
       }
       // Else: exact duplicate, ignore silently
     }
@@ -121,11 +122,6 @@ async function appendToMonthBucket(monthKey, newReadings, sourceFile) {
   
   // Save bucket
   await putRecord(STORES.READING_BUCKETS, bucket);
-  
-  console.log(
-    `[AppendBucket] ${monthKey}: Added ${addedCount}, ` +
-    `Conflicts ${conflictCount}, Total ${bucket.count}`
-  );
 }
 
 /**
@@ -136,12 +132,8 @@ async function appendToMonthBucket(monthKey, newReadings, sourceFile) {
  * @param {string} sourceFile - CSV filename
  */
 export async function appendReadingsToMaster(newReadings, sourceFile) {
-  console.log(`[AppendToMaster] ${newReadings.length} readings from ${sourceFile}`);
-  const startTime = performance.now();
-  
   // Group by month
   const byMonth = groupByMonth(newReadings);
-  console.log(`[AppendToMaster] Grouped into ${byMonth.size} months`);
   
   // Append to each bucket
   for (const [monthKey, monthReadings] of byMonth) {
@@ -150,9 +142,6 @@ export async function appendReadingsToMaster(newReadings, sourceFile) {
   
   // Invalidate cache (will rebuild on next access)
   await invalidateCache();
-  
-  const elapsed = performance.now() - startTime;
-  console.log(`[AppendToMaster] ✅ Complete in ${elapsed.toFixed(0)}ms`);
 }
 
 /**
@@ -160,12 +149,8 @@ export async function appendReadingsToMaster(newReadings, sourceFile) {
  * Called when cache is dirty or missing
  */
 export async function rebuildSortedCache() {
-  console.log('[RebuildCache] Starting...');
-  const startTime = performance.now();
-  
   // Load all buckets
   const buckets = await getAllRecords(STORES.READING_BUCKETS);
-  console.log(`[RebuildCache] Loaded ${buckets.length} month buckets`);
   
   if (buckets.length === 0) {
     // No data yet
@@ -183,7 +168,6 @@ export async function rebuildSortedCache() {
   
   // Flatten all buckets into single array
   const allReadings = buckets.flatMap(b => b.readings);
-  console.log(`[RebuildCache] Flattened to ${allReadings.length} readings`);
   
   // Sort by timestamp (should already be mostly sorted)
   allReadings.sort((a, b) => a.timestamp - b.timestamp);
@@ -204,11 +188,6 @@ export async function rebuildSortedCache() {
   // Save cache
   await putRecord(STORES.MASTER_DATASET, cache);
   
-  const elapsed = performance.now() - startTime;
-  console.log(
-    `[RebuildCache] ✅ ${allReadings.length} readings in ${elapsed.toFixed(0)}ms`
-  );
-  
   return cache;
 }
 
@@ -221,12 +200,10 @@ export async function loadOrRebuildCache() {
   const savedCache = await getRecord(STORES.MASTER_DATASET, 'cache');
   
   if (savedCache && !savedCache.isDirty) {
-    console.log('[LoadCache] Using saved cache');
     return savedCache;
   }
   
   // Cache missing or dirty - rebuild
-  console.log('[LoadCache] Cache dirty or missing, rebuilding...');
   return await rebuildSortedCache();
 }
 
@@ -240,7 +217,6 @@ export async function invalidateCache() {
   if (cache) {
     cache.isDirty = true;
     await putRecord(STORES.MASTER_DATASET, cache);
-    console.log('[InvalidateCache] Cache marked dirty');
   }
 }
 
@@ -282,7 +258,6 @@ export async function getMasterDatasetStats() {
  */
 export async function saveProTimeData(workdaySet) {
   if (!workdaySet || workdaySet.size === 0) {
-    console.warn('[saveProTimeData] Empty workday set');
     return;
   }
 
@@ -294,8 +269,6 @@ export async function saveProTimeData(workdaySet) {
     workdays: workdayArray,
     lastUpdated: Date.now()
   });
-  
-  console.log(`[saveProTimeData] Saved ${workdayArray.length} workdays`);
 }
 
 /**
@@ -311,4 +284,61 @@ export async function loadProTimeData() {
   
   // Convert Array back to Set
   return new Set(record.workdays);
+}
+
+/**
+ * Upload CSV directly to V3 storage (bypasses V2 completely)
+ * @param {string} csvText - Raw CSV text from CareLink export
+ * @returns {Object} Upload result with stats
+ */
+export async function uploadCSVToV3(csvText) {
+  // Import CSV parser
+  const { parseCSV } = await import('../core/parsers.js');
+  
+  // Parse CSV to get readings array
+  const readings = parseCSV(csvText);
+  
+  if (!readings || readings.length === 0) {
+    throw new Error('No valid readings found in CSV');
+  }
+  
+  // Transform readings to add timestamp field (required by storage layer)
+  const readingsWithTimestamps = readings.map((reading, index) => {
+    // Parse date/time into timestamp Date object
+    const [year, month, day] = reading.date.split('/').map(Number);
+    const [hour, minute, second] = reading.time.split(':').map(Number);
+    const timestamp = new Date(year, month - 1, day, hour, minute, second);
+    
+    // Validate timestamp
+    if (isNaN(timestamp.getTime())) {
+      console.error(`[uploadCSVToV3] Invalid timestamp at row ${index}:`, {
+        date: reading.date,
+        time: reading.time,
+        parsed: { year, month, day, hour, minute, second },
+        result: timestamp
+      });
+      throw new Error(`Invalid date/time at row ${index}: ${reading.date} ${reading.time}`);
+    }
+    
+    return {
+      ...reading,
+      timestamp
+    };
+  });
+  
+  // Append readings to master dataset (handles bucketing, deduplication, etc.)
+  await appendReadingsToMaster(readingsWithTimestamps);
+  
+  // Rebuild cache for immediate access
+  await rebuildSortedCache();
+  
+  // Get stats
+  const stats = await getMasterDatasetStats();
+  
+  return {
+    success: true,
+    readingsAdded: readings.length,
+    totalReadings: stats.totalReadings,
+    dateRange: stats.dateRange
+  };
 }

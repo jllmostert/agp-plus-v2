@@ -127,6 +127,12 @@ export const parseCSV = (text) => {
       .map((line, index) => {
         const parts = line.split(';');
         
+        // Skip column header row (Date;Time;...)
+        if (parts[1] === 'Date' && parts[2] === 'Time') {
+          skippedRows++;
+          return null;
+        }
+        
         // Validate column count
         if (parts.length < 35) {
           skippedRows++;
@@ -169,6 +175,10 @@ export const parseCSV = (text) => {
     if (data.length === 0) {
       throw new Error(`No valid glucose data found. Checked ${dataLines.length} rows, all were invalid.`);
     }
+    
+    // Debug: Count rewind events
+    const rewindCount = data.filter(row => row.rewind).length;
+    console.log(`[CSV Parser] Found ${rewindCount} rewind events out of ${data.length} total rows`);
     
     // Calculate coverage
     const coverage = (validRows / (validRows + skippedRows) * 100).toFixed(1);

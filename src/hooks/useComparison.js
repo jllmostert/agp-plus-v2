@@ -91,9 +91,20 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
 
       // Verify we have valid data
       if (!comparison || !comparisonAGP || comparison.readingCount < 100) {
+        console.log('[useComparison] Invalid comparison data:', {
+          hasComparison: !!comparison,
+          hasAGP: !!comparisonAGP,
+          readingCount: comparison?.readingCount
+        });
         setComparisonData(null);
         return;
       }
+
+      console.log('[useComparison] ✅ Comparison successful:', {
+        readingCount: comparison.readingCount,
+        agpBins: comparisonAGP.length,
+        period: `${prevStartStr} to ${prevEndStr}`
+      });
 
       setComparisonData({
         comparison,
