@@ -309,7 +309,23 @@ export async function deleteProTimeData() {
  * @param {Array} readings - Parsed CSV readings
  */
 async function detectAndStoreEvents(readings) {
+  console.log('[detectAndStoreEvents] Called with readings:', readings.length);
+  console.log('[detectAndStoreEvents] First 5 readings:', readings.slice(0, 5));
+  console.log('[detectAndStoreEvents] Readings with alerts:', readings.filter(r => r.alert).map(r => ({
+    date: r.date,
+    time: r.time,
+    alert: r.alert
+  })));
+  console.log('[detectAndStoreEvents] Readings with rewind:', readings.filter(r => r.rewind === true).map(r => ({
+    date: r.date,
+    time: r.time,
+    rewind: r.rewind
+  })));
+  
+  // Import event storage functions
+  console.log('[detectAndStoreEvents] Importing eventStorage...');
   const { storeSensorChange, storeCartridgeChange } = await import('./eventStorage.js');
+  console.log('[detectAndStoreEvents] Event storage functions imported successfully');
   
   // Detect sensor changes from CSV alerts
   const sensorAlerts = readings
@@ -329,13 +345,18 @@ async function detectAndStoreEvents(readings) {
     .filter(event => !isNaN(event.timestamp.getTime()));
   
   // Store sensor changes
+  console.log(`[detectAndStoreEvents] Found ${sensorAlerts.length} sensor alerts to store`);
   for (const event of sensorAlerts) {
     try {
+      console.log('[detectAndStoreEvents] Storing sensor change:', event);
       await storeSensorChange(event.timestamp, event.alert, 'CSV Alert');
+      console.log('[detectAndStoreEvents] Successfully stored sensor change');
     } catch (err) {
       // Ignore duplicate events
       if (!err.message.includes('duplicate')) {
         console.warn('[detectAndStoreEvents] Failed to store sensor change:', err);
+      } else {
+        console.log('[detectAndStoreEvents] Skipped duplicate sensor event');
       }
     }
   }
@@ -351,13 +372,18 @@ async function detectAndStoreEvents(readings) {
     .filter(date => !isNaN(date.getTime()));
   
   // Store cartridge changes
+  console.log(`[detectAndStoreEvents] Found ${rewindEvents.length} rewind events to store`);
   for (const timestamp of rewindEvents) {
     try {
+      console.log('[detectAndStoreEvents] Storing cartridge change at:', timestamp);
       await storeCartridgeChange(timestamp, 'Rewind', 'CSV Upload');
+      console.log('[detectAndStoreEvents] Successfully stored cartridge change');
     } catch (err) {
       // Ignore duplicate events
       if (!err.message.includes('duplicate')) {
         console.warn('[detectAndStoreEvents] Failed to store cartridge change:', err);
+      } else {
+        console.log('[detectAndStoreEvents] Skipped duplicate cartridge event');
       }
     }
   }
@@ -430,10 +456,10 @@ function formatTimeFromTimestamp(timestamp) {
  */
 export async function uploadCSVToV3(csvText) {
   // Import CSV parser
-  const { parseCSVContent } = await import('../core/parsers.js');
+  const { parseCSV } = await import('../core/parsers.js');
   
   // Parse CSV to get readings array
-  const readings = parseCSVContent(csvText);
+  const readings = parseCSV(csvText);
   
   if (!readings || readings.length === 0) {
     throw new Error('No valid readings found in CSV');
@@ -467,6 +493,8 @@ export async function uploadCSVToV3(csvText) {
   await appendReadingsToMaster(readingsWithTimestamps);
   
   // Detect and store device events (sensor/cartridge changes)
+  console.log('[uploadCSVToV3] About to call detectAndStoreEvents with', readings.length, 'readings');
+  console.log('[uploadCSVToV3] Sample reading before detection:', readings[3]); // Row 3 has SENSOR CONNECTED
   await detectAndStoreEvents(readings);
   
   // Rebuild cache for immediate access
