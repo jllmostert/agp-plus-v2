@@ -2,36 +2,36 @@
 
 ## 📚 How to Use This Documentation
 
-This folder contains complete documentation for AGP+ v3.0 FUSION. Start with the PROJECT BRIEFING, then explore other docs as needed.
+This folder uses a **TIER 1-2-3 system** for efficient onboarding:
+- **TIER 1:** Quick start (read first, ~200 lines)
+- **TIER 2:** Status & technical docs (read when needed)
+- **TIER 3:** Complete reference (deep dive when required)
 
 ---
 
-## 🎯 START HERE: Project Briefing
+## 🎯 TIER 1: START HERE
 
-### [PROJECT_BRIEFING_V3_0.md](./PROJECT_BRIEFING_V3_0.md) ⭐ **THIS IS THE PROJECT BRIEFING**
+### [START_HERE.md](./START_HERE.md) ⭐ **READ THIS FIRST**
 
-**Purpose:** Complete handoff document for AI assistants and developers  
+**Purpose:** Quick overview to get you productive immediately  
+**Time:** 10-15 minutes  
 **Contains:**
-- Current project status (Phase 1-4)
-- Where we are in development (95% production ready)
-- What needs to be done next (Phase 4 verification)
-- Project structure & file organization
-- Server startup commands
-- Testing checklist
-- Git workflow
-- Quick command reference
+- Current status (95% production ready)
+- Critical server commands
+- Desktop Commander tooling (REQUIRED)
+- Immediate next steps
+- Known bugs & constraints
+- Links to TIER 2/3 docs
 
-**Time to read:** 20-30 minutes  
 **Essential for:** Everyone - AI assistants, developers, new contributors
 
-**This is THE document** that explains the entire project state. Everything else is either:
-- Reference material (metrics, device specs)
-- Deep-dive technical docs (architecture, decisions)
-- Historical records (archive)
-
 ---
 
-## 📊 Current Status Documents
+## 📊 TIER 2: Status & Technical Deep Dives
+
+**Read these when you need specific context:**
+
+### Status Documents
 
 ### [V3_PHASE_4_STATUS_CHECK.md](./V3_PHASE_4_STATUS_CHECK.md)
 Phase 4 implementation status - what's done vs. what needs verification
@@ -44,10 +44,19 @@ Quick reference index (deprecated - use PROJECT_BRIEFING instead)
 
 ---
 
-## 🏗️ Technical Deep Dives
+## 📖 TIER 3: Complete Reference
 
-### [V3_ARCHITECTURE.md](./V3_ARCHITECTURE.md)
-Complete system design:
+**Deep dive documentation - read when you need full context:**
+
+### [PROJECT_BRIEFING_V3_0.md](./PROJECT_BRIEFING_V3_0.md) - Complete Project Overview
+
+**Purpose:** Comprehensive handoff with all details (339 lines)  
+**Time:** 30-40 minutes  
+**Contains:** Everything from TIER 1 + complete testing checklist, full commands, deployment steps
+
+**When to read:** When you need complete context beyond quick start
+
+### Clinical Standards
 - IndexedDB schema with month-bucketing
 - Master dataset architecture
 - Hook orchestration layer

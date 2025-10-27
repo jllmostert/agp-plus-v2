@@ -1,9 +1,14 @@
-# AGP+ v3.0 - PROJECT BRIEFING
+# AGP+ v3.0 - PROJECT BRIEFING (TIER 3)
 
-**Document Type:** 📋 Project Briefing / Handoff voor Volgende Sessie  
+**Document Type:** 📋 TIER 3 - Complete Project Reference  
+**Read First:** START_HERE.md (TIER 1) for quick overview  
 **Datum:** 27 oktober 2025  
 **Versie:** v3.0.0 PRODUCTION READY  
 **Status:** Phase 1-3 Complete, Phase 4 Verification Pending
+
+---
+
+**⚠️ NOTE:** This is a comprehensive 339-line reference document. If you just need to get started, read `START_HERE.md` first (TIER 1). This document contains complete details for deep-dive understanding.
 
 ---
 
