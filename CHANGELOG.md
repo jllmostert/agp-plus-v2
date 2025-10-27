@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.0] - 2025-10-26 - 🎉 PRODUCTION RELEASE
+## [3.0.0] - 2025-10-27 - 🎉 PRODUCTION RELEASE
 
 **The birth of v3.0 - Complete rewrite with master dataset architecture**
 
@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Data Cleanup**: Selective deletion of month buckets with preview
 
 ### Fixed - Critical Production Bugs
+- **CSV Alert Detection** (Oct 27): Fixed parseCSV import error in uploadCSVToV3
+  - Corrected non-existent `parseCSVContent` to actual `parseCSV` function
+  - Sensor alert detection now works (SENSOR CONNECTED events)
+  - Cartridge change detection now works (Rewind events)
+  - Phase 4 direct CSV upload to V3 now fully functional
+  
 - **Comparison Date Calculations**: Fixed period-to-period comparison date ranges
   - Previous periods now calculate correctly relative to selected period
   - Eliminates "Invalid Date" errors in comparison views
