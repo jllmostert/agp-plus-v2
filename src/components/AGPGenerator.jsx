@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Activity, Download, ChevronDown, AlertCircle, Save, User } from 'lucide-react';
+import { debug } from '../utils/debug.js';
 
 // Custom hooks
 import { useCSVData } from '../hooks/useCSVData';
@@ -63,7 +64,7 @@ export default function AGPGenerator() {
   
   // DEBUG: Log what AGPGenerator receives from hook
   useEffect(() => {
-    console.log('🟢 [AGPGenerator] Sensors from hook:', {
+    debug.log('[AGPGenerator] Sensors from hook:', {
       count: sensors?.length || 0,
       isArray: Array.isArray(sensors),
       firstSensor: sensors?.[0],

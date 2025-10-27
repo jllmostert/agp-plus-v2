@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { debug } from '../utils/debug.js';
 import { 
   calculateOverallStats, 
   calculateHWVersionStats,
@@ -23,7 +24,7 @@ import {
 
 export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   // Debug: Check what we receive
-  console.log('🔴 [SensorHistoryModal] Received sensors:', {
+  debug.log('[SensorHistoryModal] Received sensors:', {
     count: sensors?.length || 0,
     firstSensor: sensors?.[0],
     lastSensor: sensors?.[sensors?.length - 1]
@@ -60,7 +61,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
       chronological_index: idx + 1 // 1-based index
     }));
     
-    console.log('🟢 [SensorHistoryModal] Chronological indexing:', {
+    debug.log('[SensorHistoryModal] Chronological indexing:', {
       total: withIndex.length,
       first: { id: withIndex[0]?.chronological_index, date: withIndex[0]?.start_date },
       last: { id: withIndex[withIndex.length - 1]?.chronological_index, date: withIndex[withIndex.length - 1]?.start_date }
@@ -82,7 +83,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   // Sorted sensors
   const sortedSensors = useMemo(() => {
     const sorted = sortSensors(filteredSensors, sortColumn, sortDirection);
-    console.log('🔴 [SensorHistoryModal] Sorted sensors:', sorted.length);
+    debug.log('[SensorHistoryModal] Sorted sensors:', sorted.length);
     return sorted;
   }, [filteredSensors, sortColumn, sortDirection]);
 

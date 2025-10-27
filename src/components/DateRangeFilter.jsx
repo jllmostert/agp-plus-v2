@@ -16,6 +16,7 @@
  */
 
 import React, { useState } from 'react';
+import { debug } from '../utils/debug.js';
 
 export function DateRangeFilter({ onRangeChange, currentRange }) {
   const [customMode, setCustomMode] = useState(false);
@@ -57,7 +58,7 @@ export function DateRangeFilter({ onRangeChange, currentRange }) {
     end.setHours(23, 59, 59, 999);  // End of day (just before midnight)
     
     // DEBUG: Log what we're sending
-    console.log('[DateRangeFilter] 🔍 Custom range selected:', {
+    debug.log('[DateRangeFilter] Custom range selected:', {
       startDateInput: startDate,
       endDateInput: endDate,
       startDateTime: start.toISOString(),

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Trash2, Database } from 'lucide-react';
+import { debug } from '../utils/debug.js';
 
 export default function DataManagementModal({ onClose, onDelete, currentDataStats }) {
   // State for date range selection
@@ -105,12 +106,12 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
         }
       });
       
-      console.log('[DataManagementModal] Deletion complete:', result);
+      debug.log('[DataManagementModal] Deletion complete:', result);
       alert(`Deleted: ${result.glucose} readings, ${result.proTime} workdays, ${result.cartridge} cartridge events`);
       onClose();
       
     } catch (err) {
-      console.error('[DataManagementModal] Delete failed:', err);
+      debug.error('[DataManagementModal] Delete failed:', err);
       alert('Deletion failed: ' + err.message);
     } finally {
       setIsDeleting(false);

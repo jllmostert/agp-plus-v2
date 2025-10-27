@@ -28,6 +28,7 @@
 
 import { useState, useEffect } from 'react';
 import initSqlJs from 'sql.js';
+import { debug } from '../utils/debug.js';
 
 // Database will be served from /public/sensor_database.db
 // (we need to copy it there first)
@@ -105,9 +106,8 @@ export function useSensorDatabase() {
         return sensor;
       });
 
-      console.log('🔵 [useSensorDatabase] SQL RESULT:', {
-        rowCount: rows.length,
-        sensorDataLength: sensorData.length,
+      debug.log('[useSensorDatabase] Loaded sensors from SQLite:', {
+        count: sensorData.length,
         firstSensor: sensorData[0],
         lastSensor: sensorData[sensorData.length - 1]
       });
@@ -115,7 +115,7 @@ export function useSensorDatabase() {
       setSensors(sensorData);
 
     } catch (err) {
-      console.error('Failed to load sensor database:', err);
+      debug.error('[useSensorDatabase] Failed to load sensor database:', err);
       setError(err.message);
     } finally {
       setIsLoading(false);

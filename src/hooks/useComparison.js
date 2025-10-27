@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { calculateMetrics, calculateAGP } from '../core/metrics-engine.js';
 import { CONFIG } from '../core/metrics-engine.js';
+import { debug } from '../utils/debug.js';
 
 /**
  * Convert Date object to YYYY/MM/DD string format
@@ -84,14 +85,14 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
 
       // Validate Date object
       if (isNaN(datasetMinDate.getTime())) {
-        console.error('[useComparison] Invalid date conversion:', dateRange.min);
+        debug.error('[useComparison] Invalid date conversion:', dateRange.min);
         setComparisonData(null);
         return;
       }
 
       // Check if previous period has sufficient data
       if (prevStart < datasetMinDate) {
-        console.log('[useComparison] Insufficient history:', {
+        debug.log('[useComparison] Insufficient history:', {
           prevStart: prevStart.toISOString(),
           datasetMin: datasetMinDate.toISOString(),
           currentPeriodDays,
@@ -101,7 +102,7 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
         return;
       }
 
-      console.log('[useComparison] ✅ Date range check passed:', {
+      debug.log('[useComparison] ✅ Date range check passed:', {
         prevStart: prevStart.toISOString(),
         prevEnd: prevEnd.toISOString(),
         datasetMin: datasetMinDate.toISOString(),
@@ -117,7 +118,7 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
 
       // Verify we have valid data
       if (!comparison || !comparisonAGP || comparison.readingCount < 100) {
-        console.log('[useComparison] Invalid comparison data:', {
+        debug.log('[useComparison] Invalid comparison data:', {
           hasComparison: !!comparison,
           hasAGP: !!comparisonAGP,
           readingCount: comparison?.readingCount
@@ -126,7 +127,7 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
         return;
       }
 
-      console.log('[useComparison] ✅ Comparison successful:', {
+      debug.log('[useComparison] ✅ Comparison successful:', {
         readingCount: comparison.readingCount,
         agpBins: comparisonAGP.length,
         period: `${prevStartStr} to ${prevEndStr}`
@@ -140,7 +141,7 @@ export function useComparison(csvData, startDate, endDate, dateRange) {
       });
 
     } catch (err) {
-      console.error('Comparison calculation failed:', err);
+      debug.error('[useComparison] Comparison calculation failed:', err);
       setComparisonData(null);
     }
   }, [
