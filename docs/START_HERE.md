@@ -1,207 +1,310 @@
-# AGP+ v3.0 - START HERE (TIER 1)
+# AGP+ v3.0 - HANDOFF & OPDRACHTEN (TIER 1)
 
-**Last Updated:** October 27, 2025  
-**Status:** 🟢 v3.0.0 PRODUCTION READY (95%)  
-**Next Action:** Phase 4 verification → testing → deploy
-
----
-
-## ⚡ Quick Status
-
-**What Just Happened (Oct 27):**
-- ✅ Version consolidated: v3.9 → v3.0.0 (all components consistent)
-- ✅ Documentation cleaned: 62 files renamed (V2_/V3_ prefixes)
-- ✅ Phase 4 mostly done: Direct CSV → IndexedDB working
-- ✅ Production utilities added: debug.js, constants.js, formatters.js
-
-**Where We Are:**
-- Phase 1-3: ✅ COMPLETE (storage, migration, UI)
-- Phase 4: ⚠️ 95% done (needs verification only)
+**Datum:** 27 oktober 2025  
+**Van:** Vorige sessie (Oct 27)  
+**Voor:** Nieuwe AI assistant  
+**Status:** 🟢 v3.0.0 PRODUCTION READY (95%)
 
 ---
 
-## 🚀 Critical Server Info
+## 📋 CONTEXT: Waar Staan We?
 
-### Start Server
+### Wat Net Gebeurd Is (Oct 27)
+- ✅ **Versie consolidatie compleet:** v3.9 → v3.0.0 (package.json, index.html, CHANGELOG consistent)
+- ✅ **Documentation cleanup:** 62 files hernoemd (V2_/V3_ prefixes)
+- ✅ **TIER 1-2-3 systeem:** Geïmplementeerd om AI assistants efficiënt te onboarden
+- ✅ **Phase 4 grotendeels klaar:** Direct CSV → IndexedDB werkt (uploadCSVToV3())
+- ✅ **Production utilities:** debug.js, constants.js, formatters.js toegevoegd
+
+### Huidige Status per Phase
+- **Phase 1** (Storage Schema): ✅ COMPLETE - IndexedDB v3, month-bucketing
+- **Phase 2** (Migration & Events): ✅ COMPLETE - 219 sensors, 3-tier detection
+- **Phase 3** (UI Integration): ✅ COMPLETE - DateRangeFilter, ProTime, exports
+- **Phase 4** (Direct CSV Upload): ⚠️ 95% DONE - **Needs verification only**
+
+### Data Status
+- 28,528 glucose readings in master dataset
+- 219 sensors uit SQLite database import
+- 4 month buckets actief (Juli-Okt 2025)
+- Hybrid v2/v3 mode voor backwards compatibility
+
+---
+
+## 🎯 OPDRACHTEN: Wat Moet Je Doen?
+
+### Opdracht 1: Documentation Audit (15 min) 📝
+**VOOR je aan code begint:**
+
+1. Lees `PROJECT_BRIEFING_V3_0.md` (TIER 3)
+   - Scan voor verouderde info sinds Oct 27
+   - Check of Phase 4 status klopt
+   - Update indien nodig
+
+2. Lees `V3_MASTER_INDEX.md`
+   - Verify file structure matcht huidige codebase
+   - Check of alle paths kloppen
+   - Update indien gewijzigd
+
+3. Update `START_HERE.md` (dit bestand)
+   - Nieuwe context toevoegen
+   - Status updaten
+   - Datum aanpassen
+
+**Deliverable:** Geüpdatete docs of confirmatie dat alles actueel is
+
+---
+
+### Opdracht 2: Phase 4 Verification (30-60 min) 🔍
+**Hoofdopdracht:**
+
+**Doel:** Verifieer dat CSV alert detection werkt voor sensor en cartridge events
+
+**Wat te testen:**
+
+1. **Sensor Alert Detection**
+   - Upload CSV met "SENSOR CONNECTED" alerts
+   - Verify events worden gedetecteerd uit CSV
+   - Check localStorage key: `agp-device-events`
+   - Confirm rode lijnen verschijnen in day profiles
+
+2. **Cartridge Change Detection**
+   - Upload CSV met "Rewind" alerts
+   - Verify cartridge events worden gedetecteerd
+   - Check event storage
+   - Confirm visualization werkt
+
+3. **3-Tier Detection Verificatie**
+   - Database (high confidence) → werkt (219 sensors)
+   - CSV alerts (medium confidence) → **VERIFY THIS**
+   - Gap analysis (low confidence) → werkt
+   - Priority order correct?
+
+**Waar te kijken:**
+- `/src/core/parsers.js` - CSV alert parsing
+- `/src/core/event-detection-engine.js` - Detection logic
+- `/src/hooks/useSensorDatabase.js` - 3-tier integration
+
+**Deliverable:** 
+- Test report met bevindingen
+- Bugs/issues gedocumenteerd
+- Update `V3_PHASE_4_STATUS_CHECK.md` met resultaten
+
+---
+
+### Opdracht 3: Production Checklist (indien Phase 4 OK)
+**Als verification succesvol:**
+
+1. Run complete testing checklist (zie PROJECT_BRIEFING_V3_0.md)
+2. Fix eventuele bugs
+3. Production build test
+4. Browser compatibility check
+5. Deployment prep (merge v3.0-dev → main)
+
+---
+
+## ⚙️ CONSTRAINTS & TOOLING
+
+### Kritieke Constraints (VERPLICHT)
+
+**1. Server Poort**
 ```bash
+# ALTIJD poort 3001 gebruiken (voor Chrome connector)
 cd /Users/jomostert/Documents/Projects/agp-plus
 export PATH="/opt/homebrew/bin:$PATH"
-lsof -ti:3001 | xargs kill -9  # Kill if port blocked
+lsof -ti:3001 | xargs kill -9  # Kill andere processen
 npx vite --port 3001
 
-# OR use the script:
+# OF gebruik script:
 ./start.sh
 ```
 
-**Always:** http://localhost:3001 (port 3001 for Chrome connector consistency)
+**Browser:** http://localhost:3001
 
-### Known Issues
-- **Port 3001 blocked?** → `lsof -ti:3001 | xargs kill -9`
-- **npm not found?** → Must export PATH first (Homebrew location)
-- **Git push hangs?** → Use `timeout_ms=10000` in Desktop Commander
-
----
-
-## 🛠️ Critical Tooling
-
-### Desktop Commander (REQUIRED)
-**ALL file operations MUST use Desktop Commander tools** - standard bash_tool cannot access `/Users/jomostert/...`
-
+**2. Desktop Commander (VERPLICHT)**
 ```bash
-# File operations
+# ALLE file operations via Desktop Commander
+# Standard bash_tool werkt NIET op /Users/jomostert/...
+
+# Files lezen:
 DC: read_file path="/Users/jomostert/Documents/Projects/agp-plus/package.json"
-DC: start_search path="/Users/.../src" pattern="uploadCSVToV3" searchType="content"
+
+# Zoeken:
+DC: start_search path="/Users/jomostert/Documents/Projects/agp-plus/src" 
+                pattern="uploadCSVToV3" searchType="content"
+
+# Editen:
 DC: edit_block file_path="..." old_string="..." new_string="..."
 
-# Git operations (needs timeout!)
-DC: start_process "cd /Users/.../agp-plus && git push origin v3.0-dev" timeout_ms=10000
+# Git (met timeout!):
+DC: start_process "cd /Users/jomostert/Documents/Projects/agp-plus && 
+                   git push origin v3.0-dev" timeout_ms=10000
 ```
 
-**Never use:** `bash_tool`, `cp`, `mv`, `cat` for project files (they won't work)
+**3. Project Pad**
+```
+/Users/jomostert/Documents/Projects/agp-plus/
+```
+Gebruik ALTIJD absolute paths, nooit relatief.
+
+**4. Git Workflow**
+- Branch: `v3.0-dev` (active development)
+- Commit messages: Descriptive, met rationale
+- Push: ALTIJD met `timeout_ms=10000`
 
 ---
 
-## 📁 Project Structure
+## 📁 PROJECT STRUCTURE
 
 ```
 /Users/jomostert/Documents/Projects/agp-plus/
-├── package.json              # v3.0.0
-├── index.html                # <title>AGP+ v3.0</title>
+├── package.json                    # v3.0.0
+├── index.html                      # <title>AGP+ v3.0</title>
+├── CHANGELOG.md                    # [3.0.0] release
+│
 ├── src/
-│   ├── components/           # React UI
-│   ├── hooks/                # React orchestration
-│   ├── storage/              # IndexedDB (masterDatasetStorage.js)
-│   ├── core/                 # Calculation engines
-│   └── utils/                # debug.js, constants.js, formatters.js
+│   ├── components/
+│   │   ├── AGPGenerator.jsx       # Main app, line 442: handleCSVLoad()
+│   │   ├── DayProfileCard.jsx     # Sensor change markers
+│   │   └── SensorHistoryModal.jsx # 219 sensors display
+│   │
+│   ├── hooks/
+│   │   ├── useMasterDataset.js    # V3 IndexedDB orchestration
+│   │   ├── useSensorDatabase.js   # SQLite sensor import
+│   │   └── useCSVData.js          # V2 fallback
+│   │
+│   ├── storage/
+│   │   ├── masterDatasetStorage.js # Core V3 storage
+│   │   │   - uploadCSVToV3()      # ✅ Direct CSV upload
+│   │   │   - appendReadingsToMaster()
+│   │   │   - rebuildSortedCache()
+│   │   └── export.js              # JSON/HTML exports
+│   │
+│   ├── core/
+│   │   ├── parsers.js             # ⚠️ CSV parsing - CHECK THIS
+│   │   ├── event-detection-engine.js # ⚠️ Event detection - CHECK THIS
+│   │   └── day-profile-engine.js  # Sensor visualization
+│   │
+│   └── utils/
+│       ├── debug.js               # Conditional logging
+│       ├── constants.js           # Clinical thresholds
+│       └── formatters.js          # Date/glucose/percent
+│
 └── docs/
-    ├── START_HERE.md         # ← YOU ARE HERE (TIER 1)
-    ├── PROJECT_BRIEFING_V3_0.md  # TIER 3: Complete reference
-    ├── V3_PHASE_4_STATUS_CHECK.md
-    └── V3_ARCHITECTURE.md
+    ├── START_HERE.md              # ← YOU ARE HERE (TIER 1)
+    ├── PROJECT_BRIEFING_V3_0.md   # TIER 3: Complete reference
+    ├── V3_MASTER_INDEX.md         # Quick file index
+    ├── V3_PHASE_4_STATUS_CHECK.md # Current status detail
+    └── V3_ARCHITECTURE.md         # System design
 ```
 
 ---
 
-## 🎯 Immediate Next Steps
+## 🐛 KNOWN ISSUES & BUGS
 
-### 1. Documentation Maintenance (15 min) 📝
-**BEFORE starting technical work:**
+### Geen Kritieke Bugs
+Alle core features werken. Phase 4 features zijn geïmplementeerd maar niet geverifieerd.
 
-- [ ] Read `PROJECT_BRIEFING_V3_0.md` (TIER 3) - scan for outdated info
-- [ ] Read `V3_MASTER_INDEX.md` - check if structure matches current codebase
-- [ ] Update both files if anything changed since Oct 27
-- [ ] Update THIS file (START_HERE.md) with any new critical info
+### Constraints (Not Bugs)
+- **Port 3001 soms blocked** → `lsof -ti:3001 | xargs kill -9`
+- **npm not found** → Export PATH first (Homebrew)
+- **Git push hangs** → Use timeout_ms=10000
+- **Hybrid v2/v3 mode active** → Intentional voor backwards compat
+- **Migration banner shows** → Correct behavior bij v2→v3 transition
 
-**Why this matters:** Documentation drift happens fast. Keep these docs accurate so the next session starts smoothly.
-
-### 2. Phase 4 Verification (30 min)
-   - Test CSV alert detection ("SENSOR CONNECTED" events)
-   - Test cartridge change detection ("Rewind" alerts)
-   - Verify 3-tier detection system integration
-   - See: V3_PHASE_4_STATUS_CHECK.md for details
-
-3. **Testing Checklist** (1 hour)
-   - V3 upload flow
-   - Sensor detection
-   - Data management
-   - Export functions
-   - See: PROJECT_BRIEFING_V3_0.md section "Testing Checklist"
-
-4. **Production Deployment**
-   - Build test
-   - Browser compatibility
-   - Merge v3.0-dev → main
-   - Tag v3.0.0
-   - Deploy to jenana.eu
+### Niet Geïmplementeerd (Optional)
+- Constants niet overal geïntegreerd in engines
+- Formatters niet overal gebruikt
+- Enkele console.logs nog aanwezig
 
 ---
 
-## ⚠️ Known Bugs & Constraints
+## 📚 REFERENCE DOCS (Lees Als Nodig)
 
-**Active Bugs:** None critical (Phase 4 features just need verification)
-
-**Constraints:**
-- **Hybrid v2/v3 mode active** - legacy localStorage still used for backwards compat
-- **Migration banner shows** on v2 → v3 transition (intentional)
-- **219 sensors** in database (from master_sensors.db SQLite import)
-- **28,528 glucose readings** in master dataset
-
-**Not Bugs (Working as Designed):**
-- Some console.logs still present (non-production cleanup deferred)
-- Constants not integrated in engines yet (optional enhancement)
-
----
-
-## 📚 TIER 2 Documents (Read When Needed)
-
-**Status & Planning:**
-- `V3_PHASE_4_STATUS_CHECK.md` - What's done vs. needs verification
-- `V3_SESSION_SUMMARY_OCT27.md` - Latest session summary
-
-**Technical Deep Dives:**
-- `V3_ARCHITECTURE.md` - System design, IndexedDB schema, algorithms
+### TIER 2: Status & Technical
+- `V3_PHASE_4_STATUS_CHECK.md` - Detailed Phase 4 status
+- `V3_ARCHITECTURE.md` - System design, IndexedDB schema
 - `V3_IMPLEMENTATION_GUIDE.md` - Phase-by-phase roadmap
+- `GIT_WORKFLOW.md` - Branch strategy
 
-**Git & Workflow:**
-- `GIT_WORKFLOW.md` - Branch strategy, commit conventions
-- `DOCUMENTATION_INDEX.md` - Navigation guide for all docs
-
----
-
-## 📖 TIER 3 Reference (Read If Time)
-
-**Complete Project Overview:**
-- `PROJECT_BRIEFING_V3_0.md` - Full handoff (339 lines, comprehensive)
-
-**Clinical Standards:**
-- `metric_definitions.md` - ADA/ATTD formulas (GMI, TIR, CV, etc.)
-- `minimed_780g_ref.md` - Device specifications
+### TIER 3: Complete Reference
+- `PROJECT_BRIEFING_V3_0.md` - Full handoff (339 lines)
+- `V3_MASTER_INDEX.md` - File structure index
+- `metric_definitions.md` - Clinical formulas (ADA/ATTD)
+- `minimed_780g_ref.md` - Device specs
 
 ---
 
-## 💡 Project Hygiene
+## ⚡ QUICK COMMANDS
 
-**File Naming Convention:**
-- `V2_*` = Deprecated v2.x docs (ignore)
-- `V3_*` = Active v3 docs (read these)
-- No prefix = Version-agnostic reference
+### Server Start/Stop
+```bash
+# Kill port 3001
+lsof -ti:3001 | xargs kill -9
 
-**Git Workflow:**
-- Branch: `v3.0-dev` (active development)
-- Main: Production-ready code
-- Always commit with descriptive messages
-- Always push with `timeout_ms=10000`
+# Start server
+cd /Users/jomostert/Documents/Projects/agp-plus
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+```
 
-**Documentation Updates:**
-- Update TIER 1 (this file) when project status changes
-- Update PROJECT_BRIEFING when architecture changes
-- Archive old docs with V3_* prefix
+### Desktop Commander Examples
+```bash
+# Read file
+DC: read_file path="/Users/jomostert/Documents/Projects/agp-plus/src/core/parsers.js"
 
----
+# Search for CSV alert parsing
+DC: start_search path="/Users/jomostert/Documents/Projects/agp-plus/src" 
+                pattern="SENSOR CONNECTED|Rewind" searchType="content"
 
-## 🔥 Hot Tips for AI Assistants
-
-1. **Start with documentation maintenance** - update docs BEFORE coding
-2. **Read PROJECT_BRIEFING & MASTER_INDEX** - optimize them if outdated
-3. **Use Desktop Commander** for all file ops (required!)
-4. **Check V3_PHASE_4_STATUS_CHECK.md** for current work status
-5. **Server PATH export is mandatory** for npm commands
-6. **Update THIS file** when project status changes significantly
+# Check git status
+DC: start_process "cd /Users/jomostert/Documents/Projects/agp-plus && git status"
+```
 
 ---
 
-## ✅ Success Criteria
+## ✅ SUCCESS CRITERIA
 
-**v3.0 Ready for Production When:**
-- [ ] Phase 4 verification complete (CSV alert/cartridge detection)
+**Sessie Succesvol Als:**
+- [ ] Documentation audit compleet (docs up-to-date)
+- [ ] Phase 4 verification compleet (sensor/cartridge detection working)
+- [ ] Test results gedocumenteerd
+- [ ] Bugs (if any) gefixed of gedocumenteerd
+- [ ] V3_PHASE_4_STATUS_CHECK.md updated
+- [ ] THIS file (START_HERE.md) updated met nieuwe context
+
+**Project Production Ready Als:**
+- [ ] Phase 4 verification passed
 - [ ] Testing checklist passed
 - [ ] No critical bugs
 - [ ] Merged to main + tagged v3.0.0
 
-**Current:** 95% ready - just needs Phase 4 verification! 🎉
+---
+
+## 💡 TIPS & REMINDERS
+
+**Voor AI Assistants:**
+1. **Start met opdracht 1** (documentation audit) - ALTIJD eerst
+2. **Gebruik Desktop Commander** - standard bash_tool werkt niet
+3. **Check V3_PHASE_4_STATUS_CHECK.md** voor details
+4. **Update THIS file** aan einde sessie met nieuwe context
+5. **Port 3001** is VERPLICHT (Chrome connector)
+6. **Absolute paths** ALTIJD gebruiken
+
+**Voor Jo:**
+- Start nieuwe chat → Geef START_HERE.md
+- Chat kan direct aan de slag met duidelijke opdrachten
+- Documentatie blijft up-to-date door opdracht 1
+- Phase 4 verification is hoofdfocus
 
 ---
 
+**Current Status:** 95% Production Ready  
 **Branch:** v3.0-dev  
-**Commit:** adb6174  
-**Deployment Target:** jenana.eu (pending)
+**Last Commit:** 2364a7f  
+**Deployment Target:** jenana.eu (pending Phase 4 verification)
+
+**Next Session Update This File With:**
+- New context (wat is er gebeurd)
+- Updated status (Phase 4 verified?)
+- New opdrachten (testing? deployment?)
+- Updated datum
