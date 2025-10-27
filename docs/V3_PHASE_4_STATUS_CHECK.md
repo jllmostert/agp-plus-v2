@@ -44,33 +44,35 @@ const handleCSVLoad = async (text) => {
 
 ---
 
-### ❓ 2. Sensor Alert Detection uit CSV
-**STATUS: UNKNOWN - NEEDS INVESTIGATION**
+### ✅ 2. Sensor Alert Detection uit CSV
+**STATUS: COMPLETE (Fixed Oct 27)**
 
-**Questions:**
-1. Is CSV alert column parsing already implemented?
-2. Are "SENSOR CONNECTED" events being detected?
-3. Is this integrated with the 3-tier detection system?
+**Implementation:**
+1. CSV parser extracts alert column (column 7)
+2. Looks for "SENSOR CONNECTED" or similar patterns
+3. `detectAndStoreEvents()` stores sensor alerts in localStorage
+4. `detectSensorChanges()` uses alerts as Priority 2 in 3-tier system
 
-**Where to Check:**
-- `src/core/parsers.js` - CSV parsing logic
-- `src/core/event-detection-engine.js` - Event detection
-- Alert columns in CareLink CSV format
+**Verified:**
+- CSV alerts properly parsed
+- Events stored in localStorage
+- 3-tier priority system working correctly
 
 ---
 
-### ❓ 3. Cartridge Change Detection
-**STATUS: UNKNOWN - NEEDS INVESTIGATION**
+### ✅ 3. Cartridge Change Detection
+**STATUS: COMPLETE & VERIFIED**
 
-**Questions:**
-1. Are "Rewind" alerts being detected from CSV?
-2. Is cartridge event storage implemented?
-3. Are cartridge changes displayed in day profiles?
+**Implementation:**
+1. "Rewind" events detected from CSV column 21
+2. `detectAndStoreEvents()` stores cartridge changes
+3. `getEventsForDate()` retrieves for day profiles
+4. Red dashed lines appear in visualization
 
-**Where to Check:**
-- Event detection in CSV parser
-- `localStorage` key for cartridge events
-- Day profile rendering for cartridge markers
+**Verified:**
+- Rewind detection working
+- Events persist in localStorage
+- Visualization correct
 
 ---
 

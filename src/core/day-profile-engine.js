@@ -277,8 +277,8 @@ function detectSensorChanges(allData, targetDate) {
   }
   
   // PRIORITY 3: Gap detection (medium confidence)
-  // Filter data for this specific day first
-  const dayData = allData.filter(row => row.date === targetDate);
+  // Filter data for this specific day first (reuse dayData from PRIORITY 2)
+  // dayData already declared above in PRIORITY 2
   
   if (dayData.length === 0) return [];
   

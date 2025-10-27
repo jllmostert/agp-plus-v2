@@ -430,10 +430,10 @@ function formatTimeFromTimestamp(timestamp) {
  */
 export async function uploadCSVToV3(csvText) {
   // Import CSV parser
-  const { parseCSV } = await import('../core/parsers.js');
+  const { parseCSVContent } = await import('../core/parsers.js');
   
   // Parse CSV to get readings array
-  const readings = parseCSV(csvText);
+  const readings = parseCSVContent(csvText);
   
   if (!readings || readings.length === 0) {
     throw new Error('No valid readings found in CSV');

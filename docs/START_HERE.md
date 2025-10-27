@@ -1,38 +1,38 @@
 # AGP+ v3.0 - HANDOFF & OPDRACHTEN (TIER 1)
 
-**Datum:** 27 oktober 2025  
-**Van:** Vorige sessie (Oct 27)  
+**Datum:** 27 oktober 2025 (Sessie 2)  
+**Van:** Vorige sessie (Oct 27 - Sessie 2)  
 **Voor:** Nieuwe AI assistant  
-**Status:** 🟢 v3.0.0 PRODUCTION READY (95%)
+**Status:** 🟡 v3.0.0 BUG FIX IN PROGRESS
 
 ---
 
-## 📋 CONTEXT: Waar Staan We?
+## 🔋 CONTEXT: Waar Staan We?
 
-### Wat Net Gebeurd Is (Oct 27)
-- ✅ **Versie consolidatie compleet:** v3.9 → v3.0.0 (package.json, index.html, CHANGELOG consistent)
-- ✅ **Documentation cleanup:** 62 files hernoemd (V2_/V3_ prefixes)
-- ✅ **TIER 1-2-3 systeem:** Geïmplementeerd om AI assistants efficiënt te onboarden
-- ✅ **Phase 4 grotendeels klaar:** Direct CSV → IndexedDB werkt (uploadCSVToV3())
-- ✅ **Production utilities:** debug.js, constants.js, formatters.js toegevoegd
+### Wat Net Gebeurd Is (Oct 27 - Sessie 2)
+- ✅ **Server fix:** Duplicate `const dayData` error opgelost
+- ✅ **Phase 4 verification:** CSV alert detection getest
+- ⚠️ **Bug gevonden:** Sensor/cartridge events worden NIET opgeslagen
+- 🔧 **Fix applied:** `parseCSV` → `parseCSVContent` in masterDatasetStorage.js
+- ❌ **Fix not tested yet:** Moet nog geverifieerd worden
 
 ### Huidige Status per Phase
-- **Phase 1** (Storage Schema): ✅ COMPLETE - IndexedDB v3, month-bucketing
-- **Phase 2** (Migration & Events): ✅ COMPLETE - 219 sensors, 3-tier detection
-- **Phase 3** (UI Integration): ✅ COMPLETE - DateRangeFilter, ProTime, exports
-- **Phase 4** (Direct CSV Upload): ⚠️ 95% DONE - **Needs verification only**
+- **Phase 1** (Storage Schema): ✅ COMPLETE
+- **Phase 2** (Migration & Events): ✅ COMPLETE  
+- **Phase 3** (UI Integration): ✅ COMPLETE
+- **Phase 4** (Direct CSV Upload): ⚠️ 99% DONE - **Bug fix in progress**
 
 ### Data Status
-- 28,528 glucose readings in master dataset
+- 28,649 glucose readings in master dataset
 - 219 sensors uit SQLite database import
 - 4 month buckets actief (Juli-Okt 2025)
-- Hybrid v2/v3 mode voor backwards compatibility
+- Device events: Bug in sensor alert detection
 
 ---
 
 ## 🎯 OPDRACHTEN: Wat Moet Je Doen?
 
-### Opdracht 1: Documentation Audit (15 min) 📝
+### Opdracht 1: Test Bug Fix (PRIORITEIT 1) 🔴
 **VOOR je aan code begint:**
 
 1. Lees `PROJECT_BRIEFING_V3_0.md` (TIER 3)
