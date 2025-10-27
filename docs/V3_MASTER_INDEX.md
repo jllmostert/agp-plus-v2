@@ -1,7 +1,7 @@
-# AGP+ MASTER INDEX V3.8
+# AGP+ MASTER INDEX V3.0
 
 **Quick Reference Guide**  
-**Version:** 3.8.3 - FUSION (Full Unified Storage Integration)  
+**Version:** 3.0.0 - FUSION (Full Unified Storage Integration)  
 **Last Updated:** October 27, 2025
 
 ---
@@ -29,7 +29,7 @@ http://localhost:3001
 **Always do this first:**
 
 1. Read latest handoff from `/docs/handoffs/` (most recent first)
-2. Read `/docs/PROJECT_BRIEFING_V3_8.md` (complete architecture)
+2. Read `/docs/PROJECT_BRIEFING_V3_0.md` (complete architecture)
 3. Read `/docs/V3_ARCHITECTURE.md` (technical details)
 4. Read this file (quick reference)
 

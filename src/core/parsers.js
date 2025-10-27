@@ -143,11 +143,15 @@ export const parseCSV = (text) => {
         const glucose = utils.parseDecimal(parts[34]);
         const hasGlucose = !isNaN(glucose);
         
+        // Parse alert field (column 7) for sensor events
+        const alert = parts[7]?.trim() || null;
+        const hasSensorAlert = alert && (alert.includes('SENSOR') || alert.includes('Sensor'));
+        
         // Skip rows that have neither glucose nor important events
         const hasRewind = parts[21]?.trim() === 'Rewind';
         const hasBolus = !isNaN(utils.parseDecimal(parts[13]));
         
-        if (!hasGlucose && !hasRewind && !hasBolus) {
+        if (!hasGlucose && !hasRewind && !hasBolus && !hasSensorAlert) {
           skippedRows++;
           return null;
         }
@@ -167,7 +171,8 @@ export const parseCSV = (text) => {
           bolus: utils.parseDecimal(parts[13]) || 0,
           bg: utils.parseDecimal(parts[5]) || null,
           carbs: utils.parseDecimal(parts[27]) || 0,
-          rewind: hasRewind
+          rewind: hasRewind,
+          alert: alert  // Alert field for sensor events
         };
       })
       .filter(row => row !== null);
@@ -179,6 +184,13 @@ export const parseCSV = (text) => {
     // Debug: Count rewind events
     const rewindCount = data.filter(row => row.rewind).length;
     console.log(`[CSV Parser] Found ${rewindCount} rewind events out of ${data.length} total rows`);
+    
+    // Debug: Count sensor alerts
+    const sensorAlerts = data.filter(row => row.alert && row.alert.includes('SENSOR'));
+    console.log(`[CSV Parser] Found ${sensorAlerts.length} sensor alerts:`);
+    sensorAlerts.forEach(alert => {
+      console.log(`  - ${alert.date} ${alert.time}: ${alert.alert}`);
+    });
     
     // Calculate coverage
     const coverage = (validRows / (validRows + skippedRows) * 100).toFixed(1);

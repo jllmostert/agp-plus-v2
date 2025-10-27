@@ -155,23 +155,15 @@ function generate24HourCurve(dayData) {
 }
 
 /**
- * Detect sensor changes within a specific day using 3-tier priority system
+ * Detect sensor changes within a specific day based on data gaps
  * 
- * DETECTION ALGORITHM (v3.0 with CSV alert support):
+ * DETECTION ALGORITHM:
  * 
- * Priority 1: Database matches (high confidence)
- *    - Direct match from SQLite sensor history (219+ sensors)
- *    - Most reliable source with lot numbers and metadata
- * 
- * Priority 2: CSV alerts (medium-high confidence)
- *    - "SENSOR CONNECTED" alerts from CareLink CSV export
- *    - Direct device-reported sensor events
- * 
- * Priority 3: Gap Detection (medium confidence)
+ * 1. Gap Detection:
  *    - Identifies periods with no glucose readings (>30 min)
  *    - Filters for "major gaps" (3-10 hours) that indicate sensor replacement
  * 
- * Gap Threshold Rationale:
+ * 2. Threshold Rationale:
  *    - >3 hours (180 min): Minimum gap for true sensor change
  *      * Includes 2h warmup period + placement/calibration time
  *      * Excludes brief sensor dropouts or BG meter calibrations
@@ -179,7 +171,7 @@ function generate24HourCurve(dayData) {
  *      * Excludes overnight gaps or multi-day data absences
  *      * Prevents false positives from extended sensor failures
  * 
- * Marker Placement:
+ * 3. Marker Placement:
  *    - Only marks gap START (when sensor goes offline)
  *    - No marker at gap END (data resuming is visually obvious in chart)
  *    - Skips midnight timestamps (00:00:00) to avoid day-boundary artifacts
@@ -235,48 +227,10 @@ function detectSensorChanges(allData, targetDate) {
       }
     }
   } catch (err) {
-    // Sensor database not available or error, fall through to CSV detection
+    // Sensor database not available or error, fall through to gap detection
   }
   
-  // PRIORITY 2: Check CSV alerts for "SENSOR CONNECTED" (medium-high confidence)
-  const dayData = allData.filter(row => row.date === targetDate);
-  
-  // Look for sensor alerts in CSV data
-  const sensorAlerts = dayData.filter(row => 
-    row.alert && 
-    (row.alert.includes('SENSOR CONNECTED') || 
-     row.alert.includes('Sensor Connected') ||
-     row.alert.includes('SENSOR'))
-  );
-  
-  if (sensorAlerts.length > 0) {
-    for (const alert of sensorAlerts) {
-      const timestamp = utils.parseDate(alert.date, alert.time);
-      const minuteOfDay = timestamp.getHours() * 60 + timestamp.getMinutes();
-      
-      // Skip midnight timestamps
-      if (minuteOfDay === 0) continue;
-      
-      allChanges.push({
-        timestamp,
-        date: targetDate,
-        minuteOfDay,
-        type: 'start',
-        confidence: 'medium-high',
-        source: 'csv-alert',
-        metadata: {
-          alert: alert.alert
-        }
-      });
-    }
-    
-    // If we found CSV alerts, return them
-    if (allChanges.length > 0) {
-      return allChanges;
-    }
-  }
-  
-  // PRIORITY 3: Gap detection (medium confidence)
+  // FALLBACK: Gap detection (medium confidence)
   // Filter data for this specific day first
   const dayData = allData.filter(row => row.date === targetDate);
   

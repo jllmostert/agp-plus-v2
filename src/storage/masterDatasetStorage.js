@@ -311,6 +311,35 @@ export async function deleteProTimeData() {
 async function detectAndStoreEvents(readings) {
   const { storeSensorChange, storeCartridgeChange } = await import('./eventStorage.js');
   
+  // Detect sensor changes from CSV alerts
+  const sensorAlerts = readings
+    .filter(row => row.alert && 
+      (row.alert.includes('SENSOR CONNECTED') || 
+       row.alert.includes('Sensor Connected') ||
+       row.alert.includes('SENSOR')) && 
+      row.date && row.time)
+    .map(row => {
+      const [year, month, day] = row.date.split('/').map(Number);
+      const [hours, minutes, seconds] = row.time.split(':').map(Number);
+      return {
+        timestamp: new Date(year, month - 1, day, hours, minutes, seconds),
+        alert: row.alert
+      };
+    })
+    .filter(event => !isNaN(event.timestamp.getTime()));
+  
+  // Store sensor changes
+  for (const event of sensorAlerts) {
+    try {
+      await storeSensorChange(event.timestamp, event.alert, 'CSV Alert');
+    } catch (err) {
+      // Ignore duplicate events
+      if (!err.message.includes('duplicate')) {
+        console.warn('[detectAndStoreEvents] Failed to store sensor change:', err);
+      }
+    }
+  }
+  
   // Detect cartridge changes (Rewind events)
   const rewindEvents = readings
     .filter(row => row.rewind === true && row.date && row.time)
@@ -333,7 +362,7 @@ async function detectAndStoreEvents(readings) {
     }
   }
   
-  console.log(`[detectAndStoreEvents] Detected ${rewindEvents.length} cartridge changes`);
+  console.log(`[detectAndStoreEvents] Detected ${sensorAlerts.length} sensor changes, ${rewindEvents.length} cartridge changes`);
 }
 
 /**
