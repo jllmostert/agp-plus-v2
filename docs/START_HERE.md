@@ -84,20 +84,30 @@ DC: start_process "cd /Users/.../agp-plus && git push origin v3.0-dev" timeout_m
 
 ## 🎯 Immediate Next Steps
 
-1. **Phase 4 Verification** (30 min)
+### 1. Documentation Maintenance (15 min) 📝
+**BEFORE starting technical work:**
+
+- [ ] Read `PROJECT_BRIEFING_V3_0.md` (TIER 3) - scan for outdated info
+- [ ] Read `V3_MASTER_INDEX.md` - check if structure matches current codebase
+- [ ] Update both files if anything changed since Oct 27
+- [ ] Update THIS file (START_HERE.md) with any new critical info
+
+**Why this matters:** Documentation drift happens fast. Keep these docs accurate so the next session starts smoothly.
+
+### 2. Phase 4 Verification (30 min)
    - Test CSV alert detection ("SENSOR CONNECTED" events)
    - Test cartridge change detection ("Rewind" alerts)
    - Verify 3-tier detection system integration
    - See: V3_PHASE_4_STATUS_CHECK.md for details
 
-2. **Testing Checklist** (1 hour)
+3. **Testing Checklist** (1 hour)
    - V3 upload flow
    - Sensor detection
    - Data management
    - Export functions
    - See: PROJECT_BRIEFING_V3_0.md section "Testing Checklist"
 
-3. **Production Deployment**
+4. **Production Deployment**
    - Build test
    - Browser compatibility
    - Merge v3.0-dev → main
@@ -171,11 +181,12 @@ DC: start_process "cd /Users/.../agp-plus && git push origin v3.0-dev" timeout_m
 
 ## 🔥 Hot Tips for AI Assistants
 
-1. **Read this file first** - don't dive into 339-line documents
-2. **Use Desktop Commander** for all file ops (required!)
-3. **Check V3_PHASE_4_STATUS_CHECK.md** for current work status
-4. **Only read PROJECT_BRIEFING** if you need complete context
+1. **Start with documentation maintenance** - update docs BEFORE coding
+2. **Read PROJECT_BRIEFING & MASTER_INDEX** - optimize them if outdated
+3. **Use Desktop Commander** for all file ops (required!)
+4. **Check V3_PHASE_4_STATUS_CHECK.md** for current work status
 5. **Server PATH export is mandatory** for npm commands
+6. **Update THIS file** when project status changes significantly
 
 ---
 
