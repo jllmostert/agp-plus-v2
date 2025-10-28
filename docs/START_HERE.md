@@ -401,8 +401,36 @@ DC: start_process "cd /Users/jomostert/Documents/Projects/agp-plus &&
 ---
 
 **Current Status:** 🟢 VERIFIED & PRODUCTION READY  
-**Branch:** v3.0-dev  
+**Branch:** v3.0-dev (production) | v3.1-insulin (feature development)  
 **Last Test:** Oct 28, 2025 - Real 7-day CSV  
 **Deployment Target:** jenana.eu (ready when you are)
 
-**Next Session:** Read `HANDOFF_2025_10_28_VERIFIED.md` for complete verification details 📖
+---
+
+## 🆕 v3.1 "INSULIN INSIGHTS" - IN DEVELOPMENT
+
+**Branch:** v3.1-insulin ✅  
+**Status:** 📋 DOCUMENTATION COMPLETE - Ready for Implementation
+
+### Major Discovery (Oct 28, 2025)
+**CSV Section 2 contains accurate TDD data!**
+- "Aggregated Auto Insulin Data" = autobasaal + micro-bolussen
+- Verified against CareLink PDF: 98.7% match ✅
+- Previous "unreliable" warning was incorrect
+
+### v3.1 Roadmap (4 Phases)
+- **Phase 0:** TDD Metrics ← IN PROGRESS
+- **Phase 1:** Bolus Visualization
+- **Phase 2:** Auto/Meal Ratio Analysis  
+- **Phase 3:** Advanced Features (IOB)
+
+### v3.1 Documentation
+**Read for v3.1 development:**
+- `HANDOFF_V3_1_INSULIN_INSIGHTS.md` - Master roadmap
+- `V3_1_PHASE_0_TDD_METRICS.md` - Implementation guide
+- `minimed_780g_ref.md` - Updated with Section 2 details
+
+---
+
+**Next Session (v3.0):** Read `HANDOFF_2025_10_28_VERIFIED.md` for complete verification details 📖  
+**Next Session (v3.1):** Read `HANDOFF_V3_1_INSULIN_INSIGHTS.md` to continue insulin tracking development 💉
