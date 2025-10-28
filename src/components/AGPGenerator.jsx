@@ -35,6 +35,7 @@ import SensorHistoryModal from './SensorHistoryModal';
 import DataManagementModal from './DataManagementModal';
 import { MigrationBanner } from './MigrationBanner';
 import { DateRangeFilter } from './DateRangeFilter';
+import DebugPanel from './DebugPanel';
 
 /**
  * AGPGenerator - Main application container
@@ -753,6 +754,10 @@ export default function AGPGenerator() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+      
+      {/* Debug Panel - Hidden debug tools (top-right bug icon) */}
+      <DebugPanel />
+      
       <div className="app-container">
         
         {/* Migration Notice (if applicable) */}
