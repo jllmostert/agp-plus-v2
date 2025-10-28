@@ -143,8 +143,8 @@ export const parseCSV = (text) => {
         const glucose = utils.parseDecimal(parts[34]);
         const hasGlucose = !isNaN(glucose);
         
-        // Parse alert field (column 7) for sensor events
-        const alert = parts[7]?.trim() || null;
+        // Parse alert field (column 18) for sensor events
+        const alert = parts[18]?.trim() || null;
         const hasSensorAlert = alert && (alert.includes('SENSOR') || alert.includes('Sensor'));
         
         // Skip rows that have neither glucose nor important events

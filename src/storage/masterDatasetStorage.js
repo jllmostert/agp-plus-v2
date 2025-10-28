@@ -306,89 +306,119 @@ export async function deleteProTimeData() {
 
 /**
  * Detect and store device events from CSV readings
+ * Uses intelligent clustering to deduplicate events
  * @param {Array} readings - Parsed CSV readings
  */
 async function detectAndStoreEvents(readings) {
   console.log('[detectAndStoreEvents] Called with readings:', readings.length);
-  console.log('[detectAndStoreEvents] First 5 readings:', readings.slice(0, 5));
-  console.log('[detectAndStoreEvents] Readings with alerts:', readings.filter(r => r.alert).map(r => ({
-    date: r.date,
-    time: r.time,
-    alert: r.alert
-  })));
-  console.log('[detectAndStoreEvents] Readings with rewind:', readings.filter(r => r.rewind === true).map(r => ({
-    date: r.date,
-    time: r.time,
-    rewind: r.rewind
-  })));
   
-  // Import event storage functions
-  console.log('[detectAndStoreEvents] Importing eventStorage...');
+  // Import dependencies
   const { storeSensorChange, storeCartridgeChange } = await import('./eventStorage.js');
-  console.log('[detectAndStoreEvents] Event storage functions imported successfully');
+  const { deduplicateSensorEvents, clusterEventsByTime, getRepresentativeEvent } = 
+    await import('../utils/eventClustering.js');
   
-  // Detect sensor changes from CSV alerts
-  const sensorAlerts = readings
-    .filter(row => row.alert && 
-      (row.alert.includes('SENSOR CONNECTED') || 
-       row.alert.includes('Sensor Connected') ||
-       row.alert.includes('SENSOR')) && 
-      row.date && row.time)
+  // ===== SENSOR CHANGE DETECTION =====
+  
+  // Extract all sensor alerts from CSV
+  const allSensorAlerts = readings
+    .filter(row => row.alert && row.date && row.time)
     .map(row => {
       const [year, month, day] = row.date.split('/').map(Number);
       const [hours, minutes, seconds] = row.time.split(':').map(Number);
       return {
         timestamp: new Date(year, month - 1, day, hours, minutes, seconds),
+        date: row.date,
+        time: row.time,
         alert: row.alert
       };
     })
     .filter(event => !isNaN(event.timestamp.getTime()));
   
-  // Store sensor changes
-  console.log(`[detectAndStoreEvents] Found ${sensorAlerts.length} sensor alerts to store`);
-  for (const event of sensorAlerts) {
+  console.log(`[detectAndStoreEvents] Found ${allSensorAlerts.length} total alerts in CSV`);
+  
+  // Deduplicate using intelligent clustering
+  const { confirmedEvents, ambiguousGroups } = deduplicateSensorEvents(allSensorAlerts);
+  
+  console.log(`[detectAndStoreEvents] After deduplication:`, {
+    confirmed: confirmedEvents.length,
+    ambiguous: ambiguousGroups.length
+  });
+  
+  // Store confirmed sensor changes
+  for (const event of confirmedEvents) {
     try {
-      console.log('[detectAndStoreEvents] Storing sensor change:', event);
       await storeSensorChange(event.timestamp, event.alert, 'CSV Alert');
-      console.log('[detectAndStoreEvents] Successfully stored sensor change');
+      console.log(`[detectAndStoreEvents] ✓ Stored sensor change: ${event.date} ${event.time}`);
     } catch (err) {
-      // Ignore duplicate events
       if (!err.message.includes('duplicate')) {
         console.warn('[detectAndStoreEvents] Failed to store sensor change:', err);
-      } else {
-        console.log('[detectAndStoreEvents] Skipped duplicate sensor event');
       }
     }
   }
   
-  // Detect cartridge changes (Rewind events)
+  // Handle ambiguous groups (>60 min apart on same day)
+  if (ambiguousGroups.length > 0) {
+    console.warn('[detectAndStoreEvents] ⚠️ Ambiguous sensor events detected:', ambiguousGroups);
+    
+    // For now, treat each ambiguous group as one sensor change (use earliest event)
+    // TODO: Add user prompt UI to ask for confirmation
+    for (const group of ambiguousGroups) {
+      const representative = getRepresentativeEvent(group.events);
+      
+      try {
+        await storeSensorChange(representative.timestamp, representative.alert, 'CSV Alert (Clustered)');
+        console.log(`[detectAndStoreEvents] ✓ Stored ambiguous sensor change (used earliest): ${representative.date} ${representative.time}`);
+        console.log(`[detectAndStoreEvents]   Note: ${group.events.length} events on ${group.date} spanning ${group.timeSpan.toFixed(1)} min`);
+      } catch (err) {
+        if (!err.message.includes('duplicate')) {
+          console.warn('[detectAndStoreEvents] Failed to store ambiguous sensor change:', err);
+        }
+      }
+    }
+  }
+  
+  // ===== CARTRIDGE CHANGE DETECTION =====
+  
+  // Extract rewind events
   const rewindEvents = readings
     .filter(row => row.rewind === true && row.date && row.time)
     .map(row => {
       const [year, month, day] = row.date.split('/').map(Number);
       const [hours, minutes, seconds] = row.time.split(':').map(Number);
-      return new Date(year, month - 1, day, hours, minutes, seconds);
+      return {
+        timestamp: new Date(year, month - 1, day, hours, minutes, seconds),
+        date: row.date,
+        time: row.time
+      };
     })
-    .filter(date => !isNaN(date.getTime()));
+    .filter(event => !isNaN(event.timestamp.getTime()));
+  
+  console.log(`[detectAndStoreEvents] Found ${rewindEvents.length} rewind events`);
+  
+  // Cluster cartridge changes (unlikely but possible to have multiple same day)
+  const cartridgeClusters = clusterEventsByTime(rewindEvents, 60);
+  
+  console.log(`[detectAndStoreEvents] After clustering: ${cartridgeClusters.length} cartridge changes`);
   
   // Store cartridge changes
-  console.log(`[detectAndStoreEvents] Found ${rewindEvents.length} rewind events to store`);
-  for (const timestamp of rewindEvents) {
+  for (const cluster of cartridgeClusters) {
+    const representative = getRepresentativeEvent(cluster);
+    
     try {
-      console.log('[detectAndStoreEvents] Storing cartridge change at:', timestamp);
-      await storeCartridgeChange(timestamp, 'Rewind', 'CSV Upload');
-      console.log('[detectAndStoreEvents] Successfully stored cartridge change');
+      await storeCartridgeChange(representative.timestamp, 'Rewind', 'CSV Upload');
+      console.log(`[detectAndStoreEvents] ✓ Stored cartridge change: ${representative.date} ${representative.time}`);
+      
+      if (cluster.length > 1) {
+        console.log(`[detectAndStoreEvents]   Note: Clustered ${cluster.length} rewind events`);
+      }
     } catch (err) {
-      // Ignore duplicate events
       if (!err.message.includes('duplicate')) {
         console.warn('[detectAndStoreEvents] Failed to store cartridge change:', err);
-      } else {
-        console.log('[detectAndStoreEvents] Skipped duplicate cartridge event');
       }
     }
   }
   
-  console.log(`[detectAndStoreEvents] Detected ${sensorAlerts.length} sensor changes, ${rewindEvents.length} cartridge changes`);
+  console.log(`[detectAndStoreEvents] ✅ Complete: ${confirmedEvents.length + ambiguousGroups.length} sensor changes, ${cartridgeClusters.length} cartridge changes`);
 }
 
 /**

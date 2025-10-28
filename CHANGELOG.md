@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.0] - 2025-10-27 - 🎉 PRODUCTION RELEASE
+## [3.0.0] - 2025-10-28 - 🎉 VERIFIED & PRODUCTION RELEASE
 
 **The birth of v3.0 - Complete rewrite with master dataset architecture**
+**Verification:** Tested with real-world 7-day CSV data (Oct 28, 2025)
 
 ### Major Features (v2 → v3)
 - **Master Dataset Architecture**: Multi-upload system with persistent IndexedDB storage
@@ -22,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Data Cleanup**: Selective deletion of month buckets with preview
 
 ### Fixed - Critical Production Bugs
+- **Sensor Detection Verification** (Oct 28): Verified with real 7-day CSV
+  - Tested: `Jo Mostert 28-10-2025.csv` (Oct 21-28, 2025)
+  - Confirmed: SENSOR CONNECTED + CHANGE SENSOR correctly detected
+  - Confirmed: LOST SENSOR SIGNAL correctly ignored (not counted as sensor change)
+  - Confirmed: SENSOR UPDATING correctly ignored (warmup period)
+  - Confirmed: Clustering works (2 alerts within 60 min → 1 sensor change event)
+  - Confirmed: Day profiles show red lines at correct sensor change times
+  - Created: Interactive debug tool (test-sensor-detection.html) for future diagnostics
 - **CSV Alert Detection** (Oct 27): Fixed parseCSV import error in uploadCSVToV3
   - Corrected non-existent `parseCSVContent` to actual `parseCSV` function
   - Sensor alert detection now works (SENSOR CONNECTED events)

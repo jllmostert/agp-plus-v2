@@ -30,35 +30,215 @@ The **MiniMed 780G** is Medtronic's advanced hybrid closed-loop insulin pump sys
 
 ## CareLink CSV Export Format
 
-### File Structure
+### File Structure Overview
 
-**Filename pattern**: `CareLink-Export-[PatientID]-[Date].csv`
+**Filename pattern**: `Jo Mostert DD-MM-YYYY.csv` (date-stamped exports)
 
-### Key Columns
+CareLink CSV exports have a **multi-section architecture** with three distinct data sections, each separated by a `-------` divider line. Each section has its own column headers and data structure.
 
-1. **Index** - Sequential reading number
-2. **Date** - YYYY-MM-DD format
-3. **Time** - HH:MM:SS format
-4. **Timestamp** - ISO 8601 combined datetime
-5. **New Device Time** - Pump clock time
-6. **BG Reading (mg/dL)** - CGM glucose value
-7. **Linked BG Meter Value (mg/dL)** - Fingerstick calibrations
-8. **Temp Basal Amount (U/h)** - Temporary basal rate
-9. **Temp Basal Type** - Manual or SmartGuard
-10. **Temp Basal Duration (hh:mm:ss)** - How long temp basal runs
-11. **Bolus Type** - Normal, Square, Dual
-12. **Bolus Volume Selected (U)** - User-requested bolus
-13. **Bolus Volume Delivered (U)** - Actually delivered
-14. **Programmed Basal Rate (U/h)** - Base basal pattern
-15. **Active Insulin (U)** - IOB calculated by pump
-16. **Sensor Glucose (mg/dL)** - Same as BG Reading
-17. **ISIG Value** - Raw sensor current
+### CSV Architecture: Three-Section Format
 
-### Sample Row
-```csv
-Index,Date,Time,Timestamp,New Device Time,BG Reading (mg/dL),...
-1,2024-10-15,00:00:00,2024-10-15T00:00:00,2024-10-15T00:00:00,142,...
 ```
+┌─────────────────────────────────────────────────────────┐
+│ HEADER (Lines 1-5)                                      │
+│ - Patient demographics                                  │
+│ - Device info (MiniMed 780G serial, firmware)          │
+│ - Date range                                            │
+└─────────────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────┐
+│ SECTION 1: Device Events & Pump Data (~Line 6+)        │
+│ Divider: -------; MiniMed 780G MMT-1886; Pump; ...     │
+│                                                         │
+│ Contains:                                               │
+│ - Basal rates (programmed pattern)                     │
+│ - Bolus data (wizard, manual, closed-loop)             │
+│ - Alerts & notifications                                │
+│ - Sensor events (SENSOR CONNECTED, CHANGE SENSOR)      │
+│ - Cartridge events (Rewind, Fill)                      │
+│ - Suspend states (USER_SUSPEND, ALARM_SUSPEND)         │
+│ - SmartGuard alerts (BG REQUIRED, HIGH/LOW)            │
+│                                                         │
+│ Key for AGP+: Event detection, sensor changes          │
+└─────────────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────┐
+│ SECTION 2: Aggregated Daily Insulin (~Line 458+)       │
+│ Divider: -------                                        │
+│                                                         │
+│ Contains:                                               │
+│ - Daily insulin delivery totals                         │
+│ - One row per day                                       │
+│ - Closed-loop auto-delivery statistics                 │
+│                                                         │
+│ Note: AGP+ does not use this section (see TDD warning) │
+└─────────────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────┐
+│ SECTION 3: Sensor Glucose Readings (~Line 470+)        │
+│ Divider: -------                                        │
+│                                                         │
+│ Contains:                                               │
+│ - 5-minute CGM readings (288/day when complete)        │
+│ - Sensor Glucose (mg/dL) values                        │
+│ - ISIG values (raw sensor current)                     │
+│ - Day start/end markers                                 │
+│                                                         │
+│ Key for AGP+: Core glucose data for all calculations   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Section 1: Device Events & Pump Data
+
+**Header format** (line 6):
+```
+-------;MiniMed 780G MMT-1886;Pump;NG4114235H;-------
+Index;Date;Time;New Device Time;BG Source;BG Reading (mg/dL);...
+```
+
+**Key Columns** (52+ columns total):
+1. **Index** - Sequential event number (e.g., `0,00000`)
+2. **Date** - Format: `YYYY/MM/DD` (e.g., `2025/10/28`)
+3. **Time** - Format: `HH:MM:SS` (e.g., `06:24:38`)
+4. **Basal Rate (U/h)** - Programmed basal pattern
+5. **Temp Basal Amount** - SmartGuard or manual temp basal
+6. **Bolus Type** - Normal, Dual, Square
+7. **Bolus Volume Delivered (U)** - Actual insulin delivered
+8. **Prime Type** - Cannula Fill, Tubing Fill
+9. **Prime Volume Delivered (U)** - Priming insulin amounts
+10. **Alert** - System alerts (see Alert Types below)
+11. **Suspend** - Pump suspend states
+12. **Rewind** - Cartridge change indicator (boolean)
+13. **BWZ fields** - Bolus Wizard calculations
+14. **Sensor Calibration BG (mg/dL)** - Fingerstick calibrations
+15. **Sensor Exception** - Sensor error states
+16. **Sensor State** - Current sensor status
+
+**Alert Types (Column: Alert)**:
+- `SENSOR CONNECTED` - New sensor paired
+- `CHANGE SENSOR` - Prompt to replace sensor
+- `LOST SENSOR SIGNAL` - Communication lost
+- `SENSOR UPDATING ALERT` - Sensor warming up
+- `ALERT ON HIGH` - Glucose above threshold
+- `ALERT ON LOW` - Glucose below threshold
+- `SMARTGUARD BG REQUIRED` - Calibration needed
+- `SMARTGUARD MAXIMUM DELIVERY TIMEOUT` - Safety limit
+- `SET CHANGE REMINDER` - Infusion set due
+- `INSERT BATTERY ALARM, DELIVERY STOPPED` - Battery dead
+
+**Suspend States (Column: Suspend)**:
+- `USER_SUSPEND` - Manually suspended
+- `ALARM_SUSPEND` - System safety suspend
+- `NOTSEATED_SUSPEND` - Reservoir not properly seated
+- `NORMAL_PUMPING` - Active insulin delivery
+
+**Sensor Event Detection Pattern** (Critical for AGP+):
+
+A single sensor change generates **multiple timestamp entries** clustered in time:
+
+```csv
+170;2025/10/25;07:31:42;;;;;;;;;;;;;CHANGE SENSOR;;...
+171;2025/10/25;07:31:19;;;;;;;;;;;;CHANGE SENSOR: tone and vibration;;;...
+167;2025/10/25;08:05:22;;;;;;;;;;;;;LOST SENSOR SIGNAL;;...
+168;2025/10/25;08:05:00;;;;;;;;;;;;LOST SENSOR SIGNAL: tone and vibration;;;...
+165;2025/10/25;08:11:32;;;;;;;;;;;;;SENSOR CONNECTED;;...
+166;2025/10/25;08:11:27;;;;;;;;;;;;SENSOR CONNECTED: tone and vibration;;;...
+```
+
+**This represents ONE sensor change**, not six. Timestamps span ~40 minutes during sensor replacement and warm-up.
+
+**Cartridge Change Detection Pattern**:
+
+A single cartridge change also generates multiple entries:
+
+```csv
+6;2025/10/28;06:08:07;;;;;0;;;;;;;;;;Rewind;;;;...
+5;2025/10/28;06:22:00;;;;;;;;;;;;;Tubing Fill;10,3597;260,65;;;;...
+4;2025/10/28;06:22:14;;;;;;;;;;;;;Cannula Fill;0,3;260,35;;;;...
+8;2025/10/28;06:07:48;;;;;0;;;;;;;;;NOTSEATED_SUSPEND;;;;;...
+3;2025/10/28;06:22:14;;;;;;;;;;;;;;NORMAL_PUMPING;;;;;...
+```
+
+**Detection logic**: `Rewind=true` indicates cartridge change start. Subsequent Fill events and pump state changes are part of the same event.
+
+### Section 2: Aggregated Daily Insulin
+
+**Header format** (~line 458):
+```
+-------
+Index;Date;Time;...;Bolus Type;Bolus Volume Delivered (U);...
+```
+
+**Contains**: Daily insulin totals, one row per date.
+
+**AGP+ Usage**: ⚠️ **NOT USED** - See "Basal Rate Trap" section for why TDD calculations are unreliable from CSV data.
+
+### Section 3: Sensor Glucose Readings
+
+**Header format** (~line 470):
+```
+-------
+Index;Date;Time;New Device Time;BG Source;BG Reading (mg/dL);...;Sensor Glucose (mg/dL);ISIG Value;...
+```
+
+**Key Columns**:
+1. **Index** - Sequential reading number
+2. **Date** - `YYYY/MM/DD` format
+3. **Time** - `HH:MM:SS` format  
+4. **Sensor Glucose (mg/dL)** - CGM glucose value (40-400 range)
+5. **ISIG Value** - Raw sensor current (diagnostic)
+6. **Event Marker** - Special markers (day start/end)
+
+**Data Characteristics**:
+- 5-minute reading intervals (288 readings/day at 100% coverage)
+- Gaps indicate sensor warm-up, signal loss, or sensor changes
+- Day markers: `Start of the day` / `End of the day` entries
+
+**Sample Rows**:
+```csv
+458;2025/10/28;06:27:34;;;;;;;;;;;;;;;;;;;;;;;;113;19,01;;...
+828;2025/10/27;00:00:00;;;;;;;;;;;;;;;;;;;;;;;;;;End of the day;...
+829;2025/10/27;00:00:00;;;;;;;;;;;;;;;;;;;;;;;;;;Start of the day;...
+```
+
+**AGP+ Usage**: This is the **primary data source** for all glucose-based metrics:
+- Time in Range (TIR)
+- Coefficient of Variation (CV)
+- Glucose Management Indicator (GMI)
+- Day profiles
+- Period comparisons
+
+### Sample File Structure (Actual Line Numbers)
+
+**Example from 7-day export** (2,891 total lines):
+
+```
+Lines 1-5:    CSV header (patient info, date range)
+Line 6:       Section 1 divider + header
+Lines 7-457:  Section 1 data (device events)
+Line 458:     Section 2 divider + header  
+Lines 459-469: Section 2 data (daily insulin)
+Line 470:     Section 3 divider + header
+Lines 471-2891: Section 3 data (glucose readings)
+```
+
+### Parsing Considerations for AGP+
+
+**Critical Rules**:
+
+1. **Multi-section awareness**: Parser must handle three distinct data structures
+2. **Section detection**: Use `-------` as section delimiter
+3. **Header skipping**: Each section has its own header row after divider
+4. **Event clustering**: Multiple timestamps can represent single events
+5. **Data validation**: Section 3 glucose values must be 40-400 mg/dL
+6. **Gap detection**: Missing readings indicate sensor events
+7. **Day markers**: Use Event Marker column for day boundaries
+
+**Current AGP+ Implementation**:
+- Focuses primarily on Section 3 (glucose readings)
+- Extracts sensor change events from Section 1 (Alert column)
+- Extracts cartridge changes from Section 1 (Rewind column)
+- Ignores Section 2 (daily insulin totals) per design decision
 
 ---
 
@@ -208,11 +388,56 @@ Per 90d:    25,920 readings
 - Multiple uploads of same period
 - Data re-sync from pump
 
+**Event Clustering** (⚠️ Critical for Sensor/Cartridge Detection):
+
+**Problem**: A single real-world event generates multiple CSV entries with different timestamps.
+
+**Example - Sensor Change**:
+```
+One actual sensor replacement creates 6+ CSV rows:
+- 07:31:42 CHANGE SENSOR (alert triggered)
+- 07:31:19 CHANGE SENSOR: tone and vibration (user acknowledged)
+- 08:05:00 LOST SENSOR SIGNAL: tone and vibration
+- 08:05:22 LOST SENSOR SIGNAL
+- 08:11:27 SENSOR CONNECTED: tone and vibration
+- 08:11:32 SENSOR CONNECTED (new sensor paired)
+
+Time span: ~40 minutes
+Glucose gap: 06:26 → 10:05 (~3.5 hours including warm-up)
+```
+
+**Example - Cartridge Change**:
+```
+One reservoir/infusion set change creates 5+ CSV rows:
+- 06:08:07 Rewind (cartridge removal)
+- 06:07:48 NOTSEATED_SUSPEND (reservoir removed)
+- 06:22:00 Tubing Fill (10.36 units)
+- 06:22:14 Cannula Fill (0.3 units)
+- 06:22:14 NORMAL_PUMPING (resumed delivery)
+
+Time span: ~14 minutes
+```
+
+**Detection Strategies**:
+
+1. **Time-based clustering**: Group events within 60 minutes as single event
+2. **User confirmation**: Prompt user when detecting multiple same-day events
+3. **Gap analysis**: Use glucose reading gaps to validate sensor changes
+4. **Keyword patterns**: Look for alert pairs (alert + "tone and vibration")
+
+**AGP+ Approach**:
+- **User confirmation preferred**: When multiple sensor changes detected on same day
+- **Show context**: Display date + time so user can recall event
+- **Fallback**: Auto-cluster if user doesn't remember ("too long ago")
+- **Validation**: Cross-reference with glucose gaps for confidence
+
 **Solution**: AGP+ parsers handle these edge cases:
 - Deduplicates readings
 - Validates timestamps
+- Clusters related events
 - Flags low coverage periods
 - Warns about gaps >2 hours
+- Prompts user for ambiguous event clusters
 
 ---
 
@@ -243,25 +468,101 @@ Per 90d:    25,920 readings
 ## Notes for Developers
 
 ### CSV Parsing Considerations
-1. Handle multiple CSV formats (Medtronic changes format occasionally)
-2. Validate glucose values (40-400 mg/dL reasonable range)
-3. Check for timezone consistency
-4. Deduplicate readings (same timestamp)
-5. Flag sensor gaps >30 minutes
+
+**Multi-Section Architecture** (Critical):
+1. Detect section boundaries with `-------` divider pattern
+2. Each section has independent column headers
+3. Skip header rows after each divider
+4. Parse sections independently based on column structure
+5. Section 1: Device events (event detection, alerts)
+6. Section 2: Daily insulin (not used by AGP+)
+7. Section 3: Glucose readings (primary data source)
+
+**Data Validation**:
+1. Validate glucose values (40-400 mg/dL reasonable range)
+2. Check for timezone consistency across sections
+3. Deduplicate readings (same timestamp + same value)
+4. Flag sensor gaps >30 minutes
+5. Validate date format consistency (`YYYY/MM/DD` in data, `DD/MM/YYYY` in filenames)
+
+**Event Detection** (Sensor & Cartridge Changes):
+1. **Parse Section 1 for events** (not Section 3)
+2. **Cluster related timestamps**: Events within 60 minutes likely same event
+3. **User confirmation**: Prompt when multiple same-day events detected
+4. **Cross-validate**: Use glucose gaps to confirm sensor changes
+5. **Alert patterns**: Look for pairs (alert + "tone and vibration")
+6. **Rewind column**: Boolean indicator for cartridge changes
+7. **Confidence levels**: Database > CSV alerts > Gap analysis
+
+**Event Clustering Algorithm**:
+```javascript
+// Pseudocode for sensor change detection
+function detectSensorChanges(section1Rows) {
+  const sensorEvents = section1Rows.filter(row => 
+    row.alert.includes('SENSOR CONNECTED') ||
+    row.alert.includes('CHANGE SENSOR')
+  );
+  
+  // Group by date
+  const byDate = groupByDate(sensorEvents);
+  
+  // For each date with events
+  for (const [date, events] of byDate) {
+    if (events.length === 1) {
+      // Single event, straightforward
+      storeSensorChange(events[0]);
+    } else {
+      // Multiple events same day
+      const timeSpan = getTimeSpan(events);
+      
+      if (timeSpan <= 60 minutes) {
+        // Clustered events - likely one sensor change
+        // Use earliest timestamp
+        storeSensorChange(events[0]);
+      } else {
+        // Events >60min apart - ask user
+        promptUser(date, events);
+      }
+    }
+  }
+}
+```
+
+**Glucose Gap Detection**:
+```javascript
+// Validate sensor change with glucose gap
+function validateSensorChange(timestamp, section3Readings) {
+  const gapWindow = 6 hours; // Sensor change + warm-up
+  const beforeGap = lastReadingBefore(timestamp);
+  const afterGap = firstReadingAfter(timestamp);
+  
+  if (afterGap.timestamp - beforeGap.timestamp > 2 hours) {
+    // Gap confirms sensor change
+    return { confidence: 'high', gap: calculateGap(...) };
+  }
+  
+  return { confidence: 'medium' };
+}
+```
 
 ### SmartGuard Implications
 - Cannot calculate accurate basal delivery from CSV
-- Focus on glucose-derived metrics (TIR, CV, etc.)
-- Event detection works fine (glucose-based)
+- Focus on glucose-derived metrics (TIR, CV, GMI, etc.)
+- Event detection works fine (glucose-based + Section 1 alerts)
 - AGP calculations unaffected (glucose-based)
 
 ### Best Practices
-- Require minimum 7 days of data
-- Warn if <70% CGM coverage
-- Handle daylight saving time carefully
-- Provide clear error messages for malformed CSVs
+- **Require minimum 7 days of data** for reliable analysis
+- **Warn if <70% CGM coverage** per ADA/ATTD guidelines
+- **Handle daylight saving time carefully** (check timezone consistency)
+- **Provide clear error messages** for malformed CSVs
+- **Section-aware parsing**: Don't assume single data structure
+- **User prompts**: Ask for clarification on ambiguous events
+- **Cross-validation**: Use multiple detection methods (database, alerts, gaps)
+- **Confidence levels**: Report detection confidence to user
 
 ---
 
-*Last updated: October 2025*
-*MiniMed 780G firmware version: 3.0+*
+*Last updated: October 28, 2025*  
+*MiniMed 780G firmware version: 8.13.2*  
+*Document version: 2.0 - Added CSV multi-section architecture*
