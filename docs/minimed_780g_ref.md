@@ -161,17 +161,49 @@ A single cartridge change also generates multiple entries:
 
 **Detection logic**: `Rewind=true` indicates cartridge change start. Subsequent Fill events and pump state changes are part of the same event.
 
-### Section 2: Aggregated Daily Insulin
+### Section 2: Aggregated Auto Insulin Data
 
 **Header format** (~line 458):
 ```
--------
-Index;Date;Time;...;Bolus Type;Bolus Volume Delivered (U);...
+-------;MiniMed 780G MMT-1886;Pump;NG4114235H;Aggregated Auto Insulin Data
+Index;Date;Time;...;Bolus Type;Bolus Volume Delivered (U);...;Bolus Source;...
 ```
 
-**Contains**: Daily insulin totals, one row per date.
+**Contains**: Daily auto insulin totals, one row per date.
 
-**AGP+ Usage**: ⚠️ **NOT USED** - See "Basal Rate Trap" section for why TDD calculations are unreliable from CSV data.
+**IMPORTANT:** ✅ **ACCURATE FOR TDD CALCULATION** (verified October 28, 2025)
+
+**Key Columns:**
+- **Column 1:** Date (YYYY/MM/DD format)
+- **Column 13:** Bolus Volume Delivered (U) - Daily auto insulin total
+- **Column 44:** Bolus Source - "CLOSED_LOOP_AUTO_INSULIN"
+
+**What This Represents:**
+`CLOSED_LOOP_AUTO_INSULIN` contains the combined total of:
+1. **Autobasaal** - SmartGuard's basal adjustments made every 5 minutes
+2. **Micro-bolussen** - Automatic correction boluses without user interaction
+3. **NOT** the programmed basal pattern (that's in Section 1 "Basal Rate" column)
+
+**Example Row:**
+```csv
+450,00000;2025/10/27;00:00:00;;;;;;;;;Normal;11,548;11,548;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;CLOSED_LOOP_AUTO_INSULIN;;;;;;;;
+```
+This shows 11.548E of auto insulin delivered on October 27, 2025.
+
+**Verification Against CareLink PDF:**
+Testing with real-world data (October 27, 2025):
+- **CareLink PDF:** TDD 29.4E | Basaal 37% (11.0E) | Bolus 63% (18.4E)
+- **CSV Section 2:** Auto Insulin 11.548E
+- **CSV Section 1:** Meal Bolus 17.475E  
+- **CSV TDD:** 29.023E (**98.7% match** ✅)
+
+**AGP+ Usage v3.1+:** ✅ **ACTIVELY USED** for Total Daily Dose (TDD) calculations
+- Combined with Section 1 meal boluses
+- Provides accurate daily insulin metrics
+- Enables auto/meal ratio analysis
+- Clinical decision support
+
+**Previous Misconception:** Earlier documentation incorrectly stated Section 2 was unreliable due to the "Basal Rate Trap" (programmed vs delivered basal). This has been corrected - Section 2 provides **actual delivered auto insulin**, not programmed rates.
 
 ### Section 3: Sensor Glucose Readings
 
