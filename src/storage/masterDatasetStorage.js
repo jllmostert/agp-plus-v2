@@ -19,7 +19,8 @@ import {
   STORES, 
   getAllRecords, 
   getRecord, 
-  putRecord 
+  putRecord,
+  deleteRecord
 } from './db.js';
 import { debug } from '../utils/debug.js';
 
