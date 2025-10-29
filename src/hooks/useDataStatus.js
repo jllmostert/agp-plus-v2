@@ -97,7 +97,6 @@ export function useDataStatus(allReadings = []) {
   const status = useMemo(() => {
     // RED: No data
     if (!allReadings || allReadings.length === 0) {
-      console.log('[useDataStatus] 🔴 RED: No data loaded');
       return {
         hasData: false,
         readingCount: 0,
@@ -134,7 +133,6 @@ export function useDataStatus(allReadings = []) {
       .map(t => t.getTime());
     
     if (timestamps.length === 0) {
-      console.log('[useDataStatus] 🔴 RED: No valid timestamps found');
       return {
         hasData: false,
         readingCount: allReadings.length,

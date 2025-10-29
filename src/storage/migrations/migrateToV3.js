@@ -61,7 +61,6 @@ async function checkIfMigrated() {
     const migrationRecord = await getRecord(STORES.MASTER_DATASET, MIGRATION_KEY);
     
     if (migrationRecord && migrationRecord.version === TARGET_VERSION) {
-      console.log('[Migration] ✅ Already migrated to v3');
       return migrationRecord;
     }
     
@@ -81,7 +80,6 @@ async function loadV2Uploads() {
     const db = await openDB();
     const uploads = await getAllRecords(STORES.UPLOADS);
     
-    console.log(`[Migration] Found ${uploads.length} v2.x uploads`);
     return uploads;
   } catch (err) {
     console.error('[Migration] Error loading v2.x uploads:', err);
@@ -104,7 +102,6 @@ async function migrateReadings(upload, index, total) {
   };
   
   try {
-    console.log(`[Migration] Processing upload ${index + 1}/${total}: ${upload.filename || upload.id}`);
     
     // Validate upload data
     if (!upload.csvData) {
@@ -118,11 +115,10 @@ async function migrateReadings(upload, index, total) {
     try {
       // Check if csvData is already parsed (array) or needs parsing (string)
       if (Array.isArray(upload.csvData)) {
-        console.log(`[Migration] Using pre-parsed csvData (${upload.csvData.length} rows)`);
         parsedData = upload.csvData;
       } else if (typeof upload.csvData === 'string') {
-        console.log(`[Migration] Parsing CSV text`);
-        parsedData = parseCSV(upload.csvData);
+        const parsed = parseCSV(upload.csvData);
+        parsedData = parsed.data || parsed; // Backwards compatibility
       } else {
         throw new Error(`Invalid csvData format: ${typeof upload.csvData}`);
       }
@@ -162,7 +158,6 @@ async function migrateReadings(upload, index, total) {
     
     stats.success = true;
     stats.readingsAdded = readings.length;
-    console.log(`[Migration] ✅ Added ${readings.length} readings in ${duration}ms`);
     
     return stats;
     
@@ -180,7 +175,6 @@ async function migrateReadings(upload, index, total) {
  * @returns {Promise<Object>} Stats {sensorsDetected, cartridgesDetected}
  */
 async function backfillEvents(uploads) {
-  console.log('[Migration] Backfilling device events...');
   
   const stats = {
     sensorsDetected: 0,
@@ -198,7 +192,8 @@ async function backfillEvents(uploads) {
         if (Array.isArray(upload.csvData)) {
           parsedData = upload.csvData;
         } else if (typeof upload.csvData === 'string') {
-          parsedData = parseCSV(upload.csvData);
+          const parsed = parseCSV(upload.csvData);
+          parsedData = parsed.data || parsed; // Backwards compatibility
         } else {
           throw new Error(`Invalid csvData format: ${typeof upload.csvData}`);
         }
@@ -216,10 +211,6 @@ async function backfillEvents(uploads) {
       }
     }
     
-    console.log(
-      `[Migration] ✅ Backfill complete: ${stats.sensorsDetected} sensors, ` +
-      `${stats.cartridgesDetected} cartridges`
-    );
     
     return stats;
     
@@ -329,7 +320,6 @@ async function markMigrationComplete(migrationStats) {
     };
     
     await putRecord(STORES.MASTER_DATASET, migrationRecord);
-    console.log('[Migration] ✅ Migration marked as complete');
     
   } catch (err) {
     console.error('[Migration] Error marking migration complete:', err);
@@ -342,7 +332,6 @@ async function markMigrationComplete(migrationStats) {
  * @returns {Promise<Object>} Migration summary with stats and errors
  */
 export async function migrateToV3() {
-  console.log('[Migration] 🔮 Starting v2.x → v3.0 FUSION migration...');
   
   const startTime = performance.now();
   const summary = {
@@ -362,7 +351,6 @@ export async function migrateToV3() {
     // Step 1: Check if already migrated
     const existing = await checkIfMigrated();
     if (existing) {
-      console.log('[Migration] Migration already complete, skipping');
       return {
         success: true,
         alreadyMigrated: true,
@@ -374,7 +362,6 @@ export async function migrateToV3() {
     const uploads = await loadV2Uploads();
     
     if (uploads.length === 0) {
-      console.log('[Migration] No v2.x uploads found, fresh install detected');
       
       // Mark as migrated anyway (empty state)
       await markMigrationComplete({
@@ -389,7 +376,6 @@ export async function migrateToV3() {
     }
     
     // Step 3: Process each upload
-    console.log(`[Migration] Processing ${uploads.length} uploads...`);
     
     for (let i = 0; i < uploads.length; i++) {
       const uploadStats = await migrateReadings(uploads[i], i, uploads.length);
@@ -406,21 +392,15 @@ export async function migrateToV3() {
       }
     }
     
-    console.log(
-      `[Migration] Uploads complete: ${summary.uploadsProcessed} success, ` +
-      `${summary.uploadsFailed} failed, ${summary.totalReadings} total readings`
-    );
     
     // Step 4: Backfill device events
     const eventStats = await backfillEvents(uploads);
     summary.eventsBackfilled = eventStats;
     
     // Step 5: Rebuild sorted cache
-    console.log('[Migration] Rebuilding sorted cache...');
     const cacheStartTime = performance.now();
     await rebuildSortedCache();
     const cacheDuration = (performance.now() - cacheStartTime).toFixed(0);
-    console.log(`[Migration] ✅ Cache rebuilt in ${cacheDuration}ms`);
     
     // Step 6: Mark migration complete
     await markMigrationComplete(summary);
@@ -430,14 +410,9 @@ export async function migrateToV3() {
     summary.success = true;
     
     // Log final stats
-    console.log('[Migration] 🎉 Migration complete!');
-    console.log(`[Migration] Time: ${summary.totalTime}s`);
-    console.log(`[Migration] Readings: ${summary.totalReadings}`);
-    console.log(`[Migration] Events: ${eventStats.sensorsDetected} sensors, ${eventStats.cartridgesDetected} cartridges`);
     
     // Get master dataset stats for verification
     const masterStats = await getMasterDatasetStats();
-    console.log('[Migration] Master dataset:', masterStats);
     
     return summary;
     
@@ -480,7 +455,6 @@ export async function resetMigration() {
     
     await tx.complete;
     
-    console.log('[Migration] ✅ v3.0 stores cleared, v2.x data preserved');
     
   } catch (err) {
     console.error('[Migration] Error resetting migration:', err);

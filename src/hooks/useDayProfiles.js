@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { getLastSevenDays } from '../core/day-profile-engine.js';
 
 /**
@@ -6,6 +6,8 @@ import { getLastSevenDays } from '../core/day-profile-engine.js';
  * 
  * Generates the last 7 complete days of glucose data with metrics, events,
  * and achievement badges. Includes AGP curve overlay for comparison.
+ * 
+ * ðŸ†• v3.1: Now includes TDD (Total Daily Dose) data per day
  * 
  * This hook extracts business logic that was previously in AGPGenerator's
  * handleDayProfilesOpen function, maintaining proper separation of concerns.
@@ -27,11 +29,37 @@ import { getLastSevenDays } from '../core/day-profile-engine.js';
  * - badges: Array of achievement badges earned
  * - overallMean: Mean glucose from current analysis period (for reference line)
  * - agpCurve: AGP percentile data (for overlay comparison)
+ * - tdd: TDD data {tdd, autoInsulin, mealBolus, autoPercent, mealPercent} âœ¨ NEW in v3.1
  * 
- * @version 2.2.1
+ * @version 3.1.0
  * @since 2024-10-25 - Extracted from AGPGenerator component
+ * @since 2025-10-28 - Added TDD data integration (v3.1 Phase 0)
  */
 export function useDayProfiles(csvData, dateRange, currentMetrics) {
+  // State for TDD data (loaded async from IndexedDB)
+  const [tddData, setTddData] = useState(null);
+  
+  // Load TDD data on mount and when dependencies change
+  useEffect(() => {
+    async function loadTDD() {
+      try {
+        const { loadTDDData } = await import('../storage/masterDatasetStorage.js');
+        const data = await loadTDDData();
+        
+        if (data && data.tddByDay) {
+          setTddData(data.tddByDay);
+        } else {
+          setTddData(null);
+        }
+      } catch (err) {
+        console.warn('[useDayProfiles] Failed to load TDD data:', err);
+        setTddData(null);
+      }
+    }
+    
+    loadTDD();
+  }, [csvData, dateRange]); // Reload when data changes
+  
   return useMemo(() => {
     // Guard: require all dependencies with proper structure
     if (!csvData || csvData.length === 0) {
@@ -66,12 +94,18 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       const overallMean = currentMetrics?.metrics?.mean || null;
       const agpCurve = currentMetrics?.agp || null;
       
-      // Add AGP overlay data to each profile
-      const enrichedProfiles = profiles.map(profile => ({
-        ...profile,
-        overallMean,
-        agpCurve
-      }));
+      // Add AGP overlay data AND TDD data to each profile
+      const enrichedProfiles = profiles.map(profile => {
+        // Get TDD for this specific day
+        const dayTDD = tddData && tddData[profile.date] ? tddData[profile.date] : null;
+        
+        return {
+          ...profile,
+          overallMean,
+          agpCurve,
+          tdd: dayTDD // âœ¨ NEW: Per-day TDD data
+        };
+      });
       
       return enrichedProfiles;
       
@@ -79,7 +113,7 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       console.error('[useDayProfiles] Failed to generate day profiles:', err);
       return null;
     }
-  }, [csvData, dateRange, currentMetrics]);
+  }, [csvData, dateRange, currentMetrics, tddData]); // Added tddData dependency
 }
 
 /**

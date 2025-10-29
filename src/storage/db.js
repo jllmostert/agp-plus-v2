@@ -41,7 +41,6 @@ export function openDB() {
       const db = event.target.result;
       const oldVersion = event.oldVersion;
       
-      console.log(`[DB] Upgrading from v${oldVersion} to v${DB_VERSION}`);
       
       // === v2.x STORES (preserve if exist) ===
       
@@ -49,12 +48,10 @@ export function openDB() {
         const uploadStore = db.createObjectStore(STORES.UPLOADS, { keyPath: 'id' });
         uploadStore.createIndex('timestamp', 'timestamp', { unique: false });
         uploadStore.createIndex('locked', 'locked', { unique: false });
-        console.log('[DB] Created uploads store');
       }
       
       if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
         db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
-        console.log('[DB] Created settings store');
       }
       
       // === v3.0 NEW STORES ===
@@ -64,7 +61,6 @@ export function openDB() {
           keyPath: 'monthKey'  // "YYYY-MM"
         });
         bucketStore.createIndex('lastUpdated', 'lastUpdated', { unique: false });
-        console.log('[DB] Created readingBuckets store');
       }
       
       if (!db.objectStoreNames.contains(STORES.SENSOR_EVENTS)) {
@@ -73,7 +69,6 @@ export function openDB() {
         });
         sensorStore.createIndex('timestamp', 'timestamp', { unique: false });
         sensorStore.createIndex('confirmed', 'confirmed', { unique: false });
-        console.log('[DB] Created sensorEvents store');
       }
       
       if (!db.objectStoreNames.contains(STORES.CARTRIDGE_EVENTS)) {
@@ -82,17 +77,14 @@ export function openDB() {
         });
         cartridgeStore.createIndex('timestamp', 'timestamp', { unique: false });
         cartridgeStore.createIndex('confirmed', 'confirmed', { unique: false });
-        console.log('[DB] Created cartridgeEvents store');
       }
       
       if (!db.objectStoreNames.contains(STORES.MASTER_DATASET)) {
         db.createObjectStore(STORES.MASTER_DATASET, { keyPath: 'id' });
-        console.log('[DB] Created masterDataset store');
       }
       
       if (!db.objectStoreNames.contains(STORES.SENSOR_DATA)) {
         db.createObjectStore(STORES.SENSOR_DATA);
-        console.log('[DB] Created sensorData store (v3.6)');
       }
     };
   });

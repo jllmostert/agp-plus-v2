@@ -301,7 +301,34 @@ export async function loadProTimeData() {
 export async function deleteProTimeData() {
   const { deleteRecord } = await import('./db.js');
   await deleteRecord(STORES.SETTINGS, 'protime_workdays');
-  console.log('[deleteProTimeData] ✅ ProTime data deleted');
+}
+
+/**
+ * Load TDD (Total Daily Dose) data from settings (V3)
+ * @returns {Object|null} {tddByDay, tddStats, validation} or null if not found
+ */
+export async function loadTDDData() {
+  const record = await getRecord(STORES.SETTINGS, 'tdd_data');
+  
+  if (!record || !record.tddByDay) {
+    return null;
+  }
+  
+  return {
+    tddByDay: record.tddByDay,
+    tddStats: record.tddStats,
+    validation: record.validation,
+    lastUpdated: record.lastUpdated
+  };
+}
+
+/**
+ * Delete TDD data from settings (V3)
+ * Removes all stored TDD data
+ */
+export async function deleteTDDData() {
+  const { deleteRecord } = await import('./db.js');
+  await deleteRecord(STORES.SETTINGS, 'tdd_data');
 }
 
 /**
@@ -310,7 +337,6 @@ export async function deleteProTimeData() {
  * @param {Array} readings - Parsed CSV readings
  */
 async function detectAndStoreEvents(readings) {
-  console.log('[detectAndStoreEvents] Called with readings:', readings.length);
   
   // Import dependencies
   const { storeSensorChange, storeCartridgeChange } = await import('./eventStorage.js');
@@ -334,21 +360,15 @@ async function detectAndStoreEvents(readings) {
     })
     .filter(event => !isNaN(event.timestamp.getTime()));
   
-  console.log(`[detectAndStoreEvents] Found ${allSensorAlerts.length} total alerts in CSV`);
   
   // Deduplicate using intelligent clustering
   const { confirmedEvents, ambiguousGroups } = deduplicateSensorEvents(allSensorAlerts);
   
-  console.log(`[detectAndStoreEvents] After deduplication:`, {
-    confirmed: confirmedEvents.length,
-    ambiguous: ambiguousGroups.length
-  });
   
   // Store confirmed sensor changes
   for (const event of confirmedEvents) {
     try {
       await storeSensorChange(event.timestamp, event.alert, 'CSV Alert');
-      console.log(`[detectAndStoreEvents] ✓ Stored sensor change: ${event.date} ${event.time}`);
     } catch (err) {
       if (!err.message.includes('duplicate')) {
         console.warn('[detectAndStoreEvents] Failed to store sensor change:', err);
@@ -367,8 +387,6 @@ async function detectAndStoreEvents(readings) {
       
       try {
         await storeSensorChange(representative.timestamp, representative.alert, 'CSV Alert (Clustered)');
-        console.log(`[detectAndStoreEvents] ✓ Stored ambiguous sensor change (used earliest): ${representative.date} ${representative.time}`);
-        console.log(`[detectAndStoreEvents]   Note: ${group.events.length} events on ${group.date} spanning ${group.timeSpan.toFixed(1)} min`);
       } catch (err) {
         if (!err.message.includes('duplicate')) {
           console.warn('[detectAndStoreEvents] Failed to store ambiguous sensor change:', err);
@@ -393,12 +411,10 @@ async function detectAndStoreEvents(readings) {
     })
     .filter(event => !isNaN(event.timestamp.getTime()));
   
-  console.log(`[detectAndStoreEvents] Found ${rewindEvents.length} rewind events`);
   
   // Cluster cartridge changes (unlikely but possible to have multiple same day)
   const cartridgeClusters = clusterEventsByTime(rewindEvents, 60);
   
-  console.log(`[detectAndStoreEvents] After clustering: ${cartridgeClusters.length} cartridge changes`);
   
   // Store cartridge changes
   for (const cluster of cartridgeClusters) {
@@ -406,10 +422,8 @@ async function detectAndStoreEvents(readings) {
     
     try {
       await storeCartridgeChange(representative.timestamp, 'Rewind', 'CSV Upload');
-      console.log(`[detectAndStoreEvents] ✓ Stored cartridge change: ${representative.date} ${representative.time}`);
       
       if (cluster.length > 1) {
-        console.log(`[detectAndStoreEvents]   Note: Clustered ${cluster.length} rewind events`);
       }
     } catch (err) {
       if (!err.message.includes('duplicate')) {
@@ -418,7 +432,6 @@ async function detectAndStoreEvents(readings) {
     }
   }
   
-  console.log(`[detectAndStoreEvents] ✅ Complete: ${confirmedEvents.length + ambiguousGroups.length} sensor changes, ${cartridgeClusters.length} cartridge changes`);
 }
 
 /**
@@ -430,17 +443,14 @@ export async function initEventsFromMasterDataset() {
   
   // Check if events already exist
   if (hasEvents()) {
-    console.log('[initEventsFromMasterDataset] Events already exist, skipping scan');
     return;
   }
   
-  console.log('[initEventsFromMasterDataset] No events found, scanning master dataset...');
   
   // Load all readings from cache
   const cache = await loadOrRebuildCache();
   
   if (!cache || cache.allReadings.length === 0) {
-    console.log('[initEventsFromMasterDataset] No readings in master dataset');
     return;
   }
   
@@ -454,7 +464,6 @@ export async function initEventsFromMasterDataset() {
   // Detect and store events
   await detectAndStoreEvents(readings);
   
-  console.log('[initEventsFromMasterDataset] ✅ Events initialized from master dataset');
 }
 
 /**
@@ -488,11 +497,47 @@ export async function uploadCSVToV3(csvText) {
   // Import CSV parser
   const { parseCSV } = await import('../core/parsers.js');
   
-  // Parse CSV to get readings array
-  const readings = parseCSV(csvText);
+  // Parse CSV to get readings array, section1, and section2 data
+  // Returns: {data: Array, section1: Array, section2: Array}
+  const parsed = parseCSV(csvText);
+  const readings = parsed.data || parsed; // Backwards compatibility
+  const section1 = parsed.section1 || []; // Meal boluses (new in v3.1)
+  const section2 = parsed.section2 || []; // Auto insulin data (new in v3.1)
   
   if (!readings || readings.length === 0) {
     throw new Error('No valid readings found in CSV');
+  }
+  
+  // Log Section 1/2 data availability
+  if (section1.length > 0) {
+  }
+  if (section2.length > 0) {
+  }
+  
+  // Calculate and store TDD (Total Daily Dose) data if available
+  if (section1.length > 0 && section2.length > 0) {
+    try {
+      const { calculateDailyTDD, calculateTDDStatistics, validateTDDData } = 
+        await import('../core/insulin-engine.js');
+      
+      const tddByDay = calculateDailyTDD(section1, section2);
+      const tddStats = calculateTDDStatistics(tddByDay);
+      const validation = validateTDDData(tddByDay);
+      
+      // Store TDD data in settings
+      await putRecord(STORES.SETTINGS, {
+        key: 'tdd_data',
+        tddByDay,
+        tddStats,
+        validation,
+        lastUpdated: Date.now()
+      });
+      
+    } catch (err) {
+      console.warn('[uploadCSVToV3] TDD calculation failed (non-fatal):', err);
+    }
+  } else {
+    console.warn('[uploadCSVToV3] Skipping TDD calculation (missing Section 1 or 2)');
   }
   
   // Transform readings to add timestamp field (required by storage layer)
@@ -523,9 +568,6 @@ export async function uploadCSVToV3(csvText) {
   await appendReadingsToMaster(readingsWithTimestamps);
   
   // Detect and store device events (sensor/cartridge changes)
-  console.log('[uploadCSVToV3] About to call detectAndStoreEvents with', readings.length, 'readings');
-  console.log('[uploadCSVToV3] Sample reading before detection:', readings[3]); // Row 3 has SENSOR CONNECTED
-  await detectAndStoreEvents(readings);
   
   // Rebuild cache for immediate access
   await rebuildSortedCache();
@@ -553,10 +595,6 @@ export async function uploadCSVToV3(csvText) {
  * @returns {Promise<number>} Count of readings deleted
  */
 export async function deleteGlucoseDataInRange(startDate, endDate) {
-  console.log('[deleteGlucoseDataInRange] START', {
-    start: startDate.toISOString(),
-    end: endDate.toISOString()
-  });
 
   const startTime = startDate.getTime();
   const endTime = endDate.getTime();
@@ -577,7 +615,6 @@ export async function deleteGlucoseDataInRange(startDate, endDate) {
     totalDeleted += deleted;
     
     if (deleted > 0) {
-      console.log(`[deleteGlucoseDataInRange] Bucket ${bucket.monthKey}: deleted ${deleted}/${originalCount}`);
     }
     
     // Update bucket metadata
@@ -591,7 +628,6 @@ export async function deleteGlucoseDataInRange(startDate, endDate) {
       await putRecord(STORES.READING_BUCKETS, bucket);
     } else {
       // Bucket empty - delete it
-      console.log(`[deleteGlucoseDataInRange] Bucket ${bucket.monthKey} now empty - deleting`);
       await deleteRecord(STORES.READING_BUCKETS, bucket.monthKey);
     }
   }
@@ -599,7 +635,6 @@ export async function deleteGlucoseDataInRange(startDate, endDate) {
   // Invalidate cache
   await invalidateCache();
   
-  console.log(`[deleteGlucoseDataInRange] COMPLETE - Deleted ${totalDeleted} readings`);
   return totalDeleted;
 }
 
@@ -614,14 +649,9 @@ export async function deleteGlucoseDataInRange(startDate, endDate) {
  * @returns {Promise<number>} Count of workdays deleted
  */
 export async function deleteProTimeDataInRange(startDate, endDate) {
-  console.log('[deleteProTimeDataInRange] START', {
-    start: startDate.toISOString(),
-    end: endDate.toISOString()
-  });
 
   const workdaySet = await loadProTimeData();
   if (!workdaySet) {
-    console.log('[deleteProTimeDataInRange] No ProTime data found');
     return 0;
   }
   
@@ -643,6 +673,5 @@ export async function deleteProTimeDataInRange(startDate, endDate) {
     await deleteProTimeData();
   }
   
-  console.log(`[deleteProTimeDataInRange] COMPLETE - Deleted ${deleted} workdays`);
   return deleted;
 }

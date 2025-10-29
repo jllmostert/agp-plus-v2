@@ -153,7 +153,6 @@ export function deduplicateSensorEvents(sensorAlerts) {
     isValidSensorChangeAlert(event.alert)
   );
   
-  console.log(`[deduplicateSensorEvents] Filtered ${sensorAlerts.length} alerts down to ${validAlerts.length} valid sensor changes`);
   
   // Group by date
   const byDate = groupEventsByDate(validAlerts);
@@ -172,11 +171,9 @@ export function deduplicateSensorEvents(sensorAlerts) {
       if (timeSpan <= 60) {
         // Events clustered within 60 minutes - likely one sensor change
         const representative = getRepresentativeEvent(dateEvents);
-        console.log(`[deduplicateSensorEvents] Clustered ${dateEvents.length} events on ${date} (${timeSpan.toFixed(1)} min) into one`);
         confirmedEvents.push(representative);
       } else {
         // Events >60 min apart - need user confirmation
-        console.log(`[deduplicateSensorEvents] Found ${dateEvents.length} events on ${date} spanning ${timeSpan.toFixed(1)} min - needs user input`);
         ambiguousGroups.push({
           date,
           events: dateEvents,

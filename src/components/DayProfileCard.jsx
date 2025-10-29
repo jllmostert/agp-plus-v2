@@ -15,7 +15,10 @@ import { calculateAdaptiveYAxis, createYScale, createXScale } from '../core/visu
 export default function DayProfileCard({ profile }) {
   if (!profile) return null;
 
-  const { date, dayOfWeek, metrics, curve, events, sensorChanges, cartridgeChanges, badges, readingCount } = profile;
+  const { date, dayOfWeek, metrics, curve, events, sensorChanges, cartridgeChanges, badges, readingCount, tdd } = profile;
+
+  // TDD display logic
+  const showTDD = tdd && tdd.tdd > 0;
 
   return (
     <div
@@ -26,7 +29,7 @@ export default function DayProfileCard({ profile }) {
         padding: 0,
         display: 'grid',
         gridTemplateColumns: '1fr auto',
-        gridTemplateRows: 'auto 1fr auto',
+        gridTemplateRows: showTDD ? 'auto auto 1fr auto' : 'auto 1fr auto', // âœ¨ NEW: 4 rows if TDD available
         gap: 0,
         minHeight: '400px'
       }}
@@ -117,11 +120,74 @@ export default function DayProfileCard({ profile }) {
         </div>
       </div>
 
+      {/* TDD Header - Insulin Metrics (spans full width) âœ¨ NEW in v3.1 */}
+      {showTDD && (
+        <div
+          style={{
+            gridColumn: '1 / -1',
+            borderBottom: '3px solid var(--color-black)',
+            padding: '12px 24px',
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            backgroundColor: 'var(--bg-primary)',
+            fontFamily: 'Courier New, monospace',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}
+        >
+          {/* TDD Badge - Yellow */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              backgroundColor: '#fef08a',
+              border: '2px solid var(--color-black)',
+              color: 'var(--color-black)'
+            }}
+          >
+            <span>TDD {tdd.tdd.toFixed(1)}E</span>
+          </div>
+
+          {/* Auto Badge - Cyan */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              backgroundColor: '#e0f2fe',
+              border: '2px solid #0891b2',
+              color: '#0891b2'
+            }}
+          >
+            <span>Auto {tdd.autoPercent.toFixed(0)}% | {tdd.autoInsulin.toFixed(1)}E</span>
+          </div>
+
+          {/* Meal Badge - Orange */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              backgroundColor: '#ffedd5',
+              border: '2px solid #f97316',
+              color: '#f97316'
+            }}
+          >
+            <span>Meal {tdd.mealPercent.toFixed(0)}% | {tdd.mealBolus.toFixed(1)}E</span>
+          </div>
+        </div>
+      )}
+
       {/* Main Content: 24h Curve */}
       <div
         style={{
           gridColumn: '1',
-          gridRow: '2',
+          gridRow: showTDD ? '3' : '2', // âœ¨ Adjust row based on TDD presence
           padding: '24px',
           borderRight: '3px solid var(--color-black)'
         }}
@@ -139,7 +205,7 @@ export default function DayProfileCard({ profile }) {
       <div
         style={{
           gridColumn: '2',
-          gridRow: '2',
+          gridRow: showTDD ? '3' : '2', // âœ¨ Adjust row based on TDD presence
           width: '120px',
           padding: '24px 16px',
           display: 'flex',
@@ -154,6 +220,7 @@ export default function DayProfileCard({ profile }) {
       <div
         style={{
           gridColumn: '1 / -1',
+          gridRow: showTDD ? '4' : '3', // âœ¨ Adjust row based on TDD presence
           borderTop: '3px solid var(--color-black)',
           padding: '16px 24px',
           display: 'grid',

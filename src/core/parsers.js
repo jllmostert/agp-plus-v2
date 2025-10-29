@@ -85,9 +85,180 @@ export const parseCSVMetadata = (text) => {
 };
 
 /**
+ * Parse Section 1: Event Data (for meal boluses)
+ * 
+ * Section 1 contains individual bolus events with detailed columns.
+ * We need this to calculate daily meal bolus totals.
+ * 
+ * Format:
+ * Index;Date;Time;...;Bolus Volume Delivered (U);...;Bolus Source;...
+ * 
+ * @param {string} text - Raw CSV text content
+ * @returns {Array} Array of {date, bolusVolumeDelivered, bolusSource}
+ */
+export const parseSection1Boluses = (text) => {
+  const section1Data = [];
+  
+  try {
+    const lines = text.split('\n');
+    let inSection1 = true; // Section 1 starts immediately after headers
+    let section1ColumnIndices = null;
+    
+    // Skip metadata header lines (first 6 lines)
+    const dataLines = lines.slice(CONFIG.CSV_SKIP_LINES);
+    
+    for (let i = 0; i < dataLines.length; i++) {
+      const line = dataLines[i];
+      
+      // Stop at Section 2 divider
+      if (line.includes('Aggregated Auto Insulin Data')) {
+        break;
+      }
+      
+      // Skip empty lines
+      if (!line.trim()) {
+        continue;
+      }
+      
+      const parts = line.split(';');
+      
+      // Parse header row to find column indices
+      if (parts[1] === 'Date' && parts[2] === 'Time') {
+        section1ColumnIndices = {
+          dateIndex: 1,
+          bolusVolumeIndex: parts.findIndex(p => p.trim().includes('Bolus Volume Delivered')),
+          bolusSourceIndex: parts.findIndex(p => p.trim().includes('Bolus Source'))
+        };
+        continue;
+      }
+      
+      // Parse data rows (meal boluses + manual boluses)
+      if (section1ColumnIndices && parts.length > Math.max(
+        section1ColumnIndices.dateIndex,
+        section1ColumnIndices.bolusVolumeIndex,
+        section1ColumnIndices.bolusSourceIndex
+      )) {
+        const date = parts[section1ColumnIndices.dateIndex]?.trim();
+        const bolusVolume = parts[section1ColumnIndices.bolusVolumeIndex]?.trim();
+        const bolusSource = parts[section1ColumnIndices.bolusSourceIndex]?.trim();
+        
+        // Include both automated food boluses AND manual boluses (BOLUS_WIZARD)
+        // - CLOSED_LOOP_BG_CORRECTION_AND_FOOD_BOLUS: Auto mode meal boluses
+        // - BOLUS_WIZARD: Manual boluses (corrections, meals, or both)
+        const isMealBolus = bolusSource === 'CLOSED_LOOP_BG_CORRECTION_AND_FOOD_BOLUS';
+        const isManualBolus = bolusSource === 'BOLUS_WIZARD';
+        
+        if (date && bolusVolume && (isMealBolus || isManualBolus)) {
+          // Convert European decimal format (comma) to JS format (dot)
+          const volumeNum = bolusVolume.replace(',', '.');
+          const volumeValue = parseFloat(volumeNum);
+          
+          // Only include delivered boluses (skip cancelled/failed boluses)
+          if (volumeValue > 0) {
+            section1Data.push({
+              date,
+              bolusVolumeDelivered: volumeValue,
+              bolusSource
+            });
+          }
+        }
+      }
+    }
+    
+    return section1Data;
+    
+  } catch (err) {
+    console.error('[Section 1 Parser] Error:', err);
+    return []; // Return empty array on error
+  }
+};
+
+/**
+ * Parse Section 2: Aggregated Auto Insulin Data
+ * 
+ * Location: Around line 458 in CareLink CSV
+ * Divider: "-------;MiniMed 780G MMT-1886;Pump;NG4114235H;Aggregated Auto Insulin Data"
+ * 
+ * Format:
+ * Index;Date;Time;...;Bolus Volume Delivered (U);...;Bolus Source;...
+ * 449,00000;2025/10/28;00:00:00;...;4,927;...;CLOSED_LOOP_AUTO_INSULIN;...
+ * 
+ * @param {string} text - Raw CSV text content
+ * @returns {Array} Array of {date, bolusVolumeDelivered, bolusSource}
+ */
+export const parseSection2 = (text) => {
+  const section2Data = [];
+  
+  try {
+    const lines = text.split('\n');
+    let inSection2 = false;
+    let section2ColumnIndices = null;
+    
+    // Find Section 2 divider and parse data
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Detect Section 2 divider
+      if (line.includes('Aggregated Auto Insulin Data')) {
+        inSection2 = true;
+        continue;
+      }
+      
+      // Stop at next section divider (starts with dashes)
+      if (inSection2 && line.trim().startsWith('-----')) {
+        break;
+      }
+      
+      if (inSection2) {
+        const parts = line.split(';');
+        
+        // Parse header row to find column indices
+        if (parts[1] === 'Date' && parts[2] === 'Time') {
+          section2ColumnIndices = {
+            dateIndex: 1,
+            bolusVolumeIndex: parts.findIndex(p => p.trim().includes('Bolus Volume Delivered')),
+            bolusSourceIndex: parts.findIndex(p => p.trim().includes('Bolus Source'))
+          };
+          continue;
+        }
+        
+        // Parse data rows
+        if (section2ColumnIndices && parts.length > Math.max(
+          section2ColumnIndices.dateIndex,
+          section2ColumnIndices.bolusVolumeIndex,
+          section2ColumnIndices.bolusSourceIndex
+        )) {
+          const date = parts[section2ColumnIndices.dateIndex]?.trim();
+          const bolusVolume = parts[section2ColumnIndices.bolusVolumeIndex]?.trim();
+          const bolusSource = parts[section2ColumnIndices.bolusSourceIndex]?.trim();
+          
+          // Only include auto insulin entries (CLOSED_LOOP_AUTO_INSULIN)
+          if (date && bolusVolume && bolusSource === 'CLOSED_LOOP_AUTO_INSULIN') {
+            // Convert European decimal format (comma) to JS format (dot)
+            const volumeNum = bolusVolume.replace(',', '.');
+            
+            section2Data.push({
+              date,
+              bolusVolumeDelivered: volumeNum,
+              bolusSource
+            });
+          }
+        }
+      }
+    }
+    
+    return section2Data;
+    
+  } catch (err) {
+    console.error('[Section 2 Parser] Error:', err);
+    return []; // Return empty array on error, don't block glucose parsing
+  }
+};
+
+/**
  * Parse Medtronic CareLink CSV export
  * @param {string} text - Raw CSV text content
- * @returns {Array} Array of data objects {date, time, glucose, bolus, bg, carbs}
+ * @returns {Object} {data: Array, section2: Array} - Main glucose data + Section 2 insulin data
  * @throws {Error} If parsing fails or no valid data found
  */
 export const parseCSV = (text) => {
@@ -183,13 +354,10 @@ export const parseCSV = (text) => {
     
     // Debug: Count rewind events
     const rewindCount = data.filter(row => row.rewind).length;
-    console.log(`[CSV Parser] Found ${rewindCount} rewind events out of ${data.length} total rows`);
     
     // Debug: Count sensor alerts
     const sensorAlerts = data.filter(row => row.alert && row.alert.includes('SENSOR'));
-    console.log(`[CSV Parser] Found ${sensorAlerts.length} sensor alerts:`);
     sensorAlerts.forEach(alert => {
-      console.log(`  - ${alert.date} ${alert.time}: ${alert.alert}`);
     });
     
     // Calculate coverage
@@ -201,7 +369,17 @@ export const parseCSV = (text) => {
       console.warn(`⚠️ Low data coverage: ${coverage}%. Metrics may be unreliable.`);
     }
     
-    return data;
+    // Parse Section 1 (meal boluses for TDD calculation)
+    const section1 = parseSection1Boluses(text);
+    
+    // Parse Section 2 (auto insulin data)
+    const section2 = parseSection2(text);
+    
+    return {
+      data,       // Main glucose/event data (Section 3)
+      section1,   // Meal boluses for TDD (NEW in v3.1)
+      section2    // Auto insulin for TDD (NEW in v3.1)
+    };
     
   } catch (err) {
     // Provide helpful error messages

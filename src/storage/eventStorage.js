@@ -199,14 +199,9 @@ export function getCartridgeHistory() {
  * @returns {Promise<number>} Count of events deleted
  */
 export async function deleteCartridgeChangesInRange(startDate, endDate) {
-  console.log('[deleteCartridgeChangesInRange] START', {
-    start: startDate.toISOString(),
-    end: endDate.toISOString()
-  });
 
   const events = getAllEvents();
   if (!events || !events.cartridgeChanges) {
-    console.log('[deleteCartridgeChangesInRange] No cartridge events found');
     return 0;
   }
   
@@ -225,6 +220,5 @@ export async function deleteCartridgeChangesInRange(startDate, endDate) {
   events.cartridgeChanges = filtered;
   storeEvents(events);
   
-  console.log(`[deleteCartridgeChangesInRange] COMPLETE - Deleted ${deleted}/${originalCount} events`);
   return deleted;
 }

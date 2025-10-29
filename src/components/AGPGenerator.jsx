@@ -167,11 +167,6 @@ export default function AGPGenerator() {
       start.setDate(start.getDate() - 13); // 14 days total (today + 13 previous)
       start.setHours(0, 0, 0, 0); // Start of day
       
-      console.log('[AGPGenerator] Auto-selecting last 14 days:', {
-        start: start.toISOString().split('T')[0],
-        end: end.toISOString().split('T')[0],
-        dayCount: Math.round((end - start) / (1000 * 60 * 60 * 24))
-      });
       
       setStartDate(start);
       setEndDate(end);
@@ -233,7 +228,6 @@ export default function AGPGenerator() {
   useEffect(() => {
     if (useV3Mode && masterDataset.stats?.workdays) {
       setWorkdays(masterDataset.stats.workdays);
-      console.log('[AGPGenerator] ✅ Restored ProTime workdays:', masterDataset.stats.workdays.size);
     }
   }, [useV3Mode, masterDataset.stats?.workdays]);
   
@@ -242,11 +236,6 @@ export default function AGPGenerator() {
     if (useV3Mode) {
       // V3: Use unfiltered dataset
       const allReadings = masterDataset.allReadings || [];
-      console.log('[AGPGenerator] Comparison readings:', {
-        count: allReadings.length,
-        sample: allReadings[0],
-        isLoading: masterDataset.isLoading
-      });
       return allReadings;
     }
     // V2: Use current csvData (not filtered in V2)
@@ -311,12 +300,6 @@ export default function AGPGenerator() {
   
   // Debug: Check if AGP data exists
   if (metricsResult && activeReadings && activeReadings.length > 0) {
-    console.log('[AGPGenerator] AGP data check:', {
-      hasAGP: !!metricsResult.agp,
-      agpBins: metricsResult.agp?.length,
-      sampleBin: metricsResult.agp?.[144], // Noon
-      readingsCount: activeReadings.length
-    });
   }
   
   // Auto-calculate comparison for preset periods
@@ -330,18 +313,9 @@ export default function AGPGenerator() {
   // Debug: Check day profiles
   if (dayProfiles && dayProfiles.length > 0) {
     const profile = dayProfiles[0];
-    console.log('[AGPGenerator] Day profile details:', {
-      date: profile?.date,
-      readingCount: profile?.readingCount,
-      sensorChanges: profile?.sensorChanges,
-      cartridgeChanges: profile?.cartridgeChanges,
-      hasCurve: !!profile?.curve,
-      sampleCurveBin: profile?.curve?.[144]
-    });
     
     // Also log a sample reading to verify rewind field
     if (activeReadings && activeReadings.length > 0) {
-      console.log('[AGPGenerator] Sample reading for events:', activeReadings[0]);
     }
   }
 
@@ -354,14 +328,6 @@ export default function AGPGenerator() {
    */
   const handleDateRangeChange = (start, end) => {
     // DEBUG: Log what we received
-    console.log('[AGPGenerator] 🔍 handleDateRangeChange called:', {
-      start,
-      end,
-      startType: typeof start,
-      endType: typeof end,
-      startIsDate: start instanceof Date,
-      endIsDate: end instanceof Date
-    });
     
     setSelectedDateRange({ start, end });
     masterDataset.setDateRange(start, end);
@@ -516,7 +482,6 @@ export default function AGPGenerator() {
         try {
           const { deleteProTimeData } = await import('../storage/masterDatasetStorage');
           await deleteProTimeData();
-          console.log('[ProTime] ✅ Deleted from V3 master dataset');
         } catch (err) {
           console.error('[ProTime] Failed to delete from V3:', err);
           throw err;
@@ -526,7 +491,6 @@ export default function AGPGenerator() {
       else if (activeUploadId) {
         try {
           await updateProTimeData(activeUploadId, null);
-          console.log('[ProTime] ✅ Deleted from V2 upload');
         } catch (err) {
           console.error('[ProTime] Failed to delete from V2 upload:', err);
           throw err;
@@ -701,10 +665,6 @@ export default function AGPGenerator() {
   const handleDataManagementDelete = async (deleteConfig) => {
     const { dateRange, deleteTypes } = deleteConfig;
     
-    console.log('[DataManagement] Delete requested:', {
-      range: `${dateRange.start.toISOString()} - ${dateRange.end.toISOString()}`,
-      types: deleteTypes
-    });
 
     try {
       let deletedCounts = {
@@ -739,7 +699,6 @@ export default function AGPGenerator() {
       // Force reload V3 data to update UI
       masterDataset.refresh();
       
-      console.log('[DataManagement] ✅ Deletion complete:', deletedCounts);
       return deletedCounts;
       
     } catch (err) {
@@ -1085,7 +1044,6 @@ export default function AGPGenerator() {
             {/* 1. IMPORT Button (Collapsible) */}
             <button
               onClick={() => {
-                console.log('🔴 IMPORT CLICKED!', dataImportExpanded);
                 setDataImportExpanded(!dataImportExpanded);
               }}
               style={{
@@ -1220,7 +1178,6 @@ export default function AGPGenerator() {
             {/* 4. EXPORT Button (Collapsible) */}
             <button
               onClick={() => {
-                console.log('🔵 EXPORT CLICKED!', dataExportExpanded);
                 setDataExportExpanded(!dataExportExpanded);
               }}
               disabled={!metricsResult || !startDate || !endDate}

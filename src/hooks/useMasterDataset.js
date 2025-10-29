@@ -93,7 +93,6 @@ export function useMasterDataset(options = {}) {
         // Update state to reflect auto-loaded range
         setDateRange(autoDateRange);
         
-        console.log(`[useMasterDataset] ✅ Auto-loaded last 14 days: ${cutoff14Days.toISOString().split('T')[0]} to ${latest.toISOString().split('T')[0]}`);
         
         // Continue with this auto-range (will be applied in filtering below)
         dateRange.start = cutoff14Days;
@@ -109,7 +108,6 @@ export function useMasterDataset(options = {}) {
         const { loadProTimeData } = await import('../storage/masterDatasetStorage');
         workdaySet = await loadProTimeData();
         if (workdaySet) {
-          console.log('[useMasterDataset] ✅ Loaded ProTime workdays:', workdaySet.size);
         }
       } catch (err) {
         console.warn('[useMasterDataset] ProTime load failed:', err);
@@ -125,15 +123,6 @@ export function useMasterDataset(options = {}) {
       
       if (dateRange.start || dateRange.end) {
         // DEBUG: Log date range for custom range debugging
-        console.log('[useMasterDataset] 🔍 Filtering with date range:', {
-          start: dateRange.start,
-          end: dateRange.end,
-          startType: typeof dateRange.start,
-          endType: typeof dateRange.end,
-          startIsDate: dateRange.start instanceof Date,
-          endIsDate: dateRange.end instanceof Date,
-          totalReadingsBeforeFilter: cache.allReadings.length
-        });
         
         filteredReadings = filteredReadings.filter(reading => {
           const timestamp = reading.timestamp;
@@ -162,10 +151,6 @@ export function useMasterDataset(options = {}) {
           return true;
         });
         
-        console.log('[useMasterDataset] ✅ After filter:', {
-          filteredCount: filteredReadings.length,
-          percentKept: ((filteredReadings.length / cache.allReadings.length) * 100).toFixed(1) + '%'
-        });
       }
 
       // Transform V3 format → V2 CSV format for backwards compatibility
@@ -199,8 +184,6 @@ export function useMasterDataset(options = {}) {
       
       // Debug: Log sample reading to verify fields
       if (normalizedReadings.length > 0) {
-        console.log('[useMasterDataset] Sample reading:', normalizedReadings[0]);
-        console.log('[useMasterDataset] Total readings:', normalizedReadings.length);
       }
       
       // ALSO store unfiltered readings (for comparison calculations)

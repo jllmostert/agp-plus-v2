@@ -13,7 +13,6 @@ import { getCartridgeHistory } from './eventStorage';
  * @returns {Promise<Object>} Export data object
  */
 export async function exportMasterDataset() {
-  console.log('[exportMasterDataset] Starting export...');
   
   try {
     // Fetch all data from IndexedDB
@@ -40,12 +39,6 @@ export async function exportMasterDataset() {
       cartridges
     };
     
-    console.log('[exportMasterDataset] Export complete:', {
-      readings: totalReadings,
-      months: months.length,
-      sensors: sensors.length,
-      cartridges: cartridges.length
-    });
     
     return exportData;
     
@@ -73,7 +66,6 @@ export function downloadJSON(data, filename) {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   
-  console.log('[downloadJSON] Downloaded:', filename);
 }
 
 /**
