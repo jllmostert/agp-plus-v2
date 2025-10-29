@@ -160,17 +160,21 @@ const generateDayCurveSVG = (curve, events, sensorChanges, cartridgeChanges, agp
         ${events.hypoL2.events.map(event => `
           <circle cx="${xScale((event.minuteOfDay || 0) / 5)}" 
                   cy="${yScale(event.startGlucose || 50)}" 
-                  r="3" fill="var(--color-red)" stroke="var(--ink)" stroke-width="1"/>
+                  r="5" fill="#dc2626" stroke="#000000" stroke-width="2"/>
+          <text x="${xScale((event.minuteOfDay || 0) / 5)}" 
+                y="${yScale(event.startGlucose || 50) + 1.5}" 
+                text-anchor="middle" fill="#ffffff" 
+                font-size="8" font-weight="bold">×</text>
         `).join('')}
         ${events.hypoL1.events.map(event => `
           <circle cx="${xScale((event.minuteOfDay || 0) / 5)}" 
                   cy="${yScale(event.startGlucose || 65)}" 
-                  r="3" fill="var(--color-orange)" stroke="var(--ink)" stroke-width="1"/>
+                  r="4" fill="#ea580c" stroke="#000000" stroke-width="2"/>
         `).join('')}
         ${events.hyper.events.map(event => `
           <circle cx="${xScale((event.minuteOfDay || 0) / 5)}" 
                   cy="${yScale(event.startGlucose || 260)}" 
-                  r="3" fill="var(--color-orange)" stroke="var(--ink)" stroke-width="1"/>
+                  r="4" fill="#f97316" stroke="#000000" stroke-width="2"/>
         `).join('')}
         
         <!-- Sensor change - red dashed line when sensor stops -->

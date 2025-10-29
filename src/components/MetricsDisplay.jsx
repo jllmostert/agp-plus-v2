@@ -12,7 +12,7 @@ import { getMetricTooltip } from '../utils/metricDefinitions';
  * @version 2.2.0 - Reorganized Overview section (Analysis Period + Data Quality)
  *                   Moved GRI to HypoglycemiaEvents component
  */
-export default function MetricsDisplay({ metrics }) {
+export default function MetricsDisplay({ metrics, tddData }) {
   if (!metrics) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
@@ -48,10 +48,10 @@ export default function MetricsDisplay({ metrics }) {
 
   return (
     <>
-      {/* HERO GRID - Primary Metrics (4 equal cards) */}
+      {/* HERO GRID - Primary Metrics (5 cards in single row) */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+        gridTemplateColumns: 'repeat(5, 1fr)',
         gap: '1rem',
         marginBottom: '2rem'
       }}>
@@ -134,6 +134,44 @@ export default function MetricsDisplay({ metrics }) {
           status={getStatus('gmi', metrics.gmi)}
           metricId="gmi"
         />
+
+        {/* TDD - Total Daily Dose */}
+        {tddData ? (
+          <PrimaryMetricCard
+            icon={Activity}
+            label="TDD"
+            value={safeFormat(tddData.meanTDD, 1)}
+            unit="E"
+            subtitle={`± ${safeFormat(tddData.sdTDD, 1)} SD`}
+            status="neutral"
+            metricId="tdd"
+          />
+        ) : (
+          <div 
+            className="card-hero" 
+            style={{ 
+              padding: '2rem',
+              minHeight: '180px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              opacity: 0.5
+            }}
+          >
+            <span style={{ 
+              fontSize: '0.875rem', 
+              fontWeight: 700, 
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase'
+            }}>
+              TDD
+            </span>
+            <div style={{ fontSize: '0.75rem', marginTop: '1rem' }}>
+              No insulin data
+            </div>
+          </div>
+        )}
       </div>
 
       {/* SECONDARY GRID - Detail Metrics (aligned grid layout) */}

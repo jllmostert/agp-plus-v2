@@ -1,377 +1,312 @@
-# AGP+ v3.0 - Ambulatory Glucose Profile Analyzer
+# AGP+ - Ambulatory Glucose Profile Analyzer
 
-> ✅ **v3.0.0 PRODUCTION READY** - Complete rewrite with master dataset architecture, persistent storage, and clinical-grade analysis.
+**Professional diabetes data analysis tool following ADA/ATTD clinical guidelines**
 
-> **Professional diabetes data analysis tool following ADA/ATTD 2025 clinical guidelines**
+---
 
-## Overview
+## What is AGP+?
 
-AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period-over-period comparison, **individual day profiles**, **device event tracking**, and **complete database export** following international clinical standards.
+AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period comparisons, day profiles, and device event tracking.
 
-**Version:** 3.0.0  
-**Status:** Production Ready  
-**Last Updated:** October 26, 2025
+**Key Features:**
+- Master dataset with multi-upload support
+- Period-to-period comparison (14/30/90 days)
+- Day/Night glucose analysis
+- Workday vs Rest day metrics (ProTime PDF integration)
+- Individual 24h day profiles with event markers
+- Sensor and cartridge change detection
+- Complete database export/import
+
+**Clinical Standards:**
+- ADA/ATTD 2025 guidelines
+- TIR/TAR/TBR thresholds (70-180 mg/dL)
+- GMI calculation (HbA1c estimate)
+- mg/dL units only
 
 ---
 
 ## Quick Start
 
-### Option 1: Simple Script (Recommended)
-```bash
-# Navigate to project folder
-cd /Users/jomostert/Documents/Projects/agp-plus
+### 1. Start Development Server
 
-# Run startup script
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+```
+
+Or use the startup script:
+```bash
 ./start.sh
-
-# Open browser
-http://localhost:3001
 ```
 
-### Option 2: Manual Start
-```bash
-# Clean up ports
-lsof -ti:3001 | xargs kill -9
+### 2. Open in Browser
 
-# Navigate to project
-cd /Users/jomostert/Documents/Projects/agp-plus
+Navigate to: **http://localhost:3001**
 
-# Set PATH and start server
-export PATH="/opt/homebrew/bin:$PATH" && npx vite --port 3001
+### 3. Upload CSV
 
-# Open browser
-http://localhost:3001
-```
-
-### Option 3: Standard NPM (default port 5173)
-```bash
-cd agp-plus
-npm install
-npm run dev
-# Open http://localhost:5173
-```
+1. Export data from Medtronic CareLink (CSV format)
+2. Click "Upload CSV" button
+3. Select your file
+4. Choose analysis period
 
 ---
 
-## Core Features
+## Project Structure
 
-### Data Import & Storage
-- ✅ Medtronic CareLink CSV upload
-- ✅ ProTime workday data integration (PDF/JSON)
-- ✅ **IndexedDB persistent storage** (save/load unlimited uploads)
-- ✅ **Patient information management** (auto-extraction + manual entry)
-- ✅ **Database Export** ⭐ NEW: Complete JSON export of master dataset
-- ✅ Automatic data validation & error handling
-
-### Clinical Analysis
-- ✅ **8 Core Metrics**: TIR, TAR, TBR, CV, GMI, Mean Glucose, MAGE, MODD
-- ✅ **AGP Visualization**: Percentile bands (10th, 25th, 50th, 75th, 90th)
-- ✅ **Event Detection**: Hypoglycemia (L1/L2), hyperglycemia alerts
-- ✅ **Period Comparison**: Auto-comparison for 14/30/90-day periods
-- ✅ **Day/Night Analysis**: Separate metrics for 06:00-22:00 vs 22:00-06:00
-- ✅ **Workday Split**: Compare workdays vs rest days (ProTime integration)
-- ✅ **Day Profiles** ⭐: Individual day analysis with 24h glucose curves
-
-### Day Profiles (v2.2)
-- ✅ **Last 7 Days View**: Individual cards per day with full context
-- ✅ **24h Glucose Curves**: High-resolution 5-minute data visualization
-- ✅ **Achievement Badges**: Perfect Day, Zen Master, exceptional performance
-- ✅ **Event Markers**: Visual hypo L1/L2, hyper events
-- ✅ **AGP Reference**: Period median overlay for context
-- ✅ **Print Export**: Optimized HTML for A4 printing (max 2 pages)
-- ✅ **Per-Day Metrics**: TIR, TAR, TBR, Mean±SD, CV for each day
-
-### Event Detection (v3.6) 🚧 IN DEVELOPMENT
-- ✅ **Sensor Database Import**: Load master_sensors.db (SQLite) from Sensoren project
-- ✅ **localStorage Storage**: Fast synchronous event access
-- ✅ **Event Caching**: Scan once, read many times (no render lag)
-- ⏳ **3-Tier Detection**: Database (high) → Alerts (medium) → Gaps (low)
-- ⏳ **JSON Export/Import**: Portable event backups (.agp-events.json)
-- ⏳ **Event Manager UI**: Rescan, export, import controls
-- ⏳ **Day Profile Integration**: Database-backed sensor/cartridge markers
-- 📝 See `docs/handoffs/HANDOFF_V3_6_EVENTS_OCT26.md` for implementation plan
-
-### User Experience
-- ✅ Preset period buttons (14/30/90 days)
-- ✅ Custom date range picker
-- ✅ Toggle-able analysis modes
-- ✅ Dark theme optimized interface
-- ✅ Responsive design (desktop/tablet/mobile)
-- ✅ HTML report export (AGP + Day Profiles)
-- ✅ **JSON database export** ⭐ NEW: Complete dataset backup
-
----
-
-## Architecture
-
-### Technology Stack
-- **React 18** - Component framework
-- **Vite** - Build tool & dev server
-- **Tailwind CSS** - Styling system
-- **Lucide React** - Icon library
-- **IndexedDB** - Client-side persistent storage
-
-### Project Structure
 ```
 agp-plus/
 ├── src/
-│   ├── components/        # 13 React UI components
-│   │   ├── AGPGenerator.jsx
-│   │   ├── FileUpload.jsx
-│   │   ├── PeriodSelector.jsx
-│   │   ├── MetricsDisplay.jsx
-│   │   ├── AGPChart.jsx
-│   │   ├── ComparisonView.jsx
-│   │   ├── DayNightSplit.jsx
-│   │   ├── WorkdaySplit.jsx
-│   │   ├── PatientInfo.jsx           [NEW v2.1]
-│   │   ├── SavedUploadsList.jsx      [NEW v2.1]
-│   │   ├── DayProfileCard.jsx        [NEW v2.2]
-│   │   ├── DayProfilesModal.jsx      [NEW v2.2]
-│   │   └── HypoglycemiaEvents.jsx    [NEW v2.2]
-│   │
-│   ├── hooks/             # 4 Custom React hooks
-│   │   ├── useCSVData.js
-│   │   ├── useMetrics.js
-│   │   ├── useComparison.js
-│   │   └── useUploadStorage.js       [NEW v2.1]
-│   │
-│   ├── core/              # 4 Calculation engines
-│   │   ├── metrics-engine.js
-│   │   ├── parsers.js
-│   │   ├── html-exporter.js
-│   │   └── day-profiles-exporter.js  [NEW v2.2]
-│   │
-│   ├── utils/             # Utility modules
-│   │   ├── patientStorage.js         [NEW v2.1]
-│   │   └── uploadStorage.js          [NEW v2.1]
-│   │
-│   └── styles/            # Tailwind CSS
-│
-├── public/                # Static assets
-├── package.json
-├── vite.config.js
-└── index.html
-```
-
-### Data Flow
-```
-CSV Upload → Parse Data → Select Period → Calculate Metrics → Render UI
-     ↓            ↓             ↓              ↓              ↓
-FileUpload → useCSVData → AGPGenerator → useMetrics → Display Components
-                                    ↓
-                              useComparison
-                                    ↓
-                            ComparisonView
+│   ├── components/        # React UI components
+│   ├── core/             # Calculation engines (pure functions)
+│   ├── hooks/            # React hooks (orchestration)
+│   └── storage/          # IndexedDB persistence
+├── docs/
+│   ├── HANDOFF.md        # Start here for development
+│   ├── STATUS.md         # Current project status
+│   ├── TEST_PLAN.md      # Testing procedures
+│   └── V3_ARCHITECTURE.md # System design
+├── public/               # Static assets
+└── test-data/           # Sample CSV files
 ```
 
 ---
 
-## Clinical Standards
+## For Developers
 
-AGP+ follows international guidelines for CGM data analysis:
+### Getting Started
 
-- **ADA/ATTD 2019** - Core CGM metrics definitions
-- **International Consensus 2017** - AGP methodology
-- **FDA Guidance 2016** - AGP visualization standards
+1. **Read Documentation**
+   - Start with `/docs/HANDOFF.md`
+   - Review `/docs/V3_ARCHITECTURE.md` for system design
+   - Check `/docs/STATUS.md` for current state
 
-### Target Ranges (Type 1 Diabetes)
-| Metric | Target | Range |
-|--------|--------|-------|
-| **TIR** | ≥70% | 70-180 mg/dL |
-| **TAR** | ≤25% | >180 mg/dL |
-| **TBR** | <4% | <70 mg/dL |
-| **CV** | ≤36% | Glycemic variability |
-| **GMI** | <7.0% | Glucose Management Indicator |
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
----
+3. **Start Dev Server**
+   ```bash
+   npm run dev
+   ```
 
-## Documentation
+### Key Technologies
 
-### Essential Reading
+- **React 18.3** - UI framework
+- **Vite** - Build tool with hot reload
+- **IndexedDB** - Client-side storage (via Dexie.js)
+- **localStorage** - Event detection cache
+- **Tailwind CSS** - Styling (brutalist design system)
 
-1. **[PROJECT BRIEFING](./AGP_PLUS_v2.1_PROJECT_BRIEFING.md)** ⭐ Start here
-   - Complete technical documentation
-   - Architecture & component details
-   - Algorithm explanations
-   - Known limitations
+### Architecture
 
-2. **[DESIGN SYSTEM](./DESIGN_SYSTEM_QUICK_REF.md)**
-   - UI/UX guidelines
-   - Color schemes & typography
-   - Component patterns
+**Data Flow:**
+```
+CSV Upload → Parse → IndexedDB → Event Detection → 
+Calculate Metrics → Generate AGP → Render Components
+```
 
-3. **[METRIC DEFINITIONS](./metric_definitions.md)**
-   - Clinical metric explanations
-   - Calculation formulas
-   - Target ranges & interpretation
+**Storage:**
+- **IndexedDB**: Glucose readings (persistent, month-bucketed)
+- **localStorage**: Event cache (sensor/cartridge changes)
+- **React State**: UI state (session only)
 
-4. **[MINIMED 780G REFERENCE](./minimed_780g_ref.md)**
-   - Device specifications
-   - CareLink data format
-   - SmartGuard algorithm notes
+### Testing
 
-### Code Reference
-
-The `/docs/artifacts/` folder contains reference implementations:
-- `ARTIFACT-01__metrics-engine_js.txt` - Calculation engine
-- `ARTIFACT-02__parsers_js.txt` - CSV parsing logic
-- `ARTIFACT-03__html-exporter_js.txt` - Report generation
-
----
-
-## Development
-
-### Prerequisites
-- Node.js 18+
-- npm 9+
-- Git
-
-### Commands
+Run comprehensive tests:
 ```bash
-# Development
-npm run dev              # Start dev server (port 5173)
+# See /docs/TEST_PLAN.md for details
 
-# Build
-npm run build            # Production build → dist/
-npm run preview          # Preview production build
-
-# Code Quality
-npm run lint             # ESLint (if configured)
+# Priority 1: Clinical validation
+# Priority 2: Edge cases  
+# Priority 3: Performance
+# Priority 4: User workflows
 ```
 
-### Testing Workflow
-1. Upload sample CareLink CSV
-2. Select 30-day period
-3. Verify all metrics display correctly
-4. Check AGP chart renders
-5. Test comparison view (if historical data available)
-6. Toggle day/night analysis
-7. Import ProTime data (if available)
-8. Export HTML report
+---
+
+## Data Format
+
+**Input:** Medtronic CareLink CSV export  
+**Columns Used:**
+- Index 0: Date
+- Index 1: Time  
+- Index 4: Sensor Glucose (mg/dL)
+- Index 7: Alerts (sensor/rewind events)
+- Index 21: Marker events
+
+**Output:** HTML report with:
+- Glycemic metrics (TIR, TAR, TBR, GMI)
+- AGP chart (5th, 25th, 50th, 75th, 95th percentiles)
+- Day profiles (24h glucose curves with event markers)
+- Comparison views (period/day-night/workday)
+
+---
+
+## Clinical Metrics
+
+### Time in Range (TIR)
+- **Target:** 70-180 mg/dL
+- **Goal:** >70% of time
+
+### Time Above Range (TAR)
+- **Level 1:** >180 mg/dL  
+- **Level 2:** >250 mg/dL
+
+### Time Below Range (TBR)
+- **Level 1:** <70 mg/dL
+- **Level 2:** <54 mg/dL
+
+### Glucose Management Indicator (GMI)
+- **Formula:** 3.31 + 0.02392 × [mean glucose]
+- **Correlates with:** HbA1c
+
+---
+
+## Design Philosophy
+
+**Brutalist Medical Interface:**
+- High contrast (black background, white/orange text)
+- 3px borders for clarity
+- Print-compatible (black & white)
+- Monospace typography
+- No gradients or shadows
+- Clinical functionality over aesthetics
+
+**Rationale:**
+Medical professionals need rapid data interpretation. The design prioritizes:
+1. Speed of reading
+2. Print compatibility
+3. Clear data hierarchy
+4. No visual distractions
+
+---
+
+## Browser Compatibility
+
+**Tested:**
+- Chrome/Edge (Chromium)
+- Safari (macOS)
+- Firefox
+
+**Requirements:**
+- Modern browser with ES6 support
+- IndexedDB support
+- localStorage enabled
+
+**Mobile:**
+- iOS Safari (touch interactions work)
+- Android Chrome (basic support)
+
+---
+
+## Database Management
+
+### Export Database
+Click "Export Database" to download complete JSON file containing:
+- All glucose readings
+- Month bucket metadata
+- Workday dates (if ProTime PDF uploaded)
+
+### Import Database  
+Upload previously exported JSON to restore full dataset.
+
+### Delete Data
+Individual month buckets can be deleted with preview of affected date ranges.
+
+---
+
+## Event Detection
+
+### Sensor Changes
+**3-Tier Confidence System:**
+1. **High:** Sensor database match (future feature)
+2. **Medium:** CSV alert detection ("SENSOR CONNECTED", "CHANGE SENSOR")
+3. **Low:** Gap analysis (2-10 hour gaps, >100 readings before)
+
+### Cartridge Changes
+Detected from CSV "Rewind" events in column 21.
+
+### Visualization
+Red dashed vertical lines at sensor/cartridge change times in day profiles.
+
+---
+
+## Comparison Features
+
+### Period-to-Period
+Compare current period with previous equivalent period (14/30/90 days back).
+
+### Day vs Night
+- **Day:** 06:00-00:00
+- **Night:** 00:00-06:00
+
+### Workday vs Rest
+Upload ProTime PDF to detect workdays, compare glucose patterns.
 
 ---
 
 ## Known Limitations
 
-### Basal Rate Data
-⚠️ **CareLink CSV exports do NOT include SmartGuard auto-adjustments**
-
-The CSV contains only the *programmed* basal pattern, not actual delivery. This makes Total Daily Dose (TDD) calculations unreliable (-26% to -1% error).
-
-**Solution:** Use Medtronic PDF reports (Therapy Management Dashboard) for accurate TDD data.
-
-**Design Decision:** We don't calculate metrics we can't trust. Honesty > features.
-
-### Data Requirements
-- Minimum 7 days of CGM data
-- At least 70% CGM coverage for reliable metrics
-- Date ranges must be within available data
+1. **CSV Format:** Only Medtronic CareLink format supported
+2. **Units:** mg/dL only (no mmol/L conversion)
+3. **Timezone:** Local time only (no timezone conversion)
+4. **Device:** MiniMed 780G focus (other devices may work)
 
 ---
 
-## Deployment
+## Documentation
 
-### Netlify (Recommended)
-```bash
-npm run build
-# Upload dist/ folder to Netlify
-# Or connect GitHub for auto-deploy
-```
-
-### Vercel
-```bash
-npm i -g vercel
-vercel
-```
-
-### GitHub Pages
-```bash
-# Update vite.config.js base path
-npm run build
-npx gh-pages -d dist
-```
+- **HANDOFF.md** - Developer onboarding guide
+- **STATUS.md** - Current project status
+- **TEST_PLAN.md** - Testing procedures
+- **V3_ARCHITECTURE.md** - System design document
+- **V3_IMPLEMENTATION_GUIDE.md** - Phase-by-phase development
+- **metric_definitions.md** - Clinical formulas
+- **minimed_780g_ref.md** - Device specifications
 
 ---
 
-## Future Enhancements
+## Contributing
 
-### Day Profiles Optimization (v2.3 Priority)
-**Problem:** Current Y-axis (40-400 mg/dL) wastes vertical space
-- Most clinically relevant data: 54-250 mg/dL
-- Current design: ~30% chart shows actual glucose patterns, ~70% is whitespace
-- **Impact:** Compressed glucose variability makes patterns harder to scan
+This is a personal project by Jo Mostert. For questions or collaboration:
 
-**Solution (Planned):**
-- [ ] Adaptive Y-axis: Primary range 54-250 mg/dL with dynamic breakpoints
-- [ ] Visual indicators for outliers above/below (similar to Medtronic PDF)
-- [ ] Maintain clinical context while maximizing data density
-- [ ] Reduce horizontal padding to increase chart width (currently 70% margins)
-
-### Planned Features
-- [x] ~~Save/load sessions~~ (✅ Implemented v2.1 - IndexedDB)
-- [x] ~~Patient information management~~ (✅ Implemented v2.1)
-- [x] ~~Day profiles with print export~~ (✅ Implemented v2.2)
-- [x] ~~Database export (JSON)~~ (✅ Implemented v3.8.0)
-- [x] ~~Sensor database import~~ (✅ Implemented v3.8.1 - Phase 2A)
-- [x] ~~Sensor change visualization in day profiles~~ (✅ Implemented v3.8.2 - Phase 2B)
-- [ ] Sensor overview dashboard (Phase 2C - Next)
-- [ ] PDF export (in addition to HTML)
-- [ ] Multiple CSV comparison
-- [ ] Custom target ranges
-- [ ] A1C correlation tracking
-- [ ] Adaptive Y-axis for day profiles (v2.3)
-
-### Under Consideration
-- [ ] Backend API integration
-- [ ] User accounts & cloud storage
-- [ ] Mobile app (React Native)
-- [ ] Real-time CGM integration
-
----
-
-## Support
-
-### Issues & Questions
-- **GitHub Issues**: [Report bugs or request features](https://github.com/[your-username]/agp-plus/issues)
-- **Documentation**: Review project briefing for detailed explanations
-- **Clinical Questions**: Consult with healthcare provider
-
-### Contributing
-Contributions welcome! Please:
-1. Fork the repository
-2. Create feature branch
-3. Follow existing code style
-4. Test thoroughly
-5. Submit pull request with clear description
+**Development Process:**
+1. Read `/docs/HANDOFF.md`
+2. Check `/docs/STATUS.md` for current priorities
+3. Follow git workflow in `/docs/GIT_WORKFLOW.md`
+4. Use Desktop Commander for file operations
+5. Test thoroughly before committing
 
 ---
 
 ## License
 
-[Add your license here - e.g., MIT, GPL, etc.]
+MIT License - See LICENSE file for details
 
 ---
 
 ## Acknowledgments
 
-Built following clinical guidelines from:
-- American Diabetes Association (ADA)
-- Advanced Technologies & Treatments for Diabetes (ATTD)
-- International Consensus on CGM Data
-
-Data format based on:
-- Medtronic CareLink export specifications
-- Medtronic MiniMed 780G system
+- **Clinical Guidelines:** American Diabetes Association (ADA), Advanced Technologies & Treatments for Diabetes (ATTD)
+- **Device:** Medtronic MiniMed 780G
+- **Inspiration:** AGP reports from clinical diabetes management
 
 ---
 
-## Contact
+## Version History
 
-**Project Maintainer**: [Your name]  
-**Email**: [Your email]  
-**Repository**: [GitHub URL]
+See `CHANGELOG.md` for complete version history.
+
+**Current:** v3.0.0 (October 2025)
+- Master dataset architecture
+- Multi-upload support
+- Event detection system
+- Comparison features
+- Day profiles with device events
 
 ---
 
-*Made with ❤️ for better diabetes management*
+**Built with care for better diabetes management. 🩺**

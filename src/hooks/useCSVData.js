@@ -30,7 +30,10 @@ export function useCSVData() {
     
     try {
       // Parse CSV using core parser
-      const data = parseCSV(text);
+      // Returns: {data: Array, section2: Array}
+      const parsed = parseCSV(text);
+      const data = parsed.data || parsed; // Backwards compatibility with old format
+      const section2 = parsed.section2 || []; // Auto insulin data (new in v3.1)
       
       if (data.length === 0) {
         throw new Error('No valid data found in CSV');

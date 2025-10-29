@@ -31,7 +31,8 @@ export default function DebugPanel() {
 
     // Parse CSV
     const { parseCSV } = await import('../core/parsers.js');
-    const readings = parseCSV(text);
+    const parsed = parseCSV(text);
+    const readings = parsed.data || parsed; // Backwards compatibility
     setParsedReadings(readings);
 
     // Analyze alerts

@@ -128,6 +128,7 @@ export const generateHTML = (options) => {
     metrics,
     agpData,
     events,
+    tddData = null,
     startDate,
     endDate,
     dayNightMetrics = null,
@@ -229,9 +230,18 @@ export const generateHTML = (options) => {
         page-break-before: always;
       }
       
+      .page-landscape {
+        page-break-before: always;
+      }
+      
       @page {
-        size: A4;
+        size: A4 portrait;
         margin: 5mm;
+      }
+      
+      @page :nth(2) {
+        size: A4 landscape;
+        margin: 8mm;
       }
     }
     
@@ -610,13 +620,15 @@ export const generateHTML = (options) => {
         </div>
       </div>
       <div class="details-card">
+        ${tddData ? `
         <div class="detail-row">
-          <span class="detail-label">Minimum</span>
-          <span class="detail-value">${metrics.min} mg/dL</span>
+          <span class="detail-label">TDD (Total Daily Dose)</span>
+          <span class="detail-value">${tddData.meanTDD.toFixed(1)} ± ${tddData.sdTDD.toFixed(1)} E</span>
         </div>
+        ` : ''}
         <div class="detail-row">
-          <span class="detail-label">Maximum</span>
-          <span class="detail-value">${metrics.max} mg/dL</span>
+          <span class="detail-label">Range (Min - Max)</span>
+          <span class="detail-value">${metrics.min} - ${metrics.max} mg/dL</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Days analyzed</span>
@@ -630,7 +642,7 @@ export const generateHTML = (options) => {
     </div>
   </div>
 
-  <div class="section">
+  <div class="section page-landscape">
     <h2>AMBULATORY GLUCOSE PROFILE</h2>
     
     <div class="tir-bar">
@@ -715,10 +727,19 @@ export const generateHTML = (options) => {
       ` : ''}
       
       <!-- Hypo event markers -->
-      ${[...events.hypoL2.events, ...events.hypoL1.events].map(event => {
+      ${events.hypoL2.events.map(event => {
         const x = 60 + (event.minuteOfDay / 1440) * 780;
-        return `<line x1="${x}" y1="50" x2="${x}" y2="360" stroke="#ff0000" stroke-width="2" opacity="0.6" />`;
-      }).join('\n      ')}
+        const y = 350 - ((event.startGlucose - yMin) / yRange) * 300;
+        return `
+          <circle cx="${x}" cy="${y}" r="5" fill="#dc2626" stroke="#000000" stroke-width="2"/>
+          <text x="${x}" y="${y + 1.5}" text-anchor="middle" fill="#ffffff" font-size="8" font-weight="bold">×</text>
+        `;
+      }).join('')}
+      ${events.hypoL1.events.map(event => {
+        const x = 60 + (event.minuteOfDay / 1440) * 780;
+        const y = 350 - ((event.startGlucose - yMin) / yRange) * 300;
+        return `<circle cx="${x}" cy="${y}" r="4" fill="#ea580c" stroke="#000000" stroke-width="2"/>`;
+      }).join('')}
       
       <!-- Legend box -->
       <rect x="680" y="60" width="150" height="${comparison ? '110' : '90'}" fill="#fff" stroke="#000" stroke-width="2" />

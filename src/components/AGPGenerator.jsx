@@ -35,7 +35,6 @@ import SensorHistoryModal from './SensorHistoryModal';
 import DataManagementModal from './DataManagementModal';
 import { MigrationBanner } from './MigrationBanner';
 import { DateRangeFilter } from './DateRangeFilter';
-import DebugPanel from './DebugPanel';
 
 /**
  * AGPGenerator - Main application container
@@ -121,6 +120,7 @@ export default function AGPGenerator() {
   const [dayProfilesOpen, setDayProfilesOpen] = useState(false); // Day profiles modal state
   const [sensorHistoryOpen, setSensorHistoryOpen] = useState(false); // Sensor history modal state
   const [dataManagementOpen, setDataManagementOpen] = useState(false); // Data management modal state
+  const [tddData, setTddData] = useState(null); // TDD statistics {meanTDD, sdTDD, ...}
 
   // Load patient info from storage
   useEffect(() => {
@@ -140,6 +140,22 @@ export default function AGPGenerator() {
       loadPatientInfo();
     }
   }, [patientInfoOpen]);
+
+  // Load TDD data from storage
+  useEffect(() => {
+    const loadTDD = async () => {
+      try {
+        const { loadTDDData } = await import('../storage/masterDatasetStorage');
+        const tdd = await loadTDDData();
+        if (tdd && tdd.tddStats) {
+          setTddData(tdd.tddStats);
+        }
+      } catch (err) {
+        console.error('Failed to load TDD data:', err);
+      }
+    };
+    loadTDD();
+  }, [activeUploadId]); // Reload when upload changes
 
   /**
    * Auto-select last 14 days when data becomes ready (green light)
@@ -545,6 +561,7 @@ export default function AGPGenerator() {
       metrics: metricsResult.metrics,
       agpData: metricsResult.agp,
       events: metricsResult.events,
+      tddData: tddData, // Add TDD statistics
       startDate: formatDate(startDate),
       endDate: formatDate(endDate),
       // ALWAYS include day/night metrics in export (independent of UI toggle)
@@ -714,9 +731,6 @@ export default function AGPGenerator() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       
-      {/* Debug Panel - Hidden debug tools (top-right bug icon) */}
-      <DebugPanel />
-      
       <div className="app-container">
         
         {/* Migration Notice (if applicable) */}
@@ -770,24 +784,84 @@ export default function AGPGenerator() {
               flexDirection: 'column',
               gap: '1.5rem'
             }}>
-              {/* Version + Title */}
-              <div>
-                <h1 style={{ 
-                  letterSpacing: '0.2em', 
-                  fontWeight: 700, 
-                  fontSize: '1.75rem',
-                  marginBottom: '0.25rem',
-                  color: 'var(--paper)'
-                }}>
-                  AGP+
-                </h1>
-                <div style={{ 
-                  fontSize: '0.875rem', 
-                  color: 'var(--paper)',
-                  fontWeight: 600,
-                  opacity: 0.9
-                }}>
-                  V3.0
+              {/* Version + Title + Debug Link */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div>
+                  <h1 style={{ 
+                    letterSpacing: '0.2em', 
+                    fontWeight: 700, 
+                    fontSize: '1.75rem',
+                    marginBottom: '0.25rem',
+                    color: 'var(--paper)'
+                  }}>
+                    AGP+
+                  </h1>
+                  <div style={{ 
+                    fontSize: '0.875rem', 
+                    color: 'var(--paper)',
+                    fontWeight: 600,
+                    opacity: 0.9
+                  }}>
+                    V3.0
+                  </div>
+                </div>
+                
+                {/* Debug Tools Buttons */}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => window.open('/debug/sensor-detection.html', '_blank')}
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      background: 'transparent',
+                      border: '2px solid var(--paper)',
+                      color: 'var(--paper)',
+                      cursor: 'pointer',
+                      fontSize: '0.625rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.15em',
+                      textTransform: 'uppercase',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap'
+                    }}
+                    title="Sensor Detection Debug Tool"
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = 'var(--paper)';
+                      e.currentTarget.style.color = 'var(--color-black)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--paper)';
+                    }}
+                  >
+                    SENSORS
+                  </button>
+                  <button
+                    onClick={() => window.open('/debug/insulin-tdd.html', '_blank')}
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      background: 'transparent',
+                      border: '2px solid var(--paper)',
+                      color: 'var(--paper)',
+                      cursor: 'pointer',
+                      fontSize: '0.625rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.15em',
+                      textTransform: 'uppercase',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap'
+                    }}
+                    title="Insulin TDD Debug Tool"
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = 'var(--paper)';
+                      e.currentTarget.style.color = 'var(--color-black)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--paper)';
+                    }}
+                  >
+                    INSULIN
+                  </button>
                 </div>
               </div>
 
@@ -1511,6 +1585,7 @@ export default function AGPGenerator() {
                 <section className="section">
                   <MetricsDisplay
                     metrics={metricsResult.metrics}
+                    tddData={tddData}
                     startDate={startDate}
                     endDate={endDate}
                   />
