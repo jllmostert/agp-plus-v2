@@ -83,20 +83,31 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
   
   // Handle deletion
   const handleDelete = async () => {
+    debug.log('[DataManagementModal] ====== handleDelete CALLED ======');
+    debug.log('[DataManagementModal] Button click registered!');
+    
     const dateRange = getDateRange();
     if (!dateRange) {
+      debug.warn('[DataManagementModal] No valid date range');
       alert('Select valid date range');
       return;
     }
     
+    debug.log('[DataManagementModal] Date range valid:', dateRange);
+    
     if (!deleteGlucose && !deleteProTime && !deleteCartridge) {
+      debug.warn('[DataManagementModal] No data types selected');
       alert('Select at least one data type');
       return;
     }
     
+    debug.log('[DataManagementModal] Delete types:', { deleteGlucose, deleteProTime, deleteCartridge });
+    debug.log('[DataManagementModal] Starting deletion process...');
+    
     setIsDeleting(true);
     
     try {
+      debug.log('[DataManagementModal] Calling onDelete function...');
       const result = await onDelete({
         dateRange,
         deleteTypes: {
@@ -115,11 +126,24 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
       alert('Deletion failed: ' + err.message);
     } finally {
       setIsDeleting(false);
+      debug.log('[DataManagementModal] ====== handleDelete FINISHED ======');
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.9)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999,
+      padding: '1rem'
+    }}>
       <div style={{
         background: 'var(--paper)',
         border: '4px solid var(--ink)',

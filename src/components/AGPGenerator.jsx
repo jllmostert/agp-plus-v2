@@ -680,6 +680,8 @@ export default function AGPGenerator() {
    * Refreshes V3 dataset and workdays after deletion
    */
   const handleDataManagementDelete = async (deleteConfig) => {
+    debug.log('[AGPGenerator] 🗑️ DELETE FUNCTION CALLED!', deleteConfig);
+    
     const { dateRange, deleteTypes } = deleteConfig;
     
 
@@ -719,7 +721,7 @@ export default function AGPGenerator() {
       return deletedCounts;
       
     } catch (err) {
-      console.error('[DataManagement] ❌ Delete failed:', err);
+      debug.error('[DataManagement] ❌ Delete failed:', err);
       throw err;
     }
   };
@@ -990,7 +992,11 @@ export default function AGPGenerator() {
                 
                 {/* CLEANUP button */}
                 <button
-                  onClick={() => setDataManagementOpen(true)}
+                  onClick={() => {
+                    debug.log('[AGPGenerator] 🗑️ CLEANUP button clicked!');
+                    debug.log('[AGPGenerator] dataStatus.hasData:', dataStatus.hasData);
+                    setDataManagementOpen(true);
+                  }}
                   disabled={!dataStatus.hasData}
                   style={{
                     padding: '0.5rem 1rem',
