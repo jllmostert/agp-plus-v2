@@ -74,7 +74,6 @@ export function useMasterDataset(options = {}) {
         const { initEventsFromMasterDataset } = await import('../storage/masterDatasetStorage');
         await initEventsFromMasterDataset();
       } catch (err) {
-        console.warn('[useMasterDataset] Event initialization failed:', err);
       }
       
       // AUTO-LOAD LAST 14 DAYS: If no date range specified, default to last 14 days
@@ -110,7 +109,6 @@ export function useMasterDataset(options = {}) {
         if (workdaySet) {
         }
       } catch (err) {
-        console.warn('[useMasterDataset] ProTime load failed:', err);
       }
       
       setStats({

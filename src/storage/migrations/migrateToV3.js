@@ -106,7 +106,6 @@ async function migrateReadings(upload, index, total) {
     // Validate upload data
     if (!upload.csvData) {
       stats.errors.push('Missing csvData');
-      console.warn(`[Migration] ⚠️ Upload ${upload.id} has no csvData, skipping`);
       return stats;
     }
     
@@ -147,7 +146,6 @@ async function migrateReadings(upload, index, total) {
     
     if (readings.length === 0) {
       stats.errors.push('No valid glucose readings found');
-      console.warn(`[Migration] ⚠️ Upload ${upload.id} has no glucose data`);
       return stats;
     }
     
@@ -206,7 +204,6 @@ async function backfillEvents(uploads) {
         await detectCartridgeChanges(parsedData, upload.filename || upload.id, stats);
         
       } catch (err) {
-        console.warn(`[Migration] ⚠️ Failed to backfill events for ${upload.id}:`, err);
         // Continue with other uploads
       }
     }
@@ -264,7 +261,6 @@ async function detectSensorChanges(parsedData, sourceFile, stats) {
       } catch (err) {
         // Duplicate event (already exists) - ignore
         if (!err.message.includes('duplicate')) {
-          console.warn('[Migration] Failed to store sensor change:', err);
         }
       }
     }
@@ -300,7 +296,6 @@ async function detectCartridgeChanges(parsedData, sourceFile, stats) {
     } catch (err) {
       // Duplicate event - ignore
       if (!err.message.includes('duplicate')) {
-        console.warn('[Migration] Failed to store cartridge change:', err);
       }
     }
   }
@@ -435,7 +430,6 @@ export async function migrateToV3() {
  * Clears all v3.0 stores but preserves v2.x uploads
  */
 export async function resetMigration() {
-  console.warn('[Migration] ⚠️ RESETTING MIGRATION - ALL V3 DATA WILL BE DELETED');
   
   try {
     const db = await openDB();

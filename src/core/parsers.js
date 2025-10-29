@@ -10,6 +10,7 @@
  */
 
 import { CONFIG, utils } from './metrics-engine.js';
+import { debug } from '../utils/debug.js';
 
 /**
  * Extract patient metadata from Medtronic CareLink CSV header
@@ -27,7 +28,6 @@ export const parseCSVMetadata = (text) => {
     const lines = text.split('\n');
     
     if (lines.length < 3) {
-      console.warn('CSV too short to extract metadata');
       return null;
     }
     
@@ -329,7 +329,6 @@ export const parseCSV = (text) => {
         
         // Validate glucose range if present (40-400 mg/dL is reasonable)
         if (hasGlucose && (glucose < 40 || glucose > 400)) {
-          console.warn(`Suspicious glucose value at row ${index + CONFIG.CSV_SKIP_LINES}: ${glucose} mg/dL`);
         }
         
         validRows++;
@@ -362,11 +361,10 @@ export const parseCSV = (text) => {
     
     // Calculate coverage
     const coverage = (validRows / (validRows + skippedRows) * 100).toFixed(1);
-    console.info(`CSV parsed successfully: ${validRows} valid rows (${coverage}% coverage), ${skippedRows} skipped`);
+    debug.info(`CSV parsed successfully: ${validRows} valid rows (${coverage}% coverage), ${skippedRows} skipped`);
     
     // Warn if coverage is low
     if (coverage < 70) {
-      console.warn(`⚠️ Low data coverage: ${coverage}%. Metrics may be unreliable.`);
     }
     
     // Parse Section 1 (meal boluses for TDD calculation)

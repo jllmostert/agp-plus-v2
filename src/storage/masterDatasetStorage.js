@@ -21,6 +21,7 @@ import {
   getRecord, 
   putRecord 
 } from './db.js';
+import { debug } from '../utils/debug.js';
 
 /**
  * Generate month key from Date
@@ -371,14 +372,12 @@ async function detectAndStoreEvents(readings) {
       await storeSensorChange(event.timestamp, event.alert, 'CSV Alert');
     } catch (err) {
       if (!err.message.includes('duplicate')) {
-        console.warn('[detectAndStoreEvents] Failed to store sensor change:', err);
       }
     }
   }
   
   // Handle ambiguous groups (>60 min apart on same day)
   if (ambiguousGroups.length > 0) {
-    console.warn('[detectAndStoreEvents] ⚠️ Ambiguous sensor events detected:', ambiguousGroups);
     
     // For now, treat each ambiguous group as one sensor change (use earliest event)
     // TODO: Add user prompt UI to ask for confirmation
@@ -389,7 +388,6 @@ async function detectAndStoreEvents(readings) {
         await storeSensorChange(representative.timestamp, representative.alert, 'CSV Alert (Clustered)');
       } catch (err) {
         if (!err.message.includes('duplicate')) {
-          console.warn('[detectAndStoreEvents] Failed to store ambiguous sensor change:', err);
         }
       }
     }
@@ -427,7 +425,6 @@ async function detectAndStoreEvents(readings) {
       }
     } catch (err) {
       if (!err.message.includes('duplicate')) {
-        console.warn('[detectAndStoreEvents] Failed to store cartridge change:', err);
       }
     }
   }
@@ -534,10 +531,10 @@ export async function uploadCSVToV3(csvText) {
       });
       
     } catch (err) {
-      console.warn('[uploadCSVToV3] TDD calculation failed (non-fatal):', err);
+      debug.warn('[uploadCSVToV3] TDD calculation failed (non-fatal):', err);
     }
   } else {
-    console.warn('[uploadCSVToV3] Skipping TDD calculation (missing Section 1 or 2)');
+    debug.warn('[uploadCSVToV3] Skipping TDD calculation (missing Section 1 or 2)');
   }
   
   // Transform readings to add timestamp field (required by storage layer)

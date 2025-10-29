@@ -1,255 +1,214 @@
-# CLEANUP PLAN - AGP+ v3.0
+# AGP+ v3.0 Code Cleanup Plan
 
 **Date:** October 29, 2025  
-**Goal:** Clean project structure, één handoff, merge to main
+**Status:** Pre-Production Cleanup
 
 ---
 
-## 📋 CURRENT STATE ANALYSIS
+## 🎯 OBJECTIVES
 
-### Root Directory
-- ✅ CHANGELOG.md (keep - updated)
-- ✅ README.md (keep - needs update)
-- ✅ agp-project-status.html (keep - new dashboard)
-- ❌ PROJECT_BRIEFING_V3_8.md (archive - outdated, we have V3_0 in docs)
-- ❌ backup-before-console-cleanup/ (delete - temporary backup)
-- ❌ cleanup-console-logs.cjs (delete - one-time script)
-- ❌ test-*.html, test-*.js files (archive - debug tools)
-
-### /docs/ Directory
-**HANDOFFS - Multiple versions exist:**
-- HANDOFF_2025_10_28_VERIFIED.md
-- HANDOFF_V3_0_FINAL.md ⭐ (KEEP THIS ONE)
-- HANDOFF_V3_1_PHASE_0_TDD_READY.md
-- handoffs/HANDOFF_2025_10_29_DEBUG_REORGANIZATION.md
-
-**STATUS - Multiple versions:**
-- V3_0_PRODUCTION_STATUS.md ⭐ (KEEP)
-- V3_PHASE_4_STATUS_CHECK.md (archive - superseded)
-
-**ARCHITECTURE:**
-- V3_ARCHITECTURE.md ⭐ (KEEP)
-- V3_ARCHITECTURE_DECISIONS.md ⭐ (KEEP)
-- V3_IMPLEMENTATION_GUIDE.md ⭐ (KEEP)
-
-**PROJECT BRIEFINGS:**
-- PROJECT_BRIEFING_V3_0.md (in docs)
-- PROJECT_BRIEFING_V2_2_0 (in Claude project files)
-- Need to consolidate
-
-**INDEX FILES:**
-- START_HERE.md
-- DOCUMENTATION_INDEX.md
-- V3_MASTER_INDEX.md
-- MASTER_INDEX_V2_2_0.md (in Claude)
-- Need to consolidate
-
-### Claude Project Files
-- agp-project-status.html (OLD version)
-- HANDOFF_PROMPT_V2_2_0.md (outdated)
-- PROJECT_BRIEFING_V2_2_0_PART1.md (outdated)
-- PROJECT_BRIEFING_V2_2_0_PART2.md (outdated)
-- MASTER_INDEX_V2_2_0.md (outdated)
+1. Remove ALL direct console.log/warn/info statements
+2. Replace with debug utility where needed
+3. Keep console.error for critical errors
+4. Clean up duplicate files
+5. Remove backup files
+6. Ensure language consistency (NL or EN, not both)
+7. Improve code comments
 
 ---
 
-## 🎯 CLEANUP ACTIONS
+## 📋 PHASE 1: FILE CLEANUP
 
-### 1. Root Directory Cleanup
+### Duplicate Files to Remove
+- [ ] `src/utils/debug 2.js` (use debug.js)
+- [ ] `src/utils/constants 2.js` (use constants.js)
+- [ ] `src/utils/eventClustering 2.js` (use eventClustering.js)
+- [ ] `src/utils/formatters 2.js` (use formatters.js)
+- [ ] `src/core/insulin-engine 2.js` (use insulin-engine.js)
+- [ ] `src/core/sensorEventClustering 2.js` (use sensorEventClustering.js)
+- [ ] `src/components/DebugPanel 2.jsx` (use DebugPanel.jsx)
 
-**Archive to `/docs/archive/debug-tools/`:**
-- test-phase4.html
-- test-phase4.js
-- test_csv_upload.js
-- test_events.html
-- test_fresh_csv_upload.js
-- test_sensor_clustering.js
-- test_upload_verification.js
-- manipulate_test_csv.py
-
-**Delete (temporary files):**
-- backup-before-console-cleanup/
-- cleanup-console-logs.cjs
-
-**Archive to `/docs/archive/old-briefings/`:**
-- PROJECT_BRIEFING_V3_8.md
+### Backup Files to Remove
+- [ ] `src/core/day-profile-engine.js.backup`
+- [ ] `src/core/day-profile-engine.js.backup2`
+- [ ] `src/core/day-profile-engine.js 2.backup2`
+- [ ] `src/core/day-profile-engine_CHUNK1.js`
 
 ---
 
-### 2. Docs Directory Consolidation
+## 📋 PHASE 2: CONSOLE STATEMENT AUDIT
 
-**Create ONE master handoff: `HANDOFF.md`**
-Based on HANDOFF_V3_0_FINAL.md but renamed to remove version
-
-**Archive old handoffs to `/docs/archive/handoffs-oct2025/`:**
-- HANDOFF_2025_10_28_VERIFIED.md
-- HANDOFF_V3_1_PHASE_0_TDD_READY.md
-- handoffs/HANDOFF_2025_10_29_DEBUG_REORGANIZATION.md
-
-**Keep in /docs/ root:**
-- HANDOFF.md (renamed from HANDOFF_V3_0_FINAL.md)
-- TEST_PLAN.md (renamed from TEST_PLAN_V3_0.md)
-- STATUS.md (renamed from V3_0_PRODUCTION_STATUS.md)
-- V3_ARCHITECTURE.md (keep as-is)
-- V3_ARCHITECTURE_DECISIONS.md (keep as-is)
-- V3_IMPLEMENTATION_GUIDE.md (keep as-is)
-- GIT_WORKFLOW.md (keep as-is)
-- metric_definitions.md (keep as-is)
-- minimed_780g_ref.md (keep as-is)
-
-**Archive to `/docs/archive/old-index-files/`:**
-- START_HERE.md
-- DOCUMENTATION_INDEX.md
-- DOCUMENTATION_RENAMING_SUMMARY.md
-- V3_MASTER_INDEX.md
-- V3_PHASE_4_STATUS_CHECK.md
-- V3_1_PHASE_0_TDD_METRICS.md
-- PROJECT_BRIEFING_V3_0.md
-
----
-
-### 3. Claude Project Files Update
-
-**Replace with current versions:**
-- agp-project-status.html (use laptop version)
-- Remove all V2_2_0 files (outdated)
-
-**New Claude project structure:**
-- HANDOFF.md (simplified, no version number)
-- STATUS.md (current state)
-- TEST_PLAN.md (testing guide)
-- V3_ARCHITECTURE.md (system design)
-- metric_definitions.md (clinical reference)
-- minimed_780g_ref.md (device reference)
-- agp-project-status.html (visual dashboard)
-- Sample CSV (Jo_Mostert_24-10-2025_SAMPLE.csv)
-
----
-
-### 4. README.md Update
-
-**Current README.md needs:**
-- Remove "v2.2" references
-- Update to v3.0 features
-- Simplify getting started
-- Remove outdated screenshots references
-
----
-
-### 5. Git Branch Consolidation
-
-**Current branches:**
-- main (old state)
-- v3.0-dev (development)
-- v3.1-insulin (current work)
-
-**Actions:**
-1. Merge v3.1-insulin → v3.0-dev (squash if needed)
-2. Merge v3.0-dev → main
-3. Tag v3.0.0 on main
-4. Delete v3.1-insulin branch (work complete)
-5. Keep v3.0-dev for future work
-
----
-
-## 📝 IMPLEMENTATION CHECKLIST
-
-### Phase 1: Root Directory
-- [ ] Create /docs/archive/debug-tools/
-- [ ] Move test files to archive
-- [ ] Delete backup-before-console-cleanup/
-- [ ] Delete cleanup-console-logs.cjs
-- [ ] Create /docs/archive/old-briefings/
-- [ ] Move PROJECT_BRIEFING_V3_8.md to archive
-
-### Phase 2: Docs Consolidation  
-- [ ] Create /docs/archive/handoffs-oct2025/
-- [ ] Move old handoffs to archive
-- [ ] Rename HANDOFF_V3_0_FINAL.md → HANDOFF.md
-- [ ] Rename TEST_PLAN_V3_0.md → TEST_PLAN.md
-- [ ] Rename V3_0_PRODUCTION_STATUS.md → STATUS.md
-- [ ] Create /docs/archive/old-index-files/
-- [ ] Move old index files to archive
-
-### Phase 3: README Update
-- [ ] Update README.md to v3.0
-- [ ] Remove version-specific language
-- [ ] Add simple getting started guide
-- [ ] Update feature list
-
-### Phase 4: Claude Project Files
-- [ ] Update agp-project-status.html
-- [ ] Add HANDOFF.md
-- [ ] Add STATUS.md
-- [ ] Add TEST_PLAN.md
-- [ ] Keep V3_ARCHITECTURE.md
-- [ ] Keep metric/device definitions
-- [ ] Remove all V2_2_0 files
-
-### Phase 5: Git Merge
-- [ ] Review all changes
-- [ ] Commit cleanup to v3.1-insulin
-- [ ] Merge v3.1-insulin → v3.0-dev
-- [ ] Merge v3.0-dev → main
-- [ ] Tag v3.0.0
-- [ ] Push all branches and tags
-- [ ] Delete v3.1-insulin branch
-
----
-
-## 🎯 FINAL STRUCTURE
-
-### Root
-```
-/
-├── CHANGELOG.md
-├── README.md (updated)
-├── agp-project-status.html
-├── package.json
-├── index.html
-├── vite.config.js
-├── /docs/
-├── /src/
-├── /public/
-└── /test-data/
+### Search Pattern
+```regex
+console\.(log|warn|info)
 ```
 
-### /docs/
-```
-/docs/
-├── HANDOFF.md ⭐ (start here for new AI)
-├── STATUS.md (current state)
-├── TEST_PLAN.md (testing procedures)
-├── V3_ARCHITECTURE.md (system design)
-├── V3_ARCHITECTURE_DECISIONS.md (ADRs)
-├── V3_IMPLEMENTATION_GUIDE.md (phase roadmap)
-├── GIT_WORKFLOW.md (git conventions)
-├── metric_definitions.md (clinical formulas)
-├── minimed_780g_ref.md (device specs)
-└── /archive/ (historical docs)
+### Files with Console Statements (Found)
+Based on initial search:
+1. `src/storage/masterDatasetStorage.js` - 2 console.warn
+2. `src/core/parsers.js` - 1 console.info
+3. All debug utility files (intentional, keep)
+
+### Action Plan
+- [ ] Scan ALL files systematically
+- [ ] Replace console.log → debug.log
+- [ ] Replace console.warn → debug.warn
+- [ ] Replace console.info → debug.info
+- [ ] Keep console.error (or ensure proper error handling)
+
+---
+
+## 📋 PHASE 3: LANGUAGE CONSISTENCY
+
+### Check Areas
+- [ ] Comments in JSX components
+- [ ] Comments in JS engines
+- [ ] Variable names
+- [ ] Function names
+- [ ] Error messages
+- [ ] User-facing strings
+
+### Current Mix Examples
+Need to audit for:
+- Dutch: `werkdag`, `rustdag`, `invoer`
+- English: `workday`, `restday`, `input`
+
+**Decision:** Standardize to ENGLISH (codebase convention)
+- Comments: English
+- Variables: English
+- User-facing: Keep Dutch (for Jo's clinical use)
+
+---
+
+## 📋 PHASE 4: COMMENT QUALITY
+
+### Standards
+1. **File-level JSDoc**
+   ```javascript
+   /**
+    * Module Description
+    * 
+    * @module path/to/module
+    * @version 3.0.0
+    */
+   ```
+
+2. **Function JSDoc**
+   ```javascript
+   /**
+    * Function description
+    * 
+    * @param {Type} paramName - Description
+    * @returns {Type} Description
+    */
+   ```
+
+3. **Inline Comments**
+   - Explain WHY, not WHAT
+   - Use for complex logic only
+   - Keep concise
+
+### Files Needing Comment Review
+- [ ] All engine files in `src/core/`
+- [ ] Storage layer in `src/storage/`
+- [ ] React hooks in `src/hooks/`
+- [ ] Main components
+
+---
+
+## 🔧 CLEANUP SCRIPT
+
+### 1. Find All Console Statements
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus
+grep -rn "console\.\(log\|warn\|info\)" src/ --include="*.js" --include="*.jsx" | grep -v "debug.js" > console-audit.txt
 ```
 
-### Claude Project
+### 2. Remove Duplicate Files
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus/src
+rm "utils/debug 2.js"
+rm "utils/constants 2.js"
+rm "utils/eventClustering 2.js"
+rm "utils/formatters 2.js"
+rm "core/insulin-engine 2.js"
+rm "core/sensorEventClustering 2.js"
+rm "components/DebugPanel 2.jsx"
 ```
-/mnt/project/
-├── HANDOFF.md
-├── STATUS.md
-├── TEST_PLAN.md
-├── V3_ARCHITECTURE.md
-├── metric_definitions.md
-├── minimed_780g_ref.md
-├── agp-project-status.html
-└── Jo_Mostert_24-10-2025_SAMPLE.csv
+
+### 3. Remove Backup Files
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus/src/core
+rm day-profile-engine.js.backup
+rm day-profile-engine.js.backup2
+rm "day-profile-engine.js 2.backup2"
+rm day-profile-engine_CHUNK1.js
 ```
 
 ---
 
-## ⚠️ IMPORTANT NOTES
+## ✅ VERIFICATION CHECKLIST
 
-1. **No "production-ready" language** - Just say "v3.0 complete" or "ready for testing"
-2. **Remove version numbers from filenames** - HANDOFF.md not HANDOFF_V3_0.md
-3. **Keep it simple** - One handoff, one status, one test plan
-4. **Archive everything else** - Don't delete, just move to archive
+After cleanup:
+- [ ] No console.log statements (except in debug.js)
+- [ ] No console.warn statements (except in debug.js)
+- [ ] No console.info statements (except in debug.js)
+- [ ] No duplicate files
+- [ ] No backup files
+- [ ] All imports using debug utility work
+- [ ] Dev server starts without errors
+- [ ] App loads and functions correctly
+- [ ] No console errors in browser
+
+---
+
+## 📝 EXECUTION ORDER
+
+1. **Create backup branch**
+   ```bash
+   git checkout -b cleanup-pre-v3-release
+   ```
+
+2. **Remove duplicate files** (Phase 1)
+
+3. **Remove backup files** (Phase 1)
+
+4. **Audit and fix console statements** (Phase 2)
+   - Run grep search
+   - Fix files one by one
+   - Test after each major file
+
+5. **Language consistency pass** (Phase 3)
+
+6. **Comment quality pass** (Phase 4)
+
+7. **Final verification**
+   - Start dev server
+   - Test all features
+   - Check browser console (should be clean)
+
+8. **Commit cleanup**
+   ```bash
+   git add -A
+   git commit -m "chore: production cleanup - remove debug logs, duplicates, improve comments"
+   ```
+
+---
+
+## 🎯 PRIORITY ORDER
+
+**High Priority (must do before production):**
+1. Remove console.log/warn/info statements
+2. Remove duplicate files
+3. Remove backup files
+
+**Medium Priority (should do before production):**
+4. Language consistency in comments
+5. Improve critical comments (engines, storage)
+
+**Low Priority (nice to have):**
+6. Full JSDoc for all functions
+7. Comprehensive inline comments
 
 ---
 

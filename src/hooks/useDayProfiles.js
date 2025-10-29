@@ -52,7 +52,6 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
           setTddData(null);
         }
       } catch (err) {
-        console.warn('[useDayProfiles] Failed to load TDD data:', err);
         setTddData(null);
       }
     }

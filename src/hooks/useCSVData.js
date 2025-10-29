@@ -60,7 +60,6 @@ export function useCSVData() {
           }
         }
       } catch (metadataErr) {
-        console.warn('Could not extract patient metadata:', metadataErr);
         // Don't fail CSV load if metadata extraction fails
       }
 
