@@ -206,26 +206,27 @@ export function hasSensorDatabase() {
 export async function addSensor(sensorData) {
   const db = getSensorDatabase() || { sensors: [], inventory: [], lastUpdated: new Date().toISOString() };
   
-  // Check if sensor already exists (by id or start_timestamp)
+  // Check if sensor already exists (by sensor_id or start_date)
   const exists = db.sensors.some(s => 
-    s.id === sensorData.id || 
-    s.start_timestamp === sensorData.startTimestamp
+    s.sensor_id === sensorData.id || 
+    s.start_date === sensorData.startTimestamp
   );
   
   if (!exists) {
-    // Convert camelCase to snake_case for storage consistency
+    // Convert to match SQLite schema (sensor_id, start_date, end_date)
     const sensor = {
-      id: sensorData.id,
-      start_timestamp: sensorData.startTimestamp,
-      end_timestamp: sensorData.endTimestamp,
+      sensor_id: sensorData.id,
+      start_date: sensorData.startTimestamp,
+      end_date: sensorData.endTimestamp,
       duration_hours: sensorData.durationHours,
       duration_days: sensorData.durationDays,
       reason_stop: sensorData.reasonStop,
+      success: sensorData.status === 'success' ? 1 : 0, // SQLite uses 1/0
       status: sensorData.status,
       confidence: sensorData.confidence,
       lot_number: sensorData.lotNumber,
-      hardware_version: sensorData.hardwareVersion,
-      firmware_version: sensorData.firmwareVersion,
+      hw_version: sensorData.hardwareVersion,
+      fw_version: sensorData.firmwareVersion,
       notes: sensorData.notes,
       sequence: sensorData.sequence
     };
@@ -248,14 +249,14 @@ export async function updateSensorEndTime(sensorId, endTimestamp) {
   const db = getSensorDatabase();
   if (!db) return false;
   
-  const sensor = db.sensors.find(s => s.id === sensorId);
+  const sensor = db.sensors.find(s => s.sensor_id === sensorId);
   if (!sensor) return false;
   
-  sensor.end_timestamp = endTimestamp;
+  sensor.end_date = endTimestamp;
   
   // Recalculate duration if both start and end are set
-  if (sensor.start_timestamp && endTimestamp) {
-    const start = new Date(sensor.start_timestamp);
+  if (sensor.start_date && endTimestamp) {
+    const start = new Date(sensor.start_date);
     const end = new Date(endTimestamp);
     const durationMs = end - start;
     sensor.duration_hours = durationMs / (1000 * 60 * 60);
@@ -282,15 +283,15 @@ export function getMostRecentSensorBefore(beforeTimestamp) {
   
   // Filter sensors that started before the target time
   const candidateSensors = db.sensors.filter(s => {
-    const start = new Date(s.start_timestamp);
+    const start = new Date(s.start_date);
     return start < targetTime;
   });
   
   if (candidateSensors.length === 0) return null;
   
-  // Sort by start_timestamp descending (most recent first)
+  // Sort by start_date descending (most recent first)
   candidateSensors.sort((a, b) => {
-    return new Date(b.start_timestamp) - new Date(a.start_timestamp);
+    return new Date(b.start_date) - new Date(a.start_date);
   });
   
   return candidateSensors[0];

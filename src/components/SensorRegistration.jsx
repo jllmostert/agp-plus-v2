@@ -141,10 +141,10 @@ export default function SensorRegistration({ isOpen, onClose }) {
         const previousSensor = getMostRecentSensorBefore(gapStartTime);
         
         if (previousSensor) {
-          addDebugLog(`Found previous sensor: ${previousSensor.id} (started ${formatTimestamp(previousSensor.start_timestamp)})`);
+          addDebugLog(`Found previous sensor: ${previousSensor.sensor_id} (started ${formatTimestamp(previousSensor.start_date)})`);
           
           // Update its end time to the gap start
-          const updated = await updateSensorEndTime(previousSensor.id, gapStartTime.toISOString());
+          const updated = await updateSensorEndTime(previousSensor.sensor_id, gapStartTime.toISOString());
           
           if (updated) {
             addDebugLog(`✅ Updated previous sensor end time: ${formatTimestamp(gapStartTime)}`);
