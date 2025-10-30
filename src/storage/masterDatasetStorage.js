@@ -566,6 +566,7 @@ export async function uploadCSVToV3(csvText) {
   await appendReadingsToMaster(readingsWithTimestamps);
   
   // Detect and store device events (sensor/cartridge changes)
+  await detectAndStoreEvents(readingsWithTimestamps);
   
   // Rebuild cache for immediate access
   await rebuildSortedCache();

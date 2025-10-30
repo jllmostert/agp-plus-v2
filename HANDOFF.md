@@ -203,9 +203,10 @@ debug.log('[Module] Action', { data });
 
 ## 📚 Reference Docs
 
-**CSV Structure**: `docs/minimed_780g_ref.md` (lines 50-150)  
-**Gap Detection**: `docs/metric_definitions.md` (continuity metrics)  
-**Alert Types**: `docs/minimed_780g_ref.md` (Section 1 format)
+**CSV Structure**: `reference/minimed_780g_ref.md` (lines 50-150)  
+**Gap Detection**: `reference/metric_definitions.md` (continuity metrics)  
+**Alert Types**: `reference/minimed_780g_ref.md` (Section 1 format)  
+**Git Workflow**: `reference/GIT_WORKFLOW.md`
 
 ## 🚨 Critical Notes
 
