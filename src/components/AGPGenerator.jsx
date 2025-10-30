@@ -32,6 +32,7 @@ import SavedUploadsList from './SavedUploadsList';
 import PatientInfo from './PatientInfo';
 import DayProfilesModal from './DayProfilesModal';
 import SensorHistoryModal from './SensorHistoryModal';
+import SensorRegistration from './SensorRegistration';
 import DataManagementModal from './DataManagementModal';
 import { MigrationBanner } from './MigrationBanner';
 import { DateRangeFilter } from './DateRangeFilter';
@@ -119,6 +120,7 @@ export default function AGPGenerator() {
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
   const [dayProfilesOpen, setDayProfilesOpen] = useState(false); // Day profiles modal state
   const [sensorHistoryOpen, setSensorHistoryOpen] = useState(false); // Sensor history modal state
+  const [sensorRegistrationOpen, setSensorRegistrationOpen] = useState(false); // Sensor registration modal state
   const [dataManagementOpen, setDataManagementOpen] = useState(false); // Data management modal state
   const [tddData, setTddData] = useState(null); // TDD statistics {meanTDD, sdTDD, ...}
 
@@ -811,7 +813,7 @@ export default function AGPGenerator() {
                 {/* Debug Tools Buttons */}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button
-                    onClick={() => window.open('/debug/sensor-detection.html', '_blank')}
+                    onClick={() => setSensorRegistrationOpen(true)}
                     style={{
                       padding: '0.5rem 0.75rem',
                       background: 'transparent',
@@ -825,7 +827,7 @@ export default function AGPGenerator() {
                       transition: 'all 0.2s',
                       whiteSpace: 'nowrap'
                     }}
-                    title="Sensor Detection Debug Tool"
+                    title="Register New Sensors from CSV"
                     onMouseOver={(e) => {
                       e.currentTarget.style.background = 'var(--paper)';
                       e.currentTarget.style.color = 'var(--color-black)';
@@ -1664,6 +1666,15 @@ export default function AGPGenerator() {
             isOpen={sensorHistoryOpen}
             onClose={() => setSensorHistoryOpen(false)}
             sensors={sensors}
+          />,
+          document.body
+        )}
+
+        {/* Sensor Registration Modal - Portal */}
+        {sensorRegistrationOpen && ReactDOM.createPortal(
+          <SensorRegistration 
+            isOpen={sensorRegistrationOpen}
+            onClose={() => setSensorRegistrationOpen(false)}
           />,
           document.body
         )}

@@ -1,0 +1,384 @@
+/* Sensor Registration Modal - Brutalist Style */
+
+.sensor-registration-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 2rem;
+}
+
+.sensor-registration-modal {
+  background: #E5E5E5;
+  border: 3px solid #000;
+  max-width: 1200px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+}
+
+/* Header */
+.modal-header {
+  background: #000;
+  color: #FFF;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid #000;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.close-btn {
+  background: transparent;
+  border: 2px solid #FFF;
+  color: #FFF;
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-family: monospace;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: #FFF;
+  color: #000;
+}
+
+/* Upload Section */
+.upload-section {
+  padding: 2rem;
+  border-bottom: 3px solid #000;
+}
+
+.upload-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Drop Zone */
+.drop-zone {
+  position: relative;
+  padding: 3rem 2rem;
+  margin-bottom: 1rem;
+  background: #FFF;
+  border: 3px dashed #000;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.drop-zone:hover {
+  background: #F5F5F5;
+  border-color: #4A9D4A;
+}
+
+.drop-zone.dragging {
+  background: #E8F5E9;
+  border-color: #4A9D4A;
+  border-style: solid;
+}
+
+.drop-prompt {
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  color: #666;
+}
+
+.drop-zone.dragging .drop-prompt {
+  color: #4A9D4A;
+  font-size: 1rem;
+}
+
+.file-selected {
+  font-weight: 700;
+  color: #4A9D4A;
+}
+
+.file-size {
+  margin-left: 0.5rem;
+  color: #666;
+  font-weight: normal;
+}
+
+.file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-label {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: #FFF;
+  border: 3px solid #000;
+  cursor: pointer;
+  font-weight: 700;
+  margin-right: 1rem;
+  transition: all 0.2s;
+}
+
+.file-label:hover {
+  background: #000;
+  color: #FFF;
+}
+
+.analyze-btn {
+  padding: 1rem 2rem;
+  background: #4A9D4A;
+  border: 3px solid #000;
+  color: #FFF;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.analyze-btn:hover:not(:disabled) {
+  background: #3A7D3A;
+}
+
+.analyze-btn:disabled {
+  background: #CCC;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Error Box */
+.error-box {
+  margin: 1rem 2rem;
+  padding: 1rem;
+  background: #FFD0D0;
+  border: 3px solid #C00;
+  color: #800;
+  font-weight: 700;
+}
+
+/* Candidates Section */
+.candidates-section {
+  padding: 2rem;
+  border-bottom: 3px solid #000;
+}
+
+.candidates-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.candidates-table {
+  border: 3px solid #000;
+  background: #FFF;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 0.8fr 2.5fr;
+  background: #000;
+  color: #FFF;
+  padding: 1rem;
+  font-weight: 700;
+  border-bottom: 3px solid #000;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 0.8fr 2.5fr;
+  padding: 1rem;
+  border-bottom: 2px solid #CCC;
+  align-items: center;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-row:hover {
+  background: #F5F5F5;
+}
+
+.timestamp {
+  font-weight: 700;
+}
+
+.confidence {
+  font-weight: 700;
+}
+
+.confidence-high {
+  color: #2D7A2D;
+}
+
+.confidence-medium {
+  color: #D4A017;
+}
+
+.confidence-low {
+  color: #B22222;
+}
+
+.score {
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions button {
+  padding: 0.5rem 1rem;
+  border: 2px solid #000;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirm {
+  background: #4A9D4A;
+  color: #FFF;
+}
+
+.btn-confirm:hover {
+  background: #3A7D3A;
+}
+
+.btn-ignore {
+  background: #D0D0D0;
+  color: #000;
+}
+
+.btn-ignore:hover {
+  background: #A0A0A0;
+}
+
+.btn-split {
+  background: #FFD700;
+  color: #000;
+}
+
+.btn-split:hover {
+  background: #E6C200;
+}
+
+/* Debug Section */
+.debug-section {
+  padding: 2rem;
+}
+
+.debug-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.debug-log {
+  background: #000;
+  color: #0F0;
+  padding: 1rem;
+  border: 3px solid #000;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+.log-entry {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #0A0;
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-time {
+  color: #0AA;
+  margin-right: 0.5rem;
+}
+
+.log-message {
+  color: #0F0;
+}
+
+.log-data {
+  color: #AAA;
+  margin: 0.5rem 0 0 0;
+  padding-left: 2rem;
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .table-header,
+  .table-row {
+    grid-template-columns: 1.5fr 1fr 0.8fr 2fr;
+    font-size: 0.9rem;
+  }
+  
+  .actions {
+    flex-direction: column;
+  }
+}
+
+/* Success Toast */
+.success-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  padding: 1rem 1.5rem;
+  background: #4A9D4A;
+  color: #FFF;
+  border: 3px solid #000;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 0.9rem;
+  z-index: 10000;
+  animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-out 2.7s;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

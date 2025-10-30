@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sensor Detection Test</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #000;
+      color: #0f0;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      border-bottom: 3px solid #0f0;
+      padding-bottom: 10px;
+    }
+    .log {
+      background: #111;
+      border: 2px solid #0f0;
+      padding: 15px;
+      margin: 10px 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      margin-right: 5px;
+      border: 2px solid;
+    }
+    .high { color: #0f0; border-color: #0f0; }
+    .medium { color: #ff0; border-color: #ff0; }
+    .low { color: #f00; border-color: #f00; }
+    button {
+      background: #000;
+      color: #0f0;
+      border: 3px solid #0f0;
+      padding: 10px 20px;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #0f0;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 SENSOR DETECTION TEST</h1>
+  <button onclick="runTest()">RUN TEST</button>
+  <div id="output"></div>
+
+  <script type="module">
+    import { parseCareLinkSections } from '/src/core/csvSectionParser.js';
+    import { detectSensorChanges } from '/src/core/sensorDetectionEngine.js';
+
+    window.runTest = async function() {
+      const output = document.getElementById('output');
+      output.innerHTML = '<div class="log">🔄 Running test...</div>';
+
+      try {
+        // Load CSV
+        const response = await fetch('/test-data/SAMPLE__Jo Mostert 30-10-2025_7d.csv');
+        const csvText = await response.text();
+
+        // Parse
+        const { alerts, glucose, metadata } = parseCareLinkSections(csvText);
+        
+        output.innerHTML += `<div class="log">✅ CSV Parsed:
+- Alerts: ${alerts.length}
+- Glucose readings: ${glucose.length}
+- Patient: ${metadata.name}</div>`;
+
+        // Filter sensor alerts
+        const sensorAlerts = alerts.filter(a => 
+          a.alert && (
+            a.alert.includes('SENSOR CONNECTED') ||
+            a.alert.includes('CHANGE SENSOR')
+          )
+        );
+
+        output.innerHTML += `<div class="log">🔍 Sensor Alerts Found: ${sensorAlerts.length}
+${sensorAlerts.map(a => `  - ${a.timestamp.toLocaleString('nl-NL')}: ${a.alert}`).join('\n')}</div>`;
+
+        // Detect
+        const result = detectSensorChanges(alerts, glucose);
+
+        output.innerHTML += `<div class="log">📊 Detection Summary:
+- Total candidates: ${result.summary.totalCandidates}
+- High confidence: ${result.summary.highConfidence}
+- Medium confidence: ${result.summary.mediumConfidence}
+- Low confidence: ${result.summary.lowConfidence}</div>`;
+
+        // Show candidates
+        result.candidates.forEach((c, i) => {
+          const badgeClass = c.confidence;
+          output.innerHTML += `<div class="log"><span class="badge ${badgeClass}">${c.confidence.toUpperCase()}</span> Candidate ${i + 1}
+Time: ${c.timestamp.toLocaleString('nl-NL')}
+Score: ${c.score}/100
+Alerts: ${c.alerts.join(', ') || 'none'}
+Gaps: ${c.gaps.map(g => `${g.duration}min`).join(', ') || 'none'}
+Reason: ${c.reason}</div>`;
+        });
+
+      } catch (error) {
+        output.innerHTML += `<div class="log" style="color: #f00;">❌ ERROR: ${error.message}
+${error.stack}</div>`;
+      }
+    };
+  </script>
+</body>
+</html>

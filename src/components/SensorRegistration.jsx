@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { parseCareLinkSections } from '../core/csvSectionParser';
 import { detectSensorChanges } from '../core/sensorDetectionEngine';
-import { addSensor, getSensorHistory } from '../storage/sensorStorage';
+import { addSensor, getSensorHistory, getMostRecentSensorBefore, updateSensorEndTime } from '../storage/sensorStorage';
 import './SensorRegistration.css';
 
 export default function SensorRegistration({ isOpen, onClose }) {
@@ -10,6 +10,8 @@ export default function SensorRegistration({ isOpen, onClose }) {
   const [candidates, setCandidates] = useState([]);
   const [debugLog, setDebugLog] = useState([]);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [successToast, setSuccessToast] = useState(null); // { message, timestamp }
 
   const addDebugLog = (message, data = null) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -30,6 +32,35 @@ export default function SensorRegistration({ isOpen, onClose }) {
     setDebugLog([]);
     setCandidates([]);
     addDebugLog(`File selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    
+    if (!file.name.endsWith('.csv')) {
+      setError('Please drop a CSV file');
+      return;
+    }
+    
+    setCsvFile(file);
+    setError(null);
+    setDebugLog([]);
+    setCandidates([]);
+    addDebugLog(`File dropped: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
   };
   const handleAnalyze = async () => {
     if (!csvFile) {
@@ -97,18 +128,75 @@ export default function SensorRegistration({ isOpen, onClose }) {
   };
   const handleConfirm = async (candidate) => {
     try {
-      addDebugLog(`Confirming sensor change: ${candidate.timestamp}`);
+      addDebugLog(`Confirming sensor change: ${formatTimestamp(candidate.timestamp)}`);
+      
+      // Step 1: If there's a gap, update the previous sensor's end time
+      if (candidate.gaps && candidate.gaps.length > 0) {
+        const gap = candidate.gaps[0]; // Use first gap
+        const gapStartTime = gap.startTime; // Last reading before gap = end of old sensor
+        
+        addDebugLog(`Gap detected: last reading before gap at ${formatTimestamp(gapStartTime)}`);
+        
+        // Find the most recent sensor that started before this gap
+        const previousSensor = getMostRecentSensorBefore(gapStartTime);
+        
+        if (previousSensor) {
+          addDebugLog(`Found previous sensor: ${previousSensor.id} (started ${formatTimestamp(previousSensor.start_timestamp)})`);
+          
+          // Update its end time to the gap start
+          const updated = await updateSensorEndTime(previousSensor.id, gapStartTime.toISOString());
+          
+          if (updated) {
+            addDebugLog(`✅ Updated previous sensor end time: ${formatTimestamp(gapStartTime)}`);
+            addDebugLog(`   Duration: ${previousSensor.duration_days?.toFixed(1) || 'calculating...'} days`);
+          } else {
+            addDebugLog(`⚠️ Failed to update previous sensor`);
+          }
+        } else {
+          addDebugLog(`⚠️ No previous sensor found before gap (might be first sensor in dataset)`);
+        }
+      } else {
+        addDebugLog(`No gap detected - previous sensor end time will remain null`);
+      }
+      
+      // Step 2: Add the new sensor
+      const sensorId = `sensor_${candidate.timestamp.getTime()}`;
       
       const sensorData = {
-        insertDate: candidate.timestamp,
-        notes: `Auto-detected from CSV (confidence: ${candidate.confidence})`,
-        source: 'csv_detection'
+        id: sensorId,
+        startTimestamp: candidate.timestamp.toISOString(),
+        endTimestamp: null, // Will be set when NEXT sensor is added
+        durationHours: null,
+        durationDays: null,
+        reasonStop: null,
+        status: 'active',
+        confidence: candidate.confidence,
+        lotNumber: null,
+        hardwareVersion: null,
+        firmwareVersion: null,
+        notes: `CSV auto-detected (${candidate.confidence.toUpperCase()}, score: ${candidate.score}/100)`,
+        source: 'csv_detection',
+        sequence: null
       };
       
-      const sensorId = await addSensor(sensorData);
-      addDebugLog(`✅ Sensor added to database: ID ${sensorId}`);
+      await addSensor(sensorData);
+      addDebugLog(`✅ New sensor added: ${sensorId}`, {
+        start: formatTimestamp(candidate.timestamp),
+        confidence: candidate.confidence,
+        score: candidate.score
+      });
       
-      // Remove from candidates list (compare timestamps by value, not reference)
+      // Show success toast
+      const sensorCount = getSensorHistory().length;
+      setSuccessToast({
+        message: `Sensor added! Total: ${sensorCount}`,
+        timestamp: Date.now()
+      });
+      
+      // Auto-hide toast after 3 seconds
+      setTimeout(() => setSuccessToast(null), 3000);
+      
+      // Remove from candidates list
       setCandidates(prev => prev.filter(c => 
         c.timestamp.getTime() !== candidate.timestamp.getTime()
       ));
@@ -175,16 +263,32 @@ export default function SensorRegistration({ isOpen, onClose }) {
         {/* CSV Upload Section */}
         <div className="upload-section">
           <h3>1. UPLOAD CARELINK CSV</h3>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileSelect}
-            className="file-input"
-            id="csv-upload"
-          />
-          <label htmlFor="csv-upload" className="file-label">
-            {csvFile ? `📄 ${csvFile.name}` : '📁 SELECT CSV FILE'}
-          </label>
+          
+          {/* Drag & Drop Zone */}
+          <div
+            className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            {csvFile ? (
+              <div className="file-selected">
+                📄 {csvFile.name}
+                <span className="file-size">({(csvFile.size / 1024).toFixed(1)} KB)</span>
+              </div>
+            ) : (
+              <div className="drop-prompt">
+                {isDragging ? '📥 DROP CSV HERE' : '📁 DRAG & DROP CSV OR CLICK TO BROWSE'}
+              </div>
+            )}
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileSelect}
+              className="file-input"
+              id="csv-upload"
+            />
+          </div>
           
           <button
             onClick={handleAnalyze}
@@ -251,6 +355,13 @@ export default function SensorRegistration({ isOpen, onClose }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Success Toast */}
+        {successToast && (
+          <div className="success-toast">
+            ✅ {successToast.message}
           </div>
         )}
 

@@ -29,6 +29,7 @@
 import { useState, useEffect } from 'react';
 import initSqlJs from 'sql.js';
 import { debug } from '../utils/debug.js';
+import { getSensorHistory } from '../storage/sensorStorage.js';
 
 // Database will be served from /public/sensor_database.db
 // (we need to copy it there first)
@@ -112,7 +113,37 @@ export function useSensorDatabase() {
         lastSensor: sensorData[sensorData.length - 1]
       });
 
-      setSensors(sensorData);
+      // MERGE: Add localStorage sensors (CSV-detected sensors)
+      const localStorageSensors = getSensorHistory();
+      debug.log('[useSensorDatabase] localStorage sensors:', {
+        count: localStorageSensors.length
+      });
+
+      // Convert localStorage format to match SQLite format
+      const localSensorsConverted = localStorageSensors.map(s => ({
+        sensor_id: s.id,
+        start_date: s.start_timestamp,
+        end_date: s.end_timestamp,
+        duration_days: s.duration_days,
+        duration_hours: s.duration_hours,
+        lot_number: s.lot_number,
+        hw_version: s.hardware_version,
+        status: s.status,
+        failure_reason: s.reason_stop,
+        notes: s.notes,
+        success: s.status === 'success' ? 1 : 0
+      }));
+
+      // Merge: localStorage sensors first (newest), then SQLite
+      const allSensors = [...localSensorsConverted, ...sensorData];
+
+      debug.log('[useSensorDatabase] Total sensors (merged):', {
+        count: allSensors.length,
+        localStorage: localSensorsConverted.length,
+        sqlite: sensorData.length
+      });
+
+      setSensors(allSensors);
 
     } catch (err) {
       debug.error('[useSensorDatabase] Failed to load sensor database:', err);

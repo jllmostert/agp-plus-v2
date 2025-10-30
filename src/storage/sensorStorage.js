@@ -238,6 +238,65 @@ export async function addSensor(sensorData) {
 }
 
 /**
+ * Update the end timestamp of a sensor
+ * 
+ * @param {string} sensorId - Sensor ID to update
+ * @param {string} endTimestamp - ISO timestamp string
+ * @returns {Promise<boolean>} True if updated, false if not found
+ */
+export async function updateSensorEndTime(sensorId, endTimestamp) {
+  const db = getSensorDatabase();
+  if (!db) return false;
+  
+  const sensor = db.sensors.find(s => s.id === sensorId);
+  if (!sensor) return false;
+  
+  sensor.end_timestamp = endTimestamp;
+  
+  // Recalculate duration if both start and end are set
+  if (sensor.start_timestamp && endTimestamp) {
+    const start = new Date(sensor.start_timestamp);
+    const end = new Date(endTimestamp);
+    const durationMs = end - start;
+    sensor.duration_hours = durationMs / (1000 * 60 * 60);
+    sensor.duration_days = sensor.duration_hours / 24;
+  }
+  
+  db.lastUpdated = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  
+  return true;
+}
+
+/**
+ * Find the most recent sensor that started before a given timestamp
+ * 
+ * @param {Date|string} beforeTimestamp - Find sensor before this time
+ * @returns {Object|null} Most recent sensor or null
+ */
+export function getMostRecentSensorBefore(beforeTimestamp) {
+  const db = getSensorDatabase();
+  if (!db || !db.sensors.length) return null;
+  
+  const targetTime = new Date(beforeTimestamp);
+  
+  // Filter sensors that started before the target time
+  const candidateSensors = db.sensors.filter(s => {
+    const start = new Date(s.start_timestamp);
+    return start < targetTime;
+  });
+  
+  if (candidateSensors.length === 0) return null;
+  
+  // Sort by start_timestamp descending (most recent first)
+  candidateSensors.sort((a, b) => {
+    return new Date(b.start_timestamp) - new Date(a.start_timestamp);
+  });
+  
+  return candidateSensors[0];
+}
+
+/**
  * Get sensor history for export
  * Returns array of sensors or empty array
  * 
