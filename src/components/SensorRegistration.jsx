@@ -55,9 +55,29 @@ export default function SensorRegistration({ isOpen, onClose }) {
 
       // Step 3: Detect sensor changes (includes clustering, gap detection, and matching)
       addDebugLog('Detecting sensor changes...');
-      const { candidates: matches, summary } = detectSensorChanges(alerts, glucose);
+      const detectionResult = detectSensorChanges(alerts, glucose);
+      console.log('[SensorRegistration] Detection result:', detectionResult);
+      addDebugLog('Raw detection result:', detectionResult);
+      
+      const matches = detectionResult.candidates || [];
+      console.log('[SensorRegistration] Extracted candidates:', matches);
       addDebugLog(`Identified ${matches.length} sensor change candidates`, matches);
-      addDebugLog('Detection summary:', summary);
+      addDebugLog('Detection summary:', detectionResult.summary);
+      
+      // Extra debug: log each candidate structure
+      if (matches.length > 0) {
+        matches.forEach((c, i) => {
+          addDebugLog(`Candidate ${i+1}:`, {
+            timestamp: formatTimestamp(c.timestamp),
+            confidence: c.confidence,
+            score: c.score,
+            alerts: c.alerts?.length || 0,
+            alertTypes: c.alerts?.slice(0, 3),
+            gaps: c.gaps?.length || 0,
+            gapDuration: c.gaps?.[0]?.duration
+          });
+        });
+      }
 
       setCandidates(matches);
 
@@ -88,8 +108,10 @@ export default function SensorRegistration({ isOpen, onClose }) {
       const sensorId = await addSensor(sensorData);
       addDebugLog(`✅ Sensor added to database: ID ${sensorId}`);
       
-      // Remove from candidates list
-      setCandidates(prev => prev.filter(c => c.timestamp !== candidate.timestamp));
+      // Remove from candidates list (compare timestamps by value, not reference)
+      setCandidates(prev => prev.filter(c => 
+        c.timestamp.getTime() !== candidate.timestamp.getTime()
+      ));
       
     } catch (err) {
       console.error('Confirm error:', err);
@@ -99,8 +121,10 @@ export default function SensorRegistration({ isOpen, onClose }) {
   };
 
   const handleIgnore = (candidate) => {
-    addDebugLog(`Ignoring candidate: ${candidate.timestamp}`);
-    setCandidates(prev => prev.filter(c => c.timestamp !== candidate.timestamp));
+    addDebugLog(`Ignoring candidate: ${formatTimestamp(candidate.timestamp)}`);
+    setCandidates(prev => prev.filter(c => 
+      c.timestamp.getTime() !== candidate.timestamp.getTime()
+    ));
   };
 
   const handleSplit = (candidate) => {
@@ -109,15 +133,31 @@ export default function SensorRegistration({ isOpen, onClose }) {
     alert('Split functionality coming in Phase 5');
   };
 
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    
+    // Format: "30 Oct 13:41"
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en', { month: 'short' });
+    const hours = String(date.getHours()).padStart(2, '0');
+    const mins = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${day} ${month} ${hours}:${mins}`;
+  };
+
   const getConfidenceBadge = (confidence) => {
-    if (confidence === 'HIGH') return '🟢 HIGH';
-    if (confidence === 'MEDIUM') return '🟡 MEDIUM';
+    const conf = String(confidence || '').toUpperCase();
+    if (conf === 'HIGH') return '🟢 HIGH';
+    if (conf === 'MEDIUM') return '🟡 MEDIUM';
     return '🔴 LOW';
   };
 
   const getConfidenceClass = (confidence) => {
-    if (confidence === 'HIGH') return 'confidence-high';
-    if (confidence === 'MEDIUM') return 'confidence-medium';
+    const conf = String(confidence || '').toUpperCase();
+    if (conf === 'HIGH') return 'confidence-high';
+    if (conf === 'MEDIUM') return 'confidence-medium';
     return 'confidence-low';
   };
 
@@ -175,7 +215,7 @@ export default function SensorRegistration({ isOpen, onClose }) {
               </div>
               {candidates.map((candidate, idx) => (
                 <div key={idx} className="table-row">
-                  <div className="timestamp">{candidate.timestamp}</div>
+                  <div className="timestamp">{formatTimestamp(candidate.timestamp)}</div>
                   <div className={`confidence ${getConfidenceClass(candidate.confidence)}`}>
                     {getConfidenceBadge(candidate.confidence)}
                   </div>
