@@ -26,6 +26,7 @@ Problem: 219 sensors imported from SQLite, but no way to add new sensors from Ca
 ### Tier 2 — Project (/project/)
 | Document | Purpose |
 |----------|---------|
+| [PROJECT_BRIEFING.md](./project/PROJECT_BRIEFING.md) | Strategic overview + scope (v3.1) |
 | [STATUS.md](./project/STATUS.md) | Phase tracking + completion criteria |
 | [TEST_PLAN.md](./project/TEST_PLAN.md) | Test scenarios + validation |
 | [V3_ARCHITECTURE.md](./project/V3_ARCHITECTURE.md) | Master dataset architecture |

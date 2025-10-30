@@ -11,6 +11,24 @@ date: 2025-10-30
 
 Build CSV-based sensor detection and registration system. Currently: 219 sensors imported from SQLite, no way to add new sensors from CareLink exports.
 
+## 📂 Document Navigation
+
+**Follow tier-based structure** (see `DocumentHygiene.md`):
+
+- **Tier 1 (Root)**: `START_HERE.md`, `HANDOFF.md` (this file)
+- **Tier 2 (/project/)**: `STATUS.md`, `TEST_PLAN.md`, architecture docs
+- **Tier 3 (/reference/)**: `metric_definitions.md`, `minimed_780g_ref.md`, `GIT_WORKFLOW.md`
+
+**All docs have metadata headers**:
+```yaml
+---
+tier: N
+status: active|stable
+last_updated: YYYY-MM-DD
+purpose: Brief description
+---
+```
+
 ## 🔧 Server Setup
 
 ```bash
