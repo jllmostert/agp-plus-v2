@@ -121,17 +121,17 @@ export function useSensorDatabase() {
 
       // Convert localStorage format to match SQLite format
       const localSensorsConverted = localStorageSensors.map(s => ({
-        sensor_id: s.id,
-        start_date: s.start_timestamp,
-        end_date: s.end_timestamp,
+        sensor_id: s.sensor_id,
+        start_date: s.start_date,
+        end_date: s.end_date,
         duration_days: s.duration_days,
         duration_hours: s.duration_hours,
         lot_number: s.lot_number,
-        hw_version: s.hardware_version,
+        hw_version: s.hw_version,
         status: s.status,
         failure_reason: s.reason_stop,
         notes: s.notes,
-        success: s.status === 'success' ? 1 : 0
+        success: s.success
       }));
 
       // Merge: localStorage sensors first (newest), then SQLite
