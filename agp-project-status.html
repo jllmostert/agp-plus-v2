@@ -492,13 +492,42 @@
             </div>
         </div>
 
+        <div class="card" id="status-latest" style="grid-column: 1 / -1; border-color: #ff6b00;">
+            <h2>📊 LATEST STATUS: v3.1 Sensor Registration (2025-10-30)</h2>
+            
+            <div style="display: grid; gap: 1rem; margin-top: 1rem;">
+                <div>
+                    <strong style="color: #ff6b00;">Current Phase:</strong> CSV-based sensor registration system
+                </div>
+                <div>
+                    <strong>Objective:</strong> Enable adding new sensors from CareLink CSV exports (currently limited to SQLite import)
+                </div>
+                <div>
+                    <strong>Status:</strong> <span class="status-badge" style="background: #444; border-color: #888;">🔨 Phase 1 - CSV Parser</span>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 2rem; color: #ff6b00;">Implementation Phases</h3>
+            <ul class="feature-list">
+                <li class="pending">Phase 1: CSV Section Parser (3-section format)</li>
+                <li class="pending">Phase 2: Gap Analyzer (≥120 min detection)</li>
+                <li class="pending">Phase 3: Cluster-Gap Matcher (alert + gap correlation)</li>
+                <li class="pending">Phase 4: Registration UI (review/confirm/ignore)</li>
+                <li class="pending">Phase 5: Lock System (protect old sensors)</li>
+            </ul>
+
+            <div style="margin-top: 2rem; padding: 1rem; border: 2px solid #444; background: #1a1a1a;">
+                <strong>Next Session:</strong> Implement csvSectionParser.js + test with 7d CSV (2826 lines, expect 2 sensor candidates)
+            </div>
+        </div>
+
         <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
-            <h2 style="margin-bottom: 1rem;">🚀 AGP+ v3.0 is Ready for the World</h2>
+            <h2 style="margin-bottom: 1rem;">🚀 AGP+ v3.0 Complete, v3.1 In Progress</h2>
             <p style="font-size: 1.2rem; color: #888; margin-bottom: 1rem;">
-                Complete master dataset architecture with verified sensor detection
+                Core features verified | Sensor registration system under construction
             </p>
             <div class="status-badge status-ready" style="font-size: 1.5rem; padding: 1rem 2rem;">
-                ✅ PRODUCTION READY
+                v3.0: ✅ PRODUCTION | v3.1: 🔨 BUILDING
             </div>
         </div>
     </div>

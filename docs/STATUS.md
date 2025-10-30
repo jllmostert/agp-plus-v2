@@ -1,298 +1,162 @@
-# AGP+ v3.0 STATUS
+# AGP+ STATUS
 
-**Date:** October 29, 2025  
-**Version:** v3.0.0  
-**Status:** ✅ Core features verified with real data
-
----
-
-## 🎉 V3.0 COMPLETE
-
-AGP+ v3.0 has successfully completed development after comprehensive verification with real-world data.
+**Version:** v3.0 → v3.1  
+**Phase:** Sensor Registration from CSV  
+**Date:** 2025-10-30  
+**Status:** 🔨 In Development
 
 ---
 
-## ✅ VERIFICATION RESULTS (Oct 28-29)
+## 🎯 V3.1 OBJECTIVE
 
-### Real-World Data Testing
-**Test File:** `Jo Mostert 28-10-2025.csv`  
-**Period:** October 21-28, 2025 (7 days)  
-**Readings:** ~1,400 glucose measurements
+Build CSV-based sensor registration system to add new sensors from CareLink exports.
 
-**Sensor Detection Results:**
-- ✅ 2 sensor changes correctly identified (Oct 23, Oct 26)
-- ✅ SENSOR CONNECTED alerts detected
-- ✅ CHANGE SENSOR alerts detected
-- ✅ LOST SENSOR SIGNAL correctly ignored
-- ✅ SENSOR UPDATING correctly ignored (warmup periods)
-- ✅ Alert clustering working (60-minute window)
-- ✅ Day profiles display red dashed lines at correct times
-
-**System Integration:**
-- ✅ CSV → IndexedDB upload successful
-- ✅ Event detection and caching working
-- ✅ Day profiles render correctly
-- ✅ Metrics calculations accurate
-- ✅ No console errors
-- ✅ Performance acceptable (< 1s render)
+**Current limitation**: 219 sensors imported from SQLite (2022-2025), but no way to register new sensors from CSV files.
 
 ---
 
-## 🐛 BUGS FIXED (Phase 4)
+## 📋 IMPLEMENTATION PHASES
 
-### 1. CSV Alert Detection ✅
-**Issue:** uploadCSVToV3 calling non-existent `parseCSVContent`  
-**Fix:** Corrected to actual `parseCSV` function  
-**Impact:** Sensor and cartridge change detection now works from CSV uploads
+### Phase 1: CSV Section Parser ⏳ TODO
+**Module**: `src/core/csvSectionParser.js`
 
-### 2. Comparison Date Calculations ✅
-**Issue:** "Invalid Date" errors in period-to-period comparison  
-**Fix:** Previous period calculation logic corrected  
-**Impact:** All comparison features now functional
+**Tasks**:
+- [ ] Auto-detect `Index;Date;Time;` headers (3 occurrences)
+- [ ] Split sections: deviceEvents, autoInsulin, sensorGlucose
+- [ ] Parse with delimiter auto-detection (; vs ,)
+- [ ] Return structured: `{ alerts: [], glucose: [], insulin: [] }`
 
-### 3. ProTime Workday Persistence ✅
-**Issue:** Workday dates lost on page refresh  
-**Fix:** Added IndexedDB storage (was localStorage only)  
-**Impact:** Workday comparison survives browser restart
-
-### 4. Cartridge Change Detection ✅
-**Issue:** Events not displaying in day profiles  
-**Fix:** Cross-day gap detection improved  
-**Impact:** Red dashed lines appear correctly
+**Test**: 7d CSV should yield ~460 alerts, ~2000 glucose readings
 
 ---
 
-## 📦 FEATURE COMPLETION STATUS
+### Phase 2: Gap Analyzer ⏳ TODO
+**Module**: `src/core/glucoseGapAnalyzer.js`
 
-### Phase 1: Storage Schema ✅ COMPLETE
-- [x] IndexedDB v3 schema with month buckets
-- [x] Dexie.js v4 upgrade
-- [x] masterDatasetStorage.js module
-- [x] Idempotent deduplication
-- [x] Cached sorted arrays
+**Tasks**:
+- [ ] Sort glucose readings by timestamp
+- [ ] Calculate Δt between consecutive readings
+- [ ] Flag gaps ≥120 min (transmitter charge + warmup)
+- [ ] Return: `[{ startTime, endTime, durationMin }]`
 
-### Phase 2: Migration & Events ✅ COMPLETE
-- [x] Auto-migrate v2 → v3 on page load
-- [x] Sensor change detection (3-tier system)
-- [x] Cartridge change detection
-- [x] localStorage event caching
-- [x] Database export functionality
-
-### Phase 3: Comparison Features ✅ COMPLETE
-- [x] Period-to-period comparison (14/30/90 days)
-- [x] Day/Night analysis (06:00-00:00 split)
-- [x] Workday comparison (ProTime PDF integration)
-- [x] Comparison UI with dark headers
-- [x] Orange label blocks
-
-### Phase 4: Direct CSV Upload ✅ COMPLETE
-- [x] CSV → IndexedDB without localStorage
-- [x] Sensor alert detection from CSV
-- [x] Cartridge change detection from CSV
-- [x] Event storage and visualization
-
-### Phase 5: Production Polish ✅ COMPLETE
-- [x] Real-world data verification
-- [x] Interactive debug tool (test-sensor-detection.html)
-- [x] Comprehensive documentation
-- [x] Test plan creation
-- [x] Handoff documentation
+**Test**: 7d CSV should detect 2+ gaps (Oct 19, Oct 25)
 
 ---
 
-## 🎯 CORE FEATURES VERIFIED
+### Phase 3: Cluster-Gap Matcher ⏳ TODO
+**Module**: `src/core/sensorDetectionEngine.js`
 
-### Master Dataset Architecture ✅
-- Multi-upload system working
-- IndexedDB persistence confirmed
-- Month-bucketed storage optimized
-- Deduplication preventing duplicates
-- Data export/import functional
+**Tasks**:
+- [ ] Integrate `sensorEventClustering.js` (4h window clusters)
+- [ ] Match clusters to gaps (±6h window)
+- [ ] Assign confidence: high/medium/low
+- [ ] Return candidates: `[{ cluster, gap, confidence, timestamp }]`
 
-### Event Detection System ✅
-- 3-tier confidence working:
-  1. Sensor database (not yet integrated)
-  2. CSV alerts (working)
-  3. Gap analysis (working)
-- Clustering prevents duplicate events
-- Filter logic excludes false positives
-- localStorage caching improves performance
-
-### Day Profiles ✅
-- 24h glucose curves render correctly
-- Achievement badges display
-- Sensor/cartridge markers appear
-- Dynamic Y-axis scaling works
-- Print-compatible layout
-
-### Comparison Views ✅
-- Period-to-period calculations correct
-- Day/Night metrics accurate
-- Workday detection from ProTime working
-- UI consistent across all sections
-
-### Data Management ✅
-- Database JSON export complete
-- Month bucket deletion with preview
-- Import restores full state
-- No data loss across sessions
+**Test**: 7d CSV should produce 2 high-confidence candidates
 
 ---
 
-## 🔬 DEBUG TOOLS CREATED
+### Phase 4: Registration UI ⏳ TODO
+**Component**: `src/components/SensorRegistration.jsx`
 
-### 1. test-sensor-detection.html ✅
-**Location:** Project root  
-**Purpose:** Test sensor detection logic in isolation
+**Tasks**:
+- [ ] CSV file upload input
+- [ ] "Load & Analyse" button
+- [ ] Candidates table (timestamp, confidence, actions)
+- [ ] Actions: ✓ Confirm | ✗ Ignore | ✂ Split
+- [ ] Debug log panel (show clusters + gaps)
+- [ ] On confirm: `addSensor()` to IndexedDB
 
-**Features:**
-- Paste CSV data directly
-- See alert clustering in real-time
-- View filtering logic
-- Inspect final event output
-- Debug timestamp calculations
-
-**Usage:**
-```bash
-open /Users/jomostert/Documents/Projects/agp-plus/test-sensor-detection.html
-```
-
-### 2. Browser Console Helpers ✅
-**Available in running app:**
-
-```javascript
-// Check dataset size
-masterDataset.getAllReadings().then(r => console.log(`Readings: ${r.length}`));
-
-// Inspect events
-JSON.parse(localStorage.getItem('agp_detected_events'));
-
-// Check workday dates
-JSON.parse(localStorage.getItem('agp_workday_dates'));
-
-// Force event recalculation
-localStorage.removeItem('agp_detected_events');
-```
+**UI**: Brutalist theme, monospace, 3px borders
 
 ---
 
-## 📚 DOCUMENTATION STATUS
+### Phase 5: Lock System ⏳ TODO
+**Module**: `src/storage/sensorStorage.js` (extend)
 
-### Core Documents ✅
-- [x] HANDOFF_V3_0_FINAL.md - Complete handoff for next assistant
-- [x] TEST_PLAN_V3_0.md - Comprehensive testing guide
-- [x] CHANGELOG.md - Updated with v3.0.0 entry
-- [x] V3_PHASE_4_STATUS_CHECK.md - Phase 4 completion report
-- [x] This file - Production status summary
+**Tasks**:
+- [ ] Add `locked` field to sensor schema
+- [ ] `lockSensorsBeforeDate(cutoff)` function
+- [ ] Safe delete: only if `locked = false`
+- [ ] UI: Show lock icon for protected sensors
 
-### Reference Documents ✅
-- [x] PROJECT_BRIEFING_V2_2_0.md (Parts 1 & 2)
-- [x] V3_ARCHITECTURE.md
-- [x] V3_IMPLEMENTATION_GUIDE.md
-- [x] metric_definitions.md
-- [x] minimed_780g_ref.md
-- [x] GIT_WORKFLOW.md
-
-### Archive ✅
-- [x] Historical docs preserved in /docs/archive/
-- [x] Clear V2/V3 distinction
-- [x] 79 total documentation files organized
+**Lock policy**: Cutoff = start of current month (Oct 1, 2025)
 
 ---
 
-## 🚀 PRODUCTION READINESS ASSESSMENT
+## 🧪 TEST PLAN
 
-### Code Quality: ✅ READY
-- Core functionality verified with real data
-- No critical bugs outstanding
-- Debug console.log() statements present (need cleanup)
-- ESLint warnings minimal
-- Architecture clean and maintainable
+**Primary testdata**: `test-data/SAMPLE__Jo Mostert 30-10-2025_7d.csv`
+- 2826 lines, 3 sections
+- Expected: 2 sensor changes (Oct 19 ~01:00, Oct 25 ~08:00)
 
-### Testing: ⚠️ NEEDS PRIORITY 1 TESTS
-- ✅ 7-day data tested successfully
-- ⏳ 30-day data testing pending
-- ⏳ 90-day data testing pending
-- ⏳ Edge case testing pending
-- ⏳ Performance testing pending
+**Workflow**:
+1. Upload CSV
+2. Click "Load & Analyse"
+3. Verify 2 candidates detected
+4. Confirm both
+5. Check IndexedDB: 219 → 221 sensors
 
-### Documentation: ✅ COMPLETE
-- Comprehensive handoff created
-- Test plan detailed
-- Architecture documented
-- Debugging guides available
-- Examples and scenarios provided
-
-### User Experience: ✅ VERIFIED
-- CSV upload intuitive
-- Day profiles visually clear
-- Comparison features accessible
-- Event markers obvious
-- Print layout acceptable
+**Edge cases**:
+- Multiple LOST SIGNAL without gap → ignore
+- Gap without alerts → flag as unknown
+- Re-upload same CSV → idempotent (no duplicates)
 
 ---
 
-## 📋 PRE-RELEASE CHECKLIST
+## 🔧 EXISTING INFRASTRUCTURE (v3.0)
 
-### Must Complete Before Public Release
-- [ ] Run Priority 1 clinical validation tests (TEST_PLAN_V3_0.md)
-- [ ] Remove debug console.log() statements
-- [ ] Run ESLint and fix warnings
-- [ ] Test on Safari, Chrome, Firefox
-- [ ] Test on iOS Safari (mobile)
-- [ ] Verify print layout (black & white)
+**Storage**:
+- ✅ IndexedDB sensor table (219 sensors loaded)
+- ✅ `sensorStorage.js` - CRUD operations
+- ✅ `sensorImport.js` - SQLite import
 
-### Should Complete Before Public Release
-- [ ] Run Priority 2 edge case tests
-- [ ] Performance testing with 6-month dataset
-- [ ] Mobile browser comprehensive testing
-- [ ] Update README.md with v3.0 features
-- [ ] Add screenshots to documentation
+**Logic**:
+- ✅ `sensorEventClustering.js` - 4h window alert grouping
+- ✅ `sensor-history-engine.js` - Statistics
 
-### Nice to Have Before Public Release
-- [ ] Priority 3 performance optimization
-- [ ] Priority 4 workflow testing
-- [ ] Video tutorial creation
-- [ ] User guide writing
+**UI**:
+- ✅ `SensorHistoryModal.jsx` - View 219 sensors
+- ✅ `SensorImport.jsx` - SQLite .db import button
 
 ---
 
-## 🎯 NEXT STEPS
+## 🐛 KNOWN ISSUES
 
-### Immediate (Today/Tomorrow)
-1. **Review this documentation** - Ensure accuracy
-2. **Run TEST_PLAN Priority 1** - Clinical validation
-3. **Remove debug logs** - Clean production code
-
-### Short-term (This Week)
-1. **Complete Priority 2 tests** - Edge cases
-2. **Performance testing** - Large datasets
-3. **Mobile testing** - iOS/Android browsers
-
-### Medium-term (Next Week)
-1. **Git workflow** - Commit, tag, push v3.0.0
-2. **README update** - Comprehensive feature list
-3. **User documentation** - Getting started guide
+None (clean slate for v3.1)
 
 ---
 
-## ✅ SIGN-OFF
+## 📊 METRICS (v3.0 Baseline)
 
-**Status:** v3.0 Complete
-
-**Confidence Level:** HIGH (95%)
-
-**Reasoning:**
-- Real-world data verification successful
-- All major features working
-- No critical bugs known
-- Documentation comprehensive
-- Debug tools available
-
-**Recommended Action:**
-Complete Priority 1 tests from TEST_PLAN, then consider ready for use.
+**Sensor database**: 219 sensors (March 2022 - Oct 2025)  
+**Success rate**: TBD (calculate from existing sensors)  
+**Avg duration**: TBD (calculate from existing sensors)
 
 ---
 
-**Last Updated:** October 29, 2025  
-**Next Review:** After Priority 1 tests complete
+## ✅ COMPLETION CRITERIA
+
+- [ ] CSV parser handles 3-section format
+- [ ] Gap analyzer finds ≥120 min dropouts
+- [ ] Matcher produces confidence-scored candidates
+- [ ] UI allows review + confirm/ignore
+- [ ] IndexedDB count increases correctly (219 → 221)
+- [ ] Lock system protects old sensors
+- [ ] Idempotent re-upload
+
+---
+
+## 🔄 NEXT STEPS
+
+1. Implement Phase 1 (CSV Parser)
+2. Test with 7d CSV
+3. Implement Phase 2 (Gap Analyzer)
+4. Test gap detection accuracy
+5. Continue through phases sequentially
+
+---
+
+**Last Updated**: 2025-10-30  
+**Current Focus**: Phase 1 - CSV Section Parser  
+**Blocker**: None
