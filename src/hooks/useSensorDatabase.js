@@ -119,20 +119,56 @@ export function useSensorDatabase() {
         count: localStorageSensors.length
       });
 
+      // Helper: Determine status and success for localStorage sensors
+      const calculateSensorStatus = (sensor) => {
+        const now = new Date();
+        const startDate = new Date(sensor.start_date);
+        
+        // If no end_date, sensor is still running
+        if (!sensor.end_date) {
+          const daysRunning = (now - startDate) / (1000 * 60 * 60 * 24);
+          return {
+            status: 'running',
+            success: null, // Not determined yet
+            duration_days: daysRunning,
+            duration_hours: daysRunning * 24
+          };
+        }
+        
+        // If end_date exists, calculate duration and determine success
+        const endDate = new Date(sensor.end_date);
+        const durationMs = endDate - startDate;
+        const durationDays = durationMs / (1000 * 60 * 60 * 24);
+        const durationHours = durationMs / (1000 * 60 * 60);
+        
+        // Success if sensor lasted ≥6.75 days (6 days 18 hours)
+        const success = durationDays >= 6.75 ? 1 : 0;
+        
+        return {
+          status: success ? 'success' : 'failed',
+          success,
+          duration_days: durationDays,
+          duration_hours: durationHours
+        };
+      };
+
       // Convert localStorage format to match SQLite format
-      const localSensorsConverted = localStorageSensors.map(s => ({
-        sensor_id: s.sensor_id,
-        start_date: s.start_date,
-        end_date: s.end_date,
-        duration_days: s.duration_days,
-        duration_hours: s.duration_hours,
-        lot_number: s.lot_number,
-        hw_version: s.hw_version,
-        status: s.status,
-        failure_reason: s.reason_stop,
-        notes: s.notes,
-        success: s.success
-      }));
+      const localSensorsConverted = localStorageSensors.map(s => {
+        const statusInfo = calculateSensorStatus(s);
+        return {
+          sensor_id: s.sensor_id,
+          start_date: s.start_date,
+          end_date: s.end_date,
+          duration_days: statusInfo.duration_days,
+          duration_hours: statusInfo.duration_hours,
+          lot_number: s.lot_number,
+          hw_version: s.hw_version,
+          status: statusInfo.status,
+          failure_reason: s.reason_stop,
+          notes: s.notes,
+          success: statusInfo.success
+        };
+      });
 
       // Merge: localStorage sensors first (newest), then SQLite
       const allSensors = [...localSensorsConverted, ...sensorData];
@@ -140,7 +176,8 @@ export function useSensorDatabase() {
       debug.log('[useSensorDatabase] Total sensors (merged):', {
         count: allSensors.length,
         localStorage: localSensorsConverted.length,
-        sqlite: sensorData.length
+        sqlite: sensorData.length,
+        runningSensors: allSensors.filter(s => s.status === 'running').length
       });
 
       setSensors(allSensors);
