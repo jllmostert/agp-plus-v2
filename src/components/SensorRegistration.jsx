@@ -13,6 +13,12 @@ export default function SensorRegistration({ isOpen, onClose }) {
   const [isDragging, setIsDragging] = useState(false);
   const [successToast, setSuccessToast] = useState(null); // { message, timestamp }
 
+  // Handle close with auto-reload to refresh sensor data
+  const handleClose = () => {
+    onClose();
+    window.location.reload();
+  };
+
   const addDebugLog = (message, data = null) => {
     const timestamp = new Date().toLocaleTimeString();
     setDebugLog(prev => [...prev, { timestamp, message, data }]);
@@ -257,7 +263,7 @@ export default function SensorRegistration({ isOpen, onClose }) {
         {/* Header */}
         <div className="modal-header">
           <h2>SENSOR REGISTRATION</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
+          <button className="close-btn" onClick={handleClose}>✕</button>
         </div>
 
         {/* CSV Upload Section */}
