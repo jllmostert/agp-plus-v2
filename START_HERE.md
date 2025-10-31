@@ -1,228 +1,341 @@
 ---
-tier: 1
-status: active
-last_updated: 2025-10-30
-purpose: Entry point for all development sessions
+title: START HERE - AGP+ v3.1 Development
+date: 2025-10-31
+status: ✅ Production Ready
 ---
 
-# START HERE — AGP+ v3.1 Development
+# 🚀 START HERE - AGP+ Quick Start Guide
 
-**Quick Status**: Server running on port 3001 | Phase 4 UI implementation ready
+**Last Updated**: 2025-10-31 00:30 CET  
+**Version**: v3.1 (Phase 4 Complete)  
+**Status**: Production ready, all features working
 
-## 🚀 Quick Start (Every Session)
+---
 
-### 1. Read Current State
+## 🎯 What Is This?
+
+**AGP+ (Ambulatory Glucose Profile Plus)** is a React web app that analyzes continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It generates clinical reports with glucose pattern analysis, insulin metrics, and device event tracking.
+
+**Target Users**: Healthcare professionals and people with Type 1 Diabetes using MiniMed 780G insulin pumps with Guardian 4 CGM sensors.
+
+---
+
+## ⚡ Quick Start (30 seconds)
+
+### 1. Start Server
 ```bash
-cat HANDOFF.md  # Current phase details
-cat project/STATUS.md  # Overall project status
-```
-
-### 2. Start Dev Server
-```bash
-cd /Users/jomostert/Documents/Projects/agp-plus
+cd ~/Documents/Projects/agp-plus
 export PATH="/opt/homebrew/bin:$PATH"
 npx vite --port 3001
 ```
-Open: http://localhost:3001/
 
-### 3. Verify Setup
-- ✅ App loads without errors
-- ✅ 219 sensors shown in UI
-- ✅ No console errors in DevTools
+### 2. Open Browser
+```
+http://localhost:3001/
+```
+
+### 3. Upload CSV
+- Drag & drop a CareLink CSV file
+- Or use test file: `test-data/SAMPLE__Jo Mostert 30-10-2025_7d.csv`
+
+### 4. View Reports
+- AGP curve with percentiles
+- Time in Range metrics
+- TDD (Total Daily Dose) metrics
+- Day profiles with device markers
+- Sensor history
+
+---
 
 ## 📂 Project Structure
 
 ```
 agp-plus/
-├── START_HERE.md          ← You are here
-├── HANDOFF.md             ← Current phase details (READ FIRST)
 ├── src/
-│   ├── components/        ← React UI
-│   ├── core/              ← Pure calculation engines  
-│   ├── storage/           ← IndexedDB + SQLite
-│   ├── hooks/             ← React hooks
-│   └── styles/            ← CSS
-├── test-data/             ← Real CSV exports (READ-ONLY)
-├── public/                ← Static assets
-├── project/               ← Architecture docs
-└── reference/             ← Technical references
+│   ├── components/          # React UI components
+│   │   ├── AGPGenerator.jsx           # Main app
+│   │   ├── SensorRegistration.jsx     # CSV sensor upload
+│   │   ├── SensorHistoryModal.jsx     # Sensor history view
+│   │   └── DayProfilesModal.jsx       # Day profiles + markers
+│   ├── core/               # Pure calculation engines
+│   │   ├── sensorDetectionEngine.js   # Sensor change detection
+│   │   ├── glucoseGapAnalyzer.js      # Gap analysis
+│   │   ├── csvSectionParser.js        # CareLink CSV parser
+│   │   └── agpCalculations.js         # AGP metrics
+│   ├── storage/            # Data persistence
+│   │   └── sensorStorage.js           # localStorage CRUD
+│   ├── hooks/              # React hooks
+│   │   ├── useSensorDatabase.js       # Sensor data loader
+│   │   ├── useDeviceEvents.js         # Device event detection
+│   │   └── useMasterDataset.js        # IndexedDB glucose data
+│   └── utils/              # Utilities
+│       └── debug.js                   # Debug logging
+├── public/
+│   └── sensor_database.db  # SQLite (219 historical sensors)
+├── test-data/              # Sample CSV files
+└── docs/                   # Documentation
 ```
-
-## 🎯 Current Mission (v3.1 Phase 4)
-
-**Goal**: Build sensor registration UI for CSV-detected sensor changes
-
-**Status**: Detection engine complete (Phases 1-3), UI ready to implement
-
-**Last Completed**: Import error fixes (Session 2025-10-30, 13:57)
-- Fixed 3 import mismatches causing white screen
-- Simplified workflow to use unified detection engine
-- Commit: 7aa4399
-
-**Next Step**: Implement Phase 4A - Modal container & file upload UI
-
-## 📋 Document Hierarchy
-
-### Tier 1 (Start Here)
-- `START_HERE.md` - This file
-- `HANDOFF.md` - Current phase handoff
-- `DocumentHygiene.md` - File structure rules
-
-### Tier 2 (Project Docs)
-- `project/STATUS.md` - Overall project status
-- `project/V3_ARCHITECTURE.md` - Technical design
-- `project/TEST_PLAN.md` - Testing strategy
-
-### Tier 3 (References)
-- `reference/metric_definitions.md` - CGM metrics
-- `reference/minimed_780g_ref.md` - Pump settings
-- `reference/GIT_WORKFLOW.md` - Version control
-
-## 🔧 Common Tasks
-
-### Start Fresh Session
-```bash
-# 1. Check server status
-cat .dev-server-pid
-
-# 2. Kill if needed
-kill -9 $(cat .dev-server-pid | head -1)
-
-# 3. Start server
-npx vite --port 3001
-
-# 4. Open browser
-open http://localhost:3001/
-```
-
-### Check Current Work
-```bash
-# What phase are we in?
-grep "^phase:" HANDOFF.md
-
-# What's the last commit?
-git log -1 --oneline
-
-# What files changed?
-git status
-```
-
-### Run Tests
-```bash
-# Detection engine test harness
-open public/test-sensor-detection.html
-# Expected: 2 HIGH confidence candidates
-```
-
-### Inspect Storage
-1. Open DevTools → Application
-2. Navigate to IndexedDB → agp-plus-v3
-3. Check tables: sensors (219 records), masterData
-
-## 🎨 Development Principles
-
-### Brutalist Theme
-- 3px solid borders, no shadows
-- Monospace typography
-- High contrast black/white
-- Print-compatible
-- Fast loading
-
-### Data Flow
-1. **CSV Upload** → Parser extracts sections
-2. **Detection Engine** → Analyzes alerts + gaps
-3. **User Review** → Confirms/ignores candidates  
-4. **IndexedDB** → Persists sensor records
-
-### File Guidelines
-- **Read-only**: test-data/ (never modify)
-- **Chunk writes**: ≤30 lines per write operation
-- **Use Desktop Commander**: Required for all file ops
-- **Test with real data**: No dummy values
-
-## 🧪 Testing Checklist
-
-Before any commit:
-- [ ] Server starts without errors
-- [ ] App loads at http://localhost:3001/
-- [ ] Console has no errors
-- [ ] Test CSV processes correctly
-- [ ] Expected output matches reality
-
-## 🚨 Critical Paths
-
-### Detection Engine Files (Don't Break!)
-- `src/core/csvSectionParser.js` - 3-section parser
-- `src/core/glucoseGapAnalyzer.js` - Gap detection
-- `src/core/sensorDetectionEngine.js` - Unified detection
-- `src/core/sensorEventClustering.js` - Alert clustering
-
-### Storage Layer Files (Handle with Care!)
-- `src/storage/sensorStorage.js` - IndexedDB CRUD
-- `src/storage/masterDataStorage.js` - Main data store
-- `src/storage/sensorImport.js` - SQLite import
-
-### Test Data (READ-ONLY)
-- `test-data/SAMPLE__Jo Mostert 30-10-2025_7d.csv` - 7-day export
-- Expected: 2 sensor changes (Oct 30, Oct 25)
-
-## 📊 Key Metrics
-
-**Current State**:
-- Sensors in DB: 219 (March 2022 - Oct 2025)
-- Detection accuracy: 100% (2/2 candidates)
-- Test CSV: 2826 lines, 3 sections
-- App version: v3.0 (stable) → v3.1 (in progress)
-
-**Performance Targets**:
-- CSV parse: <500ms
-- Detection: <1000ms
-- UI render: <100ms
-- IndexedDB write: <50ms
-
-## 🔗 Quick Links
-
-- **Live App**: http://localhost:3001/
-- **GitHub**: (local only, no remote)
-- **Test Harness**: http://localhost:3001/test-sensor-detection.html
-- **DevTools**: Chrome → F12
-
-## 📝 Session Start Routine
-
-1. **Read**: `HANDOFF.md` (phase details)
-2. **Start**: Server on port 3001
-3. **Verify**: App loads, no errors
-4. **Check**: Git status, current branch
-5. **Plan**: Read phase checklist
-6. **Code**: Focus on one phase at a time
-7. **Test**: Real CSV data, not dummy
-8. **Commit**: Small, focused commits
-9. **Update**: HANDOFF.md for next session
-
-## ⚡ Power Tips
-
-- **Always use absolute paths** in code
-- **Never quote source material** (copyright!)
-- **Test incrementally** - don't write 200 lines blind
-- **Use detection engine** - don't re-implement logic
-- **Check IndexedDB** after storage operations
-- **Console.log liberally** during development
-- **Clean up logs** before committing
-
-## 🎯 Current Phase Focus
-
-**Phase 4: Registration UI**
-- Build modal container
-- File upload with drag-drop
-- Candidates review table  
-- Confirm/ignore/split actions
-- Debug log panel
-
-**See**: `HANDOFF.md` for detailed implementation plan
 
 ---
 
-**Version**: v3.1-phase4  
-**Server**: Port 3001 (PID 31953)  
-**Last Updated**: 2025-10-30 13:57 CET  
-**Status**: ✅ Ready for Phase 4 implementation
+## 🎨 Design Philosophy
+
+**Brutalist Theme**: High contrast, print-optimized, clinical readability
+- Black background
+- White/red/green/yellow text
+- 3px solid borders
+- Monospace typography (JetBrains Mono)
+- No shadows, no gradients
+- Print-compatible
+
+---
+
+## 🔧 Current Features (v3.1)
+
+### ✅ Working Features
+
+**Core Analysis**:
+- AGP curve with p5/p25/p50/p75/p95 percentiles
+- Time in Range (TIR/TAR/TBR) metrics
+- Glucose statistics (mean, median, CV, GMI)
+- Variability metrics (MAGE, MODD)
+
+**Insulin Tracking** (Phase 0 Complete):
+- Total Daily Dose (TDD) calculation
+- Auto vs Meal bolus breakdown
+- Auto/Meal ratio percentage
+- TDD displayed in main interface
+
+**Sensor Management** (Phase 4 Complete):
+- CSV upload with sensor change detection
+- Smart status detection (running/success/failed)
+- Automatic previous sensor end_date updates
+- Duration auto-calculation
+- Sensor history modal (219+ sensors)
+- SQLite + localStorage merger
+
+**Device Events**:
+- Sensor change markers on day profiles (red dashed lines)
+- Cartridge change markers (orange dashed lines)
+- Automatic detection from CSV data
+
+**Data Management**:
+- Master dataset with IndexedDB persistence
+- Upload history tracking
+- Date range filtering
+- Data import/export
+
+---
+
+## 📊 Key Metrics Explained
+
+### Time in Ranges
+- **TIR** (70-180 mg/dL): Target >70%
+- **TAR** (>180 mg/dL): Target <30%
+- **TBR** (<70 mg/dL): Target <5%
+- **CV** (Coefficient of Variation): Target ≤36%
+
+### Insulin Metrics
+- **TDD**: Total Daily Dose (Units/day)
+- **Auto**: Automated basal + corrections by SmartGuard
+- **Meal**: Manual boluses for meals
+- **Ratio**: Auto% vs Meal% (target ~50/50)
+
+### Sensor Status
+- **Running**: Active sensor (no end_date yet)
+- **Success**: Sensor lasted ≥6.75 days (162 hours)
+- **Failed**: Sensor ended before 6.75 days
+
+---
+
+## 🧪 Testing
+
+### Test CSV File
+```bash
+test-data/SAMPLE__Jo Mostert 30-10-2025_7d.csv
+```
+
+**Contains**:
+- 7 days of glucose data
+- 2 sensor changes (Oct 25 + Oct 30)
+- TDD metrics (23.0E average)
+- Device events (sensor + cartridge)
+
+### Test Workflow
+1. **Clear storage**: `localStorage.clear()` in console
+2. **Refresh page**: Cmd+Shift+R
+3. **Upload test CSV**
+4. **Check SENSORS tab**: Should show 2 HIGH confidence candidates
+5. **Confirm both sensors**
+6. **View sensor history**: Should show both sensors correctly
+7. **View day profiles**: Should show sensor change markers
+
+---
+
+## 🐛 Debug Tools
+
+### Browser Console
+```javascript
+// Check localStorage sensors
+const sensors = JSON.parse(localStorage.getItem('agp_sensors') || '[]');
+console.table(sensors);
+
+// Check master dataset
+const dataset = JSON.parse(localStorage.getItem('agp_masterDataset') || '{}');
+console.log('Total readings:', dataset.allReadings?.length);
+
+// Clear all data (nuclear option)
+localStorage.clear();
+window.location.reload();
+```
+
+### Debug Logging
+All components use `debug.log()` for consistent logging:
+```javascript
+import { debug } from '../utils/debug.js';
+debug.log('[ComponentName] Message:', data);
+```
+
+---
+
+## 📝 Common Tasks
+
+### Add New Feature
+1. Create feature branch: `git checkout -b feature/my-feature`
+2. Implement in appropriate layer (component/core/storage)
+3. Test thoroughly
+4. Document in code comments
+5. Merge to main when complete
+
+### Fix Bug
+1. Reproduce bug
+2. Add debug logging
+3. Identify root cause
+4. Fix in minimal scope
+5. Test fix
+6. Document in commit message
+
+### Update Documentation
+1. Update relevant `.md` files in docs/
+2. Update this START_HERE.md if workflow changes
+3. Update HANDOFF when session complete
+
+---
+
+## 🔗 Documentation Files
+
+### Essential Reading
+- **START_HERE.md** (this file) - Quick start guide
+- **HANDOFF_2025-10-31.md** - Latest session details
+- **minimed_780g_ref.md** - MiniMed 780G reference
+- **metric_definitions.md** - Glucose metric definitions
+
+### Phase Documentation
+- **v3.1_DETECTION_ENGINE_COMPLETE.md** - Sensor detection (Phases 1-3)
+- **SESSION_COMPLETE_2025-10-30.md** - Phase 4 completion
+- **BUG_FIX_SENSOR_ENDTIME.md** - Bug fix details
+
+### Architecture
+- **PROJECT_BRIEFING_v3.0.md** - Master dataset architecture
+- **v3.0_MIGRATION_COMPLETE.md** - Migration from v2 to v3
+
+---
+
+## 🚨 Important Notes
+
+### ALWAYS Use Desktop Commander
+Regular bash commands don't work with the project file structure. Use Desktop Commander MCP for all file operations.
+
+### Server Start Command
+```bash
+cd ~/Documents/Projects/agp-plus
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+```
+
+### Data Persistence
+- **IndexedDB**: Master glucose dataset
+- **localStorage**: Sensors, uploads, patient info
+- **SQLite**: Historical sensor database (read-only)
+
+### Field Names (CRITICAL)
+Always use SQLite-aligned field names:
+- `sensor_id` (NOT `id`)
+- `start_date` (NOT `start_timestamp`)
+- `end_date` (NOT `end_timestamp`)
+- `hw_version` (NOT `hardware_version`)
+
+---
+
+## 🎯 Current Phase
+
+**Phase 4: Complete ✅**
+- Sensor registration working
+- Status detection working
+- Auto-reload on close
+- All bugs fixed
+
+**Next Options**:
+- **Phase 5**: Lock system (protect old sensors)
+- **UI Polish**: Better loading states, confirm all, export
+- **Advanced Features**: Sensor editing, bulk operations
+
+---
+
+## 💡 Pro Tips
+
+### Debugging
+1. Check browser console first
+2. Use DevTools Application tab for localStorage/IndexedDB
+3. Use debug.log() liberally
+4. Test with real CSV data, not dummy data
+
+### Git Workflow
+- Main branch is always production-ready
+- All features merged directly to main
+- Detailed commit messages
+- Push after each complete feature
+
+### Performance
+- Use memoization for expensive calculations
+- Lazy load modals (React portals)
+- IndexedDB for large datasets
+- localStorage for small metadata
+
+---
+
+## 📞 Help & Resources
+
+### External References
+- **ADA Standards**: https://diabetesjournals.org/care
+- **Medtronic CareLink**: User manual for CSV format
+- **sql.js**: https://sql.js.org/documentation/
+
+### Internal References
+- Project memory in Claude (see userMemories)
+- Detailed metric formulas in metric_definitions.md
+- Device settings in minimed_780g_ref.md
+
+---
+
+## ✅ Health Check
+
+Before starting work, verify:
+- [ ] Server starts without errors
+- [ ] Test CSV uploads successfully
+- [ ] Console shows no red errors
+- [ ] Sensor detection works
+- [ ] Day profiles render
+- [ ] TDD metrics display
+- [ ] Sensor history opens
+
+If all checks pass → System healthy, ready to work! 🟢
+
+---
+
+**Last Session**: 2025-10-31 00:30 CET  
+**Status**: All systems operational  
+**Branch**: main  
+**Git**: Synced with GitHub
+
+**🚀 Ready to build!**
