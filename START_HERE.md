@@ -1,222 +1,261 @@
-# 🚀 START HERE - AGP+ Fresh Session
+# 🚀 START HERE - AGP+ v3.10 Quick Start
 
-**Datum**: 2025-10-31 11:30 CET  
-**Status**: ✅ Phase 5 Compleet - Cache Gewist - Klaar voor Testing  
-**Versie**: v3.1.0
+**Date**: 2025-10-31  
+**Version**: v3.10.0  
+**Status**: ✅ Bug Fixes Complete → 🧪 Testing Phase  
+**Last Session**: Project briefing & documentation
 
 ---
 
-## ⚡ SNELSTART
+## ⚡ TL;DR - What Just Happened
+
+**Recent Work** (Oct 30-31):
+- ✅ Fixed 5 critical bugs (duplicate sensors, lock system, delete)
+- ✅ Created complete project briefing (704 lines)
+- ✅ Updated status tracking
+- ✅ Ready for user validation testing
+
+**Current State**: All fixes committed, documentation complete, ready to test.
+
+---
+
+## 🎯 CURRENT OBJECTIVE
+
+**v3.10.0 Release**: Validate bug fixes, tag release, move to Phase 2
+
+**Testing Focus**:
+1. Verify duplicate sensors eliminated
+2. Verify lock system works correctly
+3. Verify delete operations stable
+4. Verify CSV import counts correct
+
+**After Testing**: Either release v3.10.0 OR start Phase 2 (architecture hardening)
+
+---
+
+## 🔧 QUICK START
+
+### 1. Start Development Server
 
 ```bash
-# Server starten (port 3001, schone start)
 cd /Users/jomostert/Documents/Projects/agp-plus
 export PATH="/opt/homebrew/bin:$PATH"
 npx vite --port 3001
 ```
 
-**Dan**: Open Chrome → http://localhost:3001
+### 2. Open Browser
 
----
-
-## 📦 WAT IS ER KLAAR
-
-### Phase 5: Sensor Lock & Data Management System
-
-✅ **Phase 5A**: Automatische 30-dagen locks  
-✅ **Phase 5B**: Handmatige lock toggles (klik op 🔒/🔓)  
-✅ **Phase 5C**: Smart sensor sync naar localStorage
-
-**Wat het doet**:
-- Beschermt oude sensors (>30 dagen) tegen accidenteel verwijderen
-- Lock icons zijn klikbaar - toggle met één klik
-- DELETE werkt alleen bij unlocked sensors
-- Oude data blijft veilig in SQLite database
-
----
-
-## 🧪 TEST PROTOCOL
-
-### Test 1: Sensor Sync bij Startup
-1. Open app → Check console
-2. Zoek naar: `[syncUnlockedSensors] Added X sensors`
-3. Verwacht: ~18 sensors gesynct (<30 dagen oud)
-
-### Test 2: Manual Lock Toggles
-1. Open Sensor History modal (SensorsTab)
-2. Zoek oude sensor met 🔒 (rood)
-3. Klik op lock icon
-4. Wordt 🔓 (groen)
-5. Reload browser → blijft 🔓
-
-### Test 3: DELETE Protection
-1. Zoek sensor met 🔒
-2. Klik DELETE
-3. Verwacht: Error "Eerst ontgrendelen"
-4. Sensor blijft in lijst
-
-### Test 4: DELETE na Unlock
-1. Klik lock icon → wordt 🔓
-2. Klik DELETE
-3. Bevestig
-4. Sensor verdwijnt
-
-### Test 5: Persistence
-1. Toggle enkele locks
-2. Sluit modal
-3. Reload browser
-4. Open modal weer
-5. Lock states bewaard
-
----
-
-## 📊 SYSTEM STATUS
-
-**Data**:
-- 220+ sensors in SQLite database
-- ~18 recente sensors in localStorage
-- 28,000+ glucose metingen
-- Periode: Maart - Oktober 2025
-
-**Features Actief**:
-- ✅ CSV import (Phase 3)
-- ✅ Sensor detectie (Phase 4)
-- ✅ Lock systeem (Phase 5)
-- ✅ AGP curve rendering
-- ✅ TIR/TAR/TBR metrics
-- ✅ MAGE/MODD berekeningen
-
-**Cache Status**:
-- ✅ Chrome cache gewist
-- ✅ Alle poorten vrijgemaakt
-- ✅ Geen oude processen
-
----
-
-## 🔧 ALS ER PROBLEMEN ZIJN
-
-### Server start niet op 3001
-```bash
-# Check welke poorten bezet zijn
-lsof -i :3001
-
-# Kill alle vite processen
-pkill -9 -f vite
-
-# Probeer opnieuw
-npx vite --port 3001
+```
+http://localhost:3001
 ```
 
-### Console errors bij sync
-```bash
-# Check localStorage
+### 3. Check Status
+
+```javascript
+// In browser console:
 localStorage.getItem('agp-sensor-database')
-localStorage.getItem('agp-sensor-locks')
-
-# Reset indien nodig
-localStorage.removeItem('agp-sensor-locks')
-location.reload()
-```
-
-### Lock icons verschijnen niet
-1. Check console voor errors
-2. Hard refresh: Cmd+Shift+R
-3. Check of modal volledig geladen is
-4. Probeer toggle op ander sensor
-
----
-
-## 📚 DOCUMENTATIE
-
-**Voor details, lees**:
-```
-docs/handoffs/HANDOFF_PHASE5_COMPLETE_2025-10-31.md
-  → Complete technische documentatie
-  → Test suites
-  → Architectuur
-  → Rollback procedures
-
-HANDOFF_PHASE5_MANUAL_LOCKS_2025-10-31.md
-  → Session notes Phase 5B
-
-HANDOFF_PHASE5C_SENSOR_SYNC_2025-10-31.md
-  → Session notes Phase 5C
+localStorage.getItem('agp-deleted-sensors')
 ```
 
 ---
 
-## 🎯 VOLGENDE STAPPEN
+## 📚 READ THESE FIRST
 
-### Nu Testen
-1. ✅ Server gestart
-2. ⏳ Test sync (console check)
-3. ⏳ Test lock toggles (klik 🔒/🔓)
-4. ⏳ Test DELETE protection
-5. ⏳ Verifieer persistence
+**Essential Reading** (30 min):
+1. **project/PROJECT_BRIEFING.md** ← Complete project overview (START HERE!)
+2. **project/STATUS.md** ← Current status & testing checklist
+3. **FIXES_IMPLEMENTED.md** ← Recent bug fixes explained
 
-### Daarna
-1. **Fix dagprofielen gaps** - AGP curve tekent door sensor gaps
-2. **Git commit** - Phase 5 changes committen
-3. **Update docs** - README.md, CHANGELOG.md
+**For Context** (15 min):
+4. **BUG_ANALYSIS_SUMMARY.md** ← Why bugs happened
+5. **CHANGELOG.md** ← Version history
+6. **README.md** ← Project overview
 
-### Optioneel
-- Lock statistieken dashboard
-- Bulk lock operations
-- Lock audit trail
+**Deep Dives** (as needed):
+- `project/V3_ARCHITECTURE.md` ← System design
+- `reference/metric_definitions.md` ← Clinical metrics
+- `reference/minimed_780g_ref.md` ← Device specs
 
 ---
 
-## 🐛 BEKENDE ISSUES
+## 🧪 TESTING CHECKLIST
 
-**Issue 1: Dagprofielen Gap Lines** (MEDIUM prioriteit)
-- Beschrijving: AGP curve tekent lijnen door sensor gaps
-- Impact: Visueel, data zelf is correct
-- Locatie: `src/components/DayProfilesModal.jsx`
-- Fix: Break curve bij sensor changes
+**See project/STATUS.md for complete checklist**
 
-**Issue 2: Port Conflicts** (LOW prioriteit)
-- Beschrijving: Soms lingeren vite processen
-- Workaround: `pkill -9 -f vite` werkt
-- Fix: Betere cleanup script
+**Quick Test**:
+- [ ] Hard refresh → Check console for "duplicatesRemoved"
+- [ ] Import CSV → Verify count
+- [ ] Delete sensor → Stays deleted after refresh
+- [ ] Lock icons correct (🔒 for old, 🔓 for recent)
+- [ ] Delete button disabled when locked
 
 ---
 
-## 💾 GIT STATUS
+## 🚨 KNOWN ISSUES
 
-**Nog niet gecommit!**
+**Not Blocking v3.10 Release**:
+1. Time Boundary Drift (sensors >30d linger in localStorage)
+2. Lock Status Orphaning (manual locks lost after 30d)
+3. Resurrection Bug (deleted sensors respawn after clear)
+4. Chronological Index Instability (#ID changes)
 
-Zodra testing compleet:
+**These will be fixed in Phase 2 (v3.11)**
+
+---
+
+## 📋 NEXT STEPS
+
+### Option A: Complete v3.10 Release
+
+**If all tests pass**:
+1. Update CHANGELOG.md with v3.10.0 entry
+2. Git tag: `v3.10.0-sensor-stability`
+3. Update agp-project-status.html
+4. Prepare handoff for Phase 2
+
+---
+
+### Option B: Start Phase 2 Implementation
+
+**If v3.10 validated**:
+- Time Boundary Enforcement (1-2h)
+- Persistent Lock Metadata (1h)
+- Tombstone Resilience (2h)
+- Persistent UUID System (3h)
+
+**Total**: 7-9 hours
+
+---
+
+## 🎯 PHASE 2 EXPLAINED (Quick Version)
+
+**Goal**: Fix 4 architectural weaknesses
+
+1. **Time Boundary Drift**
+   - Problem: Sensors >30d stay in localStorage
+   - Fix: Auto-prune on mount
+
+2. **Lock Orphaning**
+   - Problem: Manual locks lost after 30d
+   - Fix: Persistent metadata store
+
+3. **Resurrection Bug**
+   - Problem: Deleted sensors respawn after clear
+   - Fix: Dual persistence (localStorage + SQLite)
+
+4. **UUID Stability**
+   - Problem: #ID changes after delete
+   - Fix: Add persistent UUID
+
+**Impact**: No breaking changes, pure stability improvements
+
+---
+
+## 🔄 GIT STATUS
+
+**Last Commit**: `5d22534` (Oct 31) - Bug fixes complete  
+**Branch**: main  
+**Status**: Clean (ready to commit docs)
+
+**Need to Commit**:
+- project/PROJECT_BRIEFING.md (new)
+- project/STATUS.md (updated)
+- docs/handoffs/HANDOFF_2025-10-31_PROJECT_BRIEFING.md (new)
+- This file (START_HERE.md)
+
+---
+
+## 📞 EMERGENCY
+
+**Rollback Command**:
 ```bash
-git add .
-git commit -m "Phase 5: Sensor lock & data management system
+git revert HEAD && git push origin main
+```
 
-- Automatic 30-day locks for historical sensors
-- Manual lock toggles with single-click icons
-- Smart sensor sync to localStorage
-- DELETE protection for locked sensors
-- Format conversion SQLite → localStorage
+**Last Known Good**: Commit `5d22534`
 
-Closes #phase5"
+**Debug Steps**:
+1. Check browser console
+2. Check localStorage state
+3. Read FIXES_IMPLEMENTED.md
+4. Review git log
 
-git push origin main
+---
+
+## 🎬 NEW SESSION CHECKLIST
+
+**Before Starting**:
+- [ ] Read this file (you're doing it!)
+- [ ] Read project/PROJECT_BRIEFING.md
+- [ ] Check project/STATUS.md
+- [ ] Start server: `npx vite --port 3001`
+- [ ] Open browser: http://localhost:3001
+
+**Before Ending**:
+- [ ] Commit all changes
+- [ ] Push to origin
+- [ ] Update handoff
+- [ ] Update this file if needed
+- [ ] Stop server
+
+---
+
+## 💡 QUICK COMMANDS
+
+```bash
+# Git status
+git status
+
+# Recent commits
+git log --oneline -5
+
+# Start server
+cd /Users/jomostert/Documents/Projects/agp-plus
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+
+# Check localStorage (in browser console)
+JSON.parse(localStorage.getItem('agp-sensor-database'))
+JSON.parse(localStorage.getItem('agp-deleted-sensors'))
 ```
 
 ---
 
-## ✅ SUCCESS CRITERIA
+## 📊 PROJECT STATS
 
-Phase 5 is geslaagd als:
-- [ ] Sync runs at startup (console messages)
-- [ ] Lock icons display correctly (🔒/🔓)
-- [ ] Manual toggles work (click changes state)
-- [ ] DELETE blocked on locked sensors
-- [ ] DELETE works on unlocked sensors
-- [ ] Lock state persists after reload
-- [ ] No console errors
-- [ ] Performance acceptable (<100ms operations)
+**Sensor Database**:
+- 219 historical sensors (SQLite)
+- N recent sensors (localStorage)
+- Success rate: ~67%
+- Average duration: 5.8 days
+
+**Code Status**:
+- v3.10.0: Bug fixes complete ✅
+- Testing: In progress 🧪
+- Phase 2: Planned (7-9 hours)
 
 ---
 
-**READY TO TEST! 🎉**
+## 🎯 FOCUS AREAS
 
-Open Chrome → http://localhost:3001 → Begin testing!
+**Current Priority**: User validation testing
+
+**After Testing**:
+- Release v3.10.0 (if tests pass)
+- Start Phase 2 (architecture hardening)
+
+**Long-term**:
+- Phase 3: Additional features
+- Phase 4: Performance optimization
+
+---
+
+**Document Status**: ✅ CURRENT  
+**Last Updated**: 2025-10-31 12:50 CET  
+**Ready For**: Testing or Phase 2 start
+
+---
+
+*For complete details, read `project/PROJECT_BRIEFING.md`*  
+*For current status, read `project/STATUS.md`*  
+*For bug fixes, read `FIXES_IMPLEMENTED.md`*

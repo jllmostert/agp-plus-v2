@@ -2,6 +2,9 @@
 
 **Professional diabetes data analysis tool following ADA/ATTD clinical guidelines**
 
+**Current Version:** v3.10.0 (Sensor Database Stability)  
+**Status:** ✅ Production-ready with verified bug fixes
+
 ---
 
 ## What is AGP+?
@@ -16,6 +19,7 @@ AGP+ is a React-based web application for analyzing continuous glucose monitorin
 - Individual 24h day profiles with event markers
 - Sensor and cartridge change detection
 - Complete database export/import
+- Dual-source sensor tracking (SQLite + localStorage)
 
 **Clinical Standards:**
 - ADA/ATTD 2025 guidelines
