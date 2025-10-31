@@ -49,23 +49,29 @@
 
 **From DUAL_STORAGE_ANALYSIS.md:**
 
-1. âœ… **Issue #1: localStorage clear edge case** - SOLVED v3.10.0
+**Note**: Our issue numbering reflects chronological implementation order. For cross-reference with analysis document, see mapping in parentheses below.
+
+1. âœ… **localStorage clear edge case** - SOLVED v3.10.0
+   - *(Analysis Issue #1: Sync race condition)*
    - IndexedDB tombstone store (persistent)
    - 90-day auto-expiry
    - Survives localStorage.clear()
 
-2. âœ… **Issue #2: Data source confusion** - SOLVED v3.11.0
+2. âœ… **Data source confusion** - SOLVED v3.11.0
+   - *(Analysis Issue #4: Data source confusion)*
    - Color-coded badges (RECENT green / HISTORICAL gray)
    - Disabled lock toggle for read-only sensors
    - Clear visual distinction
 
-3. âœ… **Issue #3: Lock inconsistency** - SOLVED v3.12.0
+3. âœ… **Lock inconsistency** - SOLVED v3.12.0
+   - *(Analysis Issue #2: Lock state inconsistency)*
    - Enhanced error messages with detail field
    - Full context from getManualLockStatus
    - Debug logging for troubleshooting
    - Explains WHY actions fail
 
-4. âš ï¸ **Issue #4: Deleted list growth** - MOSTLY SOLVED
+4. âš ï¸ **Deleted list growth** - MOSTLY SOLVED
+   - *(Analysis Issue #3: Deleted sensors list growth)*
    - IndexedDB has 90-day auto-expiry (v3.10.0)
    - Optional: Add manual cleanup button (P3)
    - Not critical - works fine as-is

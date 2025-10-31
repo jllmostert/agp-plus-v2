@@ -255,11 +255,17 @@ npm install
 
 ## ðŸŽ¯ PROGRESS ON DUAL_STORAGE_ANALYSIS ISSUES
 
+**Note**: Issue numbering reflects chronological implementation order, not DUAL_STORAGE_ANALYSIS.md order. See analysis doc for original numbering (Issues #1-4 map differently).
+
 **Issue Status:**
 1. âœ… **localStorage clear edge case** - SOLVED v3.10.0 (IndexedDB tombstone)
+   - *Analysis Issue #1: Sync race condition*
 2. âœ… **Data source confusion** - SOLVED v3.11.0 (badges + disabled toggles)
+   - *Analysis Issue #4: Data source confusion*
 3. âœ… **Lock inconsistency** - SOLVED v3.12.0 (enhanced error messages) ðŸ†•
+   - *Analysis Issue #2: Lock state inconsistency*
 4. âš ï¸ **Deleted list growth** - Mostly solved (90-day expiry), P3 optional
+   - *Analysis Issue #3: Deleted sensors list growth*
 
 **Overall Risk**: VERY LOW (3/4 complete, 1/4 optional)
 
