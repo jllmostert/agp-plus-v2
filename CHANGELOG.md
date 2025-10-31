@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.12.0] - 2025-10-31 - 🔐 Lock System Enhancement (P2) âœ… COMPLETE
+
+**Enhanced error messages and context for lock operations**
+
+### Added
+
+**Enhanced Lock Status API** (`getManualLockStatus`):
+- Returns full context object with 5 fields:
+  - `isLocked` (boolean) - Whether sensor is locked
+  - `autoCalculated` (boolean) - Lock state auto-calculated vs manual
+  - `isEditable` (boolean) - Whether sensor can be modified (NEW)
+  - `storageSource` (string) - 'localStorage' | 'sqlite' | 'unknown' (NEW)
+  - `reason` (string) - Why sensor is in this state
+- Clear distinction between editable localStorage and read-only SQLite sensors
+
+**Better Error Messages** (`toggleSensorLock`):
+- Multi-line error messages with `detail` field
+- Explains WHY lock toggle failed (not just "failed")
+- Example: "Deze sensor is read-only (historische data uit SQLite database).\n\nAlleen recente sensoren (â‰¤30 dagen oud) kunnen worden bewerkt."
+- References badge system: "Badge: HISTORICAL = read-only, RECENT = editable"
+
+**Enhanced Delete Errors** (`deleteSensorWithLockCheck`):
+- Context-aware error messages
+- Different messages for SQLite vs localStorage locked sensors
+- Explains next steps: "Klik eerst op het slotje om te ontgrendelen"
+
+**Debug Logging**:
+- Console logs for all lock operations
+- Logs include: sensor ID, lock status, editability, storage source, reason
+- Helps troubleshoot edge cases in production
+
+**UI Error Display** (SensorHistoryModal):
+- Shows `detail` field in alerts when available
+- Format: "âŒ {message}\n\n{detail}"
+- Provides clear explanations instead of generic errors
+
+### Fixed
+
+**UX Issue**: Lock inconsistency (Priority 2 from DUAL_STORAGE_ANALYSIS.md)
+- Generic error messages didn't explain WHY actions failed
+- Users confused when lock toggle fails for SQLite sensors
+- No context about storage source in error messages
+
+**Result**: Clear, actionable error messages that explain the system's behavior
+
+### Technical Details
+
+**Modified Files**:
+- `src/storage/sensorStorage.js`:
+  - Enhanced `getManualLockStatus()` with isEditable + storageSource fields
+  - Better error messages in `toggleSensorLock()` with detail field
+  - Context-aware errors in `deleteSensorWithLockCheck()`
+  - Debug logging for lock operations
+- `src/components/SensorHistoryModal.jsx`:
+  - Updated alert() calls to show detail field (lines ~691, ~862)
+  - Displays multi-line error messages with explanations
+
+**Testing Performed**:
+- âœ… getManualLockStatus returns full context for both storage sources
+- âœ… toggleSensorLock provides clear errors for read-only sensors
+- âœ… deleteSensorWithLockCheck shows context-aware messages
+- âœ… UI displays enhanced error messages with detail field
+- âœ… Debug logging helps troubleshooting
+
+**Risk**: Low - Backwards compatible (all existing code still works)
+
+---
+
 ## [3.11.0] - 2025-10-31 - ðŸ·ï¸ Storage Source Indicators ✅ COMPLETE
 
 **Visual distinction between editable (localStorage) and read-only (SQLite) sensors**

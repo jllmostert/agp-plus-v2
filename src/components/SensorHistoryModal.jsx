@@ -688,7 +688,12 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                         // Trigger re-render without page reload
                         setRefreshKey(prev => prev + 1);
                       } else {
-                        alert(`Fout: ${result.message}`);
+                        // Show enhanced error message with detail if available
+                        if (result.detail) {
+                          alert(`âŒ ${result.message}\n\n${result.detail}`);
+                        } else {
+                          alert(`âŒ Fout: ${result.message}`);
+                        }
                       }
                     } : undefined}
                     title={
@@ -855,7 +860,12 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                               // Trigger re-render without page reload
                               setRefreshKey(prev => prev + 1);
                             } else {
-                              alert(`✗ Fout: ${result.message}`);
+                              // Show enhanced error message with detail if available
+                              if (result.detail) {
+                                alert(`âŒ ${result.message}\n\n${result.detail}`);
+                              } else {
+                                alert(`âŒ Fout: ${result.message}`);
+                              }
                             }
                           }
                         }}

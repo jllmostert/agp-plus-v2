@@ -755,13 +755,28 @@ export async function deleteSensorWithLockCheck(sensorId) {
     };
   }
   
-  // Check manual lock status
-  const lockStatus = getManualLockStatus(sensorId);
+  // Check manual lock status with enhanced context
+  const lockStatus = getManualLockStatus(sensorId, sensor.start_date);
+  
+  console.log('[deleteSensorWithLockCheck] Lock status:', {
+    sensorId,
+    isLocked: lockStatus.isLocked,
+    isEditable: lockStatus.isEditable,
+    storageSource: lockStatus.storageSource,
+    reason: lockStatus.reason
+  });
   
   if (lockStatus.isLocked) {
+    const detail = lockStatus.storageSource === 'sqlite' 
+      ? 'Deze sensor is read-only (historische data uit SQLite database).\n\n' +
+        'Verwijderen is niet mogelijk voor oude sensoren (>30 dagen).'
+      : 'Deze sensor is handmatig vergrendeld om accidenteel verwijderen te voorkomen.\n\n' +
+        'Klik eerst op het slotje om te ontgrendelen, dan verwijderen.';
+    
     return {
       success: false,
-      message: '🔒 Sensor is vergrendeld. Klik eerst op het slotje om te ontgrendelen.'
+      message: '🔒 Sensor is vergrendeld',
+      detail: detail
     };
   }
   
@@ -873,9 +888,10 @@ export function initializeManualLocks() {
 
 /**
  * Toggle manual lock status for a sensor
+ * Now with enhanced error messages and full context
  * 
  * @param {string} sensorId - Sensor ID to toggle
- * @returns {Object} Result object
+ * @returns {Object} Result object with success, message, and optional detail
  */
 export function toggleSensorLock(sensorId) {
   const db = getSensorDatabase();
@@ -883,6 +899,7 @@ export function toggleSensorLock(sensorId) {
     return {
       success: false,
       message: 'Database niet gevonden',
+      detail: 'Kan lock status niet wijzigen zonder sensor database.',
       isLocked: null
     };
   }
@@ -890,16 +907,16 @@ export function toggleSensorLock(sensorId) {
   let sensor = db.sensors.find(s => s.sensor_id === sensorId);
   
   if (!sensor) {
-    // Sensor not in localStorage - it's a read-only SQLite sensor (>30 days old)
-    // User wants to toggle lock, so we need to "promote" it to localStorage
-    // For now, we'll return a clear error message
+    // Sensor not in localStorage - it's a read-only SQLite sensor
     console.log('[toggleSensorLock] Sensor not in localStorage:', sensorId);
-    console.log('[toggleSensorLock] This sensor is in SQLite only (>30 days old)');
-    console.log('[toggleSensorLock] Cannot toggle lock for read-only sensors');
+    console.log('[toggleSensorLock] This sensor is read-only (SQLite historical data)');
     
     return {
       success: false,
-      message: 'âš ï¸ Sensor is read-only (>30 dagen oud, alleen in SQLite)\nKan lock status niet wijzigen.',
+      message: 'âš ï¸ Kan lock niet wijzigen: sensor is alleen-lezen',
+      detail: 'Deze sensor bevindt zich in de historische database (SQLite) en is meer dan 30 dagen oud.\n\n' +
+              'Alleen recente sensoren (â‰¤30 dagen oud) kunnen worden bewerkt.\n\n' +
+              'Badge: HISTORICAL = read-only, RECENT = editable',
       isLocked: null
     };
   }
@@ -917,6 +934,8 @@ export function toggleSensorLock(sensorId) {
   db.lastUpdated = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
 
+  console.log(`[toggleSensorLock] Toggled lock for ${sensorId}: ${sensor.is_manually_locked ? 'LOCKED' : 'UNLOCKED'}`);
+
   return {
     success: true,
     isLocked: sensor.is_manually_locked,
@@ -926,14 +945,19 @@ export function toggleSensorLock(sensorId) {
 
 /**
  * Get manual lock status for a sensor
- * Returns the is_manually_locked field, or auto-calculates if not set
+ * Returns comprehensive lock information including editability and storage source
  * 
  * IMPORTANT: This function is called from SensorHistoryModal with the MERGED sensor object
  * The sensor might be from SQLite (not in localStorage), so we calculate lock based on start_date
  * 
  * @param {string} sensorId - Sensor ID
  * @param {string} startDate - Optional: sensor start_date for fallback calculation
- * @returns {Object} Lock status
+ * @returns {Object} Lock status with full context
+ *   - isLocked: boolean - Whether sensor is locked
+ *   - autoCalculated: boolean - Whether lock was auto-calculated vs manually set
+ *   - isEditable: boolean - Whether sensor can be modified (localStorage only)
+ *   - storageSource: string - 'localStorage' | 'sqlite' | 'unknown'
+ *   - reason: string - Why sensor is in this state
  */
 export function getManualLockStatus(sensorId, startDate = null) {
   const db = getSensorDatabase();
@@ -944,41 +968,63 @@ export function getManualLockStatus(sensorId, startDate = null) {
       return {
         isLocked: daysSinceStart > 30,
         autoCalculated: true,
+        isEditable: false,
+        storageSource: 'unknown',
         reason: 'no-database'
       };
     }
-    return { isLocked: false, autoCalculated: true, reason: 'no-database' };
+    return { 
+      isLocked: false, 
+      autoCalculated: true, 
+      isEditable: false,
+      storageSource: 'unknown',
+      reason: 'no-database' 
+    };
   }
 
   const sensor = db.sensors.find(s => s.sensor_id === sensorId);
   if (!sensor) {
-    // Sensor not in localStorage - it's SQLite-only (old sensor)
+    // Sensor not in localStorage - it's SQLite-only (historical, read-only)
     // Calculate lock based on startDate if provided
     if (startDate) {
       const daysSinceStart = Math.floor((new Date() - new Date(startDate)) / (1000 * 60 * 60 * 24));
       return {
         isLocked: daysSinceStart > 30,
         autoCalculated: true,
-        reason: 'sqlite-only'
+        isEditable: false,
+        storageSource: 'sqlite',
+        reason: 'read-only-historical'
       };
     }
     // No startDate provided - assume locked (safe default for old sensors)
-    return { isLocked: true, autoCalculated: true, reason: 'no-start-date' };
+    return { 
+      isLocked: true, 
+      autoCalculated: true, 
+      isEditable: false,
+      storageSource: 'sqlite',
+      reason: 'no-start-date' 
+    };
   }
 
+  // Sensor is in localStorage - editable
   // If manual lock not set, calculate based on age
   if (sensor.is_manually_locked === undefined) {
     const daysSinceStart = Math.floor((new Date() - new Date(sensor.start_date)) / (1000 * 60 * 60 * 24));
     return {
       isLocked: daysSinceStart > 30,
       autoCalculated: true,
-      reason: 'age-based'
+      isEditable: true,
+      storageSource: 'localStorage',
+      reason: 'auto-calculated'
     };
   }
 
+  // Manual lock is set - use that value
   return {
     isLocked: sensor.is_manually_locked,
     autoCalculated: false,
+    isEditable: true,
+    storageSource: 'localStorage',
     reason: 'manual'
   };
 }
