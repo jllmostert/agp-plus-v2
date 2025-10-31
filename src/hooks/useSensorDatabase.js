@@ -171,12 +171,29 @@ export function useSensorDatabase() {
       });
 
       // Merge: localStorage sensors first (newest), then SQLite
-      const allSensors = [...localSensorsConverted, ...sensorData];
+      // WITH DEDUPLICATION: Prefer localStorage version (newer data)
+      const sensorMap = new Map();
+      
+      // Add localStorage sensors first (these are most recent/accurate)
+      localSensorsConverted.forEach(s => {
+        sensorMap.set(s.sensor_id, s);
+      });
+      
+      // Add SQLite sensors only if NOT already in map (avoid duplicates)
+      sensorData.forEach(s => {
+        if (!sensorMap.has(s.sensor_id)) {
+          sensorMap.set(s.sensor_id, s);
+        }
+      });
+      
+      const allSensors = Array.from(sensorMap.values());
 
-      debug.log('[useSensorDatabase] Total sensors (merged):', {
+      debug.log('[useSensorDatabase] Total sensors (merged with deduplication):', {
         count: allSensors.length,
         localStorage: localSensorsConverted.length,
         sqlite: sensorData.length,
+        rawTotal: localSensorsConverted.length + sensorData.length,
+        duplicatesRemoved: (localSensorsConverted.length + sensorData.length) - allSensors.length,
         runningSensors: allSensors.filter(s => s.status === 'running').length
       });
 

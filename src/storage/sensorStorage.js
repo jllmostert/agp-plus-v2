@@ -190,46 +190,47 @@ export function syncUnlockedSensorsToLocalStorage(allSensors) {
     
     // Get list of deleted sensors to exclude from sync
     const deletedSensors = getDeletedSensors();
+    
+    // Build a Set of existing sensor IDs BEFORE filtering
+    const existingIds = new Set(db.sensors.map(s => s.sensor_id));
 
-    // Filter sensors that are ≤30 days old (unlocked) AND not deleted
+    // Filter sensors that are ≤30 days old (unlocked) AND not deleted AND not already in localStorage
     const unlockedSensors = allSensors.filter(s => {
       if (!s.start_date) return false;
       const startDate = new Date(s.start_date);
       const isRecent = startDate >= thirtyDaysAgo;
       const isDeleted = deletedSensors.includes(s.sensor_id);
-      return isRecent && !isDeleted;
+      const alreadyInLocalStorage = existingIds.has(s.sensor_id);
+      return isRecent && !isDeleted && !alreadyInLocalStorage;
     });
 
     console.log('[syncUnlockedSensors] Syncing unlocked sensors:', {
       total: allSensors.length,
       unlocked: unlockedSensors.length,
       deleted: deletedSensors.length,
-      alreadyInDb: db.sensors.length
+      alreadyInDb: db.sensors.length,
+      filteredOut: allSensors.length - unlockedSensors.length
     });
-
-    // Build a Set of existing sensor IDs to avoid duplicates
-    const existingIds = new Set(db.sensors.map(s => s.sensor_id));
 
     // Add unlocked sensors that aren't already in localStorage
     // Convert to localStorage format before storing
+    // NOTE: existingIds check is already done in filter above
     let addedCount = 0;
     unlockedSensors.forEach(sensor => {
-      if (!existingIds.has(sensor.sensor_id)) {
-        // Convert SQLite format to localStorage format
-        const localStorageFormat = {
-          sensor_id: sensor.sensor_id,
-          start_date: sensor.start_date,
-          end_date: sensor.end_date || null,
-          lot_number: sensor.lot_number || null,
-          hw_version: sensor.hw_version || null,
-          notes: sensor.notes || '',
-          reason_stop: sensor.failure_reason || null
-        };
-        
-        db.sensors.push(localStorageFormat);
-        existingIds.add(sensor.sensor_id);
-        addedCount++;
-      }
+      // All sensors in unlockedSensors are guaranteed to NOT be in localStorage already
+      // Convert SQLite format to localStorage format
+      const localStorageFormat = {
+        sensor_id: sensor.sensor_id,
+        start_date: sensor.start_date,
+        end_date: sensor.end_date || null,
+        lot_number: sensor.lot_number || null,
+        hw_version: sensor.hw_version || null,
+        notes: sensor.notes || '',
+        reason_stop: sensor.failure_reason || null
+      };
+      
+      db.sensors.push(localStorageFormat);
+      addedCount++;
     });
 
     if (addedCount > 0) {
@@ -673,11 +674,19 @@ export function toggleSensorLock(sensorId) {
     };
   }
 
-  const sensor = db.sensors.find(s => s.sensor_id === sensorId);
+  let sensor = db.sensors.find(s => s.sensor_id === sensorId);
+  
   if (!sensor) {
+    // Sensor not in localStorage - it's a read-only SQLite sensor (>30 days old)
+    // User wants to toggle lock, so we need to "promote" it to localStorage
+    // For now, we'll return a clear error message
+    console.log('[toggleSensorLock] Sensor not in localStorage:', sensorId);
+    console.log('[toggleSensorLock] This sensor is in SQLite only (>30 days old)');
+    console.log('[toggleSensorLock] Cannot toggle lock for read-only sensors');
+    
     return {
       success: false,
-      message: 'Sensor niet gevonden',
+      message: 'âš ï¸ Sensor is read-only (>30 dagen oud, alleen in SQLite)\nKan lock status niet wijzigen.',
       isLocked: null
     };
   }
@@ -706,18 +715,42 @@ export function toggleSensorLock(sensorId) {
  * Get manual lock status for a sensor
  * Returns the is_manually_locked field, or auto-calculates if not set
  * 
+ * IMPORTANT: This function is called from SensorHistoryModal with the MERGED sensor object
+ * The sensor might be from SQLite (not in localStorage), so we calculate lock based on start_date
+ * 
  * @param {string} sensorId - Sensor ID
+ * @param {string} startDate - Optional: sensor start_date for fallback calculation
  * @returns {Object} Lock status
  */
-export function getManualLockStatus(sensorId) {
+export function getManualLockStatus(sensorId, startDate = null) {
   const db = getSensorDatabase();
   if (!db || !db.sensors) {
-    return { isLocked: false, autoCalculated: true };
+    // No localStorage database - calculate from startDate if provided
+    if (startDate) {
+      const daysSinceStart = Math.floor((new Date() - new Date(startDate)) / (1000 * 60 * 60 * 24));
+      return {
+        isLocked: daysSinceStart > 30,
+        autoCalculated: true,
+        reason: 'no-database'
+      };
+    }
+    return { isLocked: false, autoCalculated: true, reason: 'no-database' };
   }
 
   const sensor = db.sensors.find(s => s.sensor_id === sensorId);
   if (!sensor) {
-    return { isLocked: false, autoCalculated: true };
+    // Sensor not in localStorage - it's SQLite-only (old sensor)
+    // Calculate lock based on startDate if provided
+    if (startDate) {
+      const daysSinceStart = Math.floor((new Date() - new Date(startDate)) / (1000 * 60 * 60 * 24));
+      return {
+        isLocked: daysSinceStart > 30,
+        autoCalculated: true,
+        reason: 'sqlite-only'
+      };
+    }
+    // No startDate provided - assume locked (safe default for old sensors)
+    return { isLocked: true, autoCalculated: true, reason: 'no-start-date' };
   }
 
   // If manual lock not set, calculate based on age
@@ -725,12 +758,14 @@ export function getManualLockStatus(sensorId) {
     const daysSinceStart = Math.floor((new Date() - new Date(sensor.start_date)) / (1000 * 60 * 60 * 24));
     return {
       isLocked: daysSinceStart > 30,
-      autoCalculated: true
+      autoCalculated: true,
+      reason: 'age-based'
     };
   }
 
   return {
     isLocked: sensor.is_manually_locked,
-    autoCalculated: false
+    autoCalculated: false,
+    reason: 'manual'
   };
 }

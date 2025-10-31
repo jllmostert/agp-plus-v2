@@ -78,7 +78,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
     // Assign index 1, 2, 3, ... chronologically
     // AND merge lock status from localStorage
     const withIndex = sorted.map((sensor, idx) => {
-      const lockStatus = getManualLockStatus(sensor.sensor_id);
+      const lockStatus = getManualLockStatus(sensor.sensor_id, sensor.start_date);
       return {
         ...sensor,
         chronological_index: idx + 1, // 1-based index
@@ -830,6 +830,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                             }
                           }
                         }}
+                        disabled={sensor.is_manually_locked}
                         style={{
                           padding: '6px 12px',
                           fontSize: '10px',
@@ -837,13 +838,13 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                           textTransform: 'uppercase',
                           letterSpacing: '0.1em',
                           border: '2px solid var(--color-red)',
-                          backgroundColor: isSensorLocked(sensor.start_date) ? 'rgba(150, 150, 150, 0.3)' : 'transparent',
-                          color: isSensorLocked(sensor.start_date) ? 'rgba(227, 224, 220, 0.5)' : 'var(--color-red)',
-                          cursor: isSensorLocked(sensor.start_date) ? 'not-allowed' : 'pointer',
+                          backgroundColor: sensor.is_manually_locked ? 'rgba(150, 150, 150, 0.3)' : 'transparent',
+                          color: sensor.is_manually_locked ? 'rgba(227, 224, 220, 0.5)' : 'var(--color-red)',
+                          cursor: sensor.is_manually_locked ? 'not-allowed' : 'pointer',
                           fontFamily: 'Monaco, monospace'
                         }}
                       >
-                        {isSensorLocked(sensor.start_date) ? '🔒 DEL' : '✗ DEL'}
+                        {sensor.is_manually_locked ? '🔒 DEL' : '✗ DEL'}
                       </button>
                     </td>
                   </tr>
