@@ -109,6 +109,9 @@ export function useSensorDatabase() {
         columns.forEach((col, index) => {
           sensor[col] = row[index];
         });
+        // Add storage source indicators for SQLite sensors
+        sensor.storageSource = 'sqlite';
+        sensor.isEditable = false;
         return sensor;
       });
 
@@ -171,7 +174,9 @@ export function useSensorDatabase() {
           status: statusInfo.status,
           failure_reason: s.reason_stop,
           notes: s.notes,
-          success: statusInfo.success
+          success: statusInfo.success,
+          storageSource: 'localStorage',
+          isEditable: true
         };
       });
 
@@ -271,7 +276,9 @@ export function useSensorDatabase() {
             status: statusInfo.status,
             failure_reason: s.reason_stop,
             notes: s.notes,
-            success: statusInfo.success
+            success: statusInfo.success,
+            storageSource: 'localStorage',
+            isEditable: true
           };
         });
         

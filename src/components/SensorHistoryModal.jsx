@@ -647,19 +647,42 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       color: 'var(--paper)',
                       fontWeight: 'bold'
                     }}>
-                      #{sensor.chronological_index}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>#{sensor.chronological_index}</span>
+                        <span 
+                          className={`
+                            px-2 py-1 text-xs uppercase font-mono
+                            ${sensor.storageSource === 'localStorage'
+                              ? 'bg-green-900 text-green-100 border border-green-500'
+                              : 'bg-gray-800 text-gray-400 border border-gray-600'}
+                          `}
+                          style={{
+                            fontSize: '9px',
+                            padding: '2px 6px',
+                            borderRadius: '2px',
+                            fontWeight: 'bold',
+                            letterSpacing: '0.05em'
+                          }}
+                          title={sensor.storageSource === 'localStorage' 
+                            ? 'Recent sensor - can be edited/deleted' 
+                            : 'Historical sensor - read-only from database'}
+                        >
+                          {sensor.storageSource === 'localStorage' ? 'RECENT' : 'HISTORICAL'}
+                        </span>
+                      </div>
                     </td>
                     <td style={{
                       padding: '10px 12px',
                       borderRight: '1px solid var(--grid-line)',
                       textAlign: 'center',
                       fontSize: '18px',
-                      cursor: 'pointer',
+                      cursor: sensor.isEditable ? 'pointer' : 'not-allowed',
                       backgroundColor: sensor.is_manually_locked 
                         ? 'rgba(255, 0, 0, 0.1)' 
-                        : 'rgba(0, 255, 0, 0.05)'
+                        : 'rgba(0, 255, 0, 0.05)',
+                      opacity: sensor.isEditable ? 1 : 0.5
                     }}
-                    onClick={() => {
+                    onClick={sensor.isEditable ? () => {
                       const result = toggleSensorLock(sensor.sensor_id);
                       if (result.success) {
                         // Trigger re-render without page reload
@@ -667,8 +690,14 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       } else {
                         alert(`Fout: ${result.message}`);
                       }
-                    }}
-                    title="Klik om lock te togglen"
+                    } : undefined}
+                    title={
+                      !sensor.isEditable 
+                        ? 'Read-only sensor (historical data from database)'
+                        : sensor.is_manually_locked
+                          ? 'Locked - Click to unlock (allows deletion)'
+                          : 'Unlocked - Click to lock (prevents deletion)'
+                    }
                     >
                       {sensor.is_manually_locked ? '🔒' : '🔓'}
                     </td>

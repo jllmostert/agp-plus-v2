@@ -7,7 +7,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.11.0] - 2025-10-31 - 🛡️ ISSUE #1 FIX - PERSISTENT TOMBSTONE STORE
+## [3.11.0] - 2025-10-31 - ðŸ·ï¸ Storage Source Indicators ✅ COMPLETE
+
+**Visual distinction between editable (localStorage) and read-only (SQLite) sensors**
+
+### Added
+
+**Storage Source Fields**:
+- `storageSource` field added to all sensor objects ('localStorage' | 'sqlite')
+- `isEditable` boolean field indicates if sensor can be modified
+- Fields added in useSensorDatabase.js for all code paths (main + fallback)
+
+**UI Badges in Sensor History Modal**:
+- Visual badge next to sensor #ID column
+- "RECENT" badge (green) for localStorage sensors - bg-green-900, text-green-100, border-green-500
+- "HISTORICAL" badge (gray) for SQLite sensors - bg-gray-800, text-gray-400, border-gray-600
+- Tooltips explain editability status
+- Badges use 9px font size, 2px-6px padding, 2px border radius
+
+**Smart Lock Toggle**:
+- Lock toggle disabled for read-only sensors (cursor: not-allowed)
+- Reduced opacity (0.5) for disabled toggles
+- Background color indicator: red tint for locked, green tint for unlocked
+- Enhanced tooltips:
+  - Read-only: "Read-only sensor (historical data from database)"
+  - Locked: "Locked - Click to unlock (allows deletion)"
+  - Unlocked: "Unlocked - Click to lock (prevents deletion)"
+- onClick handler set to `undefined` for read-only sensors (prevents accidental clicks)
+
+### Fixed
+
+**UX Issue**: Data source confusion (Priority 1 from DUAL_STORAGE_ANALYSIS.md)
+- Users couldn't tell which sensors were editable vs read-only
+- Lock toggle would fail silently for SQLite sensors
+- No visual indicator of storage source
+
+**Result**: Clear visual hierarchy with color-coded badges and disabled states
+
+### Technical Details
+
+**Modified Files**:
+- `src/hooks/useSensorDatabase.js` - Lines 116-119 (SQLite), lines 176-179 (localStorage)
+  - Added `storageSource` and `isEditable` fields to all sensor objects
+  - SQLite sensors: `storageSource: 'sqlite', isEditable: false`
+  - localStorage sensors: `storageSource: 'localStorage', isEditable: true`
+
+- `src/components/SensorHistoryModal.jsx` - Lines 650-672 (badges), 680-703 (lock toggle)
+  - Badge implementation with flexbox layout (display: flex, gap: 8px)
+  - Conditional styling based on `sensor.storageSource`
+  - Lock toggle with `sensor.isEditable` check for cursor, opacity, and onClick
+  - Tooltip system with ternary operators for dynamic content
+
+**Implementation Pattern**:
+```javascript
+// Badge (line 652-672)
+<span className={sensor.storageSource === 'localStorage' ? 'bg-green-900...' : 'bg-gray-800...'}>
+  {sensor.storageSource === 'localStorage' ? 'RECENT' : 'HISTORICAL'}
+</span>
+
+// Lock toggle (line 680-703)
+<td 
+  style={{
+    cursor: sensor.isEditable ? 'pointer' : 'not-allowed',
+    opacity: sensor.isEditable ? 1 : 0.5
+  }}
+  onClick={sensor.isEditable ? () => {...} : undefined}
+>
+```
+
+**Testing Verified**:
+- ✅ 220 sensors loaded (219 SQLite + ~1 localStorage)
+- ✅ Badges display correctly: RECENT (green) vs HISTORICAL (gray)
+- ✅ Lock toggle disabled for SQLite sensors (no click response)
+- ✅ Lock toggle works for localStorage sensors (can lock/unlock)
+- ✅ Tooltips show appropriate context
+- ✅ No console errors, no visual regressions
+
+---
+
+## [3.10.0] - 2025-10-31 - 🛡️ ISSUE #1 FIX - PERSISTENT TOMBSTONE STORE
 
 **IndexedDB-based persistent deleted sensors storage - survives localStorage.clear()**
 
