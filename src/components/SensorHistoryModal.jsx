@@ -27,7 +27,11 @@ import {
   deleteSensorWithLockCheck,
   toggleSensorLock,
   getManualLockStatus,
-  initializeManualLocks
+  initializeManualLocks,
+  exportSensorsToJSON,
+  validateImportData,
+  importSensorsFromJSON,
+  getSensorDatabase
 } from '../storage/sensorStorage.js';
 import { 
   countDeletedSensors, 
@@ -91,6 +95,131 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
     }
   };
 
+  // Handle export of sensor database
+  const handleExport = async () => {
+    try {
+      const result = await exportSensorsToJSON();
+      
+      if (!result.success) {
+        alert(`âŒ Export mislukt: ${result.error}`);
+        return;
+      }
+
+      // Create blob and trigger download
+      const blob = new Blob([JSON.stringify(result.data, null, 2)], { 
+        type: 'application/json' 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      console.log('[SensorHistoryModal] Export successful:', result.filename);
+    } catch (err) {
+      console.error('[SensorHistoryModal] Export failed:', err);
+      alert(`âŒ Export mislukt: ${err.message}`);
+    }
+  };
+
+  // Handle import file selection
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      // Read file
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      // Validate
+      const errors = validateImportData(data);
+      if (errors) {
+        alert(`âŒ Invalid JSON:\n\n${errors.join('\n')}`);
+        setImportFile(null);
+        setImportPreview(null);
+        return;
+      }
+
+      // Set preview
+      setImportFile(file);
+      setImportPreview(data);
+
+      console.log('[SensorHistoryModal] Import file loaded:', {
+        filename: file.name,
+        sensors: data.sensors.length,
+        deleted: data.deletedSensors.length
+      });
+    } catch (err) {
+      console.error('[SensorHistoryModal] File read error:', err);
+      alert(`âŒ Kan bestand niet lezen:\n\n${err.message}`);
+      setImportFile(null);
+      setImportPreview(null);
+    }
+  };
+
+  // Handle import confirmation
+  const handleImportConfirm = async () => {
+    if (!importPreview) return;
+
+    // Confirm REPLACE mode
+    if (importOptions.mode === 'replace') {
+      // Get actual database count (not filtered list)
+      const db = getSensorDatabase();
+      const actualCount = db?.sensors?.length || 0;
+      
+      if (!confirm(
+        `⚠️ REPLACE MODE\n\n` +
+        `Dit wist alle huidige sensors en vervangt ze met de import.\n\n` +
+        `Huidige sensors: ${actualCount}\n` +
+        `Import sensors: ${importPreview.sensors.length}\n\n` +
+        `Weet je het zeker? Deze actie kan niet ongedaan worden gemaakt.`
+      )) {
+        return;
+      }
+    }
+
+    try {
+      const result = await importSensorsFromJSON(importPreview, importOptions);
+
+      if (!result.success) {
+        alert(`âŒ Import mislukt:\n\n${result.error}`);
+        return;
+      }
+
+      // Verify import actually wrote data
+      const db = getSensorDatabase();
+      if (!db || !db.sensors || db.sensors.length === 0) {
+        console.error('[SensorHistoryModal] Import reported success but no data found!');
+        alert(
+          `⚠️ Import anomalie!\n\n` +
+          `Import gerapporteerd als succesvol, maar geen data gevonden in database.\n\n` +
+          `Dit zou niet moeten gebeuren. Probeer opnieuw of neem contact op.`
+        );
+        return;
+      }
+
+      // Show success
+      alert(
+        `✅ Import succesvol!\n\n` +
+        `Mode: ${result.summary.mode}\n` +
+        `Sensors toegevoegd: ${result.summary.sensorsAdded}\n` +
+        `Sensors overgeslagen: ${result.summary.sensorsSkipped}\n` +
+        `Deleted sensors: ${result.summary.deletedAdded}\n\n` +
+        `Pagina wordt ververst...`
+      );
+
+      // Reload page to show new data
+      window.location.reload();
+    } catch (err) {
+      console.error('[SensorHistoryModal] Import failed:', err);
+      alert(`âŒ Import mislukt:\n\n${err.message}`);
+    }
+  };
+
   // Debug: Check what we receive
   debug.log('[SensorHistoryModal] Received sensors:', {
     count: sensors?.length || 0,
@@ -117,6 +246,15 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   
   // Deleted sensors count (for cleanup button)
   const [deletedCount, setDeletedCount] = useState(null);
+
+  // Import state
+  const [importFile, setImportFile] = useState(null);
+  const [importPreview, setImportPreview] = useState(null);
+  const [importOptions, setImportOptions] = useState({
+    importDeleted: true,
+    importLocks: true,
+    mode: 'merge'
+  });
 
   // Add chronological index (1 = oldest = March 2022, 219 = newest)
   // Also merge lock states into sensor objects for consistent rendering
@@ -220,6 +358,45 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
       >
         {/* Control buttons - sticky top */}
         <div className="sticky top-0 z-10 flex justify-end gap-4 p-6 bg-black bg-opacity-90">
+          <label
+            style={{
+              fontFamily: 'Courier New, monospace',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              padding: '12px 24px',
+              border: '3px solid var(--color-blue)',
+              backgroundColor: 'var(--ink)',
+              color: 'var(--color-blue)',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              letterSpacing: '2px'
+            }}
+          >
+            ↑ IMPORT
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+          </label>
+          <button
+            onClick={handleExport}
+            style={{
+              fontFamily: 'Courier New, monospace',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              padding: '12px 24px',
+              border: '3px solid var(--color-green)',
+              backgroundColor: 'var(--ink)',
+              color: 'var(--color-green)',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              letterSpacing: '2px'
+            }}
+          >
+            ↓ EXPORT
+          </button>
           <button
             onClick={onClose}
             style={{
@@ -259,6 +436,165 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
           }}>
             GUARDIAN 4 SENSOR HISTORY
           </div>
+
+          {/* Import Preview - shown when file selected */}
+          {importPreview && (
+            <div style={{
+              border: '3px solid var(--color-blue)',
+              padding: '24px',
+              marginBottom: '24px',
+              backgroundColor: 'rgba(0, 123, 255, 0.1)'
+            }}>
+              <div style={{
+                fontFamily: 'Courier New, monospace',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: 'var(--color-blue)',
+                textTransform: 'uppercase',
+                letterSpacing: '2px',
+                marginBottom: '16px'
+              }}>
+                📋 IMPORT PREVIEW
+              </div>
+              <div style={{
+                fontFamily: 'Monaco, monospace',
+                fontSize: '14px',
+                color: 'var(--paper)',
+                lineHeight: '1.8',
+                marginBottom: '24px'
+              }}>
+                <div><strong>File:</strong> {importFile?.name}</div>
+                <div><strong>Sensors:</strong> {importPreview.sensors.length}</div>
+                <div><strong>Deleted:</strong> {importPreview.deletedSensors.length}</div>
+                <div><strong>Export Date:</strong> {new Date(importPreview.exportDate).toLocaleString('nl-NL')}</div>
+              </div>
+
+              {/* Import Options */}
+              <div style={{
+                borderTop: '2px solid var(--color-blue)',
+                paddingTop: '16px',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  color: 'var(--color-blue)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  marginBottom: '12px'
+                }}>
+                  OPTIES
+                </div>
+
+                {/* Checkboxes */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontFamily: 'Monaco, monospace',
+                    fontSize: '14px',
+                    color: 'var(--paper)',
+                    cursor: 'pointer',
+                    marginBottom: '8px'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={importOptions.importDeleted}
+                      onChange={(e) => setImportOptions({
+                        ...importOptions,
+                        importDeleted: e.target.checked
+                      })}
+                      style={{ marginRight: '8px' }}
+                    />
+                    Import deleted sensors lijst
+                  </label>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontFamily: 'Monaco, monospace',
+                    fontSize: '14px',
+                    color: 'var(--paper)',
+                    cursor: 'pointer'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={importOptions.importLocks}
+                      onChange={(e) => setImportOptions({
+                        ...importOptions,
+                        importLocks: e.target.checked
+                      })}
+                      style={{ marginRight: '8px' }}
+                    />
+                    Import lock states
+                  </label>
+                </div>
+
+                {/* Radio buttons for mode */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontFamily: 'Monaco, monospace',
+                    fontSize: '14px',
+                    color: 'var(--paper)',
+                    cursor: 'pointer',
+                    marginBottom: '8px'
+                  }}>
+                    <input
+                      type="radio"
+                      checked={importOptions.mode === 'merge'}
+                      onChange={() => setImportOptions({
+                        ...importOptions,
+                        mode: 'merge'
+                      })}
+                      style={{ marginRight: '8px' }}
+                    />
+                    MERGE (voeg nieuwe toe, behoud bestaande)
+                  </label>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontFamily: 'Monaco, monospace',
+                    fontSize: '14px',
+                    color: 'var(--color-red)',
+                    cursor: 'pointer'
+                  }}>
+                    <input
+                      type="radio"
+                      checked={importOptions.mode === 'replace'}
+                      onChange={() => setImportOptions({
+                        ...importOptions,
+                        mode: 'replace'
+                      })}
+                      style={{ marginRight: '8px' }}
+                    />
+                    REPLACE (wis alles, herstel backup)
+                  </label>
+                </div>
+              </div>
+
+              {/* Confirm Button */}
+              <button
+                onClick={handleImportConfirm}
+                style={{
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  padding: '12px 24px',
+                  border: '3px solid var(--color-blue)',
+                  backgroundColor: 'var(--color-blue)',
+                  color: 'var(--ink)',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  letterSpacing: '2px',
+                  width: '100%'
+                }}
+              >
+                âœ" BEVESTIG IMPORT
+              </button>
+            </div>
+          )}
 
           {/* Overall Stats Grid */}
           <div style={{

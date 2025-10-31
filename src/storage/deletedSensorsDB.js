@@ -142,6 +142,54 @@ export async function getDeletedSensorsFromDB() {
 }
 
 /**
+ * Get all deleted sensors with full metadata (ID + timestamp)
+ * Used for export functionality - includes deletion timestamps
+ * 
+ * @returns {Promise<Array<Object>>} Array of deleted sensor objects
+ *   Each object: { sensorId: string, deletedAt: number (timestamp in ms) }
+ */
+export async function getDeletedSensorsWithTimestamps() {
+  try {
+    const db = await openDeletedSensorsDB();
+    
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    
+    const request = store.getAll();
+    
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        const sensors = request.result;
+        
+        // Convert to export format: { sensorId, deletedAt }
+        const formatted = sensors.map(s => ({
+          sensorId: s.sensor_id,
+          deletedAt: new Date(s.deleted_at).getTime() // Convert ISO to timestamp
+        }));
+        
+        console.log('[deletedSensorsDB] Loaded with timestamps:', {
+          count: formatted.length
+        });
+        
+        resolve(formatted);
+      };
+      
+      request.onerror = () => {
+        console.error('[deletedSensorsDB] Error reading deleted sensors with timestamps:', request.error);
+        reject(request.error);
+      };
+      
+      transaction.oncomplete = () => {
+        db.close();
+      };
+    });
+  } catch (err) {
+    console.error('[deletedSensorsDB] Error in getDeletedSensorsWithTimestamps:', err);
+    return []; // Fallback: return empty array
+  }
+}
+
+/**
  * Count deleted sensors with breakdown by age
  * Useful for UI to show "Clear Old Sensors (X old / Y total)"
  * 

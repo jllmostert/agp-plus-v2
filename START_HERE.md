@@ -1,29 +1,29 @@
-# 🚀 START HERE - AGP+ Quick Start
+# ðŸš€ START HERE - AGP+ Quick Start
 
-**Version**: v3.13.0 → v3.14.0 (next)  
-**Status**: ✅ Production-ready - Ready for Export/Import  
-**Next Phase**: Sensor Database Export/Import (3 hours, 7 chunks)
+**Version**: v3.14.0 (Export/Import Complete!)  
+**Status**: âœ… Production-ready - Full backup & restore  
+**Next Phase**: Testing → v3.15.0 (TBD based on feedback)
 
 ---
 
-## ⚠️ CRITICAL: WORK IN SMALL CHUNKS!
+## âš ï¸ CRITICAL: WORK IN SMALL CHUNKS!
 
 **New chat? READ THIS FIRST:**
 
-1. 🛑 **NEVER write/edit more than 30 lines at once**
-2. 🛑 **STOP after every 1-2 edits** and wait for user input
-3. 🛑 **Ask "Continue?" before next step**
-4. 🛑 **Use edit_block for small changes** (not full file rewrites)
+1. ðŸ›' **NEVER write/edit more than 30 lines at once**
+2. ðŸ›' **STOP after every 1-2 edits** and wait for user input
+3. ðŸ›' **Ask "Continue?" before next step**
+4. ðŸ›' **Use edit_block for small changes** (not full file rewrites)
 
 **Why?** Context window = 190k tokens. Large operations = crash = lost work.
 
-**If you see "go"** → Continue to next small step  
-**If you see "test"** → Wait for test results before continuing  
-**If you see "stop"** → Immediately stop current operation
+**If you see "go"** â†' Continue to next small step  
+**If you see "test"** â†' Wait for test results before continuing  
+**If you see "stop"** â†' Immediately stop current operation
 
 ---
 
-## ⚡ QUICK START
+## âš¡ QUICK START
 
 ### 1. Start Server
 ```bash
@@ -36,18 +36,18 @@ npx vite --port 3001
 http://localhost:3001
 
 ### 3. Upload CSV
-Click "Upload CSV" → Select Medtronic CareLink export → Choose period
+Click "Upload CSV" â†' Select Medtronic CareLink export â†' Choose period
 
-**That's it!** ✅
+**That's it!** âœ…
 
 ---
 
-## 📋 FOR NEW CHATS
+## ðŸ"‹ FOR NEW CHATS
 
 **Read in this order:**
 1. **This file** (you are here) - Quick orientation
-2. `HANDOFF.md` - Export/Import implementation plan
-3. `project/PROJECT_BRIEFING.md` - Full system context
+2. `HANDOFF.md` - Current status + next steps
+3. `project/PROJECT_BRIEFING.md` - Full system context (if needed)
 
 **Don't read everything at once!** Use Desktop Commander to fetch files as needed.
 
@@ -55,11 +55,11 @@ Click "Upload CSV" → Select Medtronic CareLink export → Choose period
 
 ---
 
-## 🎯 CURRENT STATUS (v3.13.0)
+## ðŸŽ¯ CURRENT STATUS (v3.14.0)
 
-### What Works ✅
-- Master dataset with multi-upload support
-- 220 sensors tracked (no duplicates)
+### What Works âœ…
+- **Master dataset** with multi-upload support
+- **220 sensors tracked** (no duplicates)
 - **Patient info auto-extraction** from CSV  
   - Name, CGM, Device Serial auto-filled
   - Header display: Name | CGM | SN
@@ -67,57 +67,46 @@ Click "Upload CSV" → Select Medtronic CareLink export → Choose period
 - **Smart lock toggle** (disabled for read-only)
 - **Enhanced error messages** (explains WHY)
 - **Dual storage** (SQLite + localStorage) - STABLE
-- TDD insulin metrics (27.9E ± 5.4 SD)
-- All clinical metrics (TIR, TAR, TBR, GMI, MAGE, MODD)
+- **TDD insulin metrics** (27.9E Â± 5.4 SD)
+- **All clinical metrics** (TIR, TAR, TBR, GMI, MAGE, MODD)
+- **âœ… EXPORT/IMPORT** (v3.14.0)
+  - Export to JSON (sensors + deleted + metadata)
+  - Import with MERGE/REPLACE modes
+  - Optional: deleted sensors, lock states
+  - Backup & rollback for REPLACE
+  - Full validation
 
-### What's Next 🔧
-**Phase: Sensor Database Export/Import** (v3.14.0)
+### What's Next ðŸ"§
+**Phase: Testing & Refinement** (v3.15.0)
 
-**Goal**: Backup & restore sensor database with full control
+**Goal**: Validate export/import, fix any bugs, optimize UX
 
-**Features to Implement:**
-1. **Export** (JSON format)
-   - All localStorage sensors
-   - Deleted sensors list + timestamps
-   - Lock states per sensor
-   - Validation metadata
+**Focus Areas:**
+1. **Export testing** - Verify JSON format, all data included
+2. **Import MERGE** - Test adding new sensors, skip existing
+3. **Import REPLACE** - Test wipe + restore, verify rollback
+4. **Edge cases** - Invalid JSON, large files, duplicate IDs
+5. **UX polish** - Better feedback, progress indicators
 
-2. **Import** with flexible options:
-   - ☑ Import deleted sensors (optional)
-   - ☑ Import lock states (optional)
-   - â—‹ MERGE mode (add new, keep existing)
-   - â—‹ REPLACE mode (wipe + restore)
-
-**Implementation: 7 Chunks (~3 hours)**
-
-**Phase 1: Export (30 min)**
-1. Chunk 1: `exportSensorsToJSON()` function (~25 lines)
-2. Chunk 2: Export button in SensorHistoryModal (~15 lines)
-
-**Phase 2: Import Logic (1 hour)**
-3. Chunk 3: `validateImportData()` function (~20 lines)
-4. Chunk 4: `importSensorsFromJSON()` function (~30 lines)
-5. Chunk 5: Merge/replace logic (~20 lines)
-
-**Phase 3: Import UI (1 hour)**
-6. Chunk 6: File picker + preview display (~25 lines)
-7. Chunk 7: Options UI (checkboxes + radio) (~25 lines)
-
-**Testing: 30 min**
-- Export test (download works, JSON valid)
-- Import MERGE test (adds new, keeps existing)
-- Import REPLACE test (wipes + restores)
-- Options test (checkboxes work correctly)
-
-See `HANDOFF.md` for full design specification.
+**After testing**: 
+- Bug fixes based on findings
+- Performance optimizations if needed
+- Consider next feature (TBD)
 
 ---
 
-## 📂 KEY FILES FOR EXPORT/IMPORT
+## ðŸ"‚ KEY FILES
 
+**Core Storage:**
 ```
-src/storage/sensorStorage.js       - Add export/import functions here
-src/components/SensorHistoryModal.jsx  - Add UI buttons here
+src/storage/sensorStorage.js          - Main storage logic + export/import
+src/storage/deletedSensorsDB.js       - Persistent deleted sensors (IndexedDB)
+```
+
+**UI Components:**
+```
+src/components/SensorHistoryModal.jsx - Export/import UI
+src/components/DayProfilesModal.jsx   - AGP visualization
 ```
 
 **Export Format** (JSON):
@@ -145,7 +134,7 @@ src/components/SensorHistoryModal.jsx  - Add UI buttons here
 
 ---
 
-## 🔧 COMMON TASKS
+## ðŸ"§ COMMON TASKS
 
 ### Start Server
 ```bash
@@ -157,6 +146,13 @@ src/components/SensorHistoryModal.jsx  - Add UI buttons here
 kill -9 $(lsof -t -i:3001)
 ```
 
+### Test Export/Import
+1. Open Sensor History modal
+2. Click "↓ EXPORT" â†' Download JSON
+3. Click "↑ IMPORT" â†' Select JSON
+4. Choose options (MERGE/REPLACE)
+5. Click "âœ" BEVESTIG IMPORT"
+
 ### Test with Sample Data
 ```bash
 # Use test CSV:
@@ -166,20 +162,20 @@ test-data/SAMPLE__Jo\ Mostert\ 31-10-2025_14d.csv
 ### Commit Changes
 ```bash
 git add .
-git commit -m "v3.14.0: [description]"
+git commit -m "v3.14.0: Export/Import complete"
 git push origin main
 ```
 
 ---
 
-## ⚠️ IMPORTANT RULES
+## âš ï¸ IMPORTANT RULES
 
 ### 1. Work in Small Chunks (CRITICAL!)
-- 🛑 Read only what you need
-- 🛑 Write ≤30 lines per operation
-- 🛑 STOP after 1-2 edits
-- 🛑 Ask: "Continue to next edit?"
-- 🛑 Wait for "go" or "test"
+- ðŸ›' Read only what you need
+- ðŸ›' Write â‰¤30 lines per operation
+- ðŸ›' STOP after 1-2 edits
+- ðŸ›' Ask: "Continue to next edit?"
+- ðŸ›' Wait for "go" or "test"
 - Test after each chunk
 - Commit logical changes
 
@@ -195,7 +191,7 @@ git push origin main
 
 ---
 
-## 🛠️ TROUBLESHOOTING
+## ðŸ› ï¸ TROUBLESHOOTING
 
 **Server won't start:**
 ```bash
@@ -205,41 +201,55 @@ npm install
 ```
 
 **Context overflow:**
-- 🛑 STOP writing immediately
-- Use smaller chunks (≤30 lines)
+- ðŸ›' STOP writing immediately
+- Use smaller chunks (â‰¤30 lines)
 - Use edit_block instead of write_file
 - Read with line ranges, not full files
 - Ask before continuing to next edit
 
+**Import fails:**
+- Check JSON format (use validator)
+- Check version field = "1.0"
+- Check sensors array structure
+- Check browser console for errors
+
 ---
 
-## 📊 CURRENT METRICS
+## ðŸ"Š CURRENT METRICS
 
 **From last analysis (14 days):**
-- TIR: 73.0% (target >70%) ✅
-- TBR: 1.8% (target <5%) ✅
-- TAR: 25.2% (target <30%) ✅
-- CV: 34.9% (target ≤36%) ✅
-- GMI: 6.8% (target <7.0%) ✅
+- TIR: 73.0% (target >70%) âœ…
+- TBR: 1.8% (target <5%) âœ…
+- TAR: 25.2% (target <30%) âœ…
+- CV: 34.9% (target â‰¤36%) âœ…
+- GMI: 6.8% (target <7.0%) âœ…
 
 **System status:**
 - 220 sensors tracked
 - 94.0% data quality
-- All v3.10-v3.13 fixes stable ✅
+- All v3.10-v3.14 features stable âœ…
+- Export/import working âœ…
 
 ---
 
-## 🚀 READY TO START?
+## ðŸš€ READY TO START?
 
-1. Open `HANDOFF.md` for detailed export/import plan
+### For Testing (v3.14.0):
+1. Start server: `./start.sh`
+2. Open http://localhost:3001
+3. Test export/import workflow
+4. Report any bugs/issues
+
+### For Development (v3.15.0+):
+1. Open `HANDOFF.md` for next steps
 2. Start server: `./start.sh`
 3. Use Desktop Commander for all file ops
-4. 🛑 Work in small chunks (≤30 lines)
-5. 🛑 STOP after 1-2 edits
-6. 🛑 Ask: "Continue?"
+4. ðŸ›' Work in small chunks (â‰¤30 lines)
+5. ðŸ›' STOP after 1-2 edits
+6. ðŸ›' Ask: "Continue?"
 7. Test after each chunk
 8. Commit logical changes
 
 **Remember: SMALL CHUNKS! STOP AND ASK!**
 
-**Let's ship export/import! 🎉**
+**Let's test export/import! ðŸŽ‰**

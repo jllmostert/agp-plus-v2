@@ -17,6 +17,7 @@
 import {
   addDeletedSensorToDB,
   getDeletedSensorsFromDB,
+  getDeletedSensorsWithTimestamps,
   cleanupOldDeletedSensorsDB,
   migrateLocalStorageToIndexedDB,
   syncIndexedDBToLocalStorage,
@@ -1027,4 +1028,337 @@ export function getManualLockStatus(sensorId, startDate = null) {
     storageSource: 'localStorage',
     reason: 'manual'
   };
+}
+
+
+// ============================================================================
+// PHASE 6: EXPORT/IMPORT
+// Backup and restore sensor database with full control
+// ============================================================================
+
+/**
+ * Export sensor database to JSON format
+ * Includes localStorage sensors, deleted sensors, and lock states
+ * 
+ * @returns {Promise<Object>} Export result
+ *   - success: boolean
+ *   - data: Object (export payload)
+ *   - filename: string
+ *   - error: string (if failed)
+ */
+export async function exportSensorsToJSON() {
+  try {
+    // 1. Get localStorage sensors
+    const db = getSensorDatabase();
+    if (!db || !db.sensors || db.sensors.length === 0) {
+      return { 
+        success: false, 
+        error: 'Geen sensoren om te exporteren' 
+      };
+    }
+
+    // 2. Get deleted sensors with timestamps from IndexedDB
+    const deletedSensors = await getDeletedSensorsWithTimestamps();
+    
+    // Warn if no deleted sensors found (might be error or genuinely empty)
+    if (deletedSensors.length === 0) {
+      console.warn('[exportSensorsToJSON] No deleted sensors found - either none exist or IndexedDB load failed');
+    }
+
+    // 3. Package data
+    const exportData = {
+      version: "1.0",
+      exportDate: new Date().toISOString(),
+      sensors: db.sensors,
+      deletedSensors: deletedSensors,
+      metadata: {
+        totalSensors: db.sensors.length,
+        deletedCount: deletedSensors.length
+      }
+    };
+
+    // 4. Generate filename with date
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filename = `agp-sensors-${dateStr}.json`;
+
+    console.log('[exportSensorsToJSON] Export prepared:', {
+      sensors: exportData.sensors.length,
+      deleted: exportData.deletedSensors.length,
+      filename
+    });
+
+    return { 
+      success: true, 
+      data: exportData, 
+      filename 
+    };
+  } catch (err) {
+    console.error('[exportSensorsToJSON] Export failed:', err);
+    return { 
+      success: false, 
+      error: err.message || 'Export mislukt' 
+    };
+  }
+}
+
+/**
+ * Validate imported JSON data structure
+ * Checks for required fields and data integrity
+ * 
+ * @param {Object} data - Parsed JSON data
+ * @returns {Array|null} Array of error messages, or null if valid
+ */
+export function validateImportData(data) {
+  const errors = [];
+
+  // Check basic structure
+  if (!data || typeof data !== 'object') {
+    errors.push('Invalid JSON format');
+    return errors;
+  }
+
+  // Check version
+  if (!data.version) {
+    errors.push('Missing version field');
+  } else if (data.version !== '1.0') {
+    errors.push(`Unsupported version: ${data.version} (expected 1.0)`);
+  }
+
+  // Check sensors array
+  if (!Array.isArray(data.sensors)) {
+    errors.push('Missing or invalid sensors array');
+  } else {
+    // Validate sensor structure
+    data.sensors.forEach((sensor, idx) => {
+      if (!sensor.sensor_id) {
+        errors.push(`Sensor ${idx}: missing sensor_id`);
+      }
+      if (!sensor.start_date) {
+        errors.push(`Sensor ${idx}: missing start_date`);
+      }
+    });
+  }
+
+  // Check deletedSensors array (optional for backward compatibility)
+  if (data.deletedSensors !== undefined) {
+    if (!Array.isArray(data.deletedSensors)) {
+      errors.push('Invalid deletedSensors field (must be array)');
+    } else {
+      // Validate deleted sensor structure
+      data.deletedSensors.forEach((deleted, idx) => {
+        if (!deleted.sensorId) {
+          errors.push(`Deleted sensor ${idx}: missing sensorId`);
+        }
+        if (!deleted.deletedAt || typeof deleted.deletedAt !== 'number') {
+          errors.push(`Deleted sensor ${idx}: missing or invalid deletedAt timestamp`);
+        }
+      });
+    }
+  }
+
+  // Check metadata (optional for backward compatibility)
+  if (data.metadata !== undefined && typeof data.metadata !== 'object') {
+    errors.push('Invalid metadata field (must be object)');
+  }
+
+  return errors.length > 0 ? errors : null;
+}
+
+/**
+ * Import sensors from JSON backup
+ * Supports MERGE (add new, keep existing) or REPLACE (wipe + restore) modes
+ * 
+ * @param {Object} data - Parsed JSON data
+ * @param {Object} options - Import options
+ * @param {boolean} options.importDeleted - Import deleted sensors list
+ * @param {boolean} options.importLocks - Import lock states
+ * @param {string} options.mode - 'merge' or 'replace'
+ * @returns {Promise<Object>} Import result
+ *   - success: boolean
+ *   - summary: Object with counts
+ *   - error: string (if failed)
+ */
+export async function importSensorsFromJSON(data, options = {}) {
+  try {
+    // 1. Validate data
+    const errors = validateImportData(data);
+    if (errors) {
+      return {
+        success: false,
+        error: 'Validatie mislukt:\n' + errors.join('\n')
+      };
+    }
+
+    // 2. Get current database
+    const db = getSensorDatabase();
+    if (!db) {
+      return { success: false, error: 'Kan database niet laden' };
+    }
+
+    // 3. Handle REPLACE mode
+    if (options.mode === 'replace') {
+      // Create backup before destructive operation
+      createDatabaseBackup();
+      // Wipe localStorage
+      db.sensors = [];
+      console.log('[importSensorsFromJSON] REPLACE mode: cleared existing sensors');
+    }
+
+    // 4. Import sensors
+    let added = 0;
+    let skipped = 0;
+    const existingIds = new Set(db.sensors.map(s => s.sensor_id));
+
+    data.sensors.forEach(sensor => {
+      if (options.mode === 'merge' && existingIds.has(sensor.sensor_id)) {
+        skipped++;
+        return;
+      }
+
+      // Import sensor (optionally strip lock state)
+      const importedSensor = { ...sensor };
+      if (!options.importLocks) {
+        delete importedSensor.is_manually_locked;
+      }
+
+      db.sensors.push(importedSensor);
+      added++;
+    });
+    
+    // Warn if lock states were ignored
+    if (!options.importLocks) {
+      const sensorsWithLocks = data.sensors.filter(s => s.is_manually_locked !== undefined).length;
+      if (sensorsWithLocks > 0) {
+        console.warn(
+          `[importSensorsFromJSON] Ignored lock states for ${sensorsWithLocks} sensors (importLocks=false)`
+        );
+      }
+    }
+
+    // 5. Save to localStorage
+    db.lastUpdated = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+
+    // 6. Import deleted sensors to IndexedDB (if enabled)
+    let deletedAdded = 0;
+    if (options.importDeleted && data.deletedSensors && data.deletedSensors.length > 0) {
+      for (const deleted of data.deletedSensors) {
+        try {
+          await addDeletedSensorToDB(deleted.sensorId);
+          deletedAdded++;
+        } catch (err) {
+          console.error('[importSensorsFromJSON] Error adding deleted sensor:', err);
+        }
+      }
+      // Sync to localStorage cache
+      await syncIndexedDBToLocalStorage();
+    } else if (!options.importDeleted && data.deletedSensors && data.deletedSensors.length > 0) {
+      console.warn(
+        `[importSensorsFromJSON] Skipping ${data.deletedSensors.length} deleted sensors (importDeleted=false)`
+      );
+    }
+
+    console.log('[importSensorsFromJSON] Import complete:', {
+      mode: options.mode,
+      added,
+      skipped,
+      deletedAdded
+    });
+
+    // Clear backup after successful import
+    if (options.mode === 'replace') {
+      clearDatabaseBackup();
+    }
+
+    return {
+      success: true,
+      summary: {
+        sensorsAdded: added,
+        sensorsSkipped: skipped,
+        deletedAdded: deletedAdded,
+        mode: options.mode
+      }
+    };
+  } catch (err) {
+    console.error('[importSensorsFromJSON] Import failed:', err);
+    
+    // Rollback REPLACE mode on error
+    if (options.mode === 'replace') {
+      console.log('[importSensorsFromJSON] Rolling back REPLACE...');
+      restoreDatabaseBackup();
+    }
+    
+    return {
+      success: false,
+      error: err.message || 'Import mislukt'
+    };
+  }
+}
+
+// ============================================================================
+// BACKUP & ROLLBACK FOR SAFE IMPORT
+// Creates temporary backup before REPLACE mode, allows rollback on error
+// ============================================================================
+
+const BACKUP_KEY = 'agp-sensor-database-backup';
+
+/**
+ * Create backup of current database before destructive operation
+ * Stores in separate localStorage key for recovery
+ * 
+ * @returns {boolean} Success status
+ */
+export function createDatabaseBackup() {
+  try {
+    const db = getSensorDatabase();
+    if (!db) {
+      console.warn('[createDatabaseBackup] No database to backup');
+      return false;
+    }
+
+    localStorage.setItem(BACKUP_KEY, JSON.stringify(db));
+    console.log('[createDatabaseBackup] Backup created:', {
+      sensors: db.sensors.length
+    });
+    return true;
+  } catch (err) {
+    console.error('[createDatabaseBackup] Backup failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Restore database from backup
+ * Used for rollback after failed import
+ * 
+ * @returns {boolean} Success status
+ */
+export function restoreDatabaseBackup() {
+  try {
+    const backup = localStorage.getItem(BACKUP_KEY);
+    if (!backup) {
+      console.warn('[restoreDatabaseBackup] No backup found');
+      return false;
+    }
+
+    localStorage.setItem(STORAGE_KEY, backup);
+    console.log('[restoreDatabaseBackup] Database restored from backup');
+    return true;
+  } catch (err) {
+    console.error('[restoreDatabaseBackup] Restore failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Clear backup after successful operation
+ * Frees up localStorage space
+ */
+export function clearDatabaseBackup() {
+  try {
+    localStorage.removeItem(BACKUP_KEY);
+    console.log('[clearDatabaseBackup] Backup cleared');
+  } catch (err) {
+    console.error('[clearDatabaseBackup] Clear failed:', err);
+  }
 }
