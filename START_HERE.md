@@ -1,12 +1,29 @@
 # 🚀 START HERE - AGP+ Quick Start
 
-**Version**: v3.12.0  
-**Status**: âœ… Production-ready  
-**Next Phase**: Optional Maintenance (P3) or Feature Development
+**Version**: v3.13.0  
+**Status**: ✅ Production-ready - Patient info auto-extraction working!  
+**Next Phase**: Sensor Export/Import or Optional Maintenance
 
 ---
 
-## âš¡ QUICK START
+## ⚠️ CRITICAL: WORK IN SMALL CHUNKS!
+
+**New chat? READ THIS FIRST:**
+
+1. 🛑 **NEVER write/edit more than 30 lines at once**
+2. 🛑 **STOP after every 1-2 edits** and wait for user input
+3. 🛑 **Ask "Continue?" before next step**
+4. 🛑 **Use edit_block for small changes** (not full file rewrites)
+
+**Why?** Context window = 190k tokens. Large operations = crash = lost work.
+
+**If you see "go"** → Continue to next small step  
+**If you see "test"** → Wait for test results before continuing  
+**If you see "stop"** → Immediately stop current operation
+
+---
+
+## ⚡ QUICK START
 
 ### 1. Start Server
 ```bash
@@ -19,57 +36,71 @@ npx vite --port 3001
 http://localhost:3001
 
 ### 3. Upload CSV
-Click "Upload CSV" â†' Select Medtronic CareLink export â†' Choose period
+Click "Upload CSV" → Select Medtronic CareLink export → Choose period
 
-**That's it!** âœ…
+**That's it!** ✅
+
+**Patient info now auto-populates!** 🎉
+- Name, CGM, Device Serial extracted from CSV
+- Shown under "PATIËNT" button in header
+- Edit manually via "PATIËNT" button (DOB, physician, email)
 
 ---
 
-## ðŸ"‹ FOR NEW CHATS
+## 📋 FOR NEW CHATS
 
 **Read in this order:**
 1. **This file** (you are here) - Quick orientation
-2. `HANDOFF.md` - Current phase details
-3. `DUAL_STORAGE_ANALYSIS.md` - Full context (Issues #1-4)
+2. `HANDOFF.md` - Current phase details + SMALL CHUNKS WARNING
+3. `DUAL_STORAGE_ANALYSIS.md` - Full context (if needed)
 
 **Don't read everything at once!** Use Desktop Commander to fetch files as needed.
 
+**REMEMBER: STOP after 1-2 edits and ask for permission to continue!**
+
 ---
 
-## ðŸŽ¯ CURRENT STATUS
+## 🎯 CURRENT STATUS
 
-### What Works âœ…
+### What Works ✅
 - Master dataset (multi-upload support)
 - 220 sensors tracked (no duplicates)
-- **Storage source badges** (RECENT/HISTORICAL) âœ…
-- **Smart lock toggle** (disabled for read-only) âœ…
-- **Enhanced error messages** (explains WHY actions fail) ðŸ†•
-- **Debug logging** (full context for troubleshooting) ðŸ†•
-- TDD insulin metrics (27.9E Â± 5.4 SD)
+- **Patient info auto-extraction** from CSV (NEW! 🎉)
+  - Name, CGM, Device Serial auto-filled
+  - DOB, physician, email manually editable
+  - Header display shows: Name, CGM, SN
+- **Storage source badges** (RECENT/HISTORICAL) ✅
+- **Smart lock toggle** (disabled for read-only) ✅
+- **Enhanced error messages** (explains WHY actions fail) ✅
+- **Debug logging** (full context for troubleshooting) ✅
+- TDD insulin metrics (27.9E ± 5.4 SD)
 - Lock system (30-day protection)
 - All clinical metrics (TIR, TAR, TBR, GMI, etc)
 
-### Recent Completion ðŸŽ‰
-**v3.12.0: Lock System Enhancement (P2)** (Issue #4 - COMPLETE)
-- Enhanced error messages with detail field
-- getManualLockStatus returns full context (isEditable, storageSource)
-- Context-aware messages for lock/delete operations
-- Debug logging for all lock operations
-- Clear explanations of WHY actions fail
+### Recent Completion 🎉
+**v3.13.0: Patient Info Auto-Extraction** (COMPLETE)
+- parseCSVMetadata() called in uploadCSVToV3
+- Auto-extracts: Name, CGM Device, Device Serial, Pump Device
+- Saved to patientStorage (IndexedDB)
+- Displayed in header under "PATIËNT" button
+- PatientInfo modal shows all fields (editable)
+- DOB preserved (not overwritten by CSV)
 
-### What's Next ðŸ"§
-**Phase: Optional Maintenance (P3)**
-- Add manual "Clear Old Deleted Sensors" button (optional)
-- Shows count of deleted sensors
-- Clears entries >90 days old
-- **Note**: IndexedDB already has 90-day auto-expiry (v3.10.0)
+**What You See:**
+```
+Header:
+Jo Mostert
+CGM: Guardian™ 4 Sensor
+SN: NG4114235H  ← Auto-extracted!
+```
 
-**OR: Ready for New Features**
-- Dual storage issues mostly resolved (2/4 complete, 2/4 optional)
-- System stable and well-documented
-- Ready for user-driven feature development
+### What's Next 🔧
+**Phase: Choose Your Adventure**
+1. **Sensor Export/Import** (4-6 hours, small chunks)
+2. **P3 Maintenance** (Clear deleted sensors button, 1 hour)
+3. **Polish & Refine** (UI/UX improvements)
 
-See `HANDOFF.md` for options.
+See `HANDOFF.md` for details.
 
 ---
 
@@ -80,14 +111,14 @@ agp-plus/
 ├── HANDOFF.md              ⭐ Start here for development
 ├── START_HERE.md           ⭐ You are here
 ├── DUAL_STORAGE_ANALYSIS.md ⭐ Issue context
-├── CHANGELOG.md            📜 Version history (v3.11.0 just added)
+├── CHANGELOG.md            📜 Version history (v3.13.0 just added)
 ├── README.md               📖 User documentation
 │
 ├── src/
 │   ├── components/         React UI components
-│   ├── core/              Pure calculation engines
+│   ├── core/              Pure calculation engines (parsers.js ⭐)
 │   ├── hooks/             React hooks (orchestration)
-│   └── storage/           IndexedDB + localStorage
+│   └── storage/           IndexedDB + localStorage (masterDatasetStorage.js ⭐)
 │
 ├── project/               Core documentation
 │   ├── V3_ARCHITECTURE.md
@@ -132,7 +163,7 @@ test-data/SAMPLE__Jo\ Mostert\ 31-10-2025_14d.csv
 ### Commit Changes
 ```bash
 git add .
-git commit -m "v3.12.0: [description]"
+git commit -m "v3.13.0: [description]"
 git push origin main
 ```
 
@@ -156,29 +187,33 @@ git push origin main
 
 ---
 
-## 🎯 NEXT PHASE FILES
+## 🎯 FILES YOU'LL TOUCH (v3.13.0+)
 
-**You'll need to modify:**
+**Patient Info (v3.13.0):**
 ```
-src/storage/sensorStorage.js         - Enhance lock API (main work)
-```
-
-**You'll reference:**
-```
-src/components/SensorHistoryModal.jsx - Error display context
-src/utils/debug.js                    - Debug patterns
-DUAL_STORAGE_ANALYSIS.md             - Why we're doing this
+src/core/parsers.js                   - parseCSVMetadata() extracts from CSV
+src/storage/masterDatasetStorage.js   - uploadCSVToV3() calls parser
+src/utils/patientStorage.js           - IndexedDB storage layer
+src/components/PatientInfo.jsx        - Edit modal
+src/components/AGPGenerator.jsx       - Header display
 ```
 
-See `HANDOFF.md` for step-by-step implementation.
+**For Export/Import (next):**
+```
+src/storage/sensorStorage.js          - Export logic here
+src/components/SensorHistoryModal.jsx - Add export/import buttons
+```
 
 ---
 
 ## ⚠️ IMPORTANT RULES
 
-### 1. Work in Small Chunks
-- Read only what you need
-- Write ≤30 lines per operation
+### 1. Work in Small Chunks (CRITICAL!)
+- 🛑 Read only what you need
+- 🛑 Write ≤30 lines per operation
+- 🛑 STOP after 1-2 edits
+- 🛑 Ask: "Continue to next edit?"
+- 🛑 Wait for "go" or "test"
 - Test after each chunk
 - Commit logical changes
 
@@ -201,7 +236,7 @@ See `HANDOFF.md` for step-by-step implementation.
 
 ---
 
-## 🛠 TROUBLESHOOTING
+## 🛠️ TROUBLESHOOTING
 
 **Server won't start:**
 ```bash
@@ -210,27 +245,18 @@ npm install
 ./start.sh
 ```
 
-**Sensor badges not showing:**
-- Should be fixed in v3.11.0
-- Check console for: "duplicatesRemoved: X"
-- Verify storageSource field in sensor objects
-
-**Lock toggle not working:**
-- Expected for SQLite sensors (>30 days old)
-- v3.11.0: Disabled UI (cursor: not-allowed, opacity 0.5)
-- v3.12.0: Enhanced error messages explain WHY âœ…
-
-**Lock/delete errors unclear:**
-- Fixed in v3.12.0 âœ…
-- Error messages now include detail field
-- Explains WHY action failed and what to do next
-- Console logs show full context
+**Patient info not showing:**
+- Re-upload CSV to trigger parseCSVMetadata
+- Check console: "Patient metadata saved" log
+- Open "PATIËNT" button → modal should show data
+- Check DevTools > IndexedDB > agp-database > settings
 
 **Context overflow:**
-- Use Desktop Commander
-- Read files with line ranges
-- Write in small chunks
-- Don't load entire codebase at once
+- 🛑 STOP writing immediately
+- Use smaller chunks (≤30 lines)
+- Use edit_block instead of write_file
+- Read with line ranges, not full files
+- Ask before continuing to next edit
 
 ---
 
@@ -246,30 +272,23 @@ npm install
 **System status:**
 - 220 sensors tracked
 - 94.0% data quality
-- Storage source badges working âœ…
-- Lock system with enhanced error messages âœ…
-- Debug logging for troubleshooting âœ…
-- No duplicate sensors âœ…
+- Patient info auto-extraction working ✅
+- Storage source badges working ✅
+- Lock system with enhanced errors ✅
+- Debug logging for troubleshooting ✅
+- No duplicate sensors ✅
 
 ---
 
-## ðŸŽ¯ PROGRESS ON DUAL_STORAGE_ANALYSIS ISSUES
+## 🎯 PROGRESS TRACKER
 
-**Note**: Issue numbering reflects chronological implementation order, not DUAL_STORAGE_ANALYSIS.md order. See analysis doc for original numbering (Issues #1-4 map differently).
+**Dual Storage Issues (from DUAL_STORAGE_ANALYSIS.md):**
+1. ✅ localStorage clear edge case - SOLVED v3.10.0
+2. ✅ Data source confusion - SOLVED v3.11.0
+3. ✅ Lock inconsistency - SOLVED v3.12.0
+4. ✅ Patient info extraction - SOLVED v3.13.0
 
-**Issue Status:**
-1. âœ… **localStorage clear edge case** - SOLVED v3.10.0 (IndexedDB tombstone)
-   - *Analysis Issue #1: Sync race condition*
-2. âœ… **Data source confusion** - SOLVED v3.11.0 (badges + disabled toggles)
-   - *Analysis Issue #4: Data source confusion*
-3. âœ… **Lock inconsistency** - SOLVED v3.12.0 (enhanced error messages) ðŸ†•
-   - *Analysis Issue #2: Lock state inconsistency*
-4. âš ï¸ **Deleted list growth** - Mostly solved (90-day expiry), P3 optional
-   - *Analysis Issue #3: Deleted sensors list growth*
-
-**Overall Risk**: VERY LOW (3/4 complete, 1/4 optional)
-
-**Dual storage architecture is stable!** ðŸŽ‰
+**All major issues resolved! 🎉**
 
 ---
 
@@ -278,8 +297,12 @@ npm install
 1. Open `HANDOFF.md` for phase details
 2. Start server: `./start.sh`
 3. Use Desktop Commander for all file ops
-4. Work in small chunks (≤30 lines)
-5. Test frequently
-6. Commit logical changes
+4. 🛑 Work in small chunks (≤30 lines)
+5. 🛑 STOP after 1-2 edits
+6. 🛑 Ask: "Continue?"
+7. Test frequently
+8. Commit logical changes
+
+**Remember: SMALL CHUNKS! STOP AND ASK!**
 
 **Let's ship it! 🎉**

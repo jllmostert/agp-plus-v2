@@ -7,7 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.12.0] - 2025-10-31 - 🔐 Lock System Enhancement (P2) âœ… COMPLETE
+## [3.13.0] - 2025-10-31 - 🎉 Patient Info Auto-Extraction from CSV ✅ COMPLETE
+
+**Automatic extraction and display of patient metadata from CareLink CSV exports**
+
+### Added
+
+**Auto-Extract Patient Metadata from CSV**:
+- `parseCSVMetadata()` now called in `uploadCSVToV3()`
+- Extracts from CSV header lines (1-3):
+  - Name (First + Last from line 2)
+  - CGM Device (from line 3, e.g., "Guardian™ 4 Sensor")
+  - Device Serial Number (from line 2, e.g., "NG4114235H")
+  - Pump Device (from line 1, e.g., "MiniMed 780G MMT-1886")
+- Automatically saved to patientStorage (IndexedDB)
+- Non-fatal errors: metadata extraction failure doesn't block CSV upload
+- Debug logging: "Patient metadata saved: {metadata}"
+
+**Header Display Enhancement** (AGPGenerator.jsx):
+- Shows patient info under "PATIËNT" button:
+  - Name (bold)
+  - DOB (if manually entered)
+  - CGM Device
+  - Device Serial Number as "SN: XXX" (NEW)
+- Always visible for quick reference
+- Critical for phone support (device serial readily available)
+
+**PatientInfo Modal Enhancement**:
+- Added 3 new fields:
+  - Device Serial Number (auto-filled from CSV)
+  - Pump Device (auto-filled from CSV)
+  - CGM Device (auto-filled from CSV)
+- All fields editable (manual override possible)
+- Help text indicates "(auto-filled from CSV)"
+- DOB remains manual entry only (not in CSV)
+
+**Storage Layer Enhancement** (patientStorage.js):
+- Added `deviceSerial` field to save/load
+- Added `device` field to save/load
+- Preserves existing values during CSV re-upload
+- DOB never overwritten (user-entered data protected)
+
+### Changed
+
+**Patient Info Workflow**:
+- **Before**: All fields manually entered
+- **After**: Name, CGM, Serial, Device auto-filled from CSV
+- **Still Manual**: DOB, Physician, Email (optional fields)
+
+**Upload Process**:
+1. User uploads CSV
+2. parseCSVMetadata() extracts patient info
+3. Saved to IndexedDB automatically
+4. Header displays: Name, CGM, SN
+5. Modal shows all fields (editable)
+
+### Fixed
+
+**UX Issue**: Manual patient data entry
+- Required re-typing device info on every install/reset
+- Device serial number not readily accessible for phone support
+- No connection between CSV data and patient record
+
+**Data Consistency**:
+- Patient info now synchronized with CSV source
+- Device serial always matches current pump
+- CGM model always matches current sensor
+
+### Technical Details
+
+**Files Modified**:
+- `src/storage/masterDatasetStorage.js` - uploadCSVToV3() calls parseCSVMetadata
+- `src/utils/patientStorage.js` - Added deviceSerial + device fields
+- `src/components/PatientInfo.jsx` - Added 3 device fields to form
+- `src/components/AGPGenerator.jsx` - Display SN in header
+
+**CSV Structure Parsed**:
+```
+Line 1: Last Name;First Name;...;Device;MiniMed 780G MMT-1886;...
+Line 2: "Mostert";"Jo";...;"Serial Number";NG4114235H;...
+Line 3: Patient DOB;;;;;;CGM;Guardian™ 4 Sensor
+```
+
+**Risk**: Very Low (non-fatal errors, existing data preserved)
+
+---
+
+## [3.12.0] - 2025-10-31 - 🔐 Lock System Enhancement (P2) ✅ COMPLETE
 
 **Enhanced error messages and context for lock operations**
 

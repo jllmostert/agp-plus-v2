@@ -1,39 +1,86 @@
-# ðŸ"‹ HANDOFF - AGP+ v3.12.0
+# 📋 HANDOFF - AGP+ v3.13.0
 
 **Date**: 2025-10-31  
-**Status**: âœ… Stable - Ready for Optional Maintenance (P3) or New Features  
-**Version**: v3.12.0  
+**Status**: ✅ Stable - Patient Info Auto-Extraction Working  
+**Version**: v3.13.0  
 **Branch**: main  
 **Server**: http://localhost:3001 (or 3002 if 3001 occupied)
 
 ---
 
-## ðŸŽ¯ CURRENT STATE
+## ⚠️ CRITICAL: WORK IN SMALL CHUNKS!
 
-### What Works âœ…
+**Before you start coding:**
+1. 🛑 **STOP after every 1-2 edits** and wait for user input
+2. 🛑 **NEVER write more than 30 lines** in one write_file call
+3. 🛑 **Use edit_block for surgical changes** instead of rewriting files
+4. 🛑 **Ask before continuing** to next step
+
+**Why?** Context window limits (190k tokens). Large operations cause crashes and lost work.
+
+**Pattern:**
+```
+1. Read file (view with line ranges)
+2. Make 1-2 small edits (write_file or edit_block)
+3. 🛑 STOP - Ask: "Continue to next edit?"
+4. Wait for user "go" or "test" command
+5. Repeat
+```
+
+**If user says "go"** → Continue to next small step
+**If user says "test"** → Wait for test results before continuing
+
+---
+
+## 🎯 CURRENT STATE
+
+### What Works ✅
 - **Master dataset** with multi-upload support
-- **Dual storage** (SQLite + localStorage) for sensors - STABLE âœ…
+- **Dual storage** (SQLite + localStorage) for sensors - STABLE ✅
 - **220 sensors tracked** (no duplicates)
+- **Patient info auto-extraction** from CSV (NEW in v3.13.0! 🎉)
 - **Storage source badges** - "RECENT" vs "HISTORICAL" clearly visible
 - **Lock system with enhanced errors** (30-day threshold, delete protection)
 - **Disabled lock toggle** for read-only SQLite sensors
 - **Context-aware error messages** (explains WHY actions fail)
 - **Debug logging** (full context for troubleshooting)
-- **TDD metrics** showing correctly (27.9E Â± 5.4 SD)
+- **TDD metrics** showing correctly (27.9E ± 5.4 SD)
 - **Event detection** (sensors, cartridges, gaps)
 - **All clinical metrics** (TIR, TAR, TBR, GMI, MAGE, MODD)
 
-### Recent Completion (v3.12.0)
-âœ… **Issue #4: Lock System Enhancement (P2)** (COMPLETE)
-- Enhanced `getManualLockStatus()` returns full context:
-  - `isEditable` (boolean) - Whether sensor can be modified
-  - `storageSource` (string) - 'localStorage' | 'sqlite' | 'unknown'
-  - `reason` (string) - Why sensor is in this state
-- Better error messages in `toggleSensorLock()` with `detail` field
-- Context-aware errors in `deleteSensorWithLockCheck()`
-- UI displays multi-line explanations (message + detail)
-- Debug logging for all lock operations
-- Testing verified: Clear error messages, full context in console
+### Recent Completion (v3.13.0) 🎉
+✅ **Patient Info Auto-Extraction from CSV** (COMPLETE)
+- `parseCSVMetadata()` called in `uploadCSVToV3`
+- Patient metadata saved automatically after CSV upload:
+  - ✅ Name (First + Last from CSV line 2)
+  - ✅ CGM Device (from CSV line 3)
+  - ✅ Device Serial Number (from CSV line 2)
+  - ✅ Pump Device (from CSV line 1)
+- Header display shows: Name, CGM, Serial Number (SN: XXX)
+- PatientInfo modal has 3 new fields: deviceSerial, device, cgm
+- DOB preserved (user-entered, not overwritten by CSV)
+- Non-fatal errors (metadata extraction failure doesn't block upload)
+
+**What User Sees:**
+```
+Header (under "PATIËNT" button):
+Jo Mostert
+CGM: Guardian™ 4 Sensor
+SN: NG4114235H
+```
+
+**Manual Fields (Optional):**
+- Date of Birth
+- Physician
+- Email
+
+### Previous Completion (v3.12.0)
+✅ **Issue #4: Lock System Enhancement (P2)** (COMPLETE)
+- Enhanced `getManualLockStatus()` returns full context
+- Better error messages with `detail` field
+- Context-aware errors in delete operations
+- UI displays multi-line explanations
+- Debug logging for troubleshooting
 
 ### Current Data
 - 220 sensors tracked (219 SQLite historical, ~1 localStorage recent)
@@ -41,91 +88,85 @@
 - 94.0% data quality (3,791 readings)
 - TIR: 73.0% (target >70%)
 - TBR: 1.8% (target <5%)
-- CV: 34.9% (target â‰¤36%)
+- CV: 34.9% (target ≤36%)
 
 ---
 
-## ðŸŽ‰ DUAL STORAGE ARCHITECTURE - STATUS
+## 🎉 DUAL STORAGE ARCHITECTURE - STATUS
 
 **From DUAL_STORAGE_ANALYSIS.md:**
 
-**Note**: Our issue numbering reflects chronological implementation order. For cross-reference with analysis document, see mapping in parentheses below.
+**Note**: Our issue numbering reflects chronological implementation order.
 
-1. âœ… **localStorage clear edge case** - SOLVED v3.10.0
-   - *(Analysis Issue #1: Sync race condition)*
+1. ✅ **localStorage clear edge case** - SOLVED v3.10.0
    - IndexedDB tombstone store (persistent)
    - 90-day auto-expiry
    - Survives localStorage.clear()
 
-2. âœ… **Data source confusion** - SOLVED v3.11.0
-   - *(Analysis Issue #4: Data source confusion)*
+2. ✅ **Data source confusion** - SOLVED v3.11.0
    - Color-coded badges (RECENT green / HISTORICAL gray)
    - Disabled lock toggle for read-only sensors
-   - Clear visual distinction
 
-3. âœ… **Lock inconsistency** - SOLVED v3.12.0
-   - *(Analysis Issue #2: Lock state inconsistency)*
+3. ✅ **Lock inconsistency** - SOLVED v3.12.0
    - Enhanced error messages with detail field
    - Full context from getManualLockStatus
-   - Debug logging for troubleshooting
-   - Explains WHY actions fail
 
-4. âš ï¸ **Deleted list growth** - MOSTLY SOLVED
-   - *(Analysis Issue #3: Deleted sensors list growth)*
-   - IndexedDB has 90-day auto-expiry (v3.10.0)
-   - Optional: Add manual cleanup button (P3)
-   - Not critical - works fine as-is
+4. ✅ **Patient info extraction** - SOLVED v3.13.0
+   - Auto-extract from CSV (name, CGM, serial, device)
+   - Display in header
+   - Edit in modal
 
-**Overall Status**: âœ… STABLE (3/4 complete, 1/4 optional)
+**Overall Status**: ✅ STABLE (all major issues resolved!)
 
 **Risk Level**: VERY LOW
 
 ---
 
-## ðŸš€ NEXT PHASE OPTIONS
+## 🚀 NEXT PHASE OPTIONS
 
-### Option A: Maintenance (P3) - Optional
+### Option A: Sensor Export/Import (NEW FEATURE)
+
+**Preparatory work needed:**
+- Design export format (JSON? CSV?)
+- Determine what to export (sensors + metadata? events?)
+- Import validation logic
+- UI for export/download button
+- UI for import/upload button
+
+**Effort**: 4-6 hours (in small chunks!)
+**Priority**: User-driven
+**Risk**: Low
+
+---
+
+### Option B: Maintenance (P3) - Optional
 
 **Add "Clear Old Deleted Sensors" Button**
-- Priority: P3 (Low - nice to have)
-- Effort: 1 hour
-- Risk: Very Low
-
-**What it does**:- Shows count of sensors in deleted list
+- Shows count of sensors in deleted list
 - Button: "Clear Deleted Sensors (>90 days)"
 - Success feedback with count removed
 - Manual trigger (auto-expiry already works)
 
-**Why optional**:
-- IndexedDB already has 90-day auto-expiry
-- System works fine without manual cleanup
-- Only useful if user wants to see/manage deleted list
-
-**Implementation**:
-1. Add button in Sensor History Modal settings
-2. Query IndexedDB for deleted sensors
-3. Show count in UI
-4. On click: Remove entries >90 days old
-5. Show toast with count removed
+**Effort**: 1 hour
+**Priority**: P3 (Low - nice to have)
+**Risk**: Very Low
 
 ---
 
-### Option B: Feature Development - New Work
+### Option C: Polish & Refine
 
-**Dual storage is stable!** System ready for new features:
+**Possible improvements:**
+- UI/UX enhancements
+- Performance optimizations
+- Additional error handling
+- Documentation updates
 
-**Possible next features**:
-- Export/import sensor database
-- Sensor usage analytics (average lifetime, failure patterns)
-- Inventory management enhancements
-- Pump settings tracking (basal profiles, ISF, CR over time)
-- Advanced event detection (site changes, cartridge patterns)
-
-**Decision**: User-driven based on needs
+**Effort**: Variable
+**Priority**: User-driven
 
 ---
 
-## ðŸ"§ DEVELOPMENT SETUP
+## 🔧 DEVELOPMENT SETUP
 
 ### Server Startup
 ```bash
@@ -149,9 +190,9 @@ pkill -f vite
 ```
 
 ### Desktop Commander
-**Use DC for all file operations:**
+**Use DC for ALL file operations:**
 - `read_file` - Read code (with line ranges)
-- `write_file` - Write in chunks (â‰¤30 lines)
+- `write_file` - Write in chunks (≤30 lines)
 - `edit_block` - Surgical edits
 - `list_directory` - Navigate
 - `start_process` - Run commands
@@ -160,40 +201,44 @@ pkill -f vite
 
 ---
 
-## ðŸ"‚ PROJECT STRUCTURE
+## 📂 PROJECT STRUCTURE
 
 ```
 agp-plus/
-â"œâ"€â"€ src/
-â"‚   â"œâ"€â"€ components/        # React UI (SensorHistoryModal)
-â"‚   â"œâ"€â"€ core/             # Pure calculation engines
-â"‚   â"œâ"€â"€ hooks/            # React hooks (useSensorDatabase)
-â"‚   â""â"€â"€ storage/          # sensorStorage.js, deletedSensorsDB.js
-â"œâ"€â"€ docs/
-â"‚   â"œâ"€â"€ archive/          # Old analysis docs
-â"‚   â""â"€â"€ handoffs/         # Previous handoffs
-â"œâ"€â"€ reference/            # Clinical specs (metric_definitions, etc)
-â"œâ"€â"€ project/              # Core docs (ARCHITECTURE, STATUS, etc)
-â""â"€â"€ test-data/           # CSV samples
+├── src/
+│   ├── components/        # React UI (PatientInfo, SensorHistoryModal)
+│   ├── core/             # Pure calculation engines (parsers.js)
+│   ├── hooks/            # React hooks (useSensorDatabase)
+│   └── storage/          # sensorStorage.js, deletedSensorsDB.js
+├── docs/
+│   ├── archive/          # Old analysis docs
+│   └── handoffs/         # Previous handoffs
+├── reference/            # Clinical specs (metric_definitions, etc)
+├── project/              # Core docs (ARCHITECTURE, STATUS, etc)
+└── test-data/           # CSV samples
 ```
 
-### Key Files
+### Key Files (v3.13.0)
 ```
-src/storage/sensorStorage.js         - Lock system (just enhanced in v3.12.0)
-src/storage/deletedSensorsDB.js      - IndexedDB tombstone store
-src/hooks/useSensorDatabase.js       - Dual storage orchestration
-src/components/SensorHistoryModal.jsx - UI for sensors (error display enhanced)
+src/core/parsers.js                   - parseCSVMetadata() extracts patient info
+src/storage/masterDatasetStorage.js   - uploadCSVToV3() calls parseCSVMetadata
+src/utils/patientStorage.js           - IndexedDB storage for patient info
+src/components/PatientInfo.jsx        - Patient info modal (edit form)
+src/components/AGPGenerator.jsx       - Header display (shows patient info)
+src/storage/sensorStorage.js          - Lock system (v3.12.0)
+src/storage/deletedSensorsDB.js       - IndexedDB tombstone store (v3.10.0)
+src/hooks/useSensorDatabase.js        - Dual storage orchestration
 ```
 
 ---
 
-## ðŸ"š ESSENTIAL READING
+## 📖 ESSENTIAL READING
 
 **Before starting:**
 1. `START_HERE.md` - Quick orientation
 2. This file - Current status
-3. `DUAL_STORAGE_ANALYSIS.md` - Context (all 4 issues documented)
-4. `CHANGELOG.md` - v3.12.0 entry (just completed)
+3. `DUAL_STORAGE_ANALYSIS.md` - Context (all issues documented)
+4. `CHANGELOG.md` - v3.13.0 entry
 
 **For context:**
 - `project/V3_ARCHITECTURE.md` - System design
@@ -202,30 +247,36 @@ src/components/SensorHistoryModal.jsx - UI for sensors (error display enhanced)
 
 ---
 
-## âš ï¸ WORK IN SMALL CHUNKS
+## ⚠️ WORK IN SMALL CHUNKS
+
+**CRITICAL RULE: After every 1-2 edits, STOP and ask for permission to continue.**
 
 **Why?** Context window limits (190k tokens).
 
 **How?**
 1. Read only files you need (use view with line ranges)
-2. Write files in chunks (â‰¤30 lines per write_file)
+2. Write files in chunks (≤30 lines per write_file)
 3. Use edit_block for targeted changes
-4. Commit after each logical change
-5. Test after each chunk
+4. 🛑 STOP after 1-2 edits
+5. Ask: "Continue to next edit?"
+6. Wait for user "go" or "test"
+7. Commit after each logical change
+8. Test after each chunk
 
 **Pattern:**
 ```
 1. Read current code (view)
 2. Plan change (thinking)
 3. Write chunk (write_file/edit_block)
-4. Test (start_process)
-5. Commit (if works)
-6. Repeat
+4. 🛑 STOP - Wait for "go" or "test"
+5. Test (start_process)
+6. Commit (if works)
+7. Repeat
 ```
 
 ---
 
-## ðŸŽ¨ DESIGN SYSTEM
+## 🎨 DESIGN SYSTEM
 
 **Brutalist Medical Interface:**
 - **Background**: #000000 (pure black)
@@ -239,39 +290,46 @@ src/components/SensorHistoryModal.jsx - UI for sensors (error display enhanced)
 
 **Why?** Medical professionals need fast scanning. High contrast = faster decisions.
 
----## ðŸ›  TROUBLESHOOTING
+---
+
+## 🛠️ TROUBLESHOOTING
 
 **Server won't start:**
 - Port occupied: `kill -9 $(lsof -t -i:3001)`
 - Module issues: `npm install`
 - PATH: `export PATH="/opt/homebrew/bin:$PATH"`
 
+**Patient info not showing:**
+- Check console: "Patient metadata saved" log?
+- Open PatientInfo modal: fields filled?
+- Check IndexedDB (DevTools > Application > IndexedDB > agp-database > settings)
+- Re-upload CSV to trigger parseCSVMetadata
+
 **Lock system issues:**
 - SQLite sensors: Lock toggle should be disabled (v3.11.0)
 - Error messages: Should show detail field (v3.12.0)
-- Console logs: Should show full context (v3.12.0)
+- Console logs: Should show full context
 - Check isSensorLocked() date calculation (30-day threshold)
 
-**Sensor display issues:**
-- Check deduplication in useSensorDatabase
-- Verify sensorMap.set() not overwriting
-- Console log: duplicatesRemoved count
-
-**Error messages not showing detail:**
-- Check alert() calls use both message and detail
-- Format: `alert(\`âŒ \${result.message}\\n\\n\${result.detail}\`)`
-- Updated in v3.12.0, should work
+**Context overflow:**
+- Use Desktop Commander
+- Read files with line ranges
+- Write in small chunks (≤30 lines)
+- 🛑 STOP after 1-2 edits
+- Don't load entire codebase at once
 
 ---
 
-## ðŸ" COMMIT CHECKLIST
+## 📝 COMMIT CHECKLIST
 
 **Before committing:**
 - [ ] All console.logs removed (or proper logging via debug.js)
 - [ ] No commented-out code (unless TODO)
-- [ ] Tested with real data (220 sensors)
+- [ ] Tested with real data
 - [ ] No visual regressions
 - [ ] Updated CHANGELOG.md if version bump
+- [ ] Updated HANDOFF.md with new status
+- [ ] Updated START_HERE.md if major feature
 
 **Commit message template:**
 ```
@@ -281,76 +339,73 @@ v3.X.X: [Feature/Fix name]
 - Another change
 - More details
 
-[Optional: Fixes issue #X from DUAL_STORAGE_ANALYSIS.md]
+[Optional: What this enables]
 [Optional: Risk: Low/Medium/High - Reason]
 ```
 
 ---
 
-## ðŸ"® WHAT'S BEEN DONE
+## ✅ SUCCESS CRITERIA
+
+**For New Features:**
+1. ✅ Feature works as described
+2. ✅ No errors in console
+3. ✅ All existing features still work
+4. ✅ Tested with real CSV data
+5. ✅ Documentation updated
+
+**For Bug Fixes:**
+1. ✅ Bug no longer reproducible
+2. ✅ Root cause addressed (not just symptom)
+3. ✅ No new bugs introduced
+4. ✅ Error handling added
+5. ✅ Debug logging in place
+
+---
+
+## 🎯 WHAT'S BEEN DONE
 
 **v3.10.0**: IndexedDB tombstone store (localStorage clear protection)
-**v3.11.0**: Storage source badges (RECENT/HISTORICAL, visual distinction)
+**v3.11.0**: Storage source badges (RECENT/HISTORICAL visual distinction)
 **v3.12.0**: Enhanced error messages (full context, explains WHY)
+**v3.13.0**: Patient info auto-extraction from CSV 🎉
 
-**Dual storage architecture is now stable!** ðŸŽ‰
+**System is stable and production-ready!** 🎉
 
 **What this means:**
-- No more sensor duplication bugs
-- Clear visual distinction between editable/read-only sensors
-- Error messages explain WHY actions fail
-- Debug logging helps troubleshooting
-- Deleted sensors persist across localStorage clears
-- Auto-expiry prevents bloat (90-day cleanup)
-
-**Remaining optional work:**
-- Manual deleted sensors cleanup button (P3 - nice to have)
-- That's it! Everything else is working well.
+- ✅ No more manual patient info entry (auto-filled from CSV)
+- ✅ Critical medical device info always visible (SN for phone support)
+- ✅ DOB/physician/email still manually editable
+- ✅ Dual storage architecture solid
+- ✅ All metrics working correctly
 
 ---
 
-## âœ… SUCCESS CRITERIA
-
-**For P3 (Optional Maintenance)**:
-1. âœ… Button shows count of deleted sensors
-2. âœ… Button clears entries >90 days old
-3. âœ… Success feedback shows count removed
-4. âœ… No errors in console
-5. âœ… All existing features still work
-
-**For New Features**:
-- User-driven requirements
-- Document in new feature spec
-- Follow same small-chunks pattern
-- Test thoroughly before committing
-
----
-
-## ðŸ"ž QUESTIONS?
+## 📞 QUESTIONS?
 
 Read in order:
 1. `START_HERE.md` - Quick orientation
 2. This file - Current status and options
-3. `DUAL_STORAGE_ANALYSIS.md` - Full context (all 4 issues)
+3. `DUAL_STORAGE_ANALYSIS.md` - Full context
 4. `project/V3_ARCHITECTURE.md` - System design
-5. `CHANGELOG.md` - Version history (v3.12.0 just added)
+5. `CHANGELOG.md` - Version history (v3.13.0 just added)
 
 **Still stuck?** Check docs/archive/ for historical context.
 
 ---
 
-## ðŸš€ READY FOR NEXT PHASE
+## 🚀 READY FOR NEXT PHASE
 
-**Current state**: âœ… Stable, well-documented, dual storage issues resolved
+**Current state**: ✅ Stable, patient info auto-extraction working
 
-**Options**:
-1. **P3 Maintenance**: Add manual cleanup button (1 hour, optional)
-2. **New Features**: User-driven development (TBD)
+**Options:**
+1. **Sensor Export/Import**: Design and implement (4-6 hours, small chunks)
+2. **P3 Maintenance**: Add manual cleanup button (1 hour, optional)
 3. **Polish**: UI/UX improvements, performance optimizations
-4. **Done**: System is production-ready, take a break! ðŸŽ‰
+4. **Done**: System is production-ready, take a break! 🎉
 
 **Decision**: Up to user based on priorities.
 
 ---
 
-**System is stable. Work in small chunks. Test frequently. ðŸš€**
+**System is stable. Work in small chunks. STOP after 1-2 edits. Test frequently. 🚀**
