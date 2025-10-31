@@ -34,6 +34,8 @@ import DayProfilesModal from './DayProfilesModal';
 import SensorHistoryModal from './SensorHistoryModal';
 import SensorRegistration from './SensorRegistration';
 import DataManagementModal from './DataManagementModal';
+import StockManagementModal from './StockManagementModal';
+import BatchAssignmentDialog from './BatchAssignmentDialog';
 import { MigrationBanner } from './MigrationBanner';
 import { DateRangeFilter } from './DateRangeFilter';
 
@@ -122,6 +124,9 @@ export default function AGPGenerator() {
   const [sensorHistoryOpen, setSensorHistoryOpen] = useState(false); // Sensor history modal state
   const [sensorRegistrationOpen, setSensorRegistrationOpen] = useState(false); // Sensor registration modal state
   const [dataManagementOpen, setDataManagementOpen] = useState(false); // Data management modal state
+  const [showStockModal, setShowStockModal] = useState(false); // Stock management modal state
+  const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
+  const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
   const [tddData, setTddData] = useState(null); // TDD statistics {meanTDD, sdTDD, ...}
 
   // Load patient info from storage
@@ -426,14 +431,28 @@ export default function AGPGenerator() {
    */
   const handleCSVLoad = async (text) => {
     if (useV3Mode) {
-      // V3: Direct upload to IndexedDB (bypasses localStorage)
+      // V3: Direct upload to IndexedDB with two-phase batch assignment
       try {
         setV3UploadError(null); // Clear previous errors
         const { uploadCSVToV3 } = await import('../storage/masterDatasetStorage');
         const result = await uploadCSVToV3(text);
         
-        // Trigger cache reload to update UI
+        // Check if upload needs user confirmation for batch assignments
+        if (result.needsConfirmation) {
+          console.log('[CSV Upload] Found batch matches, awaiting user confirmation');
+          // Store for completion after user confirms
+          setPendingUpload({
+            detectedEvents: result.detectedEvents,
+            suggestions: result.suggestions
+          });
+          setBatchAssignmentDialog({ open: true, suggestions: result.suggestions });
+          return; // Don't refresh yet - wait for user confirmation
+        }
+        
+        // No confirmation needed - refresh normally
+        console.log('[CSV Upload] No batch matches, sensors stored immediately');
         masterDataset.refresh();
+        
       } catch (err) {
         console.error('[CSV Upload] V3 upload failed:', err);
         setV3UploadError(err.message);
@@ -519,6 +538,68 @@ export default function AGPGenerator() {
       console.error('ProTime deletion failed:', err);
       throw err; // Re-throw so modal can show error
     }
+  };
+
+  /**
+   * Handle batch assignment confirmation
+   */
+  const handleBatchAssignmentConfirm = async (assignments) => {
+    try {
+      // NEW: Check if this is part of a two-phase upload
+      if (pendingUpload) {
+        console.log('[Batch Assignment] Completing two-phase upload with assignments');
+        const { completeCSVUploadWithAssignments } = await import('../storage/masterDatasetStorage');
+        
+        await completeCSVUploadWithAssignments(
+          pendingUpload.detectedEvents,
+          assignments
+        );
+        
+        setPendingUpload(null); // Clear pending state
+        masterDataset.refresh(); // Refresh UI with new sensors
+        
+        console.log(`[Batch Assignment] Upload complete: ${assignments.length} sensors assigned`);
+      } else {
+        // OLD: Legacy path for manual assignments (post-upload)
+        const { assignSensorToBatch } = await import('../storage/stockStorage');
+        
+        for (const { sensorId, batchId } of assignments) {
+          await assignSensorToBatch(sensorId, batchId, 'auto');
+        }
+        
+        console.log(`[Batch Assignment] Assigned ${assignments.length} sensors`);
+      }
+      
+      setBatchAssignmentDialog({ open: false, suggestions: [] });
+      
+    } catch (err) {
+      console.error('[Batch Assignment] Failed:', err);
+      alert(`Fout bij toewijzen: ${err.message}`);
+    }
+  };
+
+  /**
+   * Handle batch assignment cancellation
+   */
+  const handleBatchAssignmentCancel = () => {
+    // If canceling during two-phase upload, still need to complete storage
+    if (pendingUpload) {
+      console.log('[Batch Assignment] User canceled, storing sensors without assignments');
+      
+      // Complete upload without assignments (async but don't await - fire and forget)
+      (async () => {
+        try {
+          const { completeCSVUploadWithAssignments } = await import('../storage/masterDatasetStorage');
+          await completeCSVUploadWithAssignments(pendingUpload.detectedEvents, []); // Empty assignments
+          setPendingUpload(null);
+          masterDataset.refresh();
+        } catch (err) {
+          console.error('[Batch Assignment] Failed to complete upload after cancel:', err);
+        }
+      })();
+    }
+    
+    setBatchAssignmentDialog({ open: false, suggestions: [] });
   };
 
   // ============================================
@@ -1117,11 +1198,11 @@ export default function AGPGenerator() {
           </section>
         )}
 
-        {/* Control Buttons: IMPORT - DAGPROFIELEN - SENSOR HISTORY - EXPORT */}
+        {/* Control Buttons: IMPORT - DAGPROFIELEN - VOORRAAD - SENSOR HISTORY - EXPORT */}
         <section className="section">
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(5, 1fr)',
             gap: '1rem',
             marginBottom: '1rem'
           }}>
@@ -1215,7 +1296,45 @@ export default function AGPGenerator() {
               </span>
             </button>
 
-            {/* 3. SENSOR HISTORY Button (Direct Action) */}
+            {/* 3. VOORRAAD Button (Stock Management) */}
+            <button
+              onClick={() => setShowStockModal(true)}
+              style={{
+                background: 'var(--bg-secondary)',
+                border: '3px solid var(--border-primary)',
+                cursor: 'pointer',
+                padding: '1.5rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                minHeight: '100px'
+              }}
+              title="Manage sensor batches and assignments"
+            >
+              <h2 style={{ 
+                fontSize: '0.875rem',
+                fontWeight: 700, 
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                color: 'var(--text-primary)',
+                marginBottom: 0
+              }}>
+                📦 VOORRAAD
+              </h2>
+              <span style={{ 
+                fontSize: '0.625rem',
+                color: 'var(--text-secondary)',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase'
+              }}>
+                Stock Management
+              </span>
+            </button>
+
+            {/* 4. SENSOR HISTORY Button (Direct Action) */}
             <button
               onClick={() => setSensorHistoryOpen(true)}
               disabled={sensorsLoading || sensorsError || !sensors || sensors.length === 0}
@@ -1260,7 +1379,7 @@ export default function AGPGenerator() {
               </span>
             </button>
 
-            {/* 4. EXPORT Button (Collapsible) */}
+            {/* 5. EXPORT Button (Collapsible) */}
             <button
               onClick={() => {
                 setDataExportExpanded(!dataExportExpanded);
@@ -1692,10 +1811,29 @@ export default function AGPGenerator() {
           document.body
         )}
 
+        {/* Stock Management Modal - Portal */}
+        {showStockModal && ReactDOM.createPortal(
+          <StockManagementModal
+            isOpen={showStockModal}
+            onClose={() => setShowStockModal(false)}
+          />,
+          document.body
+        )}
+
+        {/* Batch Assignment Dialog - Portal */}
+        {batchAssignmentDialog.open && ReactDOM.createPortal(
+          <BatchAssignmentDialog
+            suggestions={batchAssignmentDialog.suggestions}
+            onConfirm={handleBatchAssignmentConfirm}
+            onCancel={handleBatchAssignmentCancel}
+          />,
+          document.body
+        )}
+
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
           <p>
-            AGP+ v3.12.0 | Built for Medtronic CareLink CSV exports
+            AGP+ v3.15.0 | Built for Medtronic CareLink CSV exports
           </p>
           <p className="mt-2">
             Following{' '}

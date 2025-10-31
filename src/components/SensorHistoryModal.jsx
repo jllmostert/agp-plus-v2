@@ -37,6 +37,12 @@ import {
   countDeletedSensors, 
   cleanupOldDeletedSensorsDB 
 } from '../storage/deletedSensorsDB.js';
+import {
+  getAllBatches,
+  getAssignmentForSensor,
+  assignSensorToBatch,
+  unassignSensor
+} from '../storage/stockStorage.js';
 
 export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   // Initialize manual locks on first render
@@ -256,6 +262,17 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
     mode: 'merge'
   });
 
+  // Stock batches state
+  const [batches, setBatches] = useState([]);
+
+  // Load batches on mount
+  useEffect(() => {
+    if (isOpen) {
+      const allBatches = getAllBatches();
+      setBatches(allBatches);
+    }
+  }, [isOpen, refreshKey]);
+
   // Add chronological index (1 = oldest = March 2022, 219 = newest)
   // Also merge lock states into sensor objects for consistent rendering
   const sensorsWithIndex = useMemo(() => {
@@ -329,6 +346,19 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
       successOnly: false,
       failedOnly: false
     });
+  };
+
+  // Handle batch assignment
+  const handleBatchAssignment = (sensorId, batchId) => {
+    if (!batchId || batchId === '') {
+      // Unassign
+      unassignSensor(sensorId);
+    } else {
+      // Assign to batch
+      assignSensorToBatch(sensorId, batchId, 'manual');
+    }
+    // Trigger refresh
+    setRefreshKey(prev => prev + 1);
   };
 
   if (!isOpen) return null;
@@ -997,6 +1027,19 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                     HW {sortColumn === 'hw_version' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th 
+                    style={{
+                      padding: '12px',
+                      textAlign: 'left',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      borderRight: '1px solid var(--paper)'
+                    }}
+                  >
+                    BATCH
+                  </th>
+                  <th 
                     onClick={() => handleSort('success')}
                     style={{
                       padding: '12px',
@@ -1040,6 +1083,30 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span>#{sensor.chronological_index}</span>
+                        {(() => {
+                          const assignment = getAssignmentForSensor(sensor.sensor_id);
+                          if (assignment) {
+                            const batch = batches.find(b => b.batch_id === assignment.batch_id);
+                            return (
+                              <span 
+                                title={batch ? `Batch: ${batch.lot_number}` : 'Assigned to batch'}
+                                style={{
+                                  fontSize: '9px',
+                                  padding: '2px 6px',
+                                  borderRadius: '2px',
+                                  fontWeight: 'bold',
+                                  letterSpacing: '0.05em',
+                                  backgroundColor: '#2563eb',
+                                  color: '#FFFFFF',
+                                  border: '1px solid #1d4ed8'
+                                }}
+                              >
+                                BATCH
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                         <span 
                           className={`
                             px-2 py-1 text-xs uppercase font-mono
@@ -1167,6 +1234,37 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                     </td>
                     <td style={{
                       padding: '10px 12px',
+                      borderRight: '1px solid var(--grid-line)'
+                    }}>
+                      <select
+                        value={(() => {
+                          const assignment = getAssignmentForSensor(sensor.sensor_id);
+                          return assignment ? assignment.batch_id : '';
+                        })()}
+                        onChange={(e) => handleBatchAssignment(sensor.sensor_id, e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '6px',
+                          border: '2px solid var(--paper)',
+                          backgroundColor: 'rgba(227, 224, 220, 0.05)',
+                          color: 'var(--paper)',
+                          fontSize: '11px',
+                          fontFamily: 'Monaco, monospace',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="">-</option>
+                        {batches.map(batch => (
+                          <option key={batch.batch_id} value={batch.batch_id}>
+                            {batch.lot_number}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={{
+                      padding: '10px 12px',
+                      borderRight: '1px solid var(--grid-line)',
                       color: 'var(--paper)'
                     }}>
                       {(() => {

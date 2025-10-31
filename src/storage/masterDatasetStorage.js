@@ -334,14 +334,14 @@ export async function deleteTDDData() {
 }
 
 /**
- * Detect and store device events from CSV readings
- * Uses intelligent clustering to deduplicate events
+ * Detect device events from CSV readings (NO storage)
+ * Returns detected events for pre-storage processing
  * @param {Array} readings - Parsed CSV readings
+ * @returns {Object} { sensorEvents: Array, cartridgeEvents: Array }
  */
-async function detectAndStoreEvents(readings) {
+async function detectSensors(readings) {
   
   // Import dependencies
-  const { storeSensorChange, storeCartridgeChange } = await import('./eventStorage.js');
   const { deduplicateSensorEvents, clusterEventsByTime, getRepresentativeEvent } = 
     await import('../utils/eventClustering.js');
   
@@ -366,31 +366,14 @@ async function detectAndStoreEvents(readings) {
   // Deduplicate using intelligent clustering
   const { confirmedEvents, ambiguousGroups } = deduplicateSensorEvents(allSensorAlerts);
   
-  
-  // Store confirmed sensor changes
-  for (const event of confirmedEvents) {
-    try {
-      await storeSensorChange(event.timestamp, event.alert, 'CSV Alert');
-    } catch (err) {
-      if (!err.message.includes('duplicate')) {
-      }
-    }
-  }
+  // Collect all sensor events (confirmed + ambiguous representatives)
+  const sensorEvents = [...confirmedEvents];
   
   // Handle ambiguous groups (>60 min apart on same day)
   if (ambiguousGroups.length > 0) {
-    
-    // For now, treat each ambiguous group as one sensor change (use earliest event)
-    // TODO: Add user prompt UI to ask for confirmation
     for (const group of ambiguousGroups) {
       const representative = getRepresentativeEvent(group.events);
-      
-      try {
-        await storeSensorChange(representative.timestamp, representative.alert, 'CSV Alert (Clustered)');
-      } catch (err) {
-        if (!err.message.includes('duplicate')) {
-        }
-      }
+      sensorEvents.push(representative);
     }
   }
   
@@ -414,22 +397,94 @@ async function detectAndStoreEvents(readings) {
   // Cluster cartridge changes (unlikely but possible to have multiple same day)
   const cartridgeClusters = clusterEventsByTime(rewindEvents, 60);
   
+  // Collect cartridge events
+  const cartridgeEvents = cartridgeClusters.map(cluster => 
+    getRepresentativeEvent(cluster)
+  );
   
-  // Store cartridge changes
-  for (const cluster of cartridgeClusters) {
-    const representative = getRepresentativeEvent(cluster);
+  // Return detected events (not stored yet!)
+  return {
+    sensorEvents,
+    cartridgeEvents
+  };
+}
+
+/**
+ * Pre-store hook: Find batch matches for detected sensors
+ * Called BEFORE sensors are stored, to enable atomic assignment
+ * @param {Object} detectedEvents - Result from detectSensors()
+ * @param {Array} detectedEvents.sensorEvents - Sensor change events
+ * @returns {Array} Suggestions array: [{ sensorId, matches }]
+ */
+async function findBatchSuggestionsForSensors(detectedEvents) {
+  try {
+    // Extract sensor IDs from events
+    const sensorIds = detectedEvents.sensorEvents.map(event => {
+      // Sensor ID format: "Sensor-YYYY-MM-DD-HHMMSS"
+      const timestamp = new Date(event.timestamp);
+      const year = timestamp.getFullYear();
+      const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+      const day = String(timestamp.getDate()).padStart(2, '0');
+      const hours = String(timestamp.getHours()).padStart(2, '0');
+      const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+      const seconds = String(timestamp.getSeconds()).padStart(2, '0');
+      return `Sensor-${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+    });
     
+    if (sensorIds.length === 0) {
+      return [];
+    }
+    
+    // Get batch suggestions using stock engine
+    const { suggestBatchAssignments } = await import('../core/stock-engine.js');
+    return suggestBatchAssignments(sensorIds);
+    
+  } catch (err) {
+    console.warn('[findBatchSuggestionsForSensors] Failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Store detected device events
+ * @param {Object} detectedEvents - Result from detectSensors()
+ * @param {Array} detectedEvents.sensorEvents - Sensor change events
+ * @param {Array} detectedEvents.cartridgeEvents - Cartridge change events
+ */
+async function storeSensors(detectedEvents) {
+  const { storeSensorChange, storeCartridgeChange } = await import('./eventStorage.js');
+  
+  // Store sensor changes
+  for (const event of detectedEvents.sensorEvents) {
     try {
-      await storeCartridgeChange(representative.timestamp, 'Rewind', 'CSV Upload');
-      
-      if (cluster.length > 1) {
-      }
+      await storeSensorChange(event.timestamp, event.alert, 'CSV Alert');
     } catch (err) {
       if (!err.message.includes('duplicate')) {
+        console.warn('[storeSensors] Failed to store sensor event:', err);
       }
     }
   }
   
+  // Store cartridge changes
+  for (const event of detectedEvents.cartridgeEvents) {
+    try {
+      await storeCartridgeChange(event.timestamp, 'Rewind', 'CSV Upload');
+    } catch (err) {
+      if (!err.message.includes('duplicate')) {
+        console.warn('[storeSensors] Failed to store cartridge event:', err);
+      }
+    }
+  }
+}
+
+/**
+ * Detect and store device events (LEGACY - kept for compatibility)
+ * Uses intelligent clustering to deduplicate events
+ * @param {Array} readings - Parsed CSV readings
+ */
+async function detectAndStoreEvents(readings) {
+  const detected = await detectSensors(readings);
+  await storeSensors(detected);
 }
 
 /**
@@ -591,8 +646,27 @@ export async function uploadCSVToV3(csvText) {
   // Append readings to master dataset (handles bucketing, deduplication, etc.)
   await appendReadingsToMaster(readingsWithTimestamps);
   
-  // Detect and store device events (sensor/cartridge changes)
-  await detectAndStoreEvents(readingsWithTimestamps);
+  // Detect sensors (but don't store yet - new two-phase flow)
+  const detectedEvents = await detectSensors(readingsWithTimestamps);
+  
+  // Pre-store hook: Find batch matches BEFORE storage
+  const suggestions = await findBatchSuggestionsForSensors(detectedEvents);
+  
+  // If matches found, pause for user confirmation
+  if (suggestions.length > 0) {
+    debug.log('[uploadCSVToV3] Found batch matches, awaiting user confirmation');
+    return {
+      success: true,
+      needsConfirmation: true,
+      suggestions,
+      detectedEvents,
+      readingsAdded: readings.length
+    };
+  }
+  
+  // No matches → store sensors immediately
+  debug.log('[uploadCSVToV3] No batch matches, storing sensors immediately');
+  await storeSensors(detectedEvents);
   
   // Rebuild cache for immediate access
   await rebuildSortedCache();
@@ -606,6 +680,49 @@ export async function uploadCSVToV3(csvText) {
     totalReadings: stats.totalReadings,
     dateRange: stats.dateRange
   };
+}
+
+
+/**
+ * Complete CSV upload after user confirms batch assignments
+ * Called after user confirms suggestions in BatchAssignmentDialog
+ * @param {Object} detectedEvents - Events from detectSensors()
+ * @param {Array} confirmedAssignments - [{ sensorId, batchId }]
+ * @returns {Object} Upload completion result
+ */
+export async function completeCSVUploadWithAssignments(detectedEvents, confirmedAssignments) {
+  try {
+    // Store sensors
+    await storeSensors(detectedEvents);
+    
+    // Create batch assignments
+    const { assignSensorToBatch } = await import('./stockStorage.js');
+    for (const { sensorId, batchId } of confirmedAssignments) {
+      assignSensorToBatch(sensorId, batchId, 'auto');
+    }
+    
+    // Rebuild cache
+    await rebuildSortedCache();
+    
+    // Get stats
+    const stats = await getMasterDatasetStats();
+    
+    debug.log('[completeCSVUploadWithAssignments] Complete:', {
+      sensorsStored: detectedEvents.sensorEvents.length,
+      assignmentsCreated: confirmedAssignments.length
+    });
+    
+    return {
+      success: true,
+      totalReadings: stats.totalReadings,
+      dateRange: stats.dateRange,
+      assignmentsCreated: confirmedAssignments.length
+    };
+    
+  } catch (err) {
+    console.error('[completeCSVUploadWithAssignments] Failed:', err);
+    throw err;
+  }
 }
 
 
@@ -699,4 +816,44 @@ export async function deleteProTimeDataInRange(startDate, endDate) {
   }
   
   return deleted;
+}
+
+
+/**
+ * AUTO-ASSIGN SENSORS TO BATCHES
+ * 
+ * Called after CSV upload to suggest batch assignments for newly detected sensors.
+ * Uses lot number matching to find appropriate batches.
+ * 
+ * @returns {Promise<Array>} Suggestions array: [{sensorId, matches}]
+ */
+export async function getSensorBatchSuggestions() {
+  try {
+    // Import dependencies
+    const { getSensorDatabase } = await import('./sensorStorage.js');
+    const { suggestBatchAssignments } = await import('../core/stock-engine.js');
+    
+    // Get recent sensors (last 30 days, unlocked only)
+    const db = getSensorDatabase();
+    if (!db || !db.sensors || db.sensors.length === 0) {
+      return [];
+    }
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentSensorIds = db.sensors
+      .filter(s => {
+        const startDate = new Date(s.start_date);
+        return startDate >= thirtyDaysAgo && !s.is_manually_locked;
+      })
+      .map(s => s.sensor_id);
+    
+    // Get batch suggestions
+    return suggestBatchAssignments(recentSensorIds);
+    
+  } catch (err) {
+    console.warn('[getSensorBatchSuggestions] Failed:', err);
+    return [];
+  }
 }

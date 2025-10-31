@@ -1065,25 +1065,42 @@ export async function exportSensorsToJSON() {
       console.warn('[exportSensorsToJSON] No deleted sensors found - either none exist or IndexedDB load failed');
     }
 
-    // 3. Package data
+    // 3. Get stock batches and assignments (Phase 5)
+    let batches = [];
+    let assignments = [];
+    try {
+      const { getAllBatches, getAllAssignments } = await import('./stockStorage.js');
+      batches = getAllBatches();
+      assignments = getAllAssignments();
+    } catch (err) {
+      console.warn('[exportSensorsToJSON] Stock data not available:', err);
+    }
+
+    // 4. Package data
     const exportData = {
       version: "1.0",
       exportDate: new Date().toISOString(),
       sensors: db.sensors,
       deletedSensors: deletedSensors,
+      batches: batches,
+      assignments: assignments,
       metadata: {
         totalSensors: db.sensors.length,
-        deletedCount: deletedSensors.length
+        deletedCount: deletedSensors.length,
+        batchesCount: batches.length,
+        assignmentsCount: assignments.length
       }
     };
 
-    // 4. Generate filename with date
+    // 5. Generate filename with date
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `agp-sensors-${dateStr}.json`;
 
     console.log('[exportSensorsToJSON] Export prepared:', {
       sensors: exportData.sensors.length,
       deleted: exportData.deletedSensors.length,
+      batches: exportData.batches.length,
+      assignments: exportData.assignments.length,
       filename
     });
 
@@ -1265,6 +1282,40 @@ export async function importSensorsFromJSON(data, options = {}) {
       deletedAdded
     });
 
+    // 7. Import batches and assignments (Phase 5)
+    let batchesAdded = 0;
+    let assignmentsAdded = 0;
+    if (data.batches || data.assignments) {
+      try {
+        const stockStorage = await import('./stockStorage.js');
+        
+        // Import batches
+        if (data.batches && data.batches.length > 0) {
+          for (const batch of data.batches) {
+            stockStorage.saveBatch(batch);
+            batchesAdded++;
+          }
+        }
+        
+        // Import assignments
+        if (data.assignments && data.assignments.length > 0) {
+          const existingAssignments = stockStorage.getAllAssignments();
+          const assignmentsToAdd = data.assignments.filter(a => 
+            !existingAssignments.some(ea => ea.sensor_id === a.sensor_id)
+          );
+          
+          for (const assignment of assignmentsToAdd) {
+            stockStorage.assignSensorToBatch(assignment.sensor_id, assignment.batch_id, assignment.assigned_by || 'import');
+            assignmentsAdded++;
+          }
+        }
+        
+        console.log('[importSensorsFromJSON] Stock data imported:', { batchesAdded, assignmentsAdded });
+      } catch (err) {
+        console.warn('[importSensorsFromJSON] Stock import failed (non-fatal):', err);
+      }
+    }
+
     // Clear backup after successful import
     if (options.mode === 'replace') {
       clearDatabaseBackup();
@@ -1276,6 +1327,8 @@ export async function importSensorsFromJSON(data, options = {}) {
         sensorsAdded: added,
         sensorsSkipped: skipped,
         deletedAdded: deletedAdded,
+        batchesAdded: batchesAdded,
+        assignmentsAdded: assignmentsAdded,
         mode: options.mode
       }
     };

@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.15.1] - 2025-11-01 - 🔄 Two-Phase Upload Architecture ✅ COMPLETE
+
+**Refactored CSV upload flow for true pre-storage batch matching and atomic operations**
+
+### Changed
+
+**Storage Layer Refactor**:
+- Split `detectAndStoreEvents()` into separate functions:
+  - `detectSensors()` - Detection without storage (returns events)
+  - `storeSensors()` - Actual storage operation
+  - `detectAndStoreEvents()` - Legacy wrapper (backwards compatible)
+- Added `findBatchSuggestionsForSensors()` - Pre-store hook for batch matching
+- Refactored `uploadCSVToV3()` - Two-phase coordinator:
+  - Detects sensors first (no storage)
+  - Finds batch matches BEFORE storage
+  - Returns `needsConfirmation: true` if matches found
+  - Stores immediately if no matches
+- Added `completeCSVUploadWithAssignments()` - Atomic completion handler
+  - Stores sensors + creates assignments together
+  - Called after user confirms in dialog
+
+**UI Layer Updates**:
+- Added `pendingUpload` state in AGPGenerator
+  - Stores { detectedEvents, suggestions } during confirmation
+- Updated `handleCSVLoad()`:
+  - Handles `needsConfirmation` flag
+  - Shows dialog BEFORE storage (not after)
+  - Waits for user confirmation
+- Enhanced `handleBatchAssignmentConfirm()`:
+  - Checks for pendingUpload (two-phase mode)
+  - Calls `completeCSVUploadWithAssignments()`
+  - Falls back to manual assignment (legacy path)
+- Enhanced `handleBatchAssignmentCancel()`:
+  - Completes upload WITHOUT assignments
+  - Still stores sensors (doesn't cancel entire upload)
+
+### Benefits
+
+**Architecture:**
+- ✅ True pre-processing (suggestions before storage)
+- ✅ Atomic operations (sensors + assignments together)
+- ✅ Fully idempotent (works with or without batches)
+- ✅ More transparent flow for users
+- ✅ No partial state or orphaned data
+
+**Flow Comparison:**
+```
+OLD (Reactive):
+Upload → Store → Detect Changes → Suggest
+
+NEW (Proactive):
+Upload → Detect → Suggest → Confirm → Store + Assign
+```
+
+### Fixed
+- Eliminated reactive batch suggestions (happened after storage)
+- Prevented potential timing issues with storage vs. assignment
+- Improved user experience (clear two-phase confirmation)
+
+---
+
 ## [3.14.0] - 2025-10-31 - 💾 Sensor Database Export/Import ✅ COMPLETE
 
 **Full backup and restore functionality for sensor database with flexible import options**

@@ -1,16 +1,16 @@
 ---
 tier: 2
 status: active
-last_updated: 2025-10-31
-purpose: Complete project overview for AGP+ v3.13 with patient info auto-extraction and dual storage stability
+last_updated: 2025-11-01
+purpose: Complete project overview for AGP+ v3.15.1 with two-phase upload architecture
 ---
 
-# PROJECT BRIEFING — AGP+ v3.13 Production Ready
+# PROJECT BRIEFING — AGP+ v3.15.1 Production Ready
 
-**Version:** v3.13.0  
-**Phase:** Stable - Patient Info Auto-Extraction Complete  
-**Date:** 2025-10-31  
-**Status:** âœ… Production Ready, Feature Complete
+**Version:** v3.15.1  
+**Phase:** Stable - Two-Phase Upload Flow Complete  
+**Date:** 2025-11-01  
+**Status:** âœ… Production Ready, Stock Management + Refactored Architecture
 
 ---
 
@@ -24,9 +24,9 @@ purpose: Complete project overview for AGP+ v3.13 with patient info auto-extract
 
 **Design Philosophy**: Brutalist — maximizing information density, print compatibility, and clinical workflow efficiency over aesthetic appeal.
 
-### Current Situation (Oct 31, 2025)
+### Current Situation (Nov 1, 2025)
 
-**Production Status**: v3.13.0 is stable and production-ready. Dual storage architecture (SQLite + localStorage) has been hardened and validated. Patient info auto-extraction from CSV is complete and working.
+**Production Status**: v3.15.1 is stable and production-ready. Stock management system (v3.15.0) complete with sensor batch tracking. Two-phase upload architecture (v3.15.1) implemented for atomic operations and improved user flow. Dual storage architecture (SQLite + localStorage) remains stable.
 
 **Recent Achievements**:
 - âœ… v3.10.0: IndexedDB tombstone store (localStorage clear protection)
