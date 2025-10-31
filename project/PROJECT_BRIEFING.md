@@ -2,15 +2,15 @@
 tier: 2
 status: active
 last_updated: 2025-10-31
-purpose: Complete project overview for AGP+ v3.10 with recent bug fixes and architecture
+purpose: Complete project overview for AGP+ v3.13 with patient info auto-extraction and dual storage stability
 ---
 
-# PROJECT BRIEFING — AGP+ v3.10 Sensor Database Stability
+# PROJECT BRIEFING — AGP+ v3.13 Production Ready
 
-**Version:** v3.10.0  
-**Phase:** Bug Fixes & Architecture Hardening  
+**Version:** v3.13.0  
+**Phase:** Stable - Patient Info Auto-Extraction Complete  
 **Date:** 2025-10-31  
-**Status:** ✅ Fixes Complete, Testing Phase
+**Status:** âœ… Production Ready, Feature Complete
 
 ---
 
@@ -26,16 +26,15 @@ purpose: Complete project overview for AGP+ v3.10 with recent bug fixes and arch
 
 ### Current Situation (Oct 31, 2025)
 
-**Production Status**: v3.9.x was stable with full feature set. Recent bug investigation (Oct 30-31) revealed critical data integrity issues in the sensor database layer that required immediate architectural fixes.
+**Production Status**: v3.13.0 is stable and production-ready. Dual storage architecture (SQLite + localStorage) has been hardened and validated. Patient info auto-extraction from CSV is complete and working.
 
-**What Just Happened**:
-- ✅ Discovered duplicate sensors bug (localStorage + SQLite merge without deduplication)
-- ✅ Fixed CSV import creating phantom duplicates (4 ignored + 4 confirmed = 8 added)
-- ✅ Fixed delete not working (sensors respawning from SQLite after delete)
-- ✅ Fixed lock system (icons incorrect, delete button always enabled)
-- ✅ All fixes committed & pushed (commit: 5d22534)
+**Recent Achievements**:
+- âœ… v3.10.0: IndexedDB tombstone store (localStorage clear protection)
+- âœ… v3.11.0: Storage source badges (RECENT/HISTORICAL visual distinction)
+- âœ… v3.12.0: Enhanced error messages (full context, explains WHY actions fail)
+- âœ… v3.13.0: Patient info auto-extraction from CSV (name, CGM, device serial)
 
-**Current State**: System is functionally complete with verified bug fixes. Now entering validation testing before release as v3.10.0.
+**Current State**: System is production-ready with full feature set. All major dual storage issues resolved. Patient info automatically extracted from CSV uploads and displayed in header. Ready for optional enhancements (sensor export/import) or deployment.
 
 ---
 
@@ -45,39 +44,54 @@ purpose: Complete project overview for AGP+ v3.10 with recent bug fixes and arch
 
 **Stack**:
 - **Frontend**: React 18.3 + Vite
-- **Storage**: IndexedDB (master dataset) + localStorage (sensor metadata, events)
+- **Storage**: 
+  - IndexedDB (master dataset + patient info + deleted sensors tombstone)
+  - localStorage (sensor metadata, events)
+  - SQLite (historical sensor database via sql.js)
 - **Parsing**: sql.js (SQLite), custom CSV parsers
 - **Styling**: Tailwind CSS (brutalist theme)
 - **Icons**: Lucide React
 
 **Data Flow**:
 ```
-CSV Upload → Parse → IndexedDB (readings) → localStorage (events) →
+CSV Upload → Parse (+ Extract Patient Metadata) → 
+IndexedDB (readings + patient info) → localStorage (events) →
 Calculate Metrics → Generate AGP → Render Components → HTML Export
 ```
 
 ### Dual-Source Sensor Architecture
 
-**Critical Design Pattern** (established Oct 2025):
+**Critical Design Pattern** (stable v3.13.0):
 
 ```
 SQLite Database (Guardian.db)
     ├─ Source: External sensor tracking (2022-2025)
     ├─ Records: 219 historical sensors
     ├─ Access: Read-only via sql.js
-    └─ Status: Locked (>30 days old)
+    └─ Status: Locked (>30 days old, HISTORICAL badge)
          ↓
-    MERGE LAYER (with deduplication)
+    MERGE LAYER (with deduplication v3.10.0)
          ↓
 localStorage (agp-sensor-database)
     ├─ Source: Recent sensors + user edits
     ├─ Records: Rolling 30-day window
     ├─ Access: Read-write via sensorStorage.js
-    └─ Status: Editable (unlocked)
+    └─ Status: Editable (unlocked, RECENT badge)
+         ↓
+IndexedDB Tombstone (agp-deleted-sensors)
+    ├─ Purpose: Persist deleted sensor list
+    ├─ Survives: localStorage.clear() events
+    └─ Expiry: 90 days auto-cleanup
          ↓
     UI DISPLAY (SensorHistoryModal)
-         └─ Shows: Deduplicated union of both sources
+         └─ Shows: Deduplicated union, badges, smart locks
 ```
+
+**Patient Info Storage** (v3.13.0):
+- **IndexedDB** (agp-database → settings store)
+- **Auto-extracted from CSV**: Name, CGM device, device serial, pump device
+- **User-editable**: DOB, physician, email
+- **Displayed**: Header shows name, CGM, serial (SN: XXX)
 
 **Key Rules**:
 1. **30-Day Boundary**: Sensors ≤30 days in localStorage (editable), >30 days in SQLite only (read-only)
@@ -88,72 +102,56 @@ localStorage (agp-sensor-database)
 
 ---
 
-## 🛠️ 3. Recent Bug Fixes (v3.10.0)
+## 🛠️ 3. Stability Evolution (v3.10 - v3.13)
 
-### Fix #1: Duplicate Sensors Elimination
+### v3.10.0: Core Stability Fixes
 
-**Problem**: 
-- Merge of localStorage + SQLite sensors had no deduplication
-- Sensors ≤30 days appeared twice in UI (once from each source)
+**Fix #1: Duplicate Sensors Elimination**
+- Map-based deduplication in useSensorDatabase
+- Prevents sensors appearing twice (localStorage + SQLite)
+- CSV import counts now correct
 
-**Solution** (`src/hooks/useSensorDatabase.js`):
-```javascript
-// BEFORE:
-const allSensors = [...localSensorsConverted, ...sensorData];
+**Fix #2: IndexedDB Tombstone Store**
+- Deleted sensors persist in IndexedDB (not just localStorage)
+- Survives localStorage.clear() operations
+- 90-day auto-expiry prevents bloat
 
-// AFTER:
-const sensorMap = new Map();
-localSensorsConverted.forEach(s => sensorMap.set(s.sensor_id, s));
-sensorData.forEach(s => {
-  if (!sensorMap.has(s.sensor_id)) sensorMap.set(s.sensor_id, s);
-});
-const allSensors = Array.from(sensorMap.values());
-```
-
-**Impact**:
-- CSV import count now correct (4 confirmed = 4 added, not 8)
-- Delete works correctly (no respawn from duplicate)
-- Sort stable (no jumping entries)
+**Fix #3: Sync Prevention**
+- syncUnlockedSensorsToLocalStorage checks existing IDs
+- No re-adding of already-synced sensors
 
 ---
 
-### Fix #2: Sync Duplicate Prevention
+### v3.11.0: Visual Clarity
 
-**Problem**:
-- `syncUnlockedSensorsToLocalStorage()` re-added existing sensors
-- Created duplicates after sync operations
-
-**Solution** (`src/storage/sensorStorage.js`):
-```javascript
-// Build existingIds SET before filtering
-const existingIds = new Set(db.sensors.map(s => s.sensor_id));
-
-// Filter out already-synced sensors
-const unlockedSensors = allSensors.filter(s => {
-  const isRecent = startDate >= thirtyDaysAgo;
-  const isDeleted = deletedSensors.includes(s.sensor_id);
-  const alreadyInLocalStorage = existingIds.has(s.sensor_id); // ✓ NEW
-  return isRecent && !isDeleted && !alreadyInLocalStorage;
-});
-```
-
-**Impact**:
-- Prevents re-sync of existing sensors
-- Respects tombstone list (deleted sensors stay deleted)
-- Blocks resurrection of deleted sensors
+**Storage Source Badges**
+- Color-coded badges: RECENT (green) vs HISTORICAL (gray)
+- Lock toggle disabled for read-only SQLite sensors
+- Clear visual distinction of data source
 
 ---
 
-### Fix #3: Delete Button Lock Check
+### v3.12.0: Enhanced Error Messages
 
-**Problem**:
-- Button used `isSensorLocked(start_date)` for disable state (age-based)
-- onClick used `sensor.is_manually_locked` (manual lock)
-- These were NOT synchronized → button never disabled
+**Context-Aware Errors**
+- getManualLockStatus returns full context (isLocked, isEditable, storageSource, reason)
+- Delete errors explain WHY action failed
+- Multi-line error details in UI
+- Debug logging for troubleshooting
 
-**Solution** (`src/components/SensorHistoryModal.jsx`):
-```javascript
-// Button now uses consistent check:
+---
+
+### v3.13.0: Patient Info Auto-Extraction
+
+**CSV Metadata Parsing**
+- parseCSVMetadata() extracts from CSV header:
+  - Patient name (First + Last)
+  - CGM device model
+  - Device serial number
+  - Pump device name
+- Auto-saved to IndexedDB on upload
+- Displayed in header: "Jo Mostert | CGM: Guardian™ 4 Sensor | SN: NG4114235H"
+- Manual fields preserved: DOB, physician, email
 <button
   disabled={sensor.is_manually_locked}  // ✓ Same as onClick
   style={{
@@ -239,6 +237,8 @@ if (!sensor) {
 ---
 
 ## 🚨 4. Known Issues & Technical Debt
+
+**Note**: Many critical issues documented here were resolved in v3.10-v3.13. See "Stability Evolution" section for solutions. Remaining items are low-priority edge cases.
 
 ### CRITICAL: Time Boundary Drift
 
