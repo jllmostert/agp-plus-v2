@@ -791,7 +791,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       textAlign: 'center'
                     }}>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           // Debug logging
                           debug.log('[DELETE] Sensor data:', {
                             sensor_id: sensor.sensor_id,
@@ -818,7 +818,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                             `⚠️ Deze actie kan niet ongedaan worden gemaakt.`
                           )) {
                             debug.log('[DELETE] Calling deleteSensorWithLockCheck with ID:', sensor.sensor_id);
-                            const result = deleteSensorWithLockCheck(sensor.sensor_id);
+                            const result = await deleteSensorWithLockCheck(sensor.sensor_id);
                             debug.log('[DELETE] Result:', result);
                             
                             if (result.success) {

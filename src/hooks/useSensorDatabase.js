@@ -29,7 +29,12 @@
 import { useState, useEffect } from 'react';
 import initSqlJs from 'sql.js';
 import { debug } from '../utils/debug.js';
-import { getSensorHistory, syncUnlockedSensorsToLocalStorage } from '../storage/sensorStorage.js';
+import { 
+  getSensorHistory, 
+  syncUnlockedSensorsToLocalStorage,
+  migrateDeletedSensors,
+  cleanupOldDeletedSensors
+} from '../storage/sensorStorage.js';
 
 // Database will be served from /public/sensor_database.db
 // (we need to copy it there first)
@@ -197,10 +202,23 @@ export function useSensorDatabase() {
         runningSensors: allSensors.filter(s => s.status === 'running').length
       });
 
+      // PHASE 2A: RESURRECTION BUG FIX
+      // Migrate old deleted sensors to persistent store (one-time migration)
+      const migrationResult = migrateDeletedSensors();
+      if (migrationResult.migrated > 0) {
+        debug.log('[useSensorDatabase] Migrated deleted sensors:', migrationResult);
+      }
+      
+      // Cleanup deleted sensors older than 90 days
+      const cleanupResult = cleanupOldDeletedSensors();
+      if (cleanupResult.removed > 0) {
+        debug.log('[useSensorDatabase] Cleaned up old deleted sensors:', cleanupResult);
+      }
+
       // SYNC UNLOCKED SENSORS TO LOCALSTORAGE
       // This ensures all "workable" sensors (≤30 days old) are in localStorage
       // so DELETE operations work on them. Locked sensors stay in SQLite only.
-      syncUnlockedSensorsToLocalStorage(allSensors);
+      await syncUnlockedSensorsToLocalStorage(allSensors);
 
       setSensors(allSensors);
 

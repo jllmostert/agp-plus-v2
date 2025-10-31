@@ -8,13 +8,24 @@
  * - sensors: Array of sensor records (start, end, lot, hardware, etc.)
  * - inventory: Array of inventory records (lot, quantity, expiry)
  * - lastUpdated: Timestamp of last import
+ * - deletedSensors: IndexedDB (source of truth) + localStorage (fast cache)
  * 
  * @module sensorStorage
- * @version 3.6.0
+ * @version 3.11.0
  */
+
+import {
+  addDeletedSensorToDB,
+  getDeletedSensorsFromDB,
+  cleanupOldDeletedSensorsDB,
+  migrateLocalStorageToIndexedDB,
+  syncIndexedDBToLocalStorage,
+  isIndexedDBAvailable
+} from './deletedSensorsDB.js';
 
 const STORAGE_KEY = 'agp-sensor-database';
 const DELETED_SENSORS_KEY = 'agp-deleted-sensors';
+const DELETED_SENSORS_PERSISTENT_KEY = 'agp-deleted-sensors-persistent-v1';
 
 /**
  * Import sensor database from parsed SQLite data
@@ -134,15 +145,14 @@ export function getSensorAtDate(date) {
 }
 
 /**
- * Get list of deleted sensor IDs
- * These sensors should not be re-synced from SQLite
+ * Get list of deleted sensor IDs from persistent tombstone store
+ * Now uses IndexedDB for durability (survives localStorage.clear())
  * 
- * @returns {Array<string>} Array of deleted sensor IDs
+ * @returns {Promise<Array<string>>} Array of deleted sensor IDs
  */
-export function getDeletedSensors() {
+export async function getDeletedSensors() {
   try {
-    const data = localStorage.getItem(DELETED_SENSORS_KEY);
-    return data ? JSON.parse(data) : [];
+    return await getDeletedSensorsFromDB();
   } catch (err) {
     console.error('[getDeletedSensors] Error reading deleted sensors:', err);
     return [];
@@ -150,21 +160,209 @@ export function getDeletedSensors() {
 }
 
 /**
- * Add sensor ID to deleted list
+ * Add sensor ID to deleted list (persistent tombstone)
  * Prevents re-syncing deleted sensors from SQLite
+ * Now uses IndexedDB for durability (survives localStorage.clear())
+ * 
+ * @param {string} sensorId - Sensor ID to mark as deleted
+ * @returns {Promise<boolean>} Success status
+ */
+export async function addDeletedSensor(sensorId) {
+  try {
+    await addDeletedSensorToDB(sensorId);
+    // Also sync to localStorage cache
+    await syncIndexedDBToLocalStorage();
+    console.log('[addDeletedSensor] Marked sensor as deleted:', sensorId);
+    return true;
+  } catch (err) {
+    console.error('[addDeletedSensor] Error adding deleted sensor:', err);
+    return false;
+  }
+}
+
+// ============================================================================
+// PERSISTENT DELETED SENSORS (RESURRECTION BUG FIX)
+// Dual persistence: fast access (simple array) + persistent truth (structured)
+// ============================================================================
+
+/**
+ * Get persistent deleted sensors store
+ * This store survives localStorage.clear() because it's in a separate key
+ * and has structured format with timestamps
+ * 
+ * @returns {Object} Persistent deleted sensors structure
+ */
+export function getPersistentDeletedSensors() {
+  try {
+    const data = localStorage.getItem(DELETED_SENSORS_PERSISTENT_KEY);
+    if (!data) {
+      return {
+        version: 1,
+        lastUpdated: new Date().toISOString(),
+        sensors: []
+      };
+    }
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('[getPersistentDeletedSensors] Error reading persistent deleted sensors:', err);
+    return {
+      version: 1,
+      lastUpdated: new Date().toISOString(),
+      sensors: []
+    };
+  }
+}
+
+/**
+ * Add sensor to persistent deleted store
+ * Structured format with timestamp for future cleanup
  * 
  * @param {string} sensorId - Sensor ID to mark as deleted
  */
-export function addDeletedSensor(sensorId) {
+export function addPersistentDeletedSensor(sensorId) {
   try {
-    const deleted = getDeletedSensors();
-    if (!deleted.includes(sensorId)) {
-      deleted.push(sensorId);
-      localStorage.setItem(DELETED_SENSORS_KEY, JSON.stringify(deleted));
-      console.log('[addDeletedSensor] Marked sensor as deleted:', sensorId);
+    const store = getPersistentDeletedSensors();
+    
+    // Check if already exists
+    const exists = store.sensors.some(s => s.sensor_id === sensorId);
+    if (exists) {
+      console.log('[addPersistentDeletedSensor] Sensor already in persistent store:', sensorId);
+      return;
     }
+    
+    // Add with timestamp
+    store.sensors.push({
+      sensor_id: sensorId,
+      deleted_at: new Date().toISOString(),
+      version: 1
+    });
+    
+    store.lastUpdated = new Date().toISOString();
+    localStorage.setItem(DELETED_SENSORS_PERSISTENT_KEY, JSON.stringify(store));
+    
+    console.log('[addPersistentDeletedSensor] Added to persistent store:', sensorId);
   } catch (err) {
-    console.error('[addDeletedSensor] Error adding deleted sensor:', err);
+    console.error('[addPersistentDeletedSensor] Error adding persistent deleted sensor:', err);
+  }
+}
+
+/**
+ * Get all deleted sensor IDs from IndexedDB (source of truth)
+ * Falls back to localStorage if IndexedDB unavailable or fails
+ * 
+ * @returns {Promise<Array<string>>} Array of deleted sensor IDs (deduplicated)
+ */
+export async function getAllDeletedSensors() {
+  try {
+    // Primary source: IndexedDB (survives localStorage.clear())
+    if (isIndexedDBAvailable()) {
+      const dbDeleted = await getDeletedSensorsFromDB();
+      
+      // Also check localStorage cache
+      const cacheDeleted = getDeletedSensors();
+      
+      // Merge and deduplicate
+      const allDeleted = [...new Set([...dbDeleted, ...cacheDeleted])];
+      
+      console.log('[getAllDeletedSensors] Merged from IndexedDB + cache:', {
+        indexedDB: dbDeleted.length,
+        cache: cacheDeleted.length,
+        merged: allDeleted.length
+      });
+      
+      return allDeleted;
+    }
+    
+    // Fallback: localStorage only (IndexedDB not available)
+    console.warn('[getAllDeletedSensors] IndexedDB unavailable, using localStorage only');
+    return getDeletedSensors();
+    
+  } catch (err) {
+    console.error('[getAllDeletedSensors] Error loading deleted sensors:', err);
+    // Final fallback: localStorage
+    return getDeletedSensors();
+  }
+}
+
+/**
+ * Cleanup old deleted sensors (>90 days)
+ * Prevents persistent store from growing forever
+ * 
+ * @returns {Object} Cleanup result with counts
+ */
+export function cleanupOldDeletedSensors() {
+  try {
+    const store = getPersistentDeletedSensors();
+    const originalCount = store.sensors.length;
+    
+    const now = new Date();
+    const EXPIRY_DAYS = 90;
+    
+    // Keep only sensors deleted within last 90 days
+    store.sensors = store.sensors.filter(sensor => {
+      const deletedAt = new Date(sensor.deleted_at);
+      const daysSinceDelete = (now - deletedAt) / (1000 * 60 * 60 * 24);
+      return daysSinceDelete < EXPIRY_DAYS;
+    });
+    
+    const removed = originalCount - store.sensors.length;
+    
+    if (removed > 0) {
+      store.lastUpdated = new Date().toISOString();
+      localStorage.setItem(DELETED_SENSORS_PERSISTENT_KEY, JSON.stringify(store));
+      console.log('[cleanupOldDeletedSensors] Removed', removed, 'expired deleted sensors');
+    }
+    
+    return {
+      removed,
+      remaining: store.sensors.length,
+      originalCount
+    };
+  } catch (err) {
+    console.error('[cleanupOldDeletedSensors] Error cleaning up:', err);
+    return { removed: 0, remaining: 0, originalCount: 0 };
+  }
+}
+
+/**
+ * Migrate old deleted sensors format to new persistent store
+ * Run once on app startup to preserve existing deleted sensors
+ * 
+ * @returns {Object} Migration result
+ */
+export function migrateDeletedSensors() {
+  try {
+    const fastDeleted = getDeletedSensors();
+    const persistentStore = getPersistentDeletedSensors();
+    
+    let migrated = 0;
+    
+    fastDeleted.forEach(sensorId => {
+      const exists = persistentStore.sensors.some(s => s.sensor_id === sensorId);
+      if (!exists) {
+        persistentStore.sensors.push({
+          sensor_id: sensorId,
+          deleted_at: new Date().toISOString(), // Best guess: now
+          version: 1,
+          migrated: true // Flag for debugging
+        });
+        migrated++;
+      }
+    });
+    
+    if (migrated > 0) {
+      persistentStore.lastUpdated = new Date().toISOString();
+      localStorage.setItem(DELETED_SENSORS_PERSISTENT_KEY, JSON.stringify(persistentStore));
+      console.log('[migrateDeletedSensors] Migrated', migrated, 'sensors to persistent store');
+    }
+    
+    return {
+      migrated,
+      total: persistentStore.sensors.length
+    };
+  } catch (err) {
+    console.error('[migrateDeletedSensors] Error migrating:', err);
+    return { migrated: 0, total: 0 };
   }
 }
 
@@ -177,7 +375,7 @@ export function addDeletedSensor(sensorId) {
  * 
  * @param {Array} allSensors - Merged sensor array from useSensorDatabase
  */
-export function syncUnlockedSensorsToLocalStorage(allSensors) {
+export async function syncUnlockedSensorsToLocalStorage(allSensors) {
   try {
     const db = getSensorDatabase();
     if (!db) {
@@ -188,8 +386,9 @@ export function syncUnlockedSensorsToLocalStorage(allSensors) {
     const now = new Date();
     const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
     
-    // Get list of deleted sensors to exclude from sync
-    const deletedSensors = getDeletedSensors();
+    // Get list of deleted sensors from IndexedDB (source of truth)
+    // This prevents resurrection of deleted sensors even after localStorage.clear()
+    const deletedSensors = await getAllDeletedSensors();
     
     // Build a Set of existing sensor IDs BEFORE filtering
     const existingIds = new Set(db.sensors.map(s => s.sensor_id));
@@ -525,11 +724,11 @@ export function getSensorLockStatus(startDate) {
  * Uses is_manually_locked field - user must unlock before deleting
  * 
  * @param {string} sensorId - Sensor ID to delete
- * @returns {Object} Result object
+ * @returns {Promise<Object>} Result object
  * @returns {boolean} .success - Whether deletion succeeded
  * @returns {string} .message - User-friendly message
  */
-export function deleteSensorWithLockCheck(sensorId) {
+export async function deleteSensorWithLockCheck(sensorId) {
   const db = getSensorDatabase();
   if (!db || !db.sensors) {
     // Database doesn't exist yet or is empty
@@ -571,10 +770,24 @@ export function deleteSensorWithLockCheck(sensorId) {
   db.lastUpdated = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
   
-  // Add to deleted sensors list to prevent re-sync from SQLite
-  addDeletedSensor(sensorId);
+  // TRIPLE PERSISTENCE: IndexedDB (truth) + localStorage (cache) + legacy
+  // 1. IndexedDB (source of truth, survives localStorage.clear())
+  try {
+    if (isIndexedDBAvailable()) {
+      await addDeletedSensorToDB(sensorId);
+    }
+  } catch (err) {
+    console.error('[deleteSensorWithLockCheck] IndexedDB write failed:', err);
+    // Continue anyway - localStorage still works
+  }
   
-  console.log('[deleteSensorWithLockCheck] Sensor deleted:', sensorId);
+  // 2. localStorage cache (fast access) - NOW ASYNC
+  await addDeletedSensor(sensorId);
+  
+  // 3. Legacy persistent store (backward compat)
+  addPersistentDeletedSensor(sensorId);
+  
+  console.log('[deleteSensorWithLockCheck] Sensor deleted (triple persistence):', sensorId);
   
   return {
     success: true,
