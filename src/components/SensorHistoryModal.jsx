@@ -21,6 +21,11 @@ import {
   filterSensors,
   sortSensors
 } from '../core/sensor-history-engine';
+import { 
+  isSensorLocked, 
+  getSensorLockStatus,
+  deleteSensorWithLockCheck
+} from '../storage/sensorStorage.js';
 
 export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   // Debug: Check what we receive
@@ -488,6 +493,20 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                     #ID {sortColumn === 'chronological_index' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th 
+                    style={{
+                      padding: '12px',
+                      textAlign: 'center',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      borderRight: '1px solid var(--paper)',
+                      width: '80px'
+                    }}
+                  >
+                    LOCK
+                  </th>
+                  <th 
                     onClick={() => handleSort('start_date')}
                     style={{
                       padding: '12px',
@@ -572,10 +591,24 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
                       letterSpacing: '0.1em',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      borderRight: '1px solid var(--paper)'
                     }}
                   >
                     STATUS {sortColumn === 'success' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th 
+                    style={{
+                      padding: '12px',
+                      textAlign: 'center',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      width: '80px'
+                    }}
+                  >
+                    DELETE
                   </th>
                 </tr>
               </thead>
@@ -592,6 +625,15 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       fontWeight: 'bold'
                     }}>
                       #{sensor.chronological_index}
+                    </td>
+                    <td style={{
+                      padding: '10px 12px',
+                      borderRight: '1px solid var(--grid-line)',
+                      textAlign: 'center',
+                      fontSize: '18px',
+                      backgroundColor: isSensorLocked(sensor.start_date) ? 'rgba(255, 0, 0, 0.1)' : 'rgba(0, 255, 0, 0.05)'
+                    }}>
+                      {isSensorLocked(sensor.start_date) ? '🔒' : '🔓'}
                     </td>
                     <td style={{
                       padding: '10px 12px',
@@ -706,6 +748,64 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                           </span>
                         );
                       })()}
+                    </td>
+                    <td style={{
+                      padding: '10px 12px',
+                      textAlign: 'center'
+                    }}>
+                      <button
+                        onClick={() => {
+                          const lockStatus = getSensorLockStatus(sensor.start_date);
+                          if (lockStatus.isLocked) {
+                            // Locked sensor - offer force override option
+                            const forceDelete = confirm(
+                              `🔒 SENSOR VERGRENDELD\n\n` +
+                              `Deze sensor is ${lockStatus.daysOld} dagen oud (>30 dagen threshold)\n` +
+                              `Start: ${new Date(sensor.start_date).toLocaleDateString('nl-NL')}\n\n` +
+                              `⚠️ WAARSCHUWING: Bescherming voorkomt accidenteel verlies van historische data.\n\n` +
+                              `Wil je de vergrendeling FORCEREN en sensor toch verwijderen?\n\n` +
+                              `Klik OK om FORCE DELETE uit te voeren\n` +
+                              `Klik Annuleren om te annuleren`
+                            );
+                            
+                            if (forceDelete) {
+                              // User wants to force delete
+                              const result = deleteSensorWithLockCheck(sensor.sensor_id, true); // force=true
+                              if (result.success) {
+                                alert(`✓ Sensor GEFORCEERD verwijderd!\n\n${result.message}`);
+                                window.location.reload();
+                              } else {
+                                alert(`✗ Fout bij force delete:\n\n${result.message}`);
+                              }
+                            }
+                          } else {
+                            // Unlocked sensor - normal delete
+                            if (confirm(`Sensor #${sensor.chronological_index} verwijderen?\n\nStart: ${new Date(sensor.start_date).toLocaleDateString('nl-NL')}\n\n⚠️ Deze actie kan niet ongedaan worden gemaakt.`)) {
+                              const result = deleteSensorWithLockCheck(sensor.sensor_id, false); // force=false
+                              if (result.success) {
+                                alert(`✓ Sensor verwijderd!\n\n${result.message}`);
+                                window.location.reload();
+                              } else {
+                                alert(`✗ Fout bij verwijderen:\n\n${result.message}`);
+                              }
+                            }
+                          }
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.1em',
+                          border: '2px solid var(--color-red)',
+                          backgroundColor: isSensorLocked(sensor.start_date) ? 'rgba(150, 150, 150, 0.3)' : 'transparent',
+                          color: isSensorLocked(sensor.start_date) ? 'rgba(227, 224, 220, 0.5)' : 'var(--color-red)',
+                          cursor: isSensorLocked(sensor.start_date) ? 'not-allowed' : 'pointer',
+                          fontFamily: 'Monaco, monospace'
+                        }}
+                      >
+                        {isSensorLocked(sensor.start_date) ? '🔒 DEL' : '✗ DEL'}
+                      </button>
                     </td>
                   </tr>
                 ))}
