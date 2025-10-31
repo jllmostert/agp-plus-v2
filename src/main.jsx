@@ -13,7 +13,7 @@ import {
 } from './storage/deletedSensorsDB.js';
 
 /**
- * AGP+ v3.11 - Main Application Entry Point
+ * AGP+ v3.12 - Main Application Entry Point
  * 
  * Initializes React 18 root and renders the main AGPGenerator component.
  * Uses the new createRoot API for concurrent features support.

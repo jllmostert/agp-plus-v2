@@ -23,7 +23,9 @@ export default function PatientInfo({ onClose, isModal = false }) {
     email: '',
     dob: '',
     physician: '',
-    cgm: ''
+    cgm: '',
+    deviceSerial: '',
+    device: ''
   });
   
   const [isSaving, setIsSaving] = useState(false);
@@ -175,10 +177,30 @@ export default function PatientInfo({ onClose, isModal = false }) {
           <FormField
             icon={Activity}
             label="CGM Device"
-            placeholder="e.g., MiniMed 780G + Guardian 4"
+            placeholder="e.g., Guardian 4 Sensor"
             value={formData.cgm}
             onChange={(val) => handleChange('cgm', val)}
-            helpText="Device model and sensor type"
+            helpText="Sensor model (auto-filled from CSV)"
+          />
+
+          {/* Device Serial Number */}
+          <FormField
+            icon={Activity}
+            label="Device Serial Number"
+            placeholder="e.g., NG4114235H"
+            value={formData.deviceSerial}
+            onChange={(val) => handleChange('deviceSerial', val)}
+            helpText="Pump serial number (auto-filled from CSV)"
+          />
+
+          {/* Pump Device */}
+          <FormField
+            icon={Activity}
+            label="Pump Device"
+            placeholder="e.g., MiniMed 780G MMT-1886"
+            value={formData.device}
+            onChange={(val) => handleChange('device', val)}
+            helpText="Pump model (auto-filled from CSV)"
           />
         </div>
 

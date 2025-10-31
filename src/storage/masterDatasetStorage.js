@@ -492,12 +492,38 @@ function formatTimeFromTimestamp(timestamp) {
  * @returns {Object} Upload result with stats
  */
 export async function uploadCSVToV3(csvText) {
-  // Import CSV parser
-  const { parseCSV } = await import('../core/parsers.js');
+  // Import CSV parser and metadata extractor
+  const { parseCSV, parseCSVMetadata } = await import('../core/parsers.js');
   
   // Parse CSV to get readings array, section1, and section2 data
   // Returns: {data: Array, section1: Array, section2: Array}
   const parsed = parseCSV(csvText);
+  
+  // Extract and save patient metadata (name, device serial, CGM, etc.)
+  try {
+    const metadata = parseCSVMetadata(csvText);
+    
+    if (metadata && Object.keys(metadata).length > 0) {
+      const { patientStorage } = await import('../utils/patientStorage.js');
+      
+      // Save metadata (merge with existing DOB if present)
+      const existingInfo = await patientStorage.get();
+      await patientStorage.save({
+        name: metadata.name || existingInfo?.name || '',
+        dob: existingInfo?.dob || '', // Preserve existing DOB (user-entered)
+        cgm: metadata.cgm || existingInfo?.cgm || '',
+        physician: existingInfo?.physician || '', // Preserve physician (user-entered)
+        email: existingInfo?.email || '', // Preserve email (user-entered)
+        deviceSerial: metadata.deviceSerial || existingInfo?.deviceSerial || '',
+        device: metadata.device || existingInfo?.device || ''
+      });
+      
+      debug.log('[uploadCSVToV3] Patient metadata saved:', metadata);
+    }
+  } catch (err) {
+    // Non-fatal: metadata extraction failure shouldn't block upload
+    debug.warn('[uploadCSVToV3] Failed to extract/save patient metadata:', err);
+  }
   const readings = parsed.data || parsed; // Backwards compatibility
   const section1 = parsed.section1 || []; // Meal boluses (new in v3.1)
   const section2 = parsed.section2 || []; // Auto insulin data (new in v3.1)

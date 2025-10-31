@@ -47,7 +47,7 @@ import { DateRangeFilter } from './DateRangeFilter';
  * - Metrics calculation coordination
  * - Component composition and data flow
  * 
- * @version 2.1.0
+ * @version 3.12.0
  */
 export default function AGPGenerator() {
   // ============================================
@@ -806,7 +806,7 @@ export default function AGPGenerator() {
                     fontWeight: 600,
                     opacity: 0.9
                   }}>
-                    V3.0
+                    V3.12.0
                   </div>
                 </div>
                 
@@ -919,6 +919,9 @@ export default function AGPGenerator() {
                   )}
                   {patientInfo.cgm && (
                     <div>CGM: {patientInfo.cgm}</div>
+                  )}
+                  {patientInfo.deviceSerial && (
+                    <div>SN: {patientInfo.deviceSerial}</div>
                   )}
                 </div>
               )}
@@ -1692,7 +1695,7 @@ export default function AGPGenerator() {
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
           <p>
-            AGP+ v3.0 | Built for Medtronic CareLink CSV exports
+            AGP+ v3.12.0 | Built for Medtronic CareLink CSV exports
           </p>
           <p className="mt-2">
             Following{' '}
@@ -1723,7 +1726,7 @@ function EmptyCSVState() {
         </div>
         
         <h2 className="text-2xl font-semibold text-gray-300 mb-4">
-          Welcome to AGP+ v2.1
+          Welcome to AGP+ v3.12.0
         </h2>
         
         <p className="text-gray-400 mb-6">

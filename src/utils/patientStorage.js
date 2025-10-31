@@ -72,6 +72,8 @@ export const patientStorage = {
           dob: patientData.dob || '',
           physician: patientData.physician || '',
           cgm: patientData.cgm || '',
+          deviceSerial: patientData.deviceSerial || '',
+          device: patientData.device || '',
           updatedAt: new Date().toISOString()
         }
       });

@@ -29,6 +29,10 @@ import {
   getManualLockStatus,
   initializeManualLocks
 } from '../storage/sensorStorage.js';
+import { 
+  countDeletedSensors, 
+  cleanupOldDeletedSensorsDB 
+} from '../storage/deletedSensorsDB.js';
 
 export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   // Initialize manual locks on first render
@@ -38,6 +42,54 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
       debug.log('[SensorHistoryModal] Manual locks initialized:', result);
     }
   }, [isOpen]);
+
+  // Load deleted sensors count when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadDeletedCount();
+    }
+  }, [isOpen]);
+
+  // Load deleted sensors count
+  const loadDeletedCount = async () => {
+    try {
+      const counts = await countDeletedSensors();
+      setDeletedCount(counts);
+      debug.log('[SensorHistoryModal] Deleted sensors count:', counts);
+    } catch (err) {
+      console.error('[SensorHistoryModal] Error loading deleted count:', err);
+      setDeletedCount({ totalCount: 0, oldCount: 0, recentCount: 0 });
+    }
+  };
+
+  // Handle cleanup of old deleted sensors
+  const handleCleanupDeleted = async () => {
+    if (!deletedCount || deletedCount.oldCount === 0) {
+      alert('Geen oude verwijderde sensors om op te ruimen.\n\nAlle sensors zijn jonger dan 90 dagen.');
+      return;
+    }
+
+    if (confirm(
+      `Oude verwijderde sensors opruimen?\n\n` +
+      `Dit verwijdert ${deletedCount.oldCount} sensor(s) ouder dan 90 dagen.\n` +
+      `${deletedCount.recentCount} recente sensor(s) blijven behouden.\n\n` +
+      `⚠️ Deze actie kan niet ongedaan worden gemaakt.`
+    )) {
+      try {
+        const result = await cleanupOldDeletedSensorsDB();
+        alert(
+          `✓ Opruimen voltooid!\n\n` +
+          `${result.removed} oude sensor(s) verwijderd\n` +
+          `${result.remaining} sensor(s) behouden`
+        );
+        // Reload count
+        await loadDeletedCount();
+      } catch (err) {
+        console.error('[SensorHistoryModal] Error during cleanup:', err);
+        alert(`âŒ Fout tijdens opruimen: ${err.message}`);
+      }
+    }
+  };
 
   // Debug: Check what we receive
   debug.log('[SensorHistoryModal] Received sensors:', {
@@ -62,6 +114,9 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   
   // Refresh trigger for lock/delete operations (avoids page reload)
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Deleted sensors count (for cleanup button)
+  const [deletedCount, setDeletedCount] = useState(null);
 
   // Add chronological index (1 = oldest = March 2022, 219 = newest)
   // Also merge lock states into sensor objects for consistent rendering
