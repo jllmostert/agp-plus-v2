@@ -1,106 +1,76 @@
-# 🚀 START - AGP+ Debug Session
+# START HERE - Phase 5 Lock System Testing
 
-**Date**: 2025-10-31 02:15 CET  
-**Status**: 🔴 Data Discrepancy + Phase 5 Not Implemented
-
----
-
-## ⚡ CRITICAL ISSUE
-
-**Problem**: UI shows "220 SENSORS" but storage has only 1
-
-**Your Task**: Find where the 220 sensors are actually stored
+Date: 2025-10-31 04:00 CET
+Status: Bug Fixed - Ready for Testing
+Latest Commit: 79baa9b
+Server: http://localhost:3001
 
 ---
 
-## 🔍 Investigation Steps
+## QUICK START
 
-### 1. Open Browser
-http://localhost:3001 (already open)
+1. Start Server:
+   cd /Users/jomostert/Documents/Projects/agp-plus
+   export PATH="/opt/homebrew/bin:$PATH"
+   npx vite --port 3001
 
-### 2. Open DevTools
-- Console tab
-- Application tab
+2. Open Chrome: http://localhost:3001
 
-### 3. Check IndexedDB
-Application → IndexedDB → Look for 'agp-plus' or similar database
-
-**Hypothesis**: 220 sensors are in IndexedDB, not localStorage
-
-### 4. Run This
-```javascript
-// Browser console
-indexedDB.databases().then(dbs => console.log('DBs:', dbs));
-
-// Check localStorage
-console.log('localStorage keys:', Object.keys(localStorage));
-
-// Check the sensor database
-const db = localStorage.getItem('agp-sensor-database');
-console.log('Sensors in storage:', JSON.parse(db).sensors.length);
-```
+3. Test delete functionality in Sensor History modal
 
 ---
 
-## 📋 After Finding Data
+## WHAT WAS FIXED
 
-### If 220 sensors found in IndexedDB:
-- Update Phase 5 code to use IndexedDB
-- Or add sync mechanism localStorage ↔ IndexedDB
-
-### If 220 sensors lost:
-- Re-upload CareLink CSV
-- Verify Phase 4 sensor registration works
-- Then proceed with Phase 5
-
-### If 220 sensors are cached/display bug:
-- Fix component to read from correct source
-- Verify data integrity
+Bug: Delete operations failing with "Sensor niet gevonden"
+Root Cause: Using sensor.start_date instead of sensor.sensor_id
+Fix: Changed deleteSensorWithLockCheck(sensor.start_date) to deleteSensorWithLockCheck(sensor.sensor_id)
+Commit: 79baa9b
 
 ---
 
-## 🎯 Then: Implement Phase 5
+## TESTING CHECKLIST
 
-**Files ready**: `docs/phases/phase5/`
+Must Test:
+- Lock icons display (locked/unlocked for old sensors)
+- Delete old sensor (>30 days) shows lock warning
+- Force override works for locked sensors
+- Delete new sensor (<30 days) works normally
+- Lock status shows correct age in days
 
-**Guide**: `PHASE_5_IMPLEMENTATION_GUIDE.md`
-
-**Time**: 30-45 minutes
-
----
-
-## 🔧 Server Control
-
-**Status**: ✅ Running on port 3001
-
-**Restart if needed**:
-```bash
-kill -9 $(lsof -t -i:3001)
-cd agp-plus && export PATH="/opt/homebrew/bin:$PATH" && npx vite --port 3001
-```
+Expected Behavior:
+- Locked sensor: Shows override dialog with age
+- Unlocked sensor: Normal delete confirmation
+- All error messages display correctly
 
 ---
 
-## 📖 Detailed Docs
+## CODE LOCATIONS
 
-- `docs/handoffs/HANDOFF_2025-10-31_FINAL.md` - Complete investigation
-- `docs/phases/phase5/PHASE_5_IMPLEMENTATION_GUIDE.md` - Implementation
-- `docs/phases/phase5/PHASE_5_QUICK_REFERENCE.md` - Quick cheat sheet
+Backend: src/storage/sensorStorage.js
+- isSensorLocked() - Line 318
+- getSensorLockStatus() - Line 341
+- deleteSensorWithLockCheck() - Line 376
 
----
-
-## 🎬 Quick Start
-
-1. ✅ Browser open → localhost:3001
-2. ✅ DevTools open
-3. ▶️  Run investigation code above
-4. ▶️  Find the 220 sensors
-5. ▶️  Fix data access
-6. ▶️  Implement Phase 5
-7. ▶️  Test + commit
-
-**Priority**: Find data first, then implement lock system
+Frontend: src/components/SensorHistoryModal.jsx
+- Lock icon column - Line 495
+- Delete handlers - Line 757
 
 ---
 
-**Good luck! 🔍**
+## IF ISSUES FOUND
+
+Server restart:
+  lsof -ti:3001 | xargs kill -9
+  cd /Users/jomostert/Documents/Projects/agp-plus
+  export PATH="/opt/homebrew/bin:$PATH"
+  npx vite --port 3001
+
+Check:
+- Browser console for errors
+- sensor_id field exists on sensors
+- Hard refresh (Cmd+Shift+R)
+
+---
+
+Ready to test!
