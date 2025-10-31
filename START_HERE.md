@@ -1,8 +1,8 @@
 # 🚀 START HERE - AGP+ Quick Start
 
-**Version**: v3.13.0  
-**Status**: ✅ Production-ready - Patient info auto-extraction working!  
-**Next Phase**: Sensor Export/Import or Optional Maintenance
+**Version**: v3.13.0 → v3.14.0 (next)  
+**Status**: ✅ Production-ready - Ready for Export/Import  
+**Next Phase**: Sensor Database Export/Import (3 hours, 7 chunks)
 
 ---
 
@@ -40,19 +40,14 @@ Click "Upload CSV" → Select Medtronic CareLink export → Choose period
 
 **That's it!** ✅
 
-**Patient info now auto-populates!** 🎉
-- Name, CGM, Device Serial extracted from CSV
-- Shown under "PATIËNT" button in header
-- Edit manually via "PATIËNT" button (DOB, physician, email)
-
 ---
 
 ## 📋 FOR NEW CHATS
 
 **Read in this order:**
 1. **This file** (you are here) - Quick orientation
-2. `HANDOFF.md` - Current phase details + SMALL CHUNKS WARNING
-3. `DUAL_STORAGE_ANALYSIS.md` - Full context (if needed)
+2. `HANDOFF.md` - Export/Import implementation plan
+3. `project/PROJECT_BRIEFING.md` - Full system context
 
 **Don't read everything at once!** Use Desktop Commander to fetch files as needed.
 
@@ -60,80 +55,92 @@ Click "Upload CSV" → Select Medtronic CareLink export → Choose period
 
 ---
 
-## 🎯 CURRENT STATUS
+## 🎯 CURRENT STATUS (v3.13.0)
 
 ### What Works ✅
-- Master dataset (multi-upload support)
+- Master dataset with multi-upload support
 - 220 sensors tracked (no duplicates)
-- **Patient info auto-extraction** from CSV (NEW! 🎉)
+- **Patient info auto-extraction** from CSV  
   - Name, CGM, Device Serial auto-filled
-  - DOB, physician, email manually editable
-  - Header display shows: Name, CGM, SN
-- **Storage source badges** (RECENT/HISTORICAL) ✅
-- **Smart lock toggle** (disabled for read-only) ✅
-- **Enhanced error messages** (explains WHY actions fail) ✅
-- **Debug logging** (full context for troubleshooting) ✅
+  - Header display: Name | CGM | SN
+- **Storage source badges** (RECENT/HISTORICAL)
+- **Smart lock toggle** (disabled for read-only)
+- **Enhanced error messages** (explains WHY)
+- **Dual storage** (SQLite + localStorage) - STABLE
 - TDD insulin metrics (27.9E ± 5.4 SD)
-- Lock system (30-day protection)
-- All clinical metrics (TIR, TAR, TBR, GMI, etc)
-
-### Recent Completion 🎉
-**v3.13.0: Patient Info Auto-Extraction** (COMPLETE)
-- parseCSVMetadata() called in uploadCSVToV3
-- Auto-extracts: Name, CGM Device, Device Serial, Pump Device
-- Saved to patientStorage (IndexedDB)
-- Displayed in header under "PATIËNT" button
-- PatientInfo modal shows all fields (editable)
-- DOB preserved (not overwritten by CSV)
-
-**What You See:**
-```
-Header:
-Jo Mostert
-CGM: Guardian™ 4 Sensor
-SN: NG4114235H  ← Auto-extracted!
-```
+- All clinical metrics (TIR, TAR, TBR, GMI, MAGE, MODD)
 
 ### What's Next 🔧
-**Phase: Choose Your Adventure**
-1. **Sensor Export/Import** (4-6 hours, small chunks)
-2. **P3 Maintenance** (Clear deleted sensors button, 1 hour)
-3. **Polish & Refine** (UI/UX improvements)
+**Phase: Sensor Database Export/Import** (v3.14.0)
 
-See `HANDOFF.md` for details.
+**Goal**: Backup & restore sensor database with full control
+
+**Features to Implement:**
+1. **Export** (JSON format)
+   - All localStorage sensors
+   - Deleted sensors list + timestamps
+   - Lock states per sensor
+   - Validation metadata
+
+2. **Import** with flexible options:
+   - ☑ Import deleted sensors (optional)
+   - ☑ Import lock states (optional)
+   - â—‹ MERGE mode (add new, keep existing)
+   - â—‹ REPLACE mode (wipe + restore)
+
+**Implementation: 7 Chunks (~3 hours)**
+
+**Phase 1: Export (30 min)**
+1. Chunk 1: `exportSensorsToJSON()` function (~25 lines)
+2. Chunk 2: Export button in SensorHistoryModal (~15 lines)
+
+**Phase 2: Import Logic (1 hour)**
+3. Chunk 3: `validateImportData()` function (~20 lines)
+4. Chunk 4: `importSensorsFromJSON()` function (~30 lines)
+5. Chunk 5: Merge/replace logic (~20 lines)
+
+**Phase 3: Import UI (1 hour)**
+6. Chunk 6: File picker + preview display (~25 lines)
+7. Chunk 7: Options UI (checkboxes + radio) (~25 lines)
+
+**Testing: 30 min**
+- Export test (download works, JSON valid)
+- Import MERGE test (adds new, keeps existing)
+- Import REPLACE test (wipes + restores)
+- Options test (checkboxes work correctly)
+
+See `HANDOFF.md` for full design specification.
 
 ---
 
-## 📂 PROJECT LAYOUT
+## 📂 KEY FILES FOR EXPORT/IMPORT
 
 ```
-agp-plus/
-├── HANDOFF.md              ⭐ Start here for development
-├── START_HERE.md           ⭐ You are here
-├── DUAL_STORAGE_ANALYSIS.md ⭐ Issue context
-├── CHANGELOG.md            📜 Version history (v3.13.0 just added)
-├── README.md               📖 User documentation
-│
-├── src/
-│   ├── components/         React UI components
-│   ├── core/              Pure calculation engines (parsers.js ⭐)
-│   ├── hooks/             React hooks (orchestration)
-│   └── storage/           IndexedDB + localStorage (masterDatasetStorage.js ⭐)
-│
-├── project/               Core documentation
-│   ├── V3_ARCHITECTURE.md
-│   ├── STATUS.md
-│   └── TEST_PLAN.md
-│
-├── reference/             Clinical specs
-│   ├── metric_definitions.md
-│   └── minimed_780g_ref.md
-│
-├── docs/
-│   ├── archive/          Old analysis docs
-│   └── handoffs/         Previous handoffs
-│
-└── test-data/            Sample CSV files
+src/storage/sensorStorage.js       - Add export/import functions here
+src/components/SensorHistoryModal.jsx  - Add UI buttons here
+```
+
+**Export Format** (JSON):
+```json
+{
+  "version": "1.0",
+  "exportDate": "2025-10-31T15:30:00Z",
+  "sensors": [
+    {
+      "sensor_id": "NG4A12345",
+      "start_date": "2025-10-01T10:00:00Z",
+      "end_date": "2025-10-11T08:30:00Z",
+      "is_manually_locked": false
+    }
+  ],
+  "deletedSensors": [
+    {"sensorId": "NG4A99999", "deletedAt": 1730380800000}
+  ],
+  "metadata": {
+    "totalSensors": 12,
+    "deletedCount": 5
+  }
+}
 ```
 
 ---
@@ -143,10 +150,6 @@ agp-plus/
 ### Start Server
 ```bash
 ./start.sh
-# Or manually:
-cd /Users/jomostert/Documents/Projects/agp-plus
-export PATH="/opt/homebrew/bin:$PATH"
-npx vite --port 3001
 ```
 
 ### Kill Server
@@ -163,45 +166,8 @@ test-data/SAMPLE__Jo\ Mostert\ 31-10-2025_14d.csv
 ### Commit Changes
 ```bash
 git add .
-git commit -m "v3.13.0: [description]"
+git commit -m "v3.14.0: [description]"
 git push origin main
-```
-
----
-
-## 🛠️ USE DESKTOP COMMANDER
-
-**For ALL file operations:**
-- ✅ `read_file` - Read code (with line ranges)
-- ✅ `write_file` - Write in chunks (≤30 lines)
-- ✅ `edit_block` - Surgical edits
-- ✅ `list_directory` - Navigate
-- ✅ `start_process` - Run commands
-
-**Why?** 
-- Prevents context overflow
-- Enables progress tracking
-- Better error handling
-
-**Never manually edit files in this chat!**
-
----
-
-## 🎯 FILES YOU'LL TOUCH (v3.13.0+)
-
-**Patient Info (v3.13.0):**
-```
-src/core/parsers.js                   - parseCSVMetadata() extracts from CSV
-src/storage/masterDatasetStorage.js   - uploadCSVToV3() calls parser
-src/utils/patientStorage.js           - IndexedDB storage layer
-src/components/PatientInfo.jsx        - Edit modal
-src/components/AGPGenerator.jsx       - Header display
-```
-
-**For Export/Import (next):**
-```
-src/storage/sensorStorage.js          - Export logic here
-src/components/SensorHistoryModal.jsx - Add export/import buttons
 ```
 
 ---
@@ -227,13 +193,6 @@ src/components/SensorHistoryModal.jsx - Add export/import buttons
 - Archive old docs to docs/archive/
 - Update CHANGELOG.md on version bump
 
-### 4. Design System
-- Black background (#000000)
-- High contrast (white/orange/green/red)
-- 3px solid borders
-- Monospace typography
-- NO gradients, shadows, rounded corners
-
 ---
 
 ## 🛠️ TROUBLESHOOTING
@@ -244,12 +203,6 @@ kill -9 $(lsof -t -i:3001)
 npm install
 ./start.sh
 ```
-
-**Patient info not showing:**
-- Re-upload CSV to trigger parseCSVMetadata
-- Check console: "Patient metadata saved" log
-- Open "PATIËNT" button → modal should show data
-- Check DevTools > IndexedDB > agp-database > settings
 
 **Context overflow:**
 - 🛑 STOP writing immediately
@@ -272,37 +225,21 @@ npm install
 **System status:**
 - 220 sensors tracked
 - 94.0% data quality
-- Patient info auto-extraction working ✅
-- Storage source badges working ✅
-- Lock system with enhanced errors ✅
-- Debug logging for troubleshooting ✅
-- No duplicate sensors ✅
-
----
-
-## 🎯 PROGRESS TRACKER
-
-**Dual Storage Issues (from DUAL_STORAGE_ANALYSIS.md):**
-1. ✅ localStorage clear edge case - SOLVED v3.10.0
-2. ✅ Data source confusion - SOLVED v3.11.0
-3. ✅ Lock inconsistency - SOLVED v3.12.0
-4. ✅ Patient info extraction - SOLVED v3.13.0
-
-**All major issues resolved! 🎉**
+- All v3.10-v3.13 fixes stable ✅
 
 ---
 
 ## 🚀 READY TO START?
 
-1. Open `HANDOFF.md` for phase details
+1. Open `HANDOFF.md` for detailed export/import plan
 2. Start server: `./start.sh`
 3. Use Desktop Commander for all file ops
 4. 🛑 Work in small chunks (≤30 lines)
 5. 🛑 STOP after 1-2 edits
 6. 🛑 Ask: "Continue?"
-7. Test frequently
+7. Test after each chunk
 8. Commit logical changes
 
 **Remember: SMALL CHUNKS! STOP AND ASK!**
 
-**Let's ship it! 🎉**
+**Let's ship export/import! 🎉**
