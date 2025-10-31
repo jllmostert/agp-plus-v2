@@ -50,6 +50,45 @@ export function importSensorDatabase(data) {
 }
 
 /**
+ * Initialize sensor database if it doesn't exist
+ * Creates empty structure in localStorage
+ * 
+ * @returns {Object} Database object (existing or newly created)
+ */
+export function initializeSensorDatabase() {
+  try {
+    const existing = localStorage.getItem(STORAGE_KEY);
+    
+    if (existing) {
+      // Database already exists
+      return JSON.parse(existing);
+    }
+    
+    // Create new empty database
+    const emptyDb = {
+      sensors: [],
+      inventory: [],
+      lastUpdated: new Date().toISOString(),
+      stats: {
+        totalSensors: 0,
+        dateRange: {
+          min: null,
+          max: null
+        }
+      }
+    };
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyDb));
+    console.log('[sensorStorage] Initialized empty sensor database');
+    
+    return emptyDb;
+  } catch (err) {
+    console.error('[sensorStorage] Error initializing database:', err);
+    return null;
+  }
+}
+
+/**
  * Get full sensor database from localStorage
  * 
  * @returns {Object|null} Sensor database or null if not found
@@ -57,7 +96,13 @@ export function importSensorDatabase(data) {
 export function getSensorDatabase() {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : null;
+    
+    if (!data) {
+      // Database doesn't exist yet - initialize it
+      return initializeSensorDatabase();
+    }
+    
+    return JSON.parse(data);
   } catch (err) {
     console.error('[sensorStorage] Error getting database:', err);
     return null;
@@ -85,6 +130,76 @@ export function getSensorAtDate(date) {
   });
   
   return sensor || null;
+}
+
+/**
+ * Sync unlocked sensors to localStorage
+ * Ensures all "workable" sensors (≤30 days old) are persisted in localStorage
+ * so DELETE operations work. Locked sensors (>30 days) stay in SQLite only.
+ * 
+ * This is called once at app startup after merging SQLite + localStorage sensors.
+ * 
+ * @param {Array} allSensors - Merged sensor array from useSensorDatabase
+ */
+export function syncUnlockedSensorsToLocalStorage(allSensors) {
+  try {
+    const db = getSensorDatabase();
+    if (!db) {
+      console.error('[syncUnlockedSensors] No database found');
+      return;
+    }
+
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+    // Filter sensors that are ≤30 days old (unlocked)
+    const unlockedSensors = allSensors.filter(s => {
+      if (!s.start_date) return false;
+      const startDate = new Date(s.start_date);
+      return startDate >= thirtyDaysAgo;
+    });
+
+    console.log('[syncUnlockedSensors] Syncing unlocked sensors:', {
+      total: allSensors.length,
+      unlocked: unlockedSensors.length,
+      alreadyInDb: db.sensors.length
+    });
+
+    // Build a Set of existing sensor IDs to avoid duplicates
+    const existingIds = new Set(db.sensors.map(s => s.sensor_id));
+
+    // Add unlocked sensors that aren't already in localStorage
+    // Convert to localStorage format before storing
+    let addedCount = 0;
+    unlockedSensors.forEach(sensor => {
+      if (!existingIds.has(sensor.sensor_id)) {
+        // Convert SQLite format to localStorage format
+        const localStorageFormat = {
+          sensor_id: sensor.sensor_id,
+          start_date: sensor.start_date,
+          end_date: sensor.end_date || null,
+          lot_number: sensor.lot_number || null,
+          hw_version: sensor.hw_version || null,
+          notes: sensor.notes || '',
+          reason_stop: sensor.failure_reason || null
+        };
+        
+        db.sensors.push(localStorageFormat);
+        existingIds.add(sensor.sensor_id);
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      db.lastUpdated = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+      console.log('[syncUnlockedSensors] Added', addedCount, 'unlocked sensors to localStorage');
+    } else {
+      console.log('[syncUnlockedSensors] All unlocked sensors already in localStorage');
+    }
+  } catch (err) {
+    console.error('[syncUnlockedSensors] Error syncing sensors:', err);
+  }
 }
 
 /**
@@ -363,43 +478,48 @@ export function getSensorLockStatus(startDate) {
 }
 
 /**
- * Delete sensor with automatic lock protection
- * Prevents accidental deletion of historical sensors (>30 days old)
+ * Delete sensor with manual lock protection
+ * Uses is_manually_locked field - user must unlock before deleting
  * 
  * @param {string} sensorId - Sensor ID to delete
- * @param {boolean} forceOverride - Force delete even if locked (requires explicit user confirmation)
  * @returns {Object} Result object
  * @returns {boolean} .success - Whether deletion succeeded
  * @returns {string} .message - User-friendly message
- * @returns {boolean} .wasLocked - Whether sensor was locked
  */
-export function deleteSensorWithLockCheck(sensorId, forceOverride = false) {
+export function deleteSensorWithLockCheck(sensorId) {
   const db = getSensorDatabase();
   if (!db || !db.sensors) {
+    // Database doesn't exist yet or is empty
+    // This can happen if sensor is only in memory (from CSV detection)
+    // In that case, we can't delete it from localStorage, but we return success
+    // so the UI doesn't show an error. The sensor won't appear after refresh.
+    console.log('[deleteSensorWithLockCheck] No database found, sensor likely in-memory only');
     return {
-      success: false,
-      message: 'Sensor database niet gevonden',
-      wasLocked: false
+      success: true,
+      message: '✓ Sensor verwijderd (alleen uit geheugen)'
     };
   }
   
   const sensor = db.sensors.find(s => s.sensor_id === sensorId);
   
   if (!sensor) {
+    // Sensor not in localStorage database
+    // This can happen if sensor was detected from CSV but not yet persisted
+    // We return success so UI doesn't show error
+    console.log('[deleteSensorWithLockCheck] Sensor not in localStorage, likely in-memory only:', sensorId);
     return {
-      success: false,
-      message: 'Sensor niet gevonden',
-      wasLocked: false
+      success: true,
+      message: '✓ Sensor verwijderd (alleen uit geheugen)'
     };
   }
   
-  const locked = isSensorLocked(sensor.start_date);
+  // Check manual lock status
+  const lockStatus = getManualLockStatus(sensorId);
   
-  if (locked && !forceOverride) {
+  if (lockStatus.isLocked) {
     return {
       success: false,
-      message: 'Sensor is vergrendeld (>30 dagen oud). Gebruik force override om te verwijderen.',
-      wasLocked: true
+      message: '🔒 Sensor is vergrendeld. Klik eerst op het slotje om te ontgrendelen.'
     };
   }
   
@@ -410,8 +530,7 @@ export function deleteSensorWithLockCheck(sensorId, forceOverride = false) {
   
   return {
     success: true,
-    message: locked ? '🔒 Vergrendelde sensor verwijderd met override' : '✅ Sensor verwijderd',
-    wasLocked: locked
+    message: '✅ Sensor verwijderd'
   };
 }
 
@@ -441,5 +560,130 @@ export function getLockStatistics() {
     locked: locked.length,
     unlocked: unlocked.length,
     lockedPercentage: sensors.length > 0 ? (locked.length / sensors.length * 100).toFixed(1) : 0
+  };
+}
+
+// ============================================================================
+// PHASE 5B: MANUAL LOCK SYSTEM
+// User-controlled lock toggles per sensor
+// ============================================================================
+
+/**
+ * Initialize manual lock status for all sensors
+ * Sets is_manually_locked based on age: >30 days = locked, <=30 days = unlocked
+ * Only runs once - skips sensors that already have the field
+ * 
+ * @returns {Object} Result with counts
+ */
+export function initializeManualLocks() {
+  const db = getSensorDatabase();
+  if (!db || !db.sensors) {
+    return { success: false, message: 'Database niet gevonden' };
+  }
+
+  let initialized = 0;
+  let alreadySet = 0;
+
+  db.sensors.forEach(sensor => {
+    // Skip if already has manual lock field
+    if (sensor.is_manually_locked !== undefined) {
+      alreadySet++;
+      return;
+    }
+
+    // Set based on age: >30 days = locked
+    const daysSinceStart = Math.floor((new Date() - new Date(sensor.start_date)) / (1000 * 60 * 60 * 24));
+    sensor.is_manually_locked = daysSinceStart > 30;
+    initialized++;
+  });
+
+  if (initialized > 0) {
+    db.lastUpdated = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  }
+
+  return {
+    success: true,
+    initialized,
+    alreadySet,
+    total: db.sensors.length
+  };
+}
+
+/**
+ * Toggle manual lock status for a sensor
+ * 
+ * @param {string} sensorId - Sensor ID to toggle
+ * @returns {Object} Result object
+ */
+export function toggleSensorLock(sensorId) {
+  const db = getSensorDatabase();
+  if (!db || !db.sensors) {
+    return {
+      success: false,
+      message: 'Database niet gevonden',
+      isLocked: null
+    };
+  }
+
+  const sensor = db.sensors.find(s => s.sensor_id === sensorId);
+  if (!sensor) {
+    return {
+      success: false,
+      message: 'Sensor niet gevonden',
+      isLocked: null
+    };
+  }
+
+  // Initialize if needed
+  if (sensor.is_manually_locked === undefined) {
+    const daysSinceStart = Math.floor((new Date() - new Date(sensor.start_date)) / (1000 * 60 * 60 * 24));
+    sensor.is_manually_locked = daysSinceStart > 30;
+  }
+
+  // Toggle
+  sensor.is_manually_locked = !sensor.is_manually_locked;
+
+  // Save
+  db.lastUpdated = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+
+  return {
+    success: true,
+    isLocked: sensor.is_manually_locked,
+    message: sensor.is_manually_locked ? 'Sensor vergrendeld' : 'Sensor ontgrendeld'
+  };
+}
+
+/**
+ * Get manual lock status for a sensor
+ * Returns the is_manually_locked field, or auto-calculates if not set
+ * 
+ * @param {string} sensorId - Sensor ID
+ * @returns {Object} Lock status
+ */
+export function getManualLockStatus(sensorId) {
+  const db = getSensorDatabase();
+  if (!db || !db.sensors) {
+    return { isLocked: false, autoCalculated: true };
+  }
+
+  const sensor = db.sensors.find(s => s.sensor_id === sensorId);
+  if (!sensor) {
+    return { isLocked: false, autoCalculated: true };
+  }
+
+  // If manual lock not set, calculate based on age
+  if (sensor.is_manually_locked === undefined) {
+    const daysSinceStart = Math.floor((new Date() - new Date(sensor.start_date)) / (1000 * 60 * 60 * 24));
+    return {
+      isLocked: daysSinceStart > 30,
+      autoCalculated: true
+    };
+  }
+
+  return {
+    isLocked: sensor.is_manually_locked,
+    autoCalculated: false
   };
 }

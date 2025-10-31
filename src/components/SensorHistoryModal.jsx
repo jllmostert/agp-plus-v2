@@ -12,7 +12,7 @@
  * Design: Brutalist paper/ink theme matching day profiles modal
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { debug } from '../utils/debug.js';
 import { 
   calculateOverallStats, 
@@ -24,10 +24,21 @@ import {
 import { 
   isSensorLocked, 
   getSensorLockStatus,
-  deleteSensorWithLockCheck
+  deleteSensorWithLockCheck,
+  toggleSensorLock,
+  getManualLockStatus,
+  initializeManualLocks
 } from '../storage/sensorStorage.js';
 
 export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
+  // Initialize manual locks on first render
+  useEffect(() => {
+    if (isOpen) {
+      const result = initializeManualLocks();
+      debug.log('[SensorHistoryModal] Manual locks initialized:', result);
+    }
+  }, [isOpen]);
+
   // Debug: Check what we receive
   debug.log('[SensorHistoryModal] Received sensors:', {
     count: sensors?.length || 0,
@@ -631,9 +642,26 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       borderRight: '1px solid var(--grid-line)',
                       textAlign: 'center',
                       fontSize: '18px',
-                      backgroundColor: isSensorLocked(sensor.start_date) ? 'rgba(255, 0, 0, 0.1)' : 'rgba(0, 255, 0, 0.05)'
-                    }}>
-                      {isSensorLocked(sensor.start_date) ? '🔒' : '🔓'}
+                      cursor: 'pointer',
+                      backgroundColor: (() => {
+                        const lockStatus = getManualLockStatus(sensor.sensor_id);
+                        return lockStatus.isLocked ? 'rgba(255, 0, 0, 0.1)' : 'rgba(0, 255, 0, 0.05)';
+                      })()
+                    }}
+                    onClick={() => {
+                      const result = toggleSensorLock(sensor.sensor_id);
+                      if (result.success) {
+                        window.location.reload();
+                      } else {
+                        alert(`Fout: ${result.message}`);
+                      }
+                    }}
+                    title="Klik om lock te togglen"
+                    >
+                      {(() => {
+                        const lockStatus = getManualLockStatus(sensor.sensor_id);
+                        return lockStatus.isLocked ? '🔒' : '🔓';
+                      })()}
                     </td>
                     <td style={{
                       padding: '10px 12px',
@@ -755,39 +783,42 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                     }}>
                       <button
                         onClick={() => {
-                          const lockStatus = getSensorLockStatus(sensor.start_date);
-                          if (lockStatus.isLocked) {
-                            // Locked sensor - offer force override option
-                            const forceDelete = confirm(
+                          // Debug logging
+                          debug.log('[DELETE] Sensor data:', {
+                            sensor_id: sensor.sensor_id,
+                            chronological_index: sensor.chronological_index,
+                            start_date: sensor.start_date
+                          });
+                          
+                          const manualLock = getManualLockStatus(sensor.sensor_id);
+                          debug.log('[DELETE] Lock status:', manualLock);
+                          
+                          if (manualLock.isLocked) {
+                            // Locked - cannot delete
+                            alert(
                               `🔒 SENSOR VERGRENDELD\n\n` +
-                              `Deze sensor is ${lockStatus.daysOld} dagen oud (>30 dagen threshold)\n` +
-                              `Start: ${new Date(sensor.start_date).toLocaleDateString('nl-NL')}\n\n` +
-                              `⚠️ WAARSCHUWING: Bescherming voorkomt accidenteel verlies van historische data.\n\n` +
-                              `Wil je de vergrendeling FORCEREN en sensor toch verwijderen?\n\n` +
-                              `Klik OK om FORCE DELETE uit te voeren\n` +
-                              `Klik Annuleren om te annuleren`
+                              `Deze sensor kan niet verwijderd worden.\n\n` +
+                              `Klik eerst op het slotje (🔒) om te ontgrendelen,\n` +
+                              `daarna kun je verwijderen.`
                             );
+                            return;
+                          }
+                          
+                          // Unlocked - allow delete
+                          if (confirm(
+                            `Sensor #${sensor.chronological_index} verwijderen?\n\n` +
+                            `Start: ${new Date(sensor.start_date).toLocaleDateString('nl-NL')}\n\n` +
+                            `⚠️ Deze actie kan niet ongedaan worden gemaakt.`
+                          )) {
+                            debug.log('[DELETE] Calling deleteSensorWithLockCheck with ID:', sensor.sensor_id);
+                            const result = deleteSensorWithLockCheck(sensor.sensor_id);
+                            debug.log('[DELETE] Result:', result);
                             
-                            if (forceDelete) {
-                              // User wants to force delete
-                              const result = deleteSensorWithLockCheck(sensor.sensor_id, true); // force=true
-                              if (result.success) {
-                                alert(`✓ Sensor GEFORCEERD verwijderd!\n\n${result.message}`);
-                                window.location.reload();
-                              } else {
-                                alert(`✗ Fout bij force delete:\n\n${result.message}`);
-                              }
-                            }
-                          } else {
-                            // Unlocked sensor - normal delete
-                            if (confirm(`Sensor #${sensor.chronological_index} verwijderen?\n\nStart: ${new Date(sensor.start_date).toLocaleDateString('nl-NL')}\n\n⚠️ Deze actie kan niet ongedaan worden gemaakt.`)) {
-                              const result = deleteSensorWithLockCheck(sensor.sensor_id, false); // force=false
-                              if (result.success) {
-                                alert(`✓ Sensor verwijderd!\n\n${result.message}`);
-                                window.location.reload();
-                              } else {
-                                alert(`✗ Fout bij verwijderen:\n\n${result.message}`);
-                              }
+                            if (result.success) {
+                              alert(`✓ Sensor verwijderd!`);
+                              window.location.reload();
+                            } else {
+                              alert(`✗ Fout: ${result.message}`);
                             }
                           }
                         }}

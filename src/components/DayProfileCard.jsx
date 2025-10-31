@@ -302,13 +302,52 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
   const targetHigh = showTargetZone ? yScale(70) : 0;
   const targetHeight = targetHigh - targetLow;
 
-  // Generate path for glucose curve
-  const curvePoints = curve
-    .filter((d) => d.hasData && d.glucose !== null)
-    .map((d) => `${xScale(d.bin)},${yScale(d.glucose)}`)
-    .join(' L ');
-
-  const curvePath = curvePoints ? `M ${curvePoints}` : '';
+  // Generate path for glucose curve WITH gap detection
+  // Break the path at gaps (when consecutive bins are >1 apart = missing data)
+  let pathSegments = [];
+  let currentSegment = [];
+  
+  const validPoints = curve.filter((d) => d.hasData && d.glucose !== null);
+  
+  validPoints.forEach((d, i) => {
+    const point = `${xScale(d.bin)},${yScale(d.glucose)}`;
+    
+    if (i === 0) {
+      // First point - start new segment
+      currentSegment.push(point);
+    } else {
+      const prevBin = validPoints[i - 1].bin;
+      const currentBin = d.bin;
+      
+      // Gap detection: if bins are >1 apart, there's missing data
+      const isGap = (currentBin - prevBin) > 1;
+      
+      if (isGap) {
+        // Save current segment and start new one
+        if (currentSegment.length > 0) {
+          pathSegments.push(currentSegment);
+        }
+        currentSegment = [point];
+      } else {
+        // Continue current segment
+        currentSegment.push(point);
+      }
+    }
+  });
+  
+  // Don't forget the last segment
+  if (currentSegment.length > 0) {
+    pathSegments.push(currentSegment);
+  }
+  
+  // Build path string with M (move) for each segment start, L (line) within segments
+  const curvePath = pathSegments
+    .map(segment => {
+      if (segment.length === 0) return '';
+      return `M ${segment.join(' L ')}`;
+    })
+    .filter(s => s)
+    .join(' ');
 
   return (
     <svg width="100%" height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>

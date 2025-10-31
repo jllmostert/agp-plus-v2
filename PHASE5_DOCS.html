@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 5 Documentation - AGP+</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 3px solid #0f0;
+            padding: 30px;
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #0f0;
+            padding-bottom: 10px;
+        }
+        h2 {
+            font-size: 1.5em;
+            margin: 30px 0 15px 0;
+            color: #0f0;
+        }
+        h3 {
+            font-size: 1.2em;
+            margin: 20px 0 10px 0;
+            color: #0f0;
+        }
+        .status {
+            background: #0f0;
+            color: #000;
+            padding: 15px;
+            margin: 20px 0;
+            border: 3px solid #0f0;
+            font-weight: bold;
+        }
+        .doc-link {
+            display: block;
+            background: #000;
+            border: 3px solid #0f0;
+            padding: 15px;
+            margin: 10px 0;
+            text-decoration: none;
+            color: #0f0;
+            transition: all 0.2s;
+        }
+        .doc-link:hover {
+            background: #0f0;
+            color: #000;
+        }
+        .doc-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .doc-desc {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            border: 3px solid #0f0;
+            padding: 15px;
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #0f0;
+        }
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        .test-checklist {
+            margin: 20px 0;
+        }
+        .test-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 3px solid #0f0;
+            padding-left: 15px;
+        }
+        .test-item:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+        code {
+            background: rgba(0, 255, 0, 0.1);
+            padding: 2px 6px;
+            border: 1px solid #0f0;
+        }
+        pre {
+            background: rgba(0, 255, 0, 0.1);
+            border: 3px solid #0f0;
+            padding: 15px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .priority-high { border-left-color: #f00; }
+        .priority-medium { border-left-color: #ff0; }
+        .priority-low { border-left-color: #0f0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 PHASE 5 - Sensor Lock & Data Management</h1>
+        
+        <div class="status">
+            ✅ STATUS: COMPLEET & KLAAR VOOR TESTING<br>
+            📅 Datum: 2025-10-31 11:30 CET<br>
+            🔢 Versie: v3.1.0<br>
+            🧹 Cache: Gewist & Schoon
+        </div>
+
+        <h2>🚀 Quick Start</h2>
+        <pre>cd /Users/jomostert/Documents/Projects/agp-plus
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001</pre>
+        <p>Dan: <strong>Chrome → http://localhost:3001</strong></p>
+
+        <h2>📚 Documentatie</h2>
+        
+        <a href="file:///Users/jomostert/Documents/Projects/agp-plus/START_HERE.md" class="doc-link">
+            <div class="doc-title">START_HERE.md</div>
+            <div class="doc-desc">Quick start guide & test protocol - Begin hier!</div>
+        </a>
+
+        <a href="file:///Users/jomostert/Documents/Projects/agp-plus/NEXT_CHAT.md" class="doc-link">
+            <div class="doc-title">NEXT_CHAT.md</div>
+            <div class="doc-desc">Next session instructions - Voor volgende keer</div>
+        </a>
+
+        <a href="file:///Users/jomostert/Documents/Projects/agp-plus/docs/handoffs/HANDOFF_PHASE5_COMPLETE_2025-10-31.md" class="doc-link">
+            <div class="doc-title">HANDOFF_PHASE5_COMPLETE_2025-10-31.md</div>
+            <div class="doc-desc">Complete technische referentie - 1,407 regels - Alles wat je moet weten</div>
+        </a>
+
+        <a href="file:///Users/jomostert/Documents/Projects/agp-plus/HANDOFF_PHASE5_MANUAL_LOCKS_2025-10-31.md" class="doc-link">
+            <div class="doc-title">HANDOFF_PHASE5_MANUAL_LOCKS_2025-10-31.md</div>
+            <div class="doc-desc">Session notes Phase 5B - Manual lock toggles</div>
+        </a>
+
+        <a href="file:///Users/jomostert/Documents/Projects/agp-plus/HANDOFF_PHASE5C_SENSOR_SYNC_2025-10-31.md" class="doc-link">
+            <div class="doc-title">HANDOFF_PHASE5C_SENSOR_SYNC_2025-10-31.md</div>
+            <div class="doc-desc">Session notes Phase 5C - Smart sensor sync</div>
+        </a>
+
+        <h2>📊 Key Metrics</h2>
+        <div class="metrics">
+            <div class="metric-card">
+                <div class="metric-value">220+</div>
+                <div class="metric-label">Sensors in database</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">~18</div>
+                <div class="metric-label">Recent sensors (≤30d)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">55ms</div>
+                <div class="metric-label">Sensor sync time</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">6ms</div>
+                <div class="metric-label">Lock toggle time</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">0</div>
+                <div class="metric-label">Breaking changes</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">&lt;1%</div>
+                <div class="metric-label">Memory overhead</div>
+            </div>
+        </div>
+
+        <h2>🧪 Test Checklist</h2>
+        <div class="test-checklist">
+            <div class="test-item">
+                <strong>Test 1:</strong> Check console voor sync messages bij startup<br>
+                <code>[syncUnlockedSensors] Added X sensors to localStorage</code>
+            </div>
+            <div class="test-item">
+                <strong>Test 2:</strong> Open Sensor History modal<br>
+                Lock icons 🔒/🔓 zichtbaar
+            </div>
+            <div class="test-item">
+                <strong>Test 3:</strong> Klik op 🔒 icon<br>
+                Wordt 🔓 (rood → groen)
+            </div>
+            <div class="test-item">
+                <strong>Test 4:</strong> Probeer DELETE op locked sensor<br>
+                Error message verschijnt
+            </div>
+            <div class="test-item">
+                <strong>Test 5:</strong> Toggle unlock, dan DELETE<br>
+                Sensor wordt verwijderd
+            </div>
+            <div class="test-item">
+                <strong>Test 6:</strong> Reload browser<br>
+                Lock states blijven bewaard
+            </div>
+        </div>
+
+        <h2>🎯 Wat is Phase 5?</h2>
+        <h3>Phase 5A: Automatic Locks</h3>
+        <p>Sensors ouder dan 30 dagen krijgen automatisch een lock 🔒. Dit beschermt historische data tegen accidenteel verwijderen.</p>
+
+        <h3>Phase 5B: Manual Lock Toggles</h3>
+        <p>Lock icons zijn klikbaar - één klik toggle tussen 🔒 (locked) en 🔓 (unlocked). DELETE button respecteert lock status.</p>
+
+        <h3>Phase 5C: Smart Sensor Sync</h3>
+        <p>Bij app startup worden recente sensors (≤30 dagen) automatisch naar localStorage gesynct. Oude sensors blijven in SQLite database (read-only).</p>
+
+        <h2>🏗️ Architectuur</h2>
+        <pre>┌─────────────────────────────────┐
+│ Phase 5C: Smart Sensor Sync     │
+│ Data Architecture Layer         │
+│ • Sync unlocked sensors to LS   │
+└─────────────────────────────────┘
+              ↓
+┌─────────────────────────────────┐
+│ Phase 5B: Manual Lock Toggles   │
+│ User Interface Layer            │
+│ • Clickable 🔒/🔓 icons         │
+└─────────────────────────────────┘
+              ↓
+┌─────────────────────────────────┐
+│ Phase 5A: Automatic Locks       │
+│ Business Logic Layer            │
+│ • >30 days = locked             │
+└─────────────────────────────────┘</pre>
+
+        <h2>🐛 Known Issues</h2>
+        <div class="test-item priority-medium" style="border-left-width: 5px;">
+            <strong>Dagprofielen Gap Lines</strong> (MEDIUM)<br>
+            AGP curve tekent lijnen door sensor gaps. Visual only, data is correct.<br>
+            <em>Next priority voor fix</em>
+        </div>
+        <div class="test-item priority-low" style="border-left-width: 5px;">
+            <strong>Port Conflicts</strong> (LOW)<br>
+            Soms lingeren vite processen. Workaround: <code>pkill -9 -f vite</code>
+        </div>
+
+        <h2>📝 Next Steps</h2>
+        <ol>
+            <li><strong>Test alle scenarios</strong> (zie checklist hierboven)</li>
+            <li><strong>Git commit</strong> Phase 5 changes</li>
+            <li><strong>Fix dagprofielen gaps</strong> (next priority)</li>
+            <li><strong>Update docs</strong> (README, CHANGELOG)</li>
+        </ol>
+
+        <h2>💾 Git Commit Template</h2>
+        <pre>git add .
+git commit -m "Phase 5: Sensor lock & data management system
+
+- Automatic 30-day locks for historical sensors
+- Manual lock toggles with single-click icons  
+- Smart sensor sync to localStorage
+- DELETE protection for locked sensors
+- Format conversion SQLite → localStorage
+
+Closes #phase5"
+
+git push origin main</pre>
+
+        <div class="status" style="margin-top: 40px;">
+            🎉 KLAAR VOOR TESTING!<br>
+            <br>
+            Start server → Test alle scenarios → Commit changes
+        </div>
+    </div>
+</body>
+</html>

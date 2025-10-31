@@ -29,7 +29,7 @@
 import { useState, useEffect } from 'react';
 import initSqlJs from 'sql.js';
 import { debug } from '../utils/debug.js';
-import { getSensorHistory } from '../storage/sensorStorage.js';
+import { getSensorHistory, syncUnlockedSensorsToLocalStorage } from '../storage/sensorStorage.js';
 
 // Database will be served from /public/sensor_database.db
 // (we need to copy it there first)
@@ -180,10 +180,74 @@ export function useSensorDatabase() {
         runningSensors: allSensors.filter(s => s.status === 'running').length
       });
 
+      // SYNC UNLOCKED SENSORS TO LOCALSTORAGE
+      // This ensures all "workable" sensors (≤30 days old) are in localStorage
+      // so DELETE operations work on them. Locked sensors stay in SQLite only.
+      syncUnlockedSensorsToLocalStorage(allSensors);
+
       setSensors(allSensors);
 
     } catch (err) {
       debug.error('[useSensorDatabase] Failed to load sensor database:', err);
+      debug.log('[useSensorDatabase] Falling back to localStorage sensors only');
+      
+      // FALLBACK: Load localStorage sensors even if SQLite fails
+      try {
+        const localStorageSensors = getSensorHistory();
+        
+        const calculateSensorStatus = (sensor) => {
+          const now = new Date();
+          const startDate = new Date(sensor.start_date);
+          
+          if (!sensor.end_date) {
+            const daysRunning = (now - startDate) / (1000 * 60 * 60 * 24);
+            return {
+              status: 'running',
+              success: null,
+              duration_days: daysRunning,
+              duration_hours: daysRunning * 24
+            };
+          }
+          
+          const endDate = new Date(sensor.end_date);
+          const durationMs = endDate - startDate;
+          const durationDays = durationMs / (1000 * 60 * 60 * 24);
+          const durationHours = durationMs / (1000 * 60 * 60);
+          const success = durationDays >= 6.75 ? 1 : 0;
+          
+          return {
+            status: success ? 'success' : 'failed',
+            success,
+            duration_days: durationDays,
+            duration_hours: durationHours
+          };
+        };
+        
+        const localSensorsConverted = localStorageSensors.map(s => {
+          const statusInfo = calculateSensorStatus(s);
+          return {
+            sensor_id: s.sensor_id,
+            start_date: s.start_date,
+            end_date: s.end_date,
+            duration_days: statusInfo.duration_days,
+            duration_hours: statusInfo.duration_hours,
+            lot_number: s.lot_number,
+            hw_version: s.hw_version,
+            status: statusInfo.status,
+            failure_reason: s.reason_stop,
+            notes: s.notes,
+            success: statusInfo.success
+          };
+        });
+        
+        setSensors(localSensorsConverted);
+        debug.log('[useSensorDatabase] Loaded localStorage sensors as fallback:', {
+          count: localSensorsConverted.length
+        });
+      } catch (fallbackErr) {
+        debug.error('[useSensorDatabase] Failed to load localStorage fallback:', fallbackErr);
+      }
+      
       setError(err.message);
     } finally {
       setIsLoading(false);
