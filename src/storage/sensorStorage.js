@@ -14,6 +14,7 @@
  */
 
 const STORAGE_KEY = 'agp-sensor-database';
+const DELETED_SENSORS_KEY = 'agp-deleted-sensors';
 
 /**
  * Import sensor database from parsed SQLite data
@@ -133,6 +134,41 @@ export function getSensorAtDate(date) {
 }
 
 /**
+ * Get list of deleted sensor IDs
+ * These sensors should not be re-synced from SQLite
+ * 
+ * @returns {Array<string>} Array of deleted sensor IDs
+ */
+export function getDeletedSensors() {
+  try {
+    const data = localStorage.getItem(DELETED_SENSORS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (err) {
+    console.error('[getDeletedSensors] Error reading deleted sensors:', err);
+    return [];
+  }
+}
+
+/**
+ * Add sensor ID to deleted list
+ * Prevents re-syncing deleted sensors from SQLite
+ * 
+ * @param {string} sensorId - Sensor ID to mark as deleted
+ */
+export function addDeletedSensor(sensorId) {
+  try {
+    const deleted = getDeletedSensors();
+    if (!deleted.includes(sensorId)) {
+      deleted.push(sensorId);
+      localStorage.setItem(DELETED_SENSORS_KEY, JSON.stringify(deleted));
+      console.log('[addDeletedSensor] Marked sensor as deleted:', sensorId);
+    }
+  } catch (err) {
+    console.error('[addDeletedSensor] Error adding deleted sensor:', err);
+  }
+}
+
+/**
  * Sync unlocked sensors to localStorage
  * Ensures all "workable" sensors (≤30 days old) are persisted in localStorage
  * so DELETE operations work. Locked sensors (>30 days) stay in SQLite only.
@@ -151,17 +187,23 @@ export function syncUnlockedSensorsToLocalStorage(allSensors) {
 
     const now = new Date();
     const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    
+    // Get list of deleted sensors to exclude from sync
+    const deletedSensors = getDeletedSensors();
 
-    // Filter sensors that are ≤30 days old (unlocked)
+    // Filter sensors that are ≤30 days old (unlocked) AND not deleted
     const unlockedSensors = allSensors.filter(s => {
       if (!s.start_date) return false;
       const startDate = new Date(s.start_date);
-      return startDate >= thirtyDaysAgo;
+      const isRecent = startDate >= thirtyDaysAgo;
+      const isDeleted = deletedSensors.includes(s.sensor_id);
+      return isRecent && !isDeleted;
     });
 
     console.log('[syncUnlockedSensors] Syncing unlocked sensors:', {
       total: allSensors.length,
       unlocked: unlockedSensors.length,
+      deleted: deletedSensors.length,
       alreadyInDb: db.sensors.length
     });
 
@@ -527,6 +569,11 @@ export function deleteSensorWithLockCheck(sensorId) {
   db.sensors = db.sensors.filter(s => s.sensor_id !== sensorId);
   db.lastUpdated = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  
+  // Add to deleted sensors list to prevent re-sync from SQLite
+  addDeletedSensor(sensorId);
+  
+  console.log('[deleteSensorWithLockCheck] Sensor deleted:', sensorId);
   
   return {
     success: true,

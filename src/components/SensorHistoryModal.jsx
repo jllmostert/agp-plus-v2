@@ -59,8 +59,12 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   // Sort state
   const [sortColumn, setSortColumn] = useState('start_date');
   const [sortDirection, setSortDirection] = useState('desc');
+  
+  // Refresh trigger for lock/delete operations (avoids page reload)
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Add chronological index (1 = oldest = March 2022, 219 = newest)
+  // Also merge lock states into sensor objects for consistent rendering
   const sensorsWithIndex = useMemo(() => {
     if (!sensors || sensors.length === 0) return [];
     
@@ -72,19 +76,27 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
     });
     
     // Assign index 1, 2, 3, ... chronologically
-    const withIndex = sorted.map((sensor, idx) => ({
-      ...sensor,
-      chronological_index: idx + 1 // 1-based index
-    }));
+    // AND merge lock status from localStorage
+    const withIndex = sorted.map((sensor, idx) => {
+      const lockStatus = getManualLockStatus(sensor.sensor_id);
+      return {
+        ...sensor,
+        chronological_index: idx + 1, // 1-based index
+        is_manually_locked: lockStatus.isLocked, // Merge lock state
+        lock_reason: lockStatus.reason // Include reason for debugging
+      };
+    });
     
-    debug.log('[SensorHistoryModal] Chronological indexing:', {
+    debug.log('[SensorHistoryModal] Chronological indexing + lock merge:', {
       total: withIndex.length,
+      locked: withIndex.filter(s => s.is_manually_locked).length,
+      unlocked: withIndex.filter(s => !s.is_manually_locked).length,
       first: { id: withIndex[0]?.chronological_index, date: withIndex[0]?.start_date },
       last: { id: withIndex[withIndex.length - 1]?.chronological_index, date: withIndex[withIndex.length - 1]?.start_date }
     });
     
     return withIndex;
-  }, [sensors]);
+  }, [sensors, refreshKey]); // Re-calculate when sensors or refreshKey changes
 
   // Calculate stats (memoized for performance)
   const overallStats = useMemo(() => calculateOverallStats(sensorsWithIndex), [sensorsWithIndex]);
@@ -643,25 +655,22 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       textAlign: 'center',
                       fontSize: '18px',
                       cursor: 'pointer',
-                      backgroundColor: (() => {
-                        const lockStatus = getManualLockStatus(sensor.sensor_id);
-                        return lockStatus.isLocked ? 'rgba(255, 0, 0, 0.1)' : 'rgba(0, 255, 0, 0.05)';
-                      })()
+                      backgroundColor: sensor.is_manually_locked 
+                        ? 'rgba(255, 0, 0, 0.1)' 
+                        : 'rgba(0, 255, 0, 0.05)'
                     }}
                     onClick={() => {
                       const result = toggleSensorLock(sensor.sensor_id);
                       if (result.success) {
-                        window.location.reload();
+                        // Trigger re-render without page reload
+                        setRefreshKey(prev => prev + 1);
                       } else {
                         alert(`Fout: ${result.message}`);
                       }
                     }}
                     title="Klik om lock te togglen"
                     >
-                      {(() => {
-                        const lockStatus = getManualLockStatus(sensor.sensor_id);
-                        return lockStatus.isLocked ? '🔒' : '🔓';
-                      })()}
+                      {sensor.is_manually_locked ? '🔒' : '🔓'}
                     </td>
                     <td style={{
                       padding: '10px 12px',
@@ -787,13 +796,11 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                           debug.log('[DELETE] Sensor data:', {
                             sensor_id: sensor.sensor_id,
                             chronological_index: sensor.chronological_index,
-                            start_date: sensor.start_date
+                            start_date: sensor.start_date,
+                            is_manually_locked: sensor.is_manually_locked
                           });
                           
-                          const manualLock = getManualLockStatus(sensor.sensor_id);
-                          debug.log('[DELETE] Lock status:', manualLock);
-                          
-                          if (manualLock.isLocked) {
+                          if (sensor.is_manually_locked) {
                             // Locked - cannot delete
                             alert(
                               `🔒 SENSOR VERGRENDELD\n\n` +
@@ -816,7 +823,8 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                             
                             if (result.success) {
                               alert(`✓ Sensor verwijderd!`);
-                              window.location.reload();
+                              // Trigger re-render without page reload
+                              setRefreshKey(prev => prev + 1);
                             } else {
                               alert(`✗ Fout: ${result.message}`);
                             }
