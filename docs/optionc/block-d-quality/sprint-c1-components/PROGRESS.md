@@ -37,11 +37,20 @@
 
 ## 🔄 IN PROGRESS
 
-### Taak 2: Extract Containers (6h) - PHASE 1 COMPLETE
-**Current**: Starting Phase 2 (2h)
-  
-- [ ] Phase 2: DataLoadingContainer (2h)
-- [ ] Phase 3: VisualizationContainer (2h)
+### Taak 2.2: DataLoadingContainer (2h) - IN PROGRESS 🚀
+**Approach**: Safe, small chunks with testing and commits
+
+**Completed**:
+- [x] Create skeleton (45 lines) ✅ Commit: 02a0f7d
+- [x] Add import button (87 lines) ✅ Commit: dab3041
+
+**Working On**:
+- [ ] Add export button (15 min) ← NEXT
+- [ ] Wire to AGPGenerator (20 min)  
+- [ ] Test functionality (10 min)
+- [ ] Final commit (5 min)
+
+**Next**: Phase 3 - VisualizationContainer (2h)
 
 ---
 

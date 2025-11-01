@@ -79,6 +79,50 @@ function DataLoadingContainer({
         )}
       </button>
       
+      {/* Placeholder for other buttons (will stay in AGPGenerator) */}
+      <div />
+      <div />
+      <div />
+      
+      {/* 5. EXPORT Button (Collapsible) */}
+      <button
+        onClick={() => setDataExportExpanded(!dataExportExpanded)}
+        disabled={!metricsResult || !startDate || !endDate}
+        style={{
+          background: dataExportExpanded ? 'var(--color-black)' : (metricsResult && startDate && endDate ? 'var(--bg-secondary)' : 'var(--bg-primary)'),
+          border: '3px solid var(--border-primary)',
+          color: dataExportExpanded ? 'var(--color-white)' : (metricsResult && startDate && endDate ? 'var(--text-primary)' : 'var(--text-secondary)'),
+          cursor: metricsResult && startDate && endDate ? 'pointer' : 'not-allowed',
+          padding: '1.5rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          minHeight: '100px',
+          opacity: metricsResult && startDate && endDate ? 1 : 0.5
+        }}
+        title={!metricsResult ? "Generate metrics first" : "Export options"}
+      >
+        <h2 style={{ 
+          fontSize: '0.875rem',
+          fontWeight: 700,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          marginBottom: 0
+        }}>
+          {dataExportExpanded ? '▼' : '▶'} EXPORT
+        </h2>
+        <span style={{ 
+          fontSize: '0.625rem',
+          fontWeight: 600,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase'
+        }}>
+          Reports & Data
+        </span>
+      </button>
+      
     </div>
   );
 }
