@@ -128,6 +128,21 @@ export function getAllAssignments() {
 export function assignSensorToBatch(sensorId, batchId, assignedBy = 'manual') {
   const assignments = getAllAssignments();
   
+  // Validate batch exists and has capacity
+  const batch = getBatchById(batchId);
+  if (!batch) {
+    throw new Error(`Batch ${batchId} not found - cannot assign sensor`);
+  }
+  
+  const currentAssignments = assignments.filter(a => a.batch_id === batchId);
+  if (batch.total_quantity && currentAssignments.length >= batch.total_quantity) {
+    throw new Error(
+      `Batch ${batch.lot_number} is at capacity ` +
+      `(${currentAssignments.length}/${batch.total_quantity} sensors assigned). ` +
+      `Cannot assign additional sensors.`
+    );
+  }
+  
   // Remove existing assignment for this sensor (if any)
   const filtered = assignments.filter(a => a.sensor_id !== sensorId);
   
