@@ -23,7 +23,7 @@ describe('parseCSVMetadata', () => {
     const metadata = parseCSVMetadata(csv);
     
     expect(metadata).not.toBeNull();
-    expect(metadata.patientName).toBeTruthy();
+    expect(metadata.name).toBeTruthy();
   });
   
   test('handles missing metadata gracefully', () => {
