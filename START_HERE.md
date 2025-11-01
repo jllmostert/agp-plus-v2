@@ -8,13 +8,13 @@
 
 ## 🎯 YOU ARE HERE
 
-**Status**: Option C Implementation - Sprint A1 (Parser Robustness)  
-**Location**: `docs/optionc/block-c-robustness/sprint-a1-parser/`
+**Status**: Option C - Sprint C1 (Split God Components)  
+**Location**: `docs/optionc/block-d-quality/sprint-c1-components/`
 
 **Quick Access**:
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
-cd docs/optionc/block-c-robustness/sprint-a1-parser
+cd docs/optionc/block-d-quality/sprint-c1-components
 cat HANDOFF.md
 ```
 
@@ -22,15 +22,10 @@ cat HANDOFF.md
 
 ## 📂 OPTION C DOCUMENTATION
 
-**Main Hub**: `docs/optionc/START_HERE.md` ← **GO HERE**
+**Main Hub**: `docs/optionc/START_HERE.md`
 
-**Contains**:
-- Complete Option C overview (4 blocks, 67 hours)
-- Current sprint location (Sprint A1)
-- All sprint details and progress tracking
-- Git workflow instructions
-
-**This file (root START_HERE.md)**: Quick pointer to the real docs
+**Current Sprint**: C1 - Split God Components (20h)  
+**Target**: AGPGenerator.jsx (1962 lines) → smaller components
 
 ---
 
@@ -40,45 +35,34 @@ cat HANDOFF.md
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
 git pull origin develop
-cd docs/optionc/block-c-robustness/sprint-a1-parser
-cat HANDOFF.md  # Read sprint details
+cd docs/optionc/block-d-quality/sprint-c1-components
+cat HANDOFF.md
 ```
 
 ### During Work
 ```bash
-# Update progress (real-time!)
+# Update PROGRESS.md after EVERY task
 nano PROGRESS.md
 
-# Commit often
+# Commit after EVERY component
 git add .
-git commit -m "refactor(parser): [what you did]"
+git commit -m "refactor(agp): [what you did]"
 git push origin develop
 ```
-
-### Key Files
-- **Sprint Details**: `docs/optionc/block-c-robustness/sprint-a1-parser/HANDOFF.md`
-- **Progress Tracking**: `docs/optionc/block-c-robustness/sprint-a1-parser/PROGRESS.md`
-- **Master Progress**: `docs/optionc/MASTER_PROGRESS.md`
-- **Git Help**: `GIT_CHEATSHEET.md`
 
 ---
 
 ## 🔒 SAFETY
 
-**Current Safe Point**: `v3.6.0-pre-optionc`
+**Current Safe Point**: `v3.7.0` (Block C complete)
 
 **Go Back**:
 ```bash
-git checkout v3.6.0-pre-optionc  # View safe version
-git checkout develop              # Return to work
-```
-
-**See all safety points**:
-```bash
-git tag -l
+git checkout v3.7.0  # View safe version
+git checkout develop  # Return to work
 ```
 
 ---
 
-**Version**: 2.0 (Option C)  
-**Next**: Go to `docs/optionc/START_HERE.md` for full details
+**Version**: 3.0 (Block D)  
+**Next**: See `docs/optionc/START_HERE.md` for details
