@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.3.1] - 2025-11-01 - 🎨 UI Improvements & Bug Fixes âœ… COMPLETE
+
+**Quick fixes: Section reordering + async/await bugs resolved**
+
+### Changed
+
+**Section Reordering** (`AGPGenerator.jsx`, `AGPChart.jsx`):
+- Hero Metrics now display above Hypoglycemia Events (no scroll required)
+- Decoupled HypoglycemiaEvents from AGPChart into separate section
+- New order: TIR Bar → AGP Chart → Hero Metrics → Hypo Events → Day/Night
+- **Impact**: Chart + Hero Metrics fit on one screen (better UX)
+
+### Fixed
+
+**Deleted Sensors Async Bugs** (`sensorStorage.js`, `useSensorDatabase.js`):
+- Fixed `TypeError: fastDeleted.forEach is not a function`
+- Fixed `TypeError: cacheDeleted is not iterable`
+- **Root cause**: `getDeletedSensors()` is async but was called without `await`
+- Made `migrateDeletedSensors()` async function
+- Added await for `getDeletedSensors()` calls in `getAllDeletedSensors()`
+- Added await for migration call in `useSensorDatabase.js`
+- **Result**: Console clean, no more Promise errors
+
+### Testing
+
+- âœ… All sections display correctly
+- âœ… No console errors
+- âœ… Sensor management working properly
+
+---
+
 ## [3.3.0] - 2025-11-01 - 🛡️ Parser Robustness âœ… COMPLETE
 
 **Block B.6: Dynamic Column Detection - Eliminates parser fragility from hardcoded column indices**
