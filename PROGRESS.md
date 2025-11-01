@@ -27,10 +27,10 @@
 | **B.6.2** | Create findColumnIndices() | 30m | ✅ DONE | 19:26 | 19:31 |
 | **B.6.3** | Update parseCSV() | 30m | ✅ DONE (TESTED) | 19:33 | 19:42 |
 | **B.6.4** | Add validation | 15m | ⏭️ SKIPPED | - | - |
-| **B.6.5** | Testing & commit | 30m | 🟡 IN PROGRESS | 19:47 | - |
+| **B.6.5** | Testing & commit | 30m | ✅ DONE | 19:47 | 19:49 |
 
-**Totaal**: 2 uur (120 minuten)  
-**Geschat klaar**: ~21:15
+**Totaal**: 120 minuten (2 uur)  
+**Werkelijk**: 32 minuten (19:17-19:49) ⚡ **AHEAD OF SCHEDULE!**
 
 ## 🎯 TAAK B.6.2: CREATE findColumnIndices()
 
@@ -551,5 +551,139 @@ const getColumn = (parts, columnName, fallbackIndex) => {
 - **File**: Likely `src/components/DailyProfileModal.jsx` or similar
 
 **Status**: Deferred to v3.4.0 or later
+
+---
+
+
+---
+
+## 🎉 BLOCK B.6 COMPLETE SUMMARY
+
+**Status**: ✅ **COMPLETE** - Dynamic Column Detection Implemented  
+**Time**: 32 minutes (19:17-19:49)  
+**Estimate**: 120 minutes  
+**Performance**: ⚡ **73% FASTER THAN ESTIMATED!**
+
+### What Was Done
+
+✅ **B.6.1 - Analysis** (8 min):
+- Identified all 8 hardcoded column indices
+- Documented column names needed
+- Created implementation strategy
+
+✅ **B.6.2 - Helper Function** (5 min):
+- Created `findColumnIndices(headerRow)` function
+- Added validation for required columns
+- Added comprehensive JSDoc
+
+✅ **B.6.3 - Parser Update** (9 min):
+- Replaced all hardcoded indices with dynamic map
+- Added `getColumn()` helper with fallback
+- Implemented header row detection
+- Tested successfully ✅
+
+✅ **B.6.4 - Validation** (skipped):
+- Already included in B.6.2 and B.6.3
+
+✅ **B.6.5 - Final Commit** (2 min):
+- Git commit with detailed message
+- Pushed to main (commit `017b7ec`)
+
+### Technical Achievements
+
+**Robustness Improvements**:
+- ✅ Parser no longer breaks if column order changes
+- ✅ Clear error messages if columns missing
+- ✅ Backwards compatible with old CSVs
+- ✅ Dynamic header detection (no line number assumptions)
+
+**Code Quality**:
+- ✅ Comprehensive JSDoc comments
+- ✅ Fallback logic for safety
+- ✅ Validation at multiple levels
+- ✅ Clear error handling
+
+### Test Results
+
+**Tested by Jo** (19:45):
+- ✅ 90-day CSV upload successful
+- ✅ All metrics calculate correctly
+- ✅ No console errors
+- ✅ Sensor detection works
+- ✅ Dynamic column mapping confirmed
+
+**Minor Issue Found** (non-blocking):
+- ⚠️ TDD display bug in some daily profiles
+- Added to TODO list (P3 priority)
+
+### Files Changed
+
+**Modified**:
+- `src/core/parsers.js` (+45 lines, significant refactor)
+- `PROGRESS.md` (updated with all details)
+
+**Commits**:
+1. `827a038` - Add findColumnIndices helper (safety checkpoint)
+2. `017b7ec` - Implement dynamic column detection (main feature)
+
+### Impact
+
+**Before**: Fragile parser with 8 hardcoded indices
+**After**: Robust parser with dynamic column detection
+
+**Risk Reduced**: MEDIUM-HIGH → LOW
+- Silent breakage if Medtronic changes columns: ❌ → ✅
+- Clear error messages: ❌ → ✅
+- Backwards compatibility: N/A → ✅
+
+---
+
+## 🎯 SESSION STATUS UPDATE
+
+**Current Time**: 19:50  
+**Session Duration**: 35 minutes (19:15-19:50)  
+**Completed**: Block B.6 (Dynamic Column Detection)  
+**Next**: Decision time!
+
+### Options
+
+1. ✅ **Continue to next block** (B.7 or B.8)
+2. ⏸️ **Take a break** (we've done a lot!)
+3. 📝 **Update documentation** (CHANGELOG, HANDOFF)
+4. 🏁 **End session** (solid progress made)
+
+**Recommendation**: We're on a roll and ahead of schedule! But we've also made significant changes. Your call, Jo! 🚀
+
+---
+
+
+---
+
+## 📝 DOCUMENTATION UPDATE (19:51)
+
+**File Updated**: `START_HERE.md`  
+**Commit**: `ba52c4f`  
+**Time**: 2 minutes
+
+### Changes Made
+
+✅ **New Session Protocol**:
+1. Read `PROGRESS.md` first (primary source of truth)
+2. Check `HANDOFF.md` for context
+3. Use `START_HERE.md` for navigation
+
+✅ **Added Sections**:
+- "What Changed Recently" (v3.2.0 → v3.3.0 summary)
+- "Safety & Rollback Info" (checkpoints: 017b7ec, 827a038)
+- "Known Issues" (TDD display bug in TODO)
+- Updated all version numbers and dates
+
+✅ **Clear Instructions**:
+- How to start new session
+- Where to find current state
+- Rollback procedures if needed
+- Recent changes summary
+
+**Result**: Anyone starting a new chat can quickly get up to speed by reading PROGRESS.md → HANDOFF.md → START_HERE.md in that order.
 
 ---

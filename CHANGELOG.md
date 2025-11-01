@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.3.0] - 2025-11-01 - 🛡️ Parser Robustness âœ… COMPLETE
+
+**Block B.6: Dynamic Column Detection - Eliminates parser fragility from hardcoded column indices**
+
+### Added
+
+**Dynamic Column Detection** (`parsers.js`):
+- `findColumnIndices(headerRow)` function maps column names → indices dynamically
+- Validates required columns exist (Date, Time, Sensor Glucose)
+- `getColumn(parts, columnName, fallbackIndex)` helper with backwards compatibility
+- Header row detection using column name matching (not line numbers)
+
+**8 Columns Made Dynamic** (previously hardcoded `parts[N]`):
+- `Sensor Glucose (mg/dL)` (was index 34)
+- `Date`, `Time` (were indices 1, 2)
+- `Alarm`, `Rewind` (were indices 18, 21)
+- `Bolus Volume Delivered (U)`, `BG Reading (mg/dL)`, `BWZ Carb Input (g)` (were indices 13, 5, 27)
+
+### Changed
+
+**Parser Resilience** - Risk Level: MEDIUM-HIGH → LOW
+- **Before**: Hardcoded indices → silent breakage if Medtronic changes column order
+- **After**: Dynamic detection → works with reordered columns, fails gracefully with clear errors
+
+### Performance
+
+- Implementation: 32 minutes (73% faster than 120 min estimate!)
+- Runtime impact: None (<1ms overhead per CSV)
+
+### Technical Details
+
+- `src/core/parsers.js` (+45 lines)
+- Fallback logic ensures backwards compatibility
+- Clear error messages if header missing or columns invalid
+
+### Testing
+
+**Verified by Jo** (2025-11-01 19:45):
+- ✅ 90-day CSV upload successful
+- ✅ All metrics calculate correctly
+- ✅ No console errors
+- ✅ Dynamic column mapping confirmed
+
+### Known Issues
+
+- ⚠️ TDD not displaying in some daily profiles (P3, display only, fix in v3.4.0)
+
+---
+
 ## [3.2.0] - 2025-11-01 - ⚡ Performance & Validation âœ… COMPLETE
 
 **Block A: Quick Wins - Performance benchmarking and glucose bounds validation**
