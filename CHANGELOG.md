@@ -6,6 +6,56 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v3.6.1] - 2025-11-02 - Development Setup
+
+### 🏗️ Project Structure
+- **v4.0 Development branch created**
+  - Main branch: v3.6.0-safe (commit 80fb1fd) - production fallback
+  - Develop branch: Active development for v4.0 implementation
+  - Full Option C chosen: 67 hours implementation (all P0-P3 sprints)
+
+### 📚 Documentation Overhaul
+- **New sprint-based structure**
+  - Created `docs/sprints/` with 7 sprint directories
+  - Sprint B1 (Metrics Validation) - starting point
+  - Sprint A1, F1, G1, C1, C2, F2 prepared
+  
+- **New root-level guides**
+  - `START_HERE.md` - Master navigation (replaces old version)
+  - `CURRENT_SPRINT.md` - Active sprint tracking
+  - `GIT_CHEATSHEET.md` - Branch switching guide
+  - `PLAN_VAN_AANPAK.md` - Complete v4.0 roadmap
+
+- **Archived old versions**
+  - Old HANDOFF.md → `docs/archive/v3.6.0-handoffs/`
+  - Old START_HERE.md → `docs/archive/v3.6.0-handoffs/`
+
+### 🎯 v4.0 Roadmap
+**Phase 1: P1 Sprints** (15h)
+- Sprint B1: Metrics Validation (7h) ← Starting here
+- Sprint A1: Parser Robustness (8h)
+
+**Phase 2: P0 Sprints** (15h)
+- Sprint F1: Chart Accessibility (5h)
+- Sprint G1: Backup/Restore Complete (10h)
+
+**Phase 3: P2 Sprints** (30h)
+- Sprint C1: Split God Components (20h)
+- Sprint C2: Table Virtualization (3h)
+- Sprint F2: WCAG Full Compliance (9h)
+
+**Total**: 67 hours across 7 sprints
+
+### 🔍 TIER2 Analysis Complete
+- 6/6 domains analyzed (A, B, C, D, E, F, G)
+- Overall architecture score: 7.5/10
+- 30+ issues identified and prioritized
+- All analysis documents in `docs/analysis/`
+
+---
+
+---
+
 ## [v3.6.0] - 2025-11-01
 
 ### 🔒 Critical Improvements

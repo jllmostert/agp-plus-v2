@@ -1,202 +1,159 @@
----
-tier: 1
-status: active
-last_updated: 2025-11-02 00:55
-purpose: Central navigation for AGP+ v3.6.0 - TIER2 complete
----
+# AGP+ Master START_HERE - v4.0 Development
 
-# 🧭 START HERE - AGP+ v3.6.0
-
-**Status**: ✅ TIER2 Complete (6/6 domains) → Synthesis Next  
-**Version**: v3.6.0 (committed: 3a2a2ba)  
-**Last Session**: 2025-11-02 00:30-00:55 (Domain F completion, 25 min)  
-**Next**: TIER2 Synthesis (30 min) → Implementation sprints
+**Version**: v4.0-develop  
+**Base**: v3.6.0-safe (commit 80fb1fd)  
+**Branch**: develop  
+**Last Updated**: 2025-11-02
 
 ---
 
-## 🎯 NEW SESSION CHECKLIST
+## 🎯 QUICK START (30 seconds)
 
-1. **Read HANDOFF.md** ← TIER2 Synthesis instructions (Priority 1)
-2. **Verify git**: `git log --oneline -3` (should show 3a2a2ba)
-3. **Review**: `docs/analysis/TIER2_ANALYSIS_SUMMARY.md` (6/6 complete)
-
----
-
-## 📂 KEY FILES
-
-**For Next Session** (TIER2 Synthesis):
-- `HANDOFF.md` - Complete synthesis instructions
-- `docs/analysis/TIER2_SYNTHESIS.md` - File to update
-- `docs/analysis/TIER2_ANALYSIS_SUMMARY.md` - Current status
-- All domain analyses (A-G)
-
-**After Synthesis** (Implementation):
-- Sprint F1: Chart accessibility (5h)
-- Sprint G1: JSON import (12h)
-- Sprint C1: Split god components (16h)
-
-**Reference**:
-- `docs/analysis/DOMAIN_F_VISUALIZATION_ANALYSIS.md` - Just completed
-- `docs/analysis/DOMAIN_G_EXPORT_IMPORT_ANALYSIS.md` - Just completed
-- `docs/analysis/DOMAIN_C_UI_COMPONENTS_ANALYSIS.md` - Critical refactoring
+1. **Check branch**: `git branch` (should show `* develop`)
+2. **Current sprint**: See `CURRENT_SPRINT.md`
+3. **Progress**: See `PROGRESS.md` (source of truth)
+4. **Switch branches**: See `GIT_CHEATSHEET.md`
 
 ---
 
-## 🚀 QUICK START
+## ðŸ"Š PROJECT STATUS
 
-```bash
-cd /Users/jomostert/Documents/Projects/agp-plus
-export PATH="/opt/homebrew/bin:$PATH"
+**Architecture Score**: 7.5/10 (TIER2 complete)  
+**Implementation Plan**: Option C (Full, 67h)  
+**Current Sprint**: B1 - Metrics Validation (7h)
 
-# Verify status
-git log --oneline -3  # Latest: 3a2a2ba (TIER2 complete)
-git status           # Clean
+**Safe Version**: 
+- Branch: main
+- Commit: 80fb1fd
+- Tag: v3.6.0-safe
 
-# Review analyses
-ls -lh docs/analysis/
-cat docs/analysis/TIER2_ANALYSIS_SUMMARY.md
-```
-
----
-
-## 📊 PROJECT STATUS
-
-**TIER2 Analysis**: ✅ **COMPLETE (6/6 domains)**
-- ✅ Domain A: Parsing (8.5/10) - Robust, dynamic
-- ✅ Domain B: Metrics (9.0/10) - Excellent performance
-- ✅ Domain C: UI Components (6.5/10) - God components ⚠️
-- ✅ Domain D: Storage (7.0/10) - Dual storage working
-- ✅ Domain E: Stock (8.0/10) - Two-phase system
-- ✅ Domain F: Visualization (6.5/10) - No accessibility ⚠️
-- ✅ Domain G: Export/Import (7.0/10) - No JSON import ⚠️
-
-**Architecture Score**: 7.5/10 (solid, actionable issues)
-
-**Next Steps** (ordered priority):
-1. 📋 TIER2 Synthesis (30 min) ← START HERE
-2. 🎯 Sprint F1: Accessibility (5h, P0)
-3. 🎯 Sprint G1: JSON import (12h, P0)
-4. 🎯 Sprint C1: Split AGPGenerator (16h, P0)
+**Development Version**:
+- Branch: develop
+- Status: Active
+- Starting: Sprint B1
 
 ---
 
-## 🚨 CRITICAL FINDINGS
+## ðŸ"‚ DOCUMENTATION STRUCTURE
 
-**Must Fix Before v4.0** (P0):
+### Root Level (Always Current)
+- `PROGRESS.md` - **SOURCE OF TRUTH** (what's done, what's next)
+- `CURRENT_SPRINT.md` - Active sprint info
+- `GIT_CHEATSHEET.md` - Branch switching guide
+- `PLAN_VAN_AANPAK.md` - Complete v4.0 roadmap
+- `README.md` - User-facing info
+- `CHANGELOG.md` - Version history
 
-1. **Accessibility** (Domain F)
-   - No ARIA labels
-   - No screen reader support
-   - No keyboard navigation
-   - Medical app MUST be accessible
-   - Fix: 5 hours (Sprint F1)
+### Per-Sprint (Organized by Sprint)
+- `docs/sprints/sprint-B1-metrics/` - Sprint B1 handoff + progress
+- `docs/sprints/sprint-A1-parser/` - Sprint A1 handoff + progress
+- `docs/sprints/sprint-F1-accessibility/` - Sprint F1 handoff + progress
+- (etc. for each sprint)
 
-2. **Incomplete Backup** (Domain G)
-   - JSON export works, import doesn't
-   - No data validation
-   - Incomplete feature
-   - Fix: 12 hours (Sprint G1)
-
-3. **God Components** (Domain C)
-   - AGPGenerator: 1,962 lines
-   - SensorHistoryModal: 1,387 lines
-   - No virtualization (slow with 1000+ items)
-   - Fix: 19 hours (Sprint C1)
-
-**Total P0 Effort**: ~36 hours over 3 sprints
+### Reference (Read-Only)
+- `docs/analysis/` - TIER2 domain analyses
+- `docs/archive/` - Old versions
+- `/mnt/project/` - MiniMed reference docs (read-only)
 
 ---
 
-## 💡 CRITICAL LESSONS LEARNED
+## 🚀 SPRINT ROADMAP
 
-**Apply these to avoid context overflow**:
+### Phase 1: P1 Sprints (15h)
+1. ✅ **Sprint B1**: Metrics Validation (7h) ← **START HERE**
+2. ⏳ **Sprint A1**: Parser Robustness (8h)
 
-1. **Large files**: ALWAYS use offset/length for files >800 lines
-   - Check file size first: `get_file_info(path)`
-   - Read in 100-line chunks: `read_file(path, offset=0, length=100)`
-   
-2. **Write operations**: Max 25-30 lines per call
-   - Use `mode='append'` for building large files
-   - Save incrementally (don't wait for end)
+### Phase 2: P0 Sprints (15h)
+3. ⏳ **Sprint F1**: Chart Accessibility (5h)
+4. ⏳ **Sprint G1**: Backup/Restore Complete (10h)
 
-3. **Progress tracking**: Document DURING work
-   - Take notes in chunks
-   - Commit partial work
-   - Recovery easier with incremental saves
+### Phase 3: P2 Sprints (30h)
+5. ⏳ **Sprint C1**: Split God Components (20h)
+6. ⏳ **Sprint C2**: Table Virtualization (3h)
+7. ⏳ **Sprint F2**: WCAG Full Compliance (9h)
 
-4. **Recovery**: Chunk-based reading works perfectly
-   - Read structure first (50-100 lines)
-   - Jump to specific sections with offset
-   - Build complete picture incrementally
-
-**Successfully Applied**:
-- Domain F completed without crash ✅
-- Real-time PROGRESS.md updates ✅
-- Incremental git commits ✅
+### Phase 4: Polish (Optional)
+- Performance optimizations
+- Additional tests
+- UX improvements
 
 ---
 
-## 🗂️ RECENT WORK (2025-11-02)
+## ðŸ"‹ FILE LOCATIONS
 
-**Session 1: Domain G Analysis** (00:00-00:25, 25 min)
-- Export/Import system analyzed
-- Score: 7.0/10
-- Critical: No JSON import
-- File: `DOMAIN_G_EXPORT_IMPORT_ANALYSIS.md`
+**Root** (`/Users/jomostert/Documents/Projects/agp-plus/`):
+- PROGRESS.md
+- CURRENT_SPRINT.md
+- GIT_CHEATSHEET.md
+- PLAN_VAN_AANPAK.md
 
-**Session 2: Domain F Completion** (00:30-00:55, 25 min)
-- Visualization analysis completed
-- Score: 6.5/10
-- Critical: No accessibility
-- File: `DOMAIN_F_VISUALIZATION_ANALYSIS.md` (370 lines)
-- Git: 3a2a2ba pushed ✅
+**Sprint Docs** (`docs/sprints/[sprint-name]/`):
+- START_HERE.md (sprint-specific)
+- HANDOFF.md (sprint-specific)
+- PROGRESS.md (copied from root after sprint)
 
-**Total**: TIER2 complete (6/6 domains, 7.5/10 average)
+**Reference** (`docs/analysis/`):
+- TIER2 domain analyses
+- Architecture scores
 
----
-
-## 📈 ARCHITECTURE EVOLUTION
-
-**Block A** (v3.1.0): Performance baseline
-- Metrics: 3-64ms ✅
-
-**Block B** (v3.2.0-v3.5.0): Parser robustness
-- Dynamic columns ✅
-- Format detection ✅
-- Validation layer ✅
-- Unit tests ✅
-
-**Block C2** (v3.6.0): Storage fixes
-- Badges added ✅
-- Lock system fixed ✅
-
-**TIER2 Analysis** (v3.6.0): Complete architecture review
-- 6 domains analyzed ✅
-- 30+ issues identified
-- Roadmap created
-
-**Next** (v3.7.0+): Implementation
-- Sprint F1: Accessibility
-- Sprint G1: JSON import
-- Sprint C1: Refactor god components
+**Archive** (`docs/archive/`):
+- Old handoff versions
+- Deprecated docs
 
 ---
 
-## 🎯 SYNTHESIS FOCUS
+## âš ï¸ CRITICAL RULES
 
-**What to Consolidate**:
-1. Executive summary (architecture verdict)
-2. Critical issues across all domains
-3. Master implementation roadmap
-4. Priority sprints (F1, G1, C1)
-5. Production readiness assessment
+### Token Efficiency
+- **Large files** (>800 lines): Use offset/length
+- **Write operations**: Max 25-30 lines per call
+- **Progress**: Update PROGRESS.md during work (not at end)
+- **Recovery**: Chunk-based reading if crash
 
-**Output**: Updated `TIER2_SYNTHESIS.md` + `PROJECT_BRIEFING.md`
+### Git Workflow
+- **Frequent commits**: Every 1-2 hours
+- **Never commit to main**: Always use develop
+- **Emergency revert**: `git checkout main` (see GIT_CHEATSHEET.md)
 
-**Effort**: 30 minutes
+### Documentation
+- **PROGRESS.md**: Source of truth, update real-time
+- **CURRENT_SPRINT.md**: Update at sprint start/end
+- **Per-sprint docs**: Create at sprint start
 
 ---
 
-**Version**: 5.0 (Post-TIER2 Analysis)  
-**Git**: 3a2a2ba (v3.6.0), TIER2 complete  
-**Status**: Ready for synthesis → implementation
+## 🎯 STARTING A NEW SESSION
+
+### Quick Checklist
+1. [ ] Verify branch: `git branch` (should be `develop`)
+2. [ ] Read `CURRENT_SPRINT.md` (what sprint are we on?)
+3. [ ] Read `PROGRESS.md` (what's the latest status?)
+4. [ ] Read sprint handoff: `docs/sprints/[sprint-name]/HANDOFF.md`
+5. [ ] Start work!
+
+### During Session
+- Update PROGRESS.md every 30-60 minutes
+- Commit frequently (`git add . && git commit -m "..."`)
+- Push to GitHub (`git push origin develop`)
+
+### End of Session
+- Update PROGRESS.md with final status
+- Update CURRENT_SPRINT.md if sprint complete
+- Commit + push
+- Create handoff for next session (if needed)
+
+---
+
+## 📞 HELP
+
+**Branch confusion?** → See `GIT_CHEATSHEET.md`  
+**Sprint info?** → See `CURRENT_SPRINT.md`  
+**Latest status?** → See `PROGRESS.md`  
+**Roadmap?** → See `PLAN_VAN_AANPAK.md`  
+**Technical details?** → See sprint's `HANDOFF.md`
+
+---
+
+**Version**: 1.0  
+**Status**: Ready for Sprint B1  
+**Next**: Read `CURRENT_SPRINT.md` and start!

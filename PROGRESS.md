@@ -99,3 +99,55 @@
 
 ---
 
+
+---
+
+## 📋 SESSION - Housekeeping & Setup (2025-11-02 01:30-02:00, 30 min)
+
+**Doel**: Setup voor v4.0 development (Option C, full implementation)
+
+**Wat gedaan**:
+- âœ… Safety commit naar GitHub (v3.6.0-safe, commit 80fb1fd)
+- âœ… Develop branch aangemaakt
+- âœ… GIT_CHEATSHEET.md gemaakt (branch switching guide)
+- âœ… Oude handoffs gearchiveerd naar docs/archive/v3.6.0-handoffs/
+- âœ… Sprint directory structure gemaakt (7 sprints)
+- âœ… START_HERE.md vernieuwd (master navigation)
+- âœ… CURRENT_SPRINT.md gemaakt (Sprint B1)
+
+**Nieuwe Structuur**:
+```
+/Users/jomostert/Documents/Projects/agp-plus/
+├── START_HERE.md (master nav)
+├── CURRENT_SPRINT.md (current sprint info)
+├── PROGRESS.md (this file - source of truth)
+├── GIT_CHEATSHEET.md (branch guide)
+├── PLAN_VAN_AANPAK.md (v4.0 roadmap)
+├── docs/
+│   ├── sprints/
+│   │   ├── sprint-B1-metrics/ (starting here!)
+│   │   ├── sprint-A1-parser/
+│   │   ├── sprint-F1-accessibility/
+│   │   ├── sprint-G1-backup/
+│   │   ├── sprint-C1-components/
+│   │   ├── sprint-C2-virtualization/
+│   │   └── sprint-F2-wcag/
+│   ├── analysis/ (TIER2 analyses)
+│   └── archive/ (old versions)
+```
+
+**Git Status**:
+- Main branch: v3.6.0-safe (80fb1fd) ← Safe fallback
+- Develop branch: Active ← Working here
+- Remote: Both pushed to GitHub
+
+**Next Steps**:
+1. [ ] Update CHANGELOG.md
+2. [ ] Update PROJECT_BRIEFING.md
+3. [ ] Create Sprint B1 HANDOFF.md
+4. [ ] Start Sprint B1 work
+
+**Status**: âœ… SETUP COMPLETE - Ready for Sprint B1
+
+---
+
