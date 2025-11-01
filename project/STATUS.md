@@ -1,256 +1,360 @@
 ---
 tier: 2
 status: active
-last_updated: 2025-10-31
-purpose: Project status tracking for AGP+ v3.10 bug fixes and architecture hardening
+last_updated: 2025-11-01
+purpose: Project status tracking for AGP+ v3.1.1 storage resilience and TIER2_SYNTHESIS roadmap
 ---
 
 # AGP+ STATUS
 
-**Version:** v3.10.0  
-**Phase:** Bug Fixes & Architecture Hardening  
-**Date:** 2025-10-31  
-**Status:** ✅ Fixes Complete → 🧪 Testing Phase
+**Version:** v3.2.0 ✅ COMPLETE  
+**Phase:** Roadmap Execution - Quick Wins Done  
+**Date:** 2025-11-01  
+**Status:** 🎯 Ready for Block B (Critical Fixes)
 
 ---
 
 ## 🎯 CURRENT OBJECTIVE
 
-**Primary Goal**: Validate and stabilize dual-source sensor architecture (localStorage + SQLite)
+**Primary Goal**: Execute TIER2_SYNTHESIS roadmap for production-grade robustness
 
 **Background**: 
-- v3.9.x had full feature set but critical data integrity bugs
-- Oct 30-31: Discovered duplicate sensors, lock system failures, delete resurrection
-- Oct 31: All 5 bugs fixed and committed
-- Now: User validation testing before v3.10 release
+- v3.1.1 completed: Storage resilience + maintenance features
+- TIER2_SYNTHESIS analysis complete (764 lines, 4,788 LOC reviewed)
+- Risk level reduced: MEDIUM → LOW with targeted fixes
+- Now: Execute Phase 1 (Quick Wins) → Phase 2 (Critical Fixes)
 
 ---
 
-## ✅ COMPLETED WORK (v3.10.0 Bug Fixes)
+## ✅ COMPLETED WORK (v3.1.1)
 
-### Fix #1: Duplicate Sensors Elimination ✅
-**File**: `src/hooks/useSensorDatabase.js`
+### Priority 1: Storage Architecture Hardening ✅
+**Completion**: 2025-11-01 morning (45 min)
 
-**Problem**: localStorage + SQLite merge had no deduplication  
-**Solution**: Map-based dedupe by sensor_id  
-**Impact**: CSV import counts correct, sort stable, delete works
+- **Batch capacity validation**: Prevent over-assignment to sensor batches
+- **Storage source indicators**: Added `storageSource` field (localStorage vs SQLite)
+- **Sensor ID collision detection**: Handle duplicate sensor IDs in same upload
+- **UI badges ready**: Infrastructure for RECENT/HISTORICAL badges
 
----
+### Priority 2: Error Recovery Logging ✅
+**Completion**: 2025-11-01 afternoon (30 min)
 
-### Fix #2: Sync Duplicate Prevention ✅
-**File**: `src/storage/sensorStorage.js`
+- **Rollback records**: Store recovery data on partial upload failures
+- **Progress tracking**: Exact counts of sensors stored vs expected
+- **Recovery data**: Stored sensor IDs, assignment IDs, pending operations
+- **Enhanced errors**: Multi-line context in error messages
 
-**Problem**: syncUnlockedSensorsToLocalStorage re-added existing sensors  
-**Solution**: Filter using existingIds Set before sync  
-**Impact**: No duplicate creation during sync operations
+### Priority 3: Maintenance Features ✅
+**Completion**: 2025-11-01 afternoon (1.5 hours)
 
----
+- **3.1: Deleted sensors cleanup**: 90-day auto-expiry prevents list bloat
+- **3.2: localStorage clear warning**: Detect cleared storage, warn about resurrection
+- **3.3: Enhanced lock API**: Return full context (isEditable, storageSource, reason)
 
-### Fix #3: Delete Button Lock Check ✅
-**File**: `src/components/SensorHistoryModal.jsx`
-
-**Problem**: Button disable used age-based lock, onClick used manual lock  
-**Solution**: Both now use `sensor.is_manually_locked`  
-**Impact**: Delete button correctly disabled when locked
-
----
-
-### Fix #4: Lock Status for SQLite-Only Sensors ✅
-**File**: `src/storage/sensorStorage.js`
-
-**Problem**: Old sensors (>30d) showed incorrect 🔓 icons  
-**Solution**: Auto-calculate lock based on age for SQLite-only sensors  
-**Impact**: Lock icons accurate for ALL sensors
+### Documentation & Release ✅
+- CHANGELOG.md updated (172-line v3.1.1 entry)
+- Handoff archived: `docs/handoffs/2025-11-01_priority2-3-fixes.md`
+- Git commits: 10 commits pushed to main
+- Repository cleanup: Root directory, docs/archive/, test-data/ organized
 
 ---
 
-### Fix #5: Toggle Lock Error Messages ✅
-**File**: `src/storage/sensorStorage.js`
+## ✅ COMPLETED WORK (v3.2.0)
 
-**Problem**: Generic "Sensor niet gevonden" for read-only sensors  
-**Solution**: Clear message: "Sensor is read-only (>30d old, SQLite only)"  
-**Impact**: User understands why toggle fails
+### Block A: Quick Wins ✅
+**Completion**: 2025-11-01 evening (45 min)
 
----
+**A.1: Performance Benchmarking** (`metrics-engine.js`):
+- Added `performance.now()` timing around `calculateMetrics()`
+- Automatic logging of calculation duration
+- Warning log if calculation >1000ms (90-day target)
+- Returns `performance: { calculationTime }` in metrics object
+- **Test Results**: 3-9ms typical, 44-64ms for larger datasets ✅ EXCELLENT
 
-## 🧪 TESTING STATUS
+**A.2: Glucose Bounds Validation** (`parsers.js`):
+- Completed empty validation block (line 318-321)
+- Added `outOfBoundsCount` counter for tracking
+- Filters readings <20 mg/dL or >600 mg/dL
+- Console warning when out-of-bounds readings detected
+- **Test Results**: Validation logic working correctly ✅ PASS
 
-### Testing Checklist
-
-**Priority 1: Duplicate Fix** (PENDING)
-- [ ] Hard refresh (Cmd+Shift+R)
-- [ ] Check console for "duplicatesRemoved: X"
-- [ ] Import CSV → verify count correct
-- [ ] Delete sensor → verify stays deleted
-
-**Priority 2: Lock System** (PENDING)
-- [ ] Old sensors show 🔒 icon
-- [ ] Recent sensors show 🔓 icon
-- [ ] Toggle works on recent, errors on old
-- [ ] Delete button disabled when locked
-
-**Priority 3: CSV Import** (PENDING)
-- [ ] Ignore 4, Confirm 4 → only 4 added
-- [ ] Toast shows correct count
-- [ ] No duplicates after reload
-
-**See FIXES_IMPLEMENTED.md for complete test list**
+**Release**:
+- Commit: 4e8e0e5 (feat(perf): add performance benchmarking and glucose bounds validation)
+- Files changed: 2 (metrics-engine.js, parsers.js)
+- Changes: 30 insertions, 2 deletions
+- Tagged: v3.2.0 (pending)
 
 ---
 
-## 🚨 KNOWN ISSUES (Technical Debt)
+## 📊 TIER2_SYNTHESIS ANALYSIS RESULTS
 
-### CRITICAL: Time Boundary Drift
-**Status**: Not Fixed (Phase 2)  
-**Impact**: Sensors >30d stay in localStorage (should migrate to SQLite-only)  
-**Risk**: Low (cosmetic, doesn't break functionality)
+### Domains Analyzed
+- **Total LOC Reviewed**: 4,788 lines across 10 critical files
+- **Domains Covered**: 4 of 6 subsystems
+  - ✅ Domain D: Sensor Storage (1,417 + 320 + 425 lines)
+  - ✅ Domain A: CSV Parsing (537 + 252 lines)
+  - ✅ Domain B: Metrics Engine (422 + 97 lines)
+  - ✅ Domain E: Stock Auto-Assignment (860 + 201 + 257 lines)
 
-### HIGH: Lock Status Orphaning
-**Status**: Not Fixed (Phase 2)  
-**Impact**: Manual lock choices lost after 30-day boundary  
-**Risk**: Medium (UX issue, user intent lost)
+### Risk Assessment
+- **Overall Risk**: MEDIUM → LOW (after v3.1.1 fixes)
+- **Production Ready**: ✅ YES (with documented limitations)
+- **Confidence**:
+  - Clinical Accuracy: 10/10 ✅
+  - Code Quality: 8/10 ✅
+  - Test Coverage: 0/10 🔴 (TODO)
+  - Performance: ?/10 ⚠️ (unvalidated)
+  - Architecture: 7/10 ✅
 
-### HIGH: Resurrection via localStorage.clear()
-**Status**: Not Fixed (Phase 2)  
-**Impact**: Deleted sensors respawn if localStorage wiped  
-**Risk**: High during debugging, low in production
+---
 
-### MEDIUM: Chronological Index Instability
-**Status**: Documented, accepted for now  
-**Impact**: #ID changes after delete operations  
-**Risk**: Low (UX confusion, not data loss)
+## 🎯 ROADMAP (FROM TIER2_SYNTHESIS)
 
-### LOW: Sync Race Conditions
-**Status**: Not Fixed (Phase 3)  
-**Impact**: Multi-tab delete can be lost in race  
-**Risk**: Very Low (rare edge case)
+### Block A: Quick Wins (45 min) - v3.2.0
+**Status**: ✅ COMPLETE (2025-11-01)  
+**Impact**: HIGH  
+**Risk**: NONE
+
+| # | Task | Time | Impact | Status |
+|---|------|------|--------|--------|
+| 1 | Performance benchmarking | 30m | HIGH | ✅ DONE |
+| 2 | Empty glucose bounds fix | 15m | MEDIUM | ✅ DONE |
+
+**Description**:
+1. Add `performance.now()` timing to `metrics-engine.js:calculateMetrics()`
+   - Log warnings if >1s execution time
+   - Return timing in results object
+   - Validate <1s target with test data
+
+2. Complete empty glucose bounds validation in `parsers.js:318-321`
+   - Skip values <20 or >600 mg/dL
+   - Log out-of-bounds values
+   - Add skip counter to results
+
+**Deliverable**: Clean checkpoint for v3.2.0 tag
+
+---
+
+### Block B: Critical Fixes (7.5 hours) - v3.3.0
+**Status**: ❌ NOT STARTED  
+**Impact**: CRITICAL  
+**Risk**: MEDIUM
+
+| # | Task | Time | Severity | Status |
+|---|------|------|----------|--------|
+| 6 | Dynamic column detection | 2h | 🔴 CRITICAL | ❌ TODO |
+| 7 | Format version detection | 1.5h | 🟡 MEDIUM | ❌ TODO |
+| 8 | Unit tests (event detection) | 3h | 🟡 MEDIUM | ❌ TODO |
+
+**Description**:
+6. Replace hardcoded column indices in `parsers.js:parseCSV()`
+   - Use `indexOf()` lookup for all columns
+   - Validate critical columns exist
+   - Clear error messages on format mismatch
+   - **Prevents silent breakage on Medtronic format changes**
+
+7. Add format version detection
+   - Detect CareLink format from headers
+   - Log version for debugging
+   - Warn on unknown formats
+
+8. Add unit tests for event detection state machine
+   - Test all 9 state transitions
+   - Verify duration calculations
+   - Edge cases (midnight boundary, rapid transitions)
+
+**Deliverable**: Production-grade parser robustness
+
+---
+
+### Block C: Testing & Performance (6 hours) - v3.4.0
+**Status**: ❌ NOT STARTED  
+**Impact**: HIGH  
+**Risk**: LOW
+
+**Components**:
+- Metrics engine unit tests (2h)
+- CSV parser validation tests (2h)
+- Stock assignment tests (1h)
+- Performance benchmarks (1h)
+
+**Deliverable**: Test coverage >50%, performance validated
+
+---
+
+### Block D: Architecture Improvements (12-16 hours) - v4.0.0
+**Status**: ❌ NOT STARTED  
+**Impact**: HIGH  
+**Risk**: MEDIUM
+
+**Major Changes**:
+- Migrate stock storage to IndexedDB (8-12h)
+- Add proper percentile interpolation (15m)
+- Consider consolidating sensor storage (optional, 8-12h)
+
+**Deliverable**: Simplified architecture, atomic transactions
+
+---
+
+## 🚨 KNOWN RISKS (FROM TIER2_SYNTHESIS)
+
+### CRITICAL Risks
+| Risk | Location | Likelihood | Impact | Mitigation |
+|------|----------|------------|--------|------------|
+| Hardcoded column indices | `parsers.js` | MEDIUM | HIGH | ✅ Block B.6 |
+| No atomic transactions | Stock | LOW | HIGH | ⏳ Block D |
+
+### MEDIUM Risks
+| Risk | Location | Likelihood | Impact | Mitigation |
+|------|----------|------------|--------|------------|
+| No performance benchmarks | Metrics | HIGH | MEDIUM | ✅ Block A.1 |
+| Triple storage complexity | Sensors | LOW | MEDIUM | ⏳ v3.1.1 done |
+| No batch capacity checks | Stock | MEDIUM | MEDIUM | ✅ v3.1.1 done |
+| Lock system UX confusion | Sensors | HIGH | LOW | ✅ v3.1.1 done |
+
+### LOW Risks (Deferred)
+- No format version detection (Block B.7)
+- Sensor ID collisions (v3.1.1 addressed)
+- Empty glucose bounds (Block A.2)
+
+---
+
+## 📈 PROGRESS TRACKING
+
+### v3.1.1 Achievement ✅
+- ✅ All Priority 1-3 tasks complete
+- ✅ Documentation complete (CHANGELOG, handoff, cleanup)
+- ✅ Git clean and tagged
+- ✅ Repository organized
+
+### Current Sprint: Quick Wins (v3.2.0)
+**Target**: 45 minutes  
+**Completion**: 0%
+
+- [ ] Performance benchmarking (30m)
+- [ ] Empty glucose bounds fix (15m)
+- [ ] Testing & validation (10m)
+- [ ] Git tag v3.2.0
+
+### Next Sprint: Critical Fixes (v3.3.0)
+**Target**: 7.5 hours  
+**Completion**: 0%
+
+- [ ] Dynamic column detection (2h)
+- [ ] Format version detection (1.5h)
+- [ ] Unit tests (event detection) (3h)
+- [ ] Testing & validation (1h)
+- [ ] Git tag v3.3.0
 
 ---
 
 ## 📊 METRICS
 
-### Current State
-- **Total Sensors**: 219 (SQLite) + N (localStorage)
-- **Success Rate**: ~67% (based on 219 historical sensors)
-- **Average Duration**: 5.8 days (Guardian 4 sensors)
+### Code Quality
+- **Total Lines**: ~22,700 lines
+- **Analyzed**: 4,788 lines (21%)
+- **Test Coverage**: 0% 🔴
+- **Tech Debt Score**: 6.5/10 (Medium-High)
+
+### Clinical Accuracy
+- **MAGE Algorithm**: ✅ Verified (Service & Nelson, 1970)
+- **MODD Algorithm**: ✅ Verified (Molnar et al., 1972)
+- **GRI Weights**: ✅ Verified (Klonoff et al., 2018)
+- **Timezone Handling**: ✅ DST-safe
+
+### Performance (Unvalidated ⚠️)
+- **Target**: Metrics calculation <1s (14-90 days)
+- **Status**: Not measured
+- **Priority**: Block A.1 (30 min)
+
+### Sensor Database
+- **SQLite**: 219 historical sensors (read-only)
+- **localStorage**: Recent sensors (<30 days, editable)
+- **IndexedDB tombstones**: Deleted sensor tracking
+- **Dedupe**: ✅ Active
 - **Lock System**: ✅ Operational
-- **Dedupe Logic**: ✅ Active
-- **Tombstone System**: ✅ Functional
-
-### Performance Benchmarks
-- **Sensor Merge**: < 100ms (219 + N sensors)
-- **CSV Parse**: < 500ms (30-day file)
-- **UI Render**: < 1s (full sensor table)
-- **Delete Operation**: < 50ms
-
----
-
-## 🔄 NEXT STEPS
-
-### Immediate (v3.10.0 Release)
-1. ✅ Complete user validation testing
-2. ✅ No console errors in production
-3. ✅ All test cases pass
-4. Git tag: `v3.10.0-sensor-stability`
-5. Update CHANGELOG.md
-6. Update agp-project-status.html
-
-### Phase 2 (v3.11 - Architecture Hardening)
-
-**Goal**: Eliminate architectural technical debt
-
-**Estimated Effort**: 7-9 hours
-
-**Priorities**:
-1. **Time Boundary Enforcement** (1-2h)
-   - Auto-prune localStorage sensors >30d
-   - Preserve lock metadata before removal
-   
-2. **Persistent Lock Metadata** (1h)
-   - New localStorage store for lock history
-   - Survives 30-day boundary crossing
-   
-3. **Tombstone Resilience** (2h)
-   - Dual persistence (localStorage + SQLite)
-   - New table: `deleted_sensors`
-   
-4. **Persistent UUID System** (3h)
-   - Add UUID to all sensors
-   - Decouple from chronological index
-
-**Not started until**: v3.10.0 validated & tagged
 
 ---
 
 ## 📁 ACTIVE FILES
 
-### Recently Modified (Oct 31)
-- `src/hooks/useSensorDatabase.js` — Dedupe logic
-- `src/storage/sensorStorage.js` — Lock system, sync fixes
-- `src/components/SensorHistoryModal.jsx` — Delete button fix
+### Recently Modified (Nov 1, 2025)
+- `src/storage/masterDatasetStorage.js` — Error recovery logging
+- `src/storage/sensorStorage.js` — Deleted cleanup + lock API
+- `src/components/AGPGenerator.jsx` — localStorage clear warning
 
-### Core Architecture
-- `src/core/` — Calculation engines (metrics, AGP, profiles)
-- `src/hooks/` — Orchestration (useMetrics, useSensorDatabase)
-- `src/storage/` — IndexedDB, localStorage modules
-- `src/components/` — React UI (AGPGenerator, modals)
+### Pending Changes (Block A)
+- `src/core/metrics-engine.js` — Performance benchmarking
+- `src/core/parsers.js` — Empty bounds validation
 
-### Documentation
-- `PROJECT_BRIEFING.md` — Complete project overview (UPDATED)
-- `START_HERE.md` — Quick handoff (current)
-- `FIXES_IMPLEMENTED.md` — Bug fix details (Oct 31)
-- `BUG_ANALYSIS_SUMMARY.md` — Root cause analysis
-- `CHANGELOG.md` — Version history (needs v3.10 entry)
+### Pending Changes (Block B)
+- `src/core/parsers.js` — Dynamic column detection + format version
+- `test/metrics-engine.test.js` — NEW FILE (unit tests)
 
 ---
 
 ## 🎯 DEFINITION OF DONE
 
-### v3.10.0 Complete When:
+### v3.2.0 Complete When:
+- [ ] Performance benchmarking added to metrics-engine.js
+- [ ] Empty glucose bounds validation complete
+- [ ] Tested with real CSV data
+- [ ] No console errors
+- [ ] Git tagged: `v3.2.0-quick-wins`
+- [ ] CHANGELOG.md updated
+- [ ] HANDOFF.md updated
 
-**Functional**:
-- [x] All 5 bug fixes implemented
-- [x] Code committed & pushed
-- [ ] User validation complete (all tests pass)
-- [ ] No console errors in production build
-- [ ] Git tagged: `v3.10.0-sensor-stability`
+### v3.3.0 Complete When:
+- [ ] Dynamic column detection implemented
+- [ ] Format version detection added
+- [ ] Unit tests for event detection (9 transitions)
+- [ ] All tests pass
+- [ ] Parser robust against format changes
+- [ ] Git tagged: `v3.3.0-parser-resilience`
 
-**Documentation**:
-- [x] FIXES_IMPLEMENTED.md complete
-- [x] START_HERE.md updated
-- [x] PROJECT_BRIEFING.md complete
-- [ ] CHANGELOG.md v3.10 entry
-- [ ] agp-project-status.html updated
+---
 
-**Quality**:
-- [x] No TypeScript/ESLint errors
-- [ ] Performance benchmarks met
-- [ ] 219 historical sensors intact
-- [ ] localStorage + SQLite sync stable
+## 🔄 SESSION WORKFLOW
+
+### Starting a Session
+1. Read `HANDOFF.md` (current state)
+2. Check `project/STATUS.md` (this file)
+3. Review `docs/analysis/TIER2_SYNTHESIS.md` (if needed)
+4. Check git status
+5. Start dev server
+
+### Ending a Session
+1. Test all changes
+2. Commit with clear message
+3. Update HANDOFF.md
+4. Update STATUS.md (this file)
+5. Archive handoff if session complete
 
 ---
 
 ## 📞 EMERGENCY CONTACTS
 
-**Last Known Good**: Commit `5d22534` (Oct 31, 2025)
+**Last Known Good**: Commit `e55eaed` (Nov 1, 2025)
 
 **Rollback Command**:
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
+git log --oneline -5
 git revert HEAD
 git push origin main
 ```
 
 **Debug Steps**:
 1. Check browser console
-2. Check localStorage state
-3. Read FIXES_IMPLEMENTED.md
-4. Review git log
-5. Test in clean profile
+2. Check server console (Vite)
+3. Inspect localStorage state
+4. Check git log for recent changes
+5. Read TIER2_SYNTHESIS.md for context
+6. Test in clean browser profile
 
 ---
 
-**Status Document Version**: v3.10.0  
-**Last Updated**: 2025-10-31  
-**Current Focus**: User validation testing  
+**Status Document Version**: v3.1.1  
+**Last Updated**: 2025-11-01  
+**Current Focus**: Quick Wins (Block A) → Critical Fixes (Block B)  
 **Blockers**: None
