@@ -320,6 +320,34 @@ export const parseCSV = (text) => {
     // Skip header lines (first 6 lines are metadata)
     const dataLines = lines.slice(CONFIG.CSV_SKIP_LINES);
     
+    // Find header row and build column index map
+    const headerRow = dataLines.find(line => {
+      const parts = line.split(';');
+      // Header contains "Date", "Time", and "Sensor Glucose"
+      return parts.some(p => p.trim() === 'Date') && 
+             parts.some(p => p.trim() === 'Time') &&
+             parts.some(p => p.trim().includes('Sensor Glucose'));
+    });
+    
+    if (!headerRow) {
+      throw new Error('Could not find CSV header row. Is this a valid CareLink export?');
+    }
+    
+    const columnMap = findColumnIndices(headerRow);
+    if (!columnMap) {
+      throw new Error('CSV header is missing required columns (Date, Time, Sensor Glucose)');
+    }
+    
+    // Helper function to get column value with fallback to old index
+    const getColumn = (parts, columnName, fallbackIndex) => {
+      const index = columnMap[columnName];
+      if (index !== undefined) {
+        return parts[index];
+      }
+      // Fallback to old hardcoded index (for backwards compatibility)
+      return parts[fallbackIndex];
+    };
+    
     // Validate CSV structure by checking first data line
     const firstDataLine = dataLines.find(line => line.trim());
     if (!firstDataLine) {
@@ -341,29 +369,29 @@ export const parseCSV = (text) => {
       .map((line, index) => {
         const parts = line.split(';');
         
-        // Skip column header row (Date;Time;...)
-        if (parts[1] === 'Date' && parts[2] === 'Time') {
+        // Skip the header row itself (already processed above)
+        if (line === headerRow) {
           skippedRows++;
           return null;
         }
         
-        // Validate column count
-        if (parts.length < 35) {
+        // Validate column count (flexible with column map)
+        if (parts.length < 10) {
           skippedRows++;
           return null;
         }
         
         // Parse glucose value (may be null for event-only rows like Rewind)
-        const glucose = utils.parseDecimal(parts[34]);
+        const glucose = utils.parseDecimal(getColumn(parts, 'Sensor Glucose (mg/dL)', 34));
         const hasGlucose = !isNaN(glucose);
         
-        // Parse alert field (column 18) for sensor events
-        const alert = parts[18]?.trim() || null;
+        // Parse alert field for sensor events
+        const alert = getColumn(parts, 'Alarm', 18)?.trim() || null;
         const hasSensorAlert = alert && (alert.includes('SENSOR') || alert.includes('Sensor'));
         
         // Skip rows that have neither glucose nor important events
-        const hasRewind = parts[21]?.trim() === 'Rewind';
-        const hasBolus = !isNaN(utils.parseDecimal(parts[13]));
+        const hasRewind = getColumn(parts, 'Rewind', 21)?.trim() === 'Rewind';
+        const hasBolus = !isNaN(utils.parseDecimal(getColumn(parts, 'Bolus Volume Delivered (U)', 13)));
         
         if (!hasGlucose && !hasRewind && !hasBolus && !hasSensorAlert) {
           skippedRows++;
@@ -382,12 +410,12 @@ export const parseCSV = (text) => {
         
         // Parse optional fields
         return {
-          date: parts[1],           // YYYY/MM/DD
-          time: parts[2],           // HH:MM:SS
+          date: getColumn(parts, 'Date', 1),
+          time: getColumn(parts, 'Time', 2),
           glucose: hasGlucose ? glucose : null,  // mg/dL (may be null)
-          bolus: utils.parseDecimal(parts[13]) || 0,
-          bg: utils.parseDecimal(parts[5]) || null,
-          carbs: utils.parseDecimal(parts[27]) || 0,
+          bolus: utils.parseDecimal(getColumn(parts, 'Bolus Volume Delivered (U)', 13)) || 0,
+          bg: utils.parseDecimal(getColumn(parts, 'BG Reading (mg/dL)', 5)) || null,
+          carbs: utils.parseDecimal(getColumn(parts, 'BWZ Carb Input (g)', 27)) || 0,
           rewind: hasRewind,
           alert: alert  // Alert field for sensor events
         };

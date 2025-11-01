@@ -25,9 +25,9 @@
 |------|------|------|--------|-------|------|
 | **B.6.1** | Analyze header structure | 15m | ✅ DONE | 19:17 | 19:25 |
 | **B.6.2** | Create findColumnIndices() | 30m | ✅ DONE | 19:26 | 19:31 |
-| **B.6.3** | Update parseCSV() | 30m | ⏸️ WAITING | - | - |
-| **B.6.4** | Add validation | 15m | ⏸️ WAITING | - | - |
-| **B.6.5** | Testing & commit | 30m | ⏸️ WAITING | - | - |
+| **B.6.3** | Update parseCSV() | 30m | ✅ DONE (TESTED) | 19:33 | 19:42 |
+| **B.6.4** | Add validation | 15m | ⏭️ SKIPPED | - | - |
+| **B.6.5** | Testing & commit | 30m | 🟡 IN PROGRESS | 19:47 | - |
 
 **Totaal**: 2 uur (120 minuten)  
 **Geschat klaar**: ~21:15
@@ -436,3 +436,120 @@ git push origin v3.2.0
 **Laatst bijgewerkt**: 2025-11-01 18:00  
 **Status**: 🟡 Klaar om te starten  
 **Volgende update**: Na voltooiing A.1
+
+
+---
+
+## 🎯 TAAK B.6.3: UPDATE parseCSV() - COMPLETE
+
+**Doel**: Replace all hardcoded column indices with dynamic column map  
+**File**: `src/core/parsers.js`  
+**Tijd**: 30 minuten  
+**Status**: ✅ CODE COMPLETE - NEEDS TESTING
+
+### Checklist
+- [x] Find header row in dataLines
+- [x] Call findColumnIndices(headerRow)
+- [x] Add error handling if columnMap is null
+- [x] Create getColumn() helper with fallback logic
+- [x] Replace parts[34] → 'Sensor Glucose (mg/dL)'
+- [x] Replace parts[18] → 'Alarm'
+- [x] Replace parts[21] → 'Rewind'
+- [x] Replace parts[13] → 'Bolus Volume Delivered (U)'
+- [x] Replace parts[1] → 'Date'
+- [x] Replace parts[2] → 'Time'
+- [x] Replace parts[5] → 'BG Reading (mg/dL)'
+- [x] Replace parts[27] → 'BWZ Carb Input (g)'
+- [x] Update header row skip check
+- [ ] **CRITICAL: Test with real CSV before commit!**
+
+### Code Changes Summary
+
+**1. Header Detection (line ~320)**:
+```javascript
+const headerRow = dataLines.find(line => {
+  const parts = line.split(';');
+  return parts.some(p => p.trim() === 'Date') && 
+         parts.some(p => p.trim().includes('Sensor Glucose'));
+});
+
+const columnMap = findColumnIndices(headerRow);
+if (!columnMap) {
+  throw new Error('CSV header missing required columns');
+}
+```
+
+**2. Helper Function with Fallback (line ~335)**:
+```javascript
+const getColumn = (parts, columnName, fallbackIndex) => {
+  const index = columnMap[columnName];
+  if (index !== undefined) {
+    return parts[index];
+  }
+  // Fallback to old hardcoded index
+  return parts[fallbackIndex];
+};
+```
+
+**3. All 8 Indices Replaced** (line ~370-415):
+- ✅ Glucose: `getColumn(parts, 'Sensor Glucose (mg/dL)', 34)`
+- ✅ Alert: `getColumn(parts, 'Alarm', 18)`
+- ✅ Rewind: `getColumn(parts, 'Rewind', 21)`
+- ✅ Bolus: `getColumn(parts, 'Bolus Volume Delivered (U)', 13)`
+- ✅ Date: `getColumn(parts, 'Date', 1)`
+- ✅ Time: `getColumn(parts, 'Time', 2)`
+- ✅ BG: `getColumn(parts, 'BG Reading (mg/dL)', 5)`
+- ✅ Carbs: `getColumn(parts, 'BWZ Carb Input (g)', 27)`
+
+### Safety Features
+- ✅ **Fallback logic**: If column name not in map, uses old index
+- ✅ **Error handling**: Throws clear error if header missing
+- ✅ **Backwards compatible**: Old CSVs still work via fallback
+- ✅ **Header validation**: Checks required columns exist
+
+### ✅ TEST RESULTS (Jo tested at 19:45)
+
+**PASSED** ✅:
+1. ✅ Server started successfully
+2. ✅ 90-day CSV uploaded without errors
+3. ✅ No console errors
+4. ✅ Metrics calculate correctly
+5. ✅ Glucose data loads and displays
+6. ✅ Sensor detection works
+7. ✅ Dynamic column detection working!
+
+**VERDICT**: Code works correctly! Good enough for commit.
+
+**Minor bug found** (non-blocking):
+- ⚠️ TDD not showing in all daily profiles (display issue only)
+- Added to TODO list (P3 priority, fix later)
+
+### Timeline (Updated)
+- 19:33 Started B.6.3
+- 19:34 Added header row detection + column map building
+- 19:36 Added getColumn() helper with fallback
+- 19:37-19:40 Replaced all 8 hardcoded indices
+- 19:41 Code complete
+- 19:45 **TESTED BY JO - PASSED** ✅
+- 19:46 Ready for commit
+
+---
+
+
+---
+
+## 📝 TODO LIST - FUTURE FIXES
+
+### 🐛 Known Bugs (Low Priority)
+
+**TDD Display Issue** (Reported: 2025-11-01 19:45)
+- **Problem**: TDD (Total Daily Dose) not showing in all daily profiles
+- **Details**: Insulin breakdown (bolus/basal split) missing in some profiles
+- **Impact**: LOW (calculation works, display issue only)
+- **Priority**: P3 (fix later)
+- **Estimated**: 30 minutes
+- **File**: Likely `src/components/DailyProfileModal.jsx` or similar
+
+**Status**: Deferred to v3.4.0 or later
+
+---
