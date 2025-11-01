@@ -1,186 +1,66 @@
-# AGP+ PROGRESS TRACKER
+# AGP+ PROGRESS - OPTION C
 
-**Sessie**: 2025-11-02 00:30-01:00 (Domain F Completion)
-**Doel**: Complete Domain F analysis + TIER2 synthesis  
-**Status**: 🔄 IN PROGRESS - Completing Domain F
-
----
-
-## 📋 CURRENT SESSION (00:30-01:00, 30 min target)
-
-**What's Happening**:
-- Domain G: âœ… COMPLETE (7.0/10)
-- Domain F: ðŸ"„ INCOMPLETE (stopped at accessibility, needs: issues + roadmap + conclusion)
-- Completing missing sections now
-
-**Recovery Notes**:
-- Found DOMAIN_F_VISUALIZATION_ANALYSIS.md (212 lines)
-- Stops after accessibility section
-- Missing: Issues & Recommendations, Priority Matrix, Roadmap, Conclusion
-- Will complete in chunks (25-30 lines per write)
+**Version**: v3.6.0 → v4.0  
+**Current Sprint**: B1 - Metrics Validation  
+**Last Update**: 2025-11-02
 
 ---
 
-## 📋 PREVIOUS SESSION - Domain G Complete (2025-11-02 00:00-00:25, 25 min)
+## 📊 MASTER PROGRESS
 
-**Delivered**:
-- âœ… Domain G Analysis COMPLETE
-  - Export/Import system analyzed
-  - Score: 7.0/10 âš ï¸
-  - Critical: No JSON import, no validation
-  - Files: sensorStorage.js export functions
-  - HTML reports excellent (brutalist, print-optimized)
-  
-**Issues Found**:
-- G0.1: No JSON import (only export) - P0, 4h
-- G0.2: No SQLite validation - P0, 2h
-- G1.1: No duplicate detection - P1, 2h
+**See**: `docs/optionc/MASTER_PROGRESS.md` for complete tracking
 
-**File Created**:
-- `docs/analysis/DOMAIN_G_EXPORT_IMPORT_ANALYSIS.md` (complete)
+**Quick Status**:
+- Block A: Documentation (5h) - ⏸️ TODO
+- Block B: Safety (15h) - ⏸️ TODO  
+- Block C: Robustness (15h) - 🔄 ACTIVE (Sprint B1)
+- Block D: Quality (35h) - ⏸️ TODO
 
-**Status**: Domain G âœ… â†' Domain F started but crashed
+**Total**: 0/67 hours completed
 
 ---
 
-## 📋 SESSION SUMMARY (23:45-24:00, 15 min) - Housekeeping
+## 🔄 CURRENT SPRINT: B1
 
-**Sessie**: 2025-11-01 23:45-24:00
-**Doel**: Archive oude docs + update handoff docs voor Domain G → F  
-**Status**: âœ… COMPLETE
+**Goal**: Metrics Validation (7h)
 
+**Progress**: `docs/optionc/block-c-robustness/sprint-b1-metrics/PROGRESS.md` ← **SOURCE OF TRUTH**
 
-## FILES CREATED/UPDATED (00:30-00:50)
+**Tasks**:
+- [ ] Performance Benchmarking (3h)
+- [ ] Unit Tests (4h)
 
-**Completed**:
-- `docs/analysis/DOMAIN_F_VISUALIZATION_ANALYSIS.md` - Completed (added 200+ lines)
-  - Issues & Recommendations (P0-P3, 26h total)
-  - Priority Matrix
-  - Refactoring Roadmap (3 sprints)
-  - Architecture Score: 6.5/10
-  - Conclusion
-- `docs/analysis/TIER2_ANALYSIS_SUMMARY.md` - Updated with Domain F
-- `PROGRESS.md` - This file (updated in real-time)
-
-**Next**: Commit + git push, then decide: TIER2 Synthesis or break
+**Update this file after every work session!**
 
 ---
 
+## 📝 SESSION LOG
 
+### Session 1: 2025-11-02 (Housekeeping, 30 min)
+**Done**:
+- ✅ Archived old docs to `docs/archive/2025-11/pre-optionc/`
+- ✅ Created Option C structure (`docs/optionc/`)
+- ✅ Safety commit: `v3.6.0-pre-optionc`
+- ✅ Created all documentation (START_HERE, MASTER_PROGRESS, Sprint B1 HANDOFF)
+- ✅ Updated GIT_CHEATSHEET.md
+- ✅ Updated root docs (START_HERE, HANDOFF, PROGRESS)
 
----
-
-## 📋 SESSION - Plan van Aanpak (2025-11-02 01:00-01:30, 30 min)
-
-**Doel**: Comprehensive implementation plan voor v3.6.0 → v4.0
-
-**Wat gedaan**:
-- âœ… Alle TIER2 analyses gereviewd (F, G, C, A, B, D, E)
-- âœ… Complete effort breakdown gemaakt
-- âœ… 3 implementatie opties gedefinieerd:
-  - Optie A: Minimaal (20u, P0 only)
-  - Optie B: Aanbevolen (35u, P0+P1) ← **ADVISED**
-  - Optie C: Volledig (67u, all sprints)
-
-**File Created**:
-- `/Users/jomostert/Documents/Projects/agp-plus/PLAN_VAN_AANPAK.md` (complete plan, 444 lines)
-
-**Key Decisions Made**:
-1. **Prioriteit**: Safety first (Accessibility + Backup zijn P0)
-2. **File Size**: Not a KPI - focus op testability/performance instead
-3. **Phased Approach**: Documentatie → Safety → Robustness → Quality
-
-**Next Steps**:
-- [ ] Jo kiest optie (A/B/C)
-- [ ] Commit plan to git
-- [ ] Start met gekozen fase
-
-**Status**: âœ… PLAN COMPLETE - Awaiting decision
+**Git**: Commits 84aba00, 1f8d211, 7ee57e4  
+**Next**: Start Sprint B1 work (performance benchmarking)
 
 ---
 
+## 🎯 NEXT SESSION
+
+**Start here**: `docs/optionc/block-c-robustness/sprint-b1-metrics/`
+
+**Read**:
+1. HANDOFF.md - Sprint details
+2. PROGRESS.md - Current status
+
+**Then**: Begin Task 1 (Performance Benchmarking)
 
 ---
 
-## 📋 SESSION - Housekeeping & Setup (2025-11-02 01:30-02:00, 30 min)
-
-**Doel**: Setup voor v4.0 development (Option C, full implementation)
-
-**Wat gedaan**:
-- âœ… Safety commit naar GitHub (v3.6.0-safe, commit 80fb1fd)
-- âœ… Develop branch aangemaakt
-- âœ… GIT_CHEATSHEET.md gemaakt (branch switching guide)
-- âœ… Oude handoffs gearchiveerd naar docs/archive/v3.6.0-handoffs/
-- âœ… Sprint directory structure gemaakt (7 sprints)
-- âœ… START_HERE.md vernieuwd (master navigation)
-- âœ… CURRENT_SPRINT.md gemaakt (Sprint B1)
-
-**Nieuwe Structuur**:
-```
-/Users/jomostert/Documents/Projects/agp-plus/
-├── START_HERE.md (master nav)
-├── CURRENT_SPRINT.md (current sprint info)
-├── PROGRESS.md (this file - source of truth)
-├── GIT_CHEATSHEET.md (branch guide)
-├── PLAN_VAN_AANPAK.md (v4.0 roadmap)
-├── docs/
-│   ├── sprints/
-│   │   ├── sprint-B1-metrics/ (starting here!)
-│   │   ├── sprint-A1-parser/
-│   │   ├── sprint-F1-accessibility/
-│   │   ├── sprint-G1-backup/
-│   │   ├── sprint-C1-components/
-│   │   ├── sprint-C2-virtualization/
-│   │   └── sprint-F2-wcag/
-│   ├── analysis/ (TIER2 analyses)
-│   └── archive/ (old versions)
-```
-
-**Git Status**:
-- Main branch: v3.6.0-safe (80fb1fd) ← Safe fallback
-- Develop branch: Active ← Working here
-- Remote: Both pushed to GitHub
-
-**Next Steps**:
-1. [ ] Update CHANGELOG.md
-2. [ ] Update PROJECT_BRIEFING.md
-3. [ ] Create Sprint B1 HANDOFF.md
-4. [ ] Start Sprint B1 work
-
-**Status**: âœ… SETUP COMPLETE - Ready for Sprint B1
-
----
-
-
-
----
-
-## 🎯 DECISION - Optie C (Full Implementation, 67u)
-
-**Sessie**: 2025-11-02 01:30-02:00  
-**Besluit**: Go for FULL v4.0 implementation (Optie C)
-
-**Scope**:
-- âœ… P0: Safety & Compliance (20h)
-- âœ… P1: Robustness (15h)  
-- âœ… P2/P3: Quality & Scale (32h)
-- **Total**: 67 hours over ~4 weeks
-
-**Start Sprint**: **B1 - Metrics Validation** (7h)
-- Reden: Concrete bewijs van performance
-- Direct testbare output
-- Fundament voor verdere work
-
-**Branch Strategy**:
-- âœ… Already on `develop` branch
-- `main` = production (stable)
-- Safety commits before each sprint
-
-**Next Steps**:
-1. Safety commit (v3.6.1 baseline)
-2. Archiveer oude handoffs
-3. Nieuwe docs structuur (per-phase handoffs)
-4. Start Sprint B1
-
----
-
+**For detailed tracking**: See `docs/optionc/MASTER_PROGRESS.md`  
+**For sprint details**: See sprint-specific PROGRESS.md files
