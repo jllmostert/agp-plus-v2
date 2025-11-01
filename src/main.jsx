@@ -13,13 +13,13 @@ import {
 } from './storage/deletedSensorsDB.js';
 
 /**
- * AGP+ v3.12 - Main Application Entry Point
+ * AGP+ v3.1.1 - Main Application Entry Point
  * 
  * Initializes React 18 root and renders the main AGPGenerator component.
  * Uses the new createRoot API for concurrent features support.
- * Includes IndexedDB tombstone store initialization for Issue #1 fix.
+ * Includes IndexedDB tombstone store initialization for deleted sensors tracking.
  * 
- * Note: MigrationBanner disabled during v3.6 development (event detection phase)
+ * Latest: v3.1.1 - Storage resilience & maintenance (batch validation, collision detection)
  */
 
 // Initialize IndexedDB tombstone store
