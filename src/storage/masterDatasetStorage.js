@@ -418,8 +418,9 @@ async function detectSensors(readings) {
  */
 async function findBatchSuggestionsForSensors(detectedEvents) {
   try {
-    // Extract sensor IDs from events
-    const sensorIds = detectedEvents.sensorEvents.map(event => {
+    // Extract sensor IDs from events with collision detection
+    const sensorIdSet = new Set();
+    const sensorIds = detectedEvents.sensorEvents.map((event, index) => {
       // Sensor ID format: "Sensor-YYYY-MM-DD-HHMMSS"
       const timestamp = new Date(event.timestamp);
       const year = timestamp.getFullYear();
@@ -428,8 +429,28 @@ async function findBatchSuggestionsForSensors(detectedEvents) {
       const hours = String(timestamp.getHours()).padStart(2, '0');
       const minutes = String(timestamp.getMinutes()).padStart(2, '0');
       const seconds = String(timestamp.getSeconds()).padStart(2, '0');
-      return `Sensor-${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+      
+      // Generate base sensor ID
+      let sensorId = `Sensor-${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+      
+      // Check for collision
+      if (sensorIdSet.has(sensorId)) {
+        console.warn(
+          `[Stock] Sensor ID collision detected at ${timestamp.toISOString()}`,
+          `- adding suffix to ensure uniqueness`
+        );
+        sensorId = `${sensorId}-${index}`;
+      }
+      
+      sensorIdSet.add(sensorId);
+      return sensorId;
     });
+    
+    // Log summary if collisions occurred
+    const collisions = sensorIds.length - sensorIdSet.size;
+    if (collisions > 0) {
+      console.warn(`[Stock] Resolved ${collisions} sensor ID collision(s)`);
+    }
     
     if (sensorIds.length === 0) {
       return [];
