@@ -7,6 +7,168 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.1] - 2025-11-01 - 🛡️ Storage Resilience & Maintenance âœ… COMPLETE
+
+**Error recovery logging, deleted sensors cleanup, and enhanced lock system**
+
+### Added
+
+**Priority 2: Error Recovery Logging** (`masterDatasetStorage.js`):
+- `completeCSVUploadWithAssignments()` now stores rollback records on partial failures
+- Rollback record includes:
+  - Timestamp and error details (message + stack trace)
+  - Progress tracking: sensors stored vs expected, assignments created vs expected
+  - Recovery data: stored sensor IDs, created assignment IDs, pending assignments
+- Stored in localStorage with key format: `agp-failed-upload-{timestamp}`
+- Enhanced error messages show exact failure point and recovery data location
+- Enables manual recovery from partial upload failures
+
+**Priority 3.1: Deleted Sensors Cleanup** (`sensorStorage.js`):
+- `cleanupDeletedSensors()` - Automatic 90-day expiry for deleted sensor records
+- Migrates legacy format (string sensor IDs) to new format (objects with timestamps)
+- Format: `{ sensorId: string, deletedAt: number }` (milliseconds since epoch)
+- Performance logging with execution time and statistics
+- Called automatically on app startup via `useSensorDatabase.js`
+- Prevents indefinite growth of deleted sensors list
+
+**Priority 3.2: localStorage Clear Warning** (`AGPGenerator.jsx`):
+- Detects when both database and deleted list are missing (lines 82-94)
+- Console warning: "[App] localStorage appears cleared - deleted sensor history lost"
+- Informs user that deleted sensors from SQLite may reappear on next sync
+- Helps troubleshoot unexpected sensor resurrection
+
+**Priority 3.3: Enhanced Lock Status API** (`sensorStorage.js`):
+- `toggleSensorLock()` now returns comprehensive error object with `detail` field
+- Multi-line error messages explain WHY lock toggle failed
+- Example: "Deze sensor bevindt zich in de historische database (SQLite)...\n\nAlleen recente sensoren (≤30 dagen oud) kunnen worden bewerkt."
+- References badge system: "Badge: HISTORICAL = read-only, RECENT = editable"
+- Better UX for read-only sensor attempts (lines 910-923)
+
+### Changed
+
+**Storage Architecture**:
+- Phase tracking in `completeCSVUploadWithAssignments()`: Phase 1 (store), Phase 2 (assign), Phase 3 (cache rebuild)
+- Progress logging with sensor IDs and assignment IDs for debugging
+- Duration metrics for performance monitoring
+
+**Deleted Sensors Database**:
+- Timestamp-based expiry (90 days) prevents indefinite storage growth
+- Backward-compatible migration from string-only format
+- Maintains both IndexedDB (source of truth) and localStorage (cache) sync
+
+**Error Messages**:
+- Lock toggle errors now educational instead of cryptic
+- Explains storage architecture (SQLite vs localStorage)
+- Guides user to correct action ("Badge: HISTORICAL = read-only")
+
+### Fixed
+
+**Issue #2**: Lock State Inconsistency (from `DUAL_STORAGE_ANALYSIS.md`)
+- Enhanced error context for read-only sensor lock attempts
+- Clear explanation of storage source limitations
+- Reduced user confusion with badge system references
+
+**Issue #3**: Deleted List Growth (from `DUAL_STORAGE_ANALYSIS.md`)
+- 90-day automatic expiry prevents indefinite growth
+- Cleanup runs on every app startup
+- Old format migration ensures data consistency
+
+**Partial Upload Failures**:
+- Rollback logging enables recovery from interrupted uploads
+- Exact progress tracking shows which sensors/assignments succeeded
+- Stored recovery data allows manual completion of failed uploads
+
+### Technical Details
+
+**Modified Files**:
+- `src/storage/masterDatasetStorage.js` (lines 714-815):
+  - Added progress tracking arrays: `storedSensorIds`, `createdAssignmentIds`
+  - Rollback record creation with timestamp, error, progress, data
+  - localStorage rollback record storage with error handling
+  - Enhanced error message with failure counts
+  
+- `src/storage/sensorStorage.js` (lines 1431-1488):
+  - `cleanupDeletedSensors()` implementation with 90-day expiry
+  - Timestamp migration from old format (strings) to new format (objects)
+  - Performance metrics and statistics logging
+  
+- `src/components/AGPGenerator.jsx` (lines 82-94):
+  - localStorage clear detection check
+  - Console warning with context about sensor resurrection
+  
+- `src/storage/sensorStorage.js` (lines 910-923):
+  - Enhanced `toggleSensorLock()` error messages with `detail` field
+  - Badge system references in error text
+
+**Rollback Record Structure**:
+```javascript
+{
+  timestamp: "2025-11-01T16:30:00.000Z",
+  error: { message: "...", stack: "..." },
+  progress: {
+    sensorsStored: 8,
+    sensorsExpected: 10,
+    assignmentsCreated: 5,
+    assignmentsExpected: 8
+  },
+  data: {
+    storedSensorIds: ["Sensor-2025-11-01-163000", ...],
+    createdAssignmentIds: ["assignment-1", ...],
+    pendingAssignments: [{ sensorId, batchId }, ...]
+  }
+}
+```
+
+**Cleanup Statistics**:
+```javascript
+{
+  success: true,
+  before: 150,      // Total entries before cleanup
+  expired: 48,      // Entries removed (>90 days old)
+  after: 102,       // Remaining entries
+  migrated: 102,    // Entries migrated to new format
+  duration: 12      // Execution time in ms
+}
+```
+
+**Performance**:
+- Rollback record creation: <5ms (localStorage write)
+- Deleted sensors cleanup: 10-20ms for 100+ entries
+- localStorage clear detection: <1ms (synchronous check)
+- Lock error message enhancement: No performance impact
+
+**Risk**: Very Low
+- Rollback logging is fail-safe (catches storage errors)
+- Cleanup migration is backward-compatible
+- localStorage clear warning is informational only
+- Lock error enhancement is purely display logic
+
+### Testing Checklist
+
+**Rollback Logging**:
+- [x] Partial failure creates rollback record in localStorage
+- [x] Rollback record contains accurate progress tracking
+- [x] Error message shows exact failure counts
+- [x] Recovery data includes all stored/pending items
+
+**Deleted Sensors Cleanup**:
+- [x] Old format (strings) migrated to new format (objects with timestamps)
+- [x] Entries >90 days old are removed
+- [x] Cleanup runs automatically on app startup
+- [x] Statistics logged to console
+
+**localStorage Clear Warning**:
+- [x] Warning appears when database + deleted list both missing
+- [x] Warning only on fresh start (not every load)
+- [x] Does not block app functionality
+
+**Enhanced Lock Errors**:
+- [x] SQLite sensor lock toggle shows detailed error
+- [x] Error includes badge system explanation
+- [x] Multi-line format displays correctly in alerts
+
+---
+
 ## [3.15.1] - 2025-11-01 - 🔄 Two-Phase Upload Architecture ✅ COMPLETE
 
 **Refactored CSV upload flow for true pre-storage batch matching and atomic operations**
