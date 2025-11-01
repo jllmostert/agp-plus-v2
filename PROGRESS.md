@@ -1,21 +1,72 @@
 # AGP+ PROGRESS TRACKER
 
-**Sessie**: 2025-11-01 19:15 (New Session)
-**Doel**: Block B.6 - Dynamic Column Detection (v3.3.0)  
-**Status**: 🟢 READY TO START
+**Sessie**: 2025-11-01 20:30 (New Session)
+**Doel**: UI Improvements + Bug Fixes (v3.3.1)  
+**Status**: ✅ COMPLETED
 
 ---
 
 ## 📊 SESSION STATUS
 
-**Previous Session (18:00-19:10)**: ✅ Block A Complete (v3.2.0)
-- Performance benchmarking added
-- Glucose bounds validation completed
-- All tests passed, commits pushed
+**Current Session (20:30-20:45)**: ✅ Complete
+- Section reordering: Hero Metrics now above Hypoglycemia Events
+- Fixed deleted sensors async/await bugs
+- Eliminated console errors
+- All commits pushed (6884343)
 
-**Current Session (19:15+)**: 🎯 Block B.6 Starting
-- Safety commit done (3b2c5d8)
-- Ready for dynamic column detection
+**Previous Session (19:15-19:49)**: ✅ Block B.6 Complete (v3.3.0)
+- Dynamic column detection implemented
+- Parser now robust to Medtronic format changes
+
+---
+
+## 🎯 SESSION WORK (2025-11-01 20:30)
+
+### 1. Section Reordering ✅
+**Problem**: Hero metrics were below hypoglycemia events, requiring scroll
+**Solution**: 
+- Decoupled HypoglycemiaEvents from AGPChart.jsx
+- Made it a separate section in AGPGenerator.jsx
+- New order: TIR Bar → AGP Chart → Hero Metrics → Hypo Events → Day/Night
+
+**Files Changed**:
+- `src/components/AGPChart.jsx` - Removed HypoglycemiaEvents component
+- `src/components/AGPGenerator.jsx` - Added as section 3, reordered sections
+
+**Result**: Chart + Hero Metrics now fit on one screen 🎯
+
+### 2. Deleted Sensors Async Bugs ✅
+**Problem**: Console errors about Promises not being iterable
+```
+TypeError: fastDeleted.forEach is not a function
+TypeError: cacheDeleted is not iterable
+```
+
+**Root Cause**: `getDeletedSensors()` is async but was called without `await`
+
+**Solution**: Added proper async/await chain
+- `migrateDeletedSensors()` → now async function
+- `getAllDeletedSensors()` → added await for getDeletedSensors() calls
+- `useSensorDatabase.js` → added await for migration call
+
+**Files Changed**:
+- `src/storage/sensorStorage.js` - Fixed 3 functions
+- `src/hooks/useSensorDatabase.js` - Added await
+
+**Result**: Console clean, no more Promise errors ✅
+
+### 3. TDD Missing for Friday (False Alarm) ℹ️
+**Issue**: Friday showed no TDD data in day profiles
+**Diagnosis**: Incomplete CSV upload, not a code bug
+**Resolution**: Data refresh solved the issue
+
+---
+
+## 📊 PREVIOUS SESSION SUMMARY
+
+**Sessie**: 2025-11-01 19:15 (Previous Session)
+**Doel**: Block B.6 - Dynamic Column Detection (v3.3.0)  
+**Status**: ✅ COMPLETED
 
 ---
 
@@ -844,6 +895,25 @@ lsof -ti:3001 | xargs kill -9
 
 ---
 
+## 🔄 SESSION: 2025-11-01 20:15-20:30
+
+**Context**: CSV upload troubleshooting
+
+### What Happened
+- Issue: CSV upload appeared to have no data
+- Cause: Corrupt/incomplete CSV file in upload
+- Solution: Re-uploaded CSV → data appeared correctly
+- Verification: Sensor data now visible and processing normally
+
+### Technical Notes
+- No code changes needed (was data issue, not bug)
+- Parser and detection working as expected
+- Dual storage architecture handling correctly
+
+**Status**: Issue resolved through data re-upload
+
+---
+
 ### 📝 INSTRUCTIONS FOR NEW CHAT
 
 **Copy/paste this to start next session**:
@@ -852,7 +922,7 @@ lsof -ti:3001 | xargs kill -9
 I'm continuing work on AGP+ v3.x.
 
 Current version: v3.3.0 (Block B.6 complete)
-Last session: 2025-11-01 19:15-20:00
+Last session: 2025-11-01 20:15-20:30
 
 Read these files first:
 1. PROGRESS.md - Current state (PRIMARY SOURCE)
@@ -865,16 +935,18 @@ Current focus: Block B (parser robustness)
 
 Git status:
 - Branch: main
-- Last commit: a77c051
+- Last commit: [pending]
 - Last tag: v3.3.0
 - Server: Running on port 3001
+
+Recent activity: CSV upload issue resolved (data problem, not code bug)
 
 Continue with Block B.7 or choose different task based on PROGRESS.md.
 ```
 
 ---
 
-**Session closed**: 2025-11-01 20:00  
+**Session closed**: 2025-11-01 20:30  
 **Next session**: Continue Block B (read PROGRESS.md first!)  
 **Status**: ✅ ALL SYSTEMS GO 🚀
 
