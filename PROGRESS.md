@@ -112,6 +112,46 @@ const headerRow = dataLines[0]; // Header is first line after metadata
 
 ---
 
+## 📋 BLOCK B.8: UNIT TESTS (Planned)
+
+**Status**: âœ… Planning Complete  
+**Estimated Time**: 3 hours (180 minutes)  
+**Plan Document**: `docs/analysis/BLOCK_B8_TEST_PLAN.md`
+
+### Quick Summary
+
+**Phases**:
+1. **Infrastructure** (30 min) - Install Vitest, setup test scripts
+2. **Core Tests** (90 min) - 27 unit tests for parser functions
+3. **Edge Cases** (30 min) - 6 tests for unusual scenarios
+4. **Documentation** (30 min) - README, coverage report
+
+**Test Coverage Goals**:
+- 33 total unit tests
+- >80% code coverage for `parsers.js`
+- 100% coverage for `detectCSVFormat()` and `findColumnIndices()`
+
+**Key Test Files**:
+- `detectCSVFormat.test.js` - Format detection (8 tests)
+- `findColumnIndices.test.js` - Column mapping (5 tests)
+- `parseCSVMetadata.test.js` - Metadata extraction (6 tests)
+- `parseCSV.test.js` - Integration tests (8 tests)
+- `parser.edge-cases.test.js` - Edge cases (6 tests)
+
+**Test Fixtures Needed**:
+- `valid-6line-header.csv` - Standard format
+- `valid-8line-header.csv` - Future format
+- `reordered-columns.csv` - Column order test
+- `missing-columns.csv` - Error handling test
+- `empty-file.csv` - Empty file test
+- `malformed.csv` - Malformed data test
+
+**Ready to Start After**:
+- âœ… B.7 testing passes
+- âœ… v3.4.0 tagged
+
+---
+
 ## 📊 PREVIOUS SESSIONS
 
 ### 1. Section Reordering ✅
