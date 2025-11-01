@@ -1,45 +1,43 @@
 ---
 tier: 1
 status: active
-last_updated: 2025-11-01 23:45
-purpose: Central navigation for AGP+ v3.6.0 → Domain F or G Next
+last_updated: 2025-11-01 23:50
+purpose: Central navigation for AGP+ v3.6.0 → Domain G → Domain F
 ---
 
 # 🧭 START HERE - AGP+ v3.6.0
 
-**Status**: Domain C Complete ✅ → Domain F or G Next  
-**Version**: v3.6.0 (committed: 8b73b4b, analysis docs pending)  
-**Last Session**: 2025-11-01 23:15-23:45 (Domain C recovery + completion, 30 min)  
-**Next**: Domain F (Viz, 60 min) OR Domain G (Export, 45 min)
+**Status**: Domain C Complete ✅ → Domain G Next  
+**Version**: v3.6.0 (committed: 4733095)  
+**Last Session**: 2025-11-01 23:15-23:45 (Domain C + housekeeping, 30 min)  
+**Next**: Domain G (Export/Import, 45 min) → Domain F (Visualization, 60 min)
 
 ---
 
 ## 🎯 NEW SESSION CHECKLIST
 
-1. **Read HANDOFF.md** ← Domain F or G analysis options
-2. **Verify git**: `git log --oneline -3` (pending commit for analysis docs)
-3. **Choose next domain**: 
-   - Domain F: Visualization (60 min)
-   - Domain G: Export/Import (45 min)
+1. **Read HANDOFF.md** ← Domain G analysis instructions (Priority 1)
+2. **Verify git**: `git log --oneline -3` (should show 4733095)
+3. **Apply lessons learned**: Read large files in chunks (offset/length)
 
 ---
 
 ## 📂 KEY FILES
 
-**For Next Session**:
-- `HANDOFF.md` - Domain F/G options and instructions
-- `docs/analysis/DOMAIN_C_UI_COMPONENTS_ANALYSIS.md` - Just completed (666 lines)
-- `docs/analysis/TIER2_ANALYSIS_SUMMARY.md` - Updated status
+**For Next Session** (Domain G):
+- `HANDOFF.md` - Complete Domain G instructions + lessons learned
+- `src/utils/exportUtils.js` - Export functionality
+- `src/utils/importUtils.js` - Import validation
+- `src/utils/pdfGenerator.js` - PDF generation
 
-**Visualization Files** (if Domain F):
-- `src/components/AGPChart.jsx`
-- `src/components/DayNightChart.jsx`
-- `src/components/HypoglycemiaEvents.jsx`
+**After Domain G** (Domain F):
+- `src/components/AGPChart.jsx` - Main chart
+- `src/components/DayNightChart.jsx` - Day/night split
+- `src/hooks/useChartData.js` - Data transformation
 
-**Export/Import Files** (if Domain G):
-- `src/utils/exportUtils.js`
-- `src/utils/importUtils.js`
-- Report generation logic
+**Reference**:
+- `docs/analysis/DOMAIN_C_UI_COMPONENTS_ANALYSIS.md` - Just completed
+- `docs/analysis/TIER2_ANALYSIS_SUMMARY.md` - Progress tracking
 
 ---
 
@@ -50,12 +48,11 @@ cd /Users/jomostert/Documents/Projects/agp-plus
 export PATH="/opt/homebrew/bin:$PATH"
 
 # Verify status
-git log --oneline -3  # Latest: 8b73b4b (B.6.4)
+git log --oneline -3  # Latest: 4733095 (Domain C)
 git status           # Clean
 
-# Start analysis
-# Read DOMAIN_C_PLAN.md first (10 min)
-# Then start reading components
+# Start Domain G
+# IMPORTANT: Use offset/length for files >800 lines (lessons learned!)
 ```
 
 ---
@@ -73,13 +70,58 @@ git status           # Clean
   - ✅ Domain D: Storage (7.0/10)
   - ✅ Domain E: Stock (8.0/10)
 
-**Next**:
-- 🔄 Domain F: Visualization (60 min)
-- 📋 Domain G: Export/Import (45 min)
+**Next** (ordered priority):
+1. 🔄 Domain G: Export/Import (45 min) ← START HERE
+2. 📋 Domain F: Visualization (60 min)
+3. 📋 TIER2 Synthesis (30 min)
 
 **Architecture Score**: 7.3/10 (down from 8.0 due to UI complexity)
 
 ---
 
-**Version**: 3.0 (Post-B.6.4)  
-**Git**: 8b73b4b (v3.6.0), ready for Domain C
+## 💡 CRITICAL LESSONS LEARNED
+
+**Apply these to avoid context overflow**:
+
+1. **Large files**: ALWAYS use offset/length for files >800 lines
+   - Check file size first: `get_file_info(path)`
+   - Read in 100-line chunks: `read_file(path, offset=0, length=100)`
+   
+2. **Write operations**: Max 25-30 lines per call
+   - Use `mode='append'` for building large files
+   - Save incrementally (don't wait for end)
+
+3. **Progress tracking**: Document DURING work
+   - Take notes in chunks
+   - Commit partial work
+   - Recovery easier with incremental saves
+
+4. **Recovery**: Chunk-based reading works perfectly
+   - Read structure first (50-100 lines)
+   - Jump to specific sections with offset
+   - Build complete picture incrementally
+
+**See HANDOFF.md for full details**
+
+---
+
+## 🗂️ RECENT HOUSEKEEPING (2025-11-01)
+
+**Archived**:
+- `docs/archive/2025-11/` - 4 old analysis docs
+- `docs/handoffs/archive/2025-11/` - 4 old session handoffs
+
+**Active Documents**:
+- `HANDOFF.md` - Current session instructions
+- `START_HERE.md` - This file (navigation)
+- `PROGRESS.md` - Session history
+
+**Analysis Docs**:
+- `TIER2_ANALYSIS_SUMMARY.md` - Status tracker (5/6 complete)
+- `TIER2_SYNTHESIS.md` - Comprehensive synthesis
+- `DOMAIN_C_UI_COMPONENTS_ANALYSIS.md` - Latest analysis
+
+---
+
+**Version**: 4.0 (Post-Domain C + Housekeeping)  
+**Git**: 4733095 (v3.6.0), ready for Domain G analysis

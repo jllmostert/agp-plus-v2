@@ -1,5 +1,48 @@
 # AGP+ PROGRESS TRACKER
 
+**Sessie**: 2025-11-01 23:45-24:00 (Housekeeping + Docs Update)
+**Doel**: Archive oude docs + update handoff docs voor Domain G → F  
+**Status**: ✅ COMPLETE - Ready for Domain G analysis
+
+---
+
+## 📋 SESSION SUMMARY (23:45-24:00, 15 min)
+
+**Housekeeping**:
+- ✅ Archived 4 old analysis docs → `docs/archive/2025-11/`
+  - SESSION_VERIFICATION.md
+  - 2025-11-01_session-summary.md
+  - BLOCK_B8_TEST_PLAN.md
+  - DOMAIN_C_PLAN.md (Domain C complete)
+- ✅ Archived 4 old handoffs → `docs/handoffs/archive/2025-11/`
+  - 2025-10-31_sensor-detection.md
+  - 2025-11-01_block-a-quick-wins.md
+  - 2025-11-01_priority1-fixes.md
+  - 2025-11-01_priority2-3-fixes.md
+
+**Docs Updated**:
+- ✅ HANDOFF.md - Prioritized Domain G → F, added lessons learned
+- ✅ START_HERE.md - Updated with G → F order + lessons learned
+- ✅ PROGRESS.md - This entry
+
+**Priority Change**:
+- Old: Domain F (Viz) → Domain G (Export)
+- New: Domain G (Export) → Domain F (Viz) ← Better workflow
+
+**Lessons Learned Added** (critical for avoiding crashes):
+1. Large files (>800L): Use offset/length
+2. Write ops: Max 25-30 lines/call
+3. Progress tracking: Document during work
+4. Recovery: Chunk-based reading
+
+**Time**: 15 minutes (housekeeping) ⚡
+
+**Next**: Domain G Analysis (45 min) - Export/Import system
+
+---
+
+## 📋 PREVIOUS SESSION (23:15-23:45, 30 min)
+
 **Sessie**: 2025-11-01 23:15-23:45 (Domain C Analysis Complete)
 **Doel**: Complete Domain C analysis after crash recovery  
 **Status**: ✅ COMPLETE - 5/6 domains analyzed, F+G remaining
