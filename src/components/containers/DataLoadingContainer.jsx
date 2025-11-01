@@ -18,7 +18,16 @@ function DataLoadingContainer({
   // Export props  
   metricsResult,
   startDate,
-  endDate
+  endDate,
+  
+  // Button handlers
+  activeReadings,
+  handleDayProfilesOpen,
+  setShowStockModal,
+  sensors,
+  sensorsLoading,
+  sensorsError,
+  setSensorHistoryOpen
 }) {
   // Local state
   const [dataImportExpanded, setDataImportExpanded] = useState(false);
@@ -79,8 +88,122 @@ function DataLoadingContainer({
         )}
       </button>
       
-      {/* Placeholder for other buttons (will stay in AGPGenerator) */}
-      <div />
+      {/* 2. DAGPROFIELEN Button */}
+      <button
+        onClick={handleDayProfilesOpen}
+        disabled={!activeReadings || activeReadings.length === 0}
+        style={{
+          background: activeReadings && activeReadings.length > 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+          border: '3px solid var(--border-primary)',
+          cursor: activeReadings && activeReadings.length > 0 ? 'pointer' : 'not-allowed',
+          padding: '1.5rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          minHeight: '100px',
+          opacity: activeReadings && activeReadings.length > 0 ? 1 : 0.5
+        }}
+        title={!activeReadings || activeReadings.length === 0 ? "Load data first" : "View last 7 day profiles"}
+      >
+        <h2 style={{ 
+          fontSize: '0.875rem',
+          fontWeight: 700, 
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          marginBottom: 0
+        }}>
+          DAGPROFIELEN
+        </h2>
+        <span style={{ 
+          fontSize: '0.625rem',
+          color: 'var(--text-secondary)',
+          fontWeight: 600,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase'
+        }}>
+          Last 7 Days
+        </span>
+      </button>
+      
+      {/* 3. VOORRAAD Button */}
+      <button
+        onClick={() => setShowStockModal(true)}
+        style={{
+          background: 'var(--bg-secondary)',
+          border: '3px solid var(--border-primary)',
+          cursor: 'pointer',
+          padding: '1.5rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          minHeight: '100px'
+        }}
+        title="Manage sensor batches"
+      >
+        <h2 style={{ 
+          fontSize: '0.875rem',
+          fontWeight: 700, 
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          marginBottom: 0
+        }}>
+          📦 VOORRAAD
+        </h2>
+        <span style={{ 
+          fontSize: '0.625rem',
+          color: 'var(--text-secondary)',
+          fontWeight: 600,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase'
+        }}>
+          Stock Management
+        </span>
+      </button>
+      
+      {/* 4. SENSOR HISTORY Button */}
+      <button
+        onClick={() => setSensorHistoryOpen(true)}
+        disabled={sensorsLoading || sensorsError || !sensors || sensors.length === 0}
+        style={{
+          background: sensors && sensors.length > 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+          border: '3px solid var(--border-primary)',
+          cursor: sensors && sensors.length > 0 ? 'pointer' : 'not-allowed',
+          padding: '1.5rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          minHeight: '100px',
+          opacity: sensors && sensors.length > 0 ? 1 : 0.5
+        }}
+        title={sensorsLoading ? "Loading..." : !sensors || sensors.length === 0 ? "No sensor data" : "View sensor history"}
+      >
+        <h2 style={{ 
+          fontSize: '0.875rem',
+          fontWeight: 700, 
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          marginBottom: 0
+        }}>
+          SENSOR HISTORY
+        </h2>
+        <span style={{ 
+          fontSize: '0.625rem',
+          color: 'var(--text-secondary)',
+          fontWeight: 600,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase'
+        }}>
+          {sensorsLoading ? 'Loading...' : sensors && sensors.length > 0 ? `${sensors.length} Sensors` : 'No Data'}
+        </span>
+      </button>
+      
+      {/* 5. EXPORT Button */}
       <div />
       <div />
       

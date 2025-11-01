@@ -1215,72 +1215,33 @@ export default function AGPGenerator() {
 
         {/* Control Buttons: IMPORT - DAGPROFIELEN - VOORRAAD - SENSOR HISTORY - EXPORT */}
         <section className="section">
-          {/* TEST: DataLoadingContainer (will replace buttons below) */}
+          {/* DataLoadingContainer with all 5 buttons */}
           <DataLoadingContainer 
             csvData={csvData}
             workdays={workdays}
             metricsResult={metricsResult}
             startDate={startDate}
             endDate={endDate}
+            activeReadings={activeReadings}
+            handleDayProfilesOpen={handleDayProfilesOpen}
+            setShowStockModal={setShowStockModal}
+            sensors={sensors}
+            sensorsLoading={sensorsLoading}
+            sensorsError={sensorsError}
+            setSensorHistoryOpen={setSensorHistoryOpen}
           />
           
-          {/* OLD BUTTONS (will remove after testing) */}
+          {/* OLD BUTTONS - Hide duplicates (IMPORT and EXPORT now in DataLoadingContainer) */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(5, 1fr)',
+            gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '1rem',
             marginBottom: '1rem'
           }}>
             
-            {/* 1. IMPORT Button (Collapsible) */}
-            <button
-              onClick={() => {
-                setDataImportExpanded(!dataImportExpanded);
-              }}
-              style={{
-                background: dataImportExpanded ? 'var(--color-black)' : 'var(--bg-secondary)',
-                border: '3px solid var(--border-primary)',
-                color: dataImportExpanded ? 'var(--color-white)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                padding: '1.5rem 1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                minHeight: '100px'
-              }}
-              title="Upload and import data"
-            >
-              <h2 style={{ 
-                fontSize: '0.875rem',
-                fontWeight: 700, 
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                marginBottom: 0
-              }}>
-                {dataImportExpanded ? '▼' : '▶'} IMPORT
-              </h2>
-              <span style={{ 
-                fontSize: '0.625rem',
-                color: dataImportExpanded ? 'var(--color-white)' : 'var(--text-secondary)',
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase'
-              }}>
-                Data Sources
-              </span>
-              {csvData && (
-                <span style={{ 
-                  fontSize: '1.25rem',
-                  color: 'var(--color-green)',
-                  marginTop: '0.25rem'
-                }}>
-                  ✓
-                </span>
-              )}
-            </button>
-
+            {/* IMPORT button removed - now in DataLoadingContainer */}
+            {/* EXPORT button removed - now in DataLoadingContainer */}
+            
             {/* 2. DAGPROFIELEN Button (Direct Action) */}
             <button
               onClick={handleDayProfilesOpen}
@@ -1401,48 +1362,6 @@ export default function AGPGenerator() {
                 {sensorsLoading ? 'Loading...' : 
                  sensors && sensors.length > 0 ? `${sensors.length} Sensors` : 
                  'No Data'}
-              </span>
-            </button>
-
-            {/* 5. EXPORT Button (Collapsible) */}
-            <button
-              onClick={() => {
-                setDataExportExpanded(!dataExportExpanded);
-              }}
-              disabled={!metricsResult || !startDate || !endDate}
-              style={{
-                background: dataExportExpanded ? 'var(--color-black)' : (metricsResult && startDate && endDate ? 'var(--bg-secondary)' : 'var(--bg-primary)'),
-                border: '3px solid var(--border-primary)',
-                color: dataExportExpanded ? 'var(--color-white)' : (metricsResult && startDate && endDate ? 'var(--text-primary)' : 'var(--text-secondary)'),
-                cursor: metricsResult && startDate && endDate ? 'pointer' : 'not-allowed',
-                padding: '1.5rem 1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                minHeight: '100px',
-                opacity: metricsResult && startDate && endDate ? 1 : 0.5
-              }}
-              title={!metricsResult ? "Generate metrics first" : "Export options"}
-            >
-              <h2 style={{ 
-                fontSize: '0.875rem',
-                fontWeight: 700, 
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                marginBottom: 0
-              }}>
-                {dataExportExpanded ? '▼' : '▶'} EXPORT
-              </h2>
-              <span style={{ 
-                fontSize: '0.625rem',
-                color: dataExportExpanded ? 'var(--color-white)' : (metricsResult && startDate && endDate ? 'var(--text-secondary)' : 'var(--text-secondary)'),
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase'
-              }}>
-                Reports & Data
               </span>
             </button>
             

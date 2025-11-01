@@ -37,18 +37,39 @@
 
 ## 🔄 IN PROGRESS
 
-### Taak 2.2: DataLoadingContainer (2h) - IN PROGRESS 🚀
-**Approach**: Safe, small chunks with testing and commits
+### Taak 2.2: DataLoadingContainer (2h) - 90% DONE 🎯
+**Status**: Component created and wired, OLD BUTTONS need removal
 
 **Completed**:
 - [x] Create skeleton (45 lines) ✅ Commit: 02a0f7d
-- [x] Add import button (87 lines) ✅ Commit: dab3041
+- [x] Add import button ✅ Commit: dab3041
+- [x] Add export button ✅ Commit: 677145f
+- [x] Wire to AGPGenerator ✅ Commit: f859df6
+- [x] Test - APP WORKS ✓
+
+**Current File State**:
+- DataLoadingContainer.jsx: 130 lines ✓
+- AGPGenerator.jsx: 1892 lines (was 1928)
+- Reduction: Only -36 lines (old buttons still present)
+
+**Completed**:
+- [x] Step 1: Found button locations ✅
+- [x] Step 2: Add button props to DataLoadingContainer ✅
+- [x] Step 3: Add DAGPROFIELEN button (column 2) ✅
+- [x] Step 4: Add VOORRAAD button (column 3) ✅
+- [x] Step 5: Add SENSOR HISTORY button (column 4) ✅
+- [x] Step 6: Pass props in AGPGenerator ✅
+- [x] Test all buttons work ✅ - ALL 5 BUTTONS IN ONE ROW!
 
 **Working On**:
-- [ ] Add export button (15 min) ← NEXT
-- [ ] Wire to AGPGenerator (20 min)  
-- [ ] Test functionality (10 min)
-- [ ] Final commit (5 min)
+- [ ] Step 7: Remove old button section from AGPGenerator (5 min) ← NOW
+- [ ] Step 8: Final commit (1 min)
+
+**Token Status**: 113k/190k (60% - safe to continue)
+
+**Expected Final State**:
+- DataLoadingContainer: ~130 lines
+- AGPGenerator: ~1600 lines (-328 total)
 
 **Next**: Phase 3 - VisualizationContainer (2h)
 
