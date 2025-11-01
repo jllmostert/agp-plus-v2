@@ -369,14 +369,68 @@ export const findColumnIndices = (headerRow) => {
     }
   });
   
-  // Validate critical columns exist
-  const requiredColumns = ['Date', 'Time', 'Sensor Glucose (mg/dL)'];
-  const missingColumns = requiredColumns.filter(col => !(col in columnMap));
+  // B.6.4: Comprehensive validation for required and optional columns
   
-  if (missingColumns.length > 0) {
-    console.error(`[Parser] Missing required columns: ${missingColumns.join(', ')}`);
+  // Critical columns (parser will fail without these)
+  const requiredColumns = [
+    'Date',
+    'Time', 
+    'Sensor Glucose (mg/dL)'
+  ];
+  
+  // Important columns (needed for full functionality)
+  const importantColumns = [
+    'BWZ Carb Input (grams)',
+    'Bolus Volume Delivered (U)',
+    'Basal Rate (U/h)',
+    'Alarm'
+  ];
+  
+  // Optional columns (nice to have, but not critical)
+  const optionalColumns = [
+    'BWZ Estimate (U)',
+    'BWZ Active Insulin (U)',
+    'BWZ Carb Ratio (g/U)',
+    'BWZ Insulin Sensitivity (mg/dL/U)',
+    'Rewind',
+    'BG Reading (mg/dL)'
+  ];
+  
+  // Check required columns
+  const missingRequired = requiredColumns.filter(col => !(col in columnMap));
+  if (missingRequired.length > 0) {
+    console.error(
+      `[Parser] CRITICAL: Missing required columns: ${missingRequired.join(', ')}\n` +
+      `This CSV cannot be parsed. Please ensure this is a valid Medtronic CareLink export.`
+    );
     return null;
   }
+  
+  // Check important columns (warn but continue)
+  const missingImportant = importantColumns.filter(col => !(col in columnMap));
+  if (missingImportant.length > 0) {
+    console.warn(
+      `[Parser] WARNING: Missing important columns: ${missingImportant.join(', ')}\n` +
+      `Some features may be limited (insulin data, carb tracking, or alerts).`
+    );
+  }
+  
+  // Check optional columns (info only, no warning)
+  const missingOptional = optionalColumns.filter(col => !(col in columnMap));
+  if (missingOptional.length > 0) {
+    console.info(
+      `[Parser] INFO: Missing optional columns: ${missingOptional.join(', ')}\n` +
+      `These are not critical - parsing will continue normally.`
+    );
+  }
+  
+  // Log successful validation
+  const totalColumns = Object.keys(columnMap).length;
+  const missingTotal = missingRequired.length + missingImportant.length + missingOptional.length;
+  console.log(
+    `[Parser] Column validation complete: ${totalColumns} columns found, ` +
+    `${missingTotal} optional/important columns missing`
+  );
   
   return columnMap;
 };
@@ -426,7 +480,12 @@ export const parseCSV = (text) => {
     
     const columnMap = findColumnIndices(headerRow);
     if (!columnMap) {
-      throw new Error('CSV header is missing required columns (Date, Time, Sensor Glucose)');
+      throw new Error(
+        'CSV header validation failed. Missing required columns (Date, Time, or Sensor Glucose).\n\n' +
+        'This file may not be a valid Medtronic CareLink export.\n' +
+        'Please ensure you exported the CSV from CareLink Personal with all columns included.\n\n' +
+        'Check the browser console for detailed column information.'
+      );
     }
     
     // Helper function to get column value with fallback to old index
