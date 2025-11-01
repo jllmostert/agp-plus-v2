@@ -3,8 +3,8 @@
 **Sprint**: C1 - Split God Components  
 **Started**: 2025-11-02  
 **Completed**: [IN PROGRESS]  
-**Status**: 🔄 **IN PROGRESS** - Taak 1 Complete!  
-**Effort**: 2/20 hours
+**Status**: 🔄 **IN PROGRESS** - Taak 2  
+**Effort**: 4/20 hours
 
 ---
 
@@ -12,37 +12,41 @@
 
 ### Taak 1: Strategy Planning (2h) - DONE ✅
 **Completed**: 2025-11-02
-
-**Results**:
 - ✅ Read AGPGenerator.jsx (1962 lines analyzed)
-- ✅ Identified 3 clear container boundaries:
-  1. ModalManager (250 lines) - All modal state
-  2. DataLoadingContainer (250 lines) - Upload section
-  3. VisualizationContainer (300 lines) - Charts + metrics
-- ✅ Created component hierarchy diagram
-- ✅ Documented extraction order (ModalManager → DataLoading → Visualization)
-- ✅ Created SPLIT_STRATEGY.md (comprehensive guide)
+- ✅ Created SPLIT_STRATEGY.md
+- ✅ Identified 3 containers
 
-**Key findings**:
-- 7 modals (all using ReactDOM.createPortal)
-- Clear separation possible (minimal state sharing)
-- React.memo opportunities for VisualizationContainer
-- Expected outcome: 1962→200 lines, 50% fewer re-renders
+### Taak 2.1: ModalManager (2h) - DONE ✅
+**Completed**: 2025-11-02
+- ✅ Created ModalManager.jsx (169 lines)
+- ✅ Moved 7 modal render logic to ModalManager
+- ✅ Updated AGPGenerator imports
+- ✅ Replaced modal renders with ModalManager component
+- ✅ Removed ReactDOM import from AGPGenerator
+- ✅ Fixed React import in ModalManager
+- ✅ Added modal-root div to index.html
+- ✅ Tested SensorHistoryModal - WORKS ✓
+- ✅ Tested PatientInfo modal - WORKS ✓
+
+**Impact**:
+- AGPGenerator: -160 lines (modal rendering)
+- New file: +169 lines (ModalManager.jsx)
+- All 7 modals working via React portals
 
 ---
 
 ## 🔄 IN PROGRESS
 
-*Nothing - waiting for next task*
+### Taak 2: Extract Containers (6h) - PHASE 1 COMPLETE
+**Current**: Starting Phase 2 (2h)
+  
+- [ ] Phase 2: DataLoadingContainer (2h)
+- [ ] Phase 3: VisualizationContainer (2h)
 
 ---
 
 ## ⏸️ TODO
 
-- [ ] Taak 2: Extract Containers (6h)
-  - [ ] ModalManager (2h)
-  - [ ] DataLoadingContainer (2h)
-  - [ ] VisualizationContainer (2h)
 - [ ] Taak 3: Extract Features (6h)
 - [ ] Taak 4: Table Virtualization (3h)
 - [ ] Taak 5: Testing (3h)
@@ -51,27 +55,14 @@
 
 ## 📝 SESSION NOTES
 
-### Session 1: 2025-11-02 [~60 min - Strategy Planning]
-**Doel**: Understand AGPGenerator structure and plan split
+### Session 1: 2025-11-02 [60 min] - DONE ✅
+**Taak 1 complete** - Strategy planning
 
-**Gedaan**:
-- ✅ Read AGPGenerator.jsx in chunks (imports, state, render)
-- ✅ Analyzed structure: hooks, state management, modals
-- ✅ Identified 3 container components
-- ✅ Created SPLIT_STRATEGY.md with detailed plan
-- ✅ Updated PROGRESS.md
+### Session 2: 2025-11-02 [Starting] - ModalManager
+**Doel**: Extract ModalManager component
 
-**Issues**:
-- None - clear component boundaries found
-
-**Results**:
-- 🎯 Strategy complete: 3 containers, clear extraction order
-- 📋 Ready to start Taak 2 (ModalManager extraction)
-
-**Next**: 
-- Commit strategy document
-- STOP and wait for "go" to start Taak 2
+**Current**: Creating ModalManager.jsx
 
 ---
 
-**Last Update**: 2025-11-02 (Session 1 complete)
+**Last Update**: 2025-11-02 (Session 2 start)

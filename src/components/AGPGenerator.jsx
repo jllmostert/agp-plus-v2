@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import ReactDOM from 'react-dom';
 import { Activity, Download, ChevronDown, AlertCircle, Save, User } from 'lucide-react';
 import { debug } from '../utils/debug.js';
 
@@ -30,14 +29,10 @@ import ComparisonView from './ComparisonView';
 import DayNightSplit from './DayNightSplit';
 import WorkdaySplit from './WorkdaySplit';
 import SavedUploadsList from './SavedUploadsList';
-import PatientInfo from './PatientInfo';
-import DayProfilesModal from './DayProfilesModal';
-import SensorHistoryModal from './SensorHistoryModal';
-import SensorRegistration from './SensorRegistration';
-import DataManagementModal from './DataManagementModal';
-import StockManagementModal from './StockManagementModal';
-import BatchAssignmentDialog from './BatchAssignmentDialog';
 import { MigrationBanner } from './MigrationBanner';
+
+// Container Components
+import ModalManager from './containers/ModalManager';
 import { DateRangeFilter } from './DateRangeFilter';
 
 /**
@@ -1788,75 +1783,45 @@ export default function AGPGenerator() {
               </>
         )}
 
-        {/* Patient Info Modal */}
-        {patientInfoOpen && (
-          ReactDOM.createPortal(
-            <PatientInfo 
-              isModal={true}
-              onClose={() => setPatientInfoOpen(false)} 
-            />,
-            document.body
-          )
-        )}
+        {/* Modal Manager - All modals rendered via portals */}
+        <ModalManager
+          // Data props
+          sensors={sensors}
+          patientInfo={patientInfo}
+          dayProfiles={dayProfiles}
+          dataStatus={dataStatus}
+          
+          // Patient Info Modal
+          patientInfoOpen={patientInfoOpen}
+          onClosePatientInfo={() => setPatientInfoOpen(false)}
+          
+          // Day Profiles Modal
+          dayProfilesOpen={dayProfilesOpen}
+          onCloseDayProfiles={() => setDayProfilesOpen(false)}
+          
+          // Sensor History Modal
+          sensorHistoryOpen={sensorHistoryOpen}
+          onCloseSensorHistory={() => setSensorHistoryOpen(false)}
+          
+          // Sensor Registration Modal
+          sensorRegistrationOpen={sensorRegistrationOpen}
+          onCloseSensorRegistration={() => setSensorRegistrationOpen(false)}
+          
+          // Data Management Modal
+          dataManagementOpen={dataManagementOpen}
+          onCloseDataManagement={() => setDataManagementOpen(false)}
+          onDataManagementDelete={handleDataManagementDelete}
+          
+          // Stock Management Modal
+          showStockModal={showStockModal}
+          onCloseStockModal={() => setShowStockModal(false)}
+          
+          // Batch Assignment Dialog
+          batchAssignmentDialog={batchAssignmentDialog}
+          onBatchAssignmentConfirm={handleBatchAssignmentConfirm}
+          onBatchAssignmentCancel={handleBatchAssignmentCancel}
+        />
 
-        {/* Day Profiles Modal - Portal */}
-        {dayProfilesOpen && ReactDOM.createPortal(
-          <DayProfilesModal 
-            isOpen={dayProfilesOpen}
-            onClose={() => setDayProfilesOpen(false)}
-            dayProfiles={dayProfiles}
-            patientInfo={patientInfo}
-          />,
-          document.body
-        )}
-
-        {/* Sensor History Modal - Portal */}
-        {sensorHistoryOpen && ReactDOM.createPortal(
-          <SensorHistoryModal 
-            isOpen={sensorHistoryOpen}
-            onClose={() => setSensorHistoryOpen(false)}
-            sensors={sensors}
-          />,
-          document.body
-        )}
-
-        {/* Sensor Registration Modal - Portal */}
-        {sensorRegistrationOpen && ReactDOM.createPortal(
-          <SensorRegistration 
-            isOpen={sensorRegistrationOpen}
-            onClose={() => setSensorRegistrationOpen(false)}
-          />,
-          document.body
-        )}
-
-        {/* Data Management Modal - Portal */}
-        {dataManagementOpen && ReactDOM.createPortal(
-          <DataManagementModal 
-            onClose={() => setDataManagementOpen(false)}
-            onDelete={handleDataManagementDelete}
-            currentDataStats={dataStatus}
-          />,
-          document.body
-        )}
-
-        {/* Stock Management Modal - Portal */}
-        {showStockModal && ReactDOM.createPortal(
-          <StockManagementModal
-            isOpen={showStockModal}
-            onClose={() => setShowStockModal(false)}
-          />,
-          document.body
-        )}
-
-        {/* Batch Assignment Dialog - Portal */}
-        {batchAssignmentDialog.open && ReactDOM.createPortal(
-          <BatchAssignmentDialog
-            suggestions={batchAssignmentDialog.suggestions}
-            onConfirm={handleBatchAssignmentConfirm}
-            onCancel={handleBatchAssignmentCancel}
-          />,
-          document.body
-        )}
 
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
