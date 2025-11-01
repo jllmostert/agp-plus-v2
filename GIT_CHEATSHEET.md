@@ -1,17 +1,78 @@
 # Git Workflow Cheatsheet - AGP+ v4.0
 
-**Quick Reference**: Voor dagelijks werk op AGP+ develop branch
+**Quick Reference**: Voor dagelijks werk op AGP+ develop branch  
+**Option C**: Development workflow met safety checkpoints
 
 ---
 
-## ðŸš€ DAILY WORKFLOW
+## ⚡ OPTION C WORKFLOW (DEVELOP BRANCH)
+
+### You're Always on Develop Branch
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus
+
+# Check you're on develop
+git branch  # Should show: * develop
+
+# Start work
+git pull origin develop
+git status
+```
+
+### During Sprint Work
+```bash
+# Commit often (small chunks!)
+git add .
+git commit -m "test(metrics): Add MAGE calculation tests"
+git push origin develop
+
+# Every 30-60 min: commit + push
+```
+
+---
+
+## 🛟 SAFETY CHECKPOINTS
+
+### Available Safety Tags
+```bash
+# View all safety points
+git tag -l
+
+# Key tags:
+v3.6.0-pre-optionc   # Before Option C start (2025-11-02)
+v3.6.0               # Stable v3.6.0 release
+v3.5.0               # Previous stable
+```
+
+### Go Back to Safe Version
+```bash
+# Method 1: Look at safe version (read-only)
+git checkout v3.6.0-pre-optionc
+# Browse code, test app
+# Return: git checkout develop
+
+# Method 2: Reset develop to safe version (DESTRUCTIVE!)
+git checkout develop
+git reset --hard v3.6.0-pre-optionc
+git push origin develop --force  # ⚠️ Use with caution!
+```
+
+### Create New Safety Checkpoint
+```bash
+# After completing a sprint/block
+git tag -a v3.7.0-sprint-b1 -m "Sprint B1 complete: Metrics validated"
+git push origin v3.7.0-sprint-b1
+```
+
+---
+
+## 🚀 DAILY WORKFLOW
 
 ### Start Session
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
-git checkout develop              # Switch to work branch
-git pull origin develop           # Get latest changes
 git status                        # Check current state
+git pull origin develop           # Get latest changes
 ```
 
 ### During Work
@@ -42,28 +103,7 @@ git push origin develop
 
 ---
 
-## 🔒 SAFETY COMMITS
-
-### Before Risky Changes
-```bash
-# Create safety point
-git add -A
-git commit -m "safety: Before refactoring AGPGenerator"
-git push origin develop
-
-# Now you can experiment safely!
-```
-
-### Create Milestone Tag
-```bash
-# For major checkpoints
-git tag -a v3.6.1 -m "TIER2 complete, v4.0 prep"
-git push origin v3.6.1
-```
-
----
-
-## ðŸš¨ EMERGENCY PROCEDURES
+## 🚨 EMERGENCY PROCEDURES
 
 ### Undo Uncommitted Changes
 ```bash
@@ -91,245 +131,78 @@ git reset --hard origin/develop
 
 ---
 
-## 🔄 BRANCH OPERATIONS
+## 📝 COMMIT MESSAGE FORMAT
 
-### Switch Branches
+### Good Commit Messages
 ```bash
-# Go to stable production
-git checkout main
-git pull origin main
+# Format: type(scope): description
 
-# Return to work
-git checkout develop
-git pull origin develop
-```
+# Types:
+feat      # New feature
+fix       # Bug fix
+test      # Adding tests
+docs      # Documentation only
+chore     # Maintenance, no code change
+refactor  # Code change, no behavior change
 
-### Create New Branch
-```bash
-# For experimental features
-git checkout -b feature/new-thing
-git push -u origin feature/new-thing
-```
-
-### Delete Branch
-```bash
-# Local only
-git branch -d feature/old-thing
-
-# Remote also
-git push origin --delete feature/old-thing
+# Examples:
+git commit -m "feat(sprint-b1): Add MAGE unit tests"
+git commit -m "fix(metrics): Correct GRI hypo component calculation"
+git commit -m "test(parser): Add dynamic column detection tests"
+git commit -m "docs(optionc): Update MASTER_PROGRESS after sprint B1"
 ```
 
 ---
 
-## 📊 INSPECTION COMMANDS
+## 🔍 CHECKING STATUS
 
-### View History
+### View Changes
 ```bash
-# Last 10 commits
-git log --oneline -10
-
-# Detailed last 3
-git log -3
-
-# See branch graph
-git log --graph --oneline --all -10
-```
-
-### Check Changes
-```bash
-# Uncommitted changes
+# What's changed?
 git status
+
+# Line-by-line changes
 git diff
 
-# Changes in specific commit
-git show [commit-hash]
+# Changes in specific file
+git diff src/engines/metrics-engine.js
 
-# File history
-git log --follow -- [filename]
+# Commit history
+git log --oneline -10
 ```
 
-### Compare Branches
+### View Tags
 ```bash
-# See what's in develop but not main
-git log main..develop
+# All tags
+git tag -l
 
-# See differences
-git diff main..develop
+# Tags with details
+git tag -n
+
+# Commits for a tag
+git show v3.6.0-pre-optionc
 ```
 
 ---
 
-## 🔍 FINDING THINGS
+## ⚙️ USEFUL ALIASES (Optional)
 
-### Search Commits
-```bash
-# Find commit by message
-git log --grep="metrics"
-
-# Find commits that changed specific file
-git log -- [filename]
-
-# Find when text was added/removed
-git log -S "function calculateMAGE"
+Add to ~/.gitconfig:
+```
+[alias]
+  st = status
+  co = checkout
+  ci = commit
+  br = branch
+  unstage = reset HEAD --
+  last = log -1 HEAD
+  visual = log --oneline --graph --decorate
 ```
 
-### Check Remote Status
-```bash
-# See all remotes
-git remote -v
-
-# Check if local is behind/ahead
-git fetch origin
-git status
-```
+Then use: `git st` instead of `git status`
 
 ---
 
-## ðŸ› ï¸ MAINTENANCE
-
-### Clean Up
-```bash
-# Remove deleted files from tracking
-git add -A
-
-# Clean untracked files (dry run first!)
-git clean -n
-git clean -f
-
-# Remove old branches
-git fetch --prune
-```
-
-### Sync with Remote
-```bash
-# Update all branches
-git fetch origin
-
-# See what changed
-git log origin/develop..develop
-
-# Fast-forward merge
-git merge origin/develop
-```
-
----
-
-## ðŸ'¡ BEST PRACTICES
-
-### Commit Messages
-```bash
-# Good format: <type>(<scope>): <description>
-
-feat(sprint-b1): Add MAGE unit tests
-fix(metrics): Correct DST handling in MODD
-docs(readme): Update installation instructions
-chore: Update dependencies
-safety: Before major refactor
-```
-
-### Types
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation only
-- `chore`: Maintenance
-- `test`: Adding tests
-- `refactor`: Code restructure
-- `safety`: Safety checkpoint
-
-### Commit Frequency
-- âœ… Commit after each small task (every 15-30 min)
-- âœ… Push at end of session
-- âœ… Safety commit before risky changes
-- âŒ Don't wait until "everything works"
-
----
-
-## ðŸš© RED FLAGS
-
-**DON'T DO THIS**:
-```bash
-# âŒ Never force push to shared branches
-git push -f origin develop  # BAD!
-
-# âŒ Never commit secrets/passwords
-git commit -m "Add API key"  # BAD!
-
-# âŒ Never work directly on main
-git checkout main
-# make changes  # BAD!
-```
-
-**DO THIS INSTEAD**:
-```bash
-# âœ… Always work on develop
-git checkout develop
-
-# âœ… Remove secrets before committing
-# Check .gitignore includes .env, etc.
-
-# âœ… Use --force-with-lease if you must force
-git push --force-with-lease origin feature/thing
-```
-
----
-
-## ðŸ†˜ COMMON PROBLEMS
-
-### "Your branch is behind"
-```bash
-git pull origin develop
-# or
-git fetch origin
-git merge origin/develop
-```
-
-### "Merge conflict"
-```bash
-# Open conflicted files, resolve manually
-# Look for <<<<<<< ======= >>>>>>>
-git add [resolved-files]
-git commit -m "fix: Resolve merge conflicts"
-```
-
-### "Detached HEAD"
-```bash
-# Create branch from current state
-git checkout -b recovery-branch
-
-# Or go back to develop
-git checkout develop
-```
-
-### "Accidentally committed to main"
-```bash
-# On main branch with unwanted commit
-git reset --hard origin/main
-
-# Or move commit to develop
-git branch -f develop HEAD
-git checkout develop
-git checkout main
-git reset --hard origin/main
-```
-
----
-
-## 📚 QUICK REFERENCE
-
-| Command | What It Does |
-|---------|--------------|
-| `git status` | Show current state |
-| `git add -A` | Stage all changes |
-| `git commit -m "msg"` | Commit with message |
-| `git push` | Upload to GitHub |
-| `git pull` | Download from GitHub |
-| `git checkout [branch]` | Switch branch |
-| `git reset --hard HEAD` | Undo all changes |
-| `git log --oneline -10` | Show last 10 commits |
-
----
-
-**Cheatsheet Version**: 2.0  
-**Last Updated**: 2025-11-02  
-**For**: AGP+ v4.0 development
+**Version**: 2.0  
+**Updated**: 2025-11-02  
+**For**: Option C development workflow
