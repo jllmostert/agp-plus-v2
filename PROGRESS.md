@@ -540,17 +540,58 @@ const getColumn = (parts, columnName, fallbackIndex) => {
 
 ## 📝 TODO LIST - FUTURE FIXES
 
-### 🐛 Known Bugs (Low Priority)
+### 🐛 Known Bugs (Priority Order)
 
-**TDD Display Issue** (Reported: 2025-11-01 19:45)
+**BUG #1: TDD Display Missing** (Reported: 2025-11-01 19:45, 20:05)
 - **Problem**: TDD (Total Daily Dose) not showing in all daily profiles
-- **Details**: Insulin breakdown (bolus/basal split) missing in some profiles
-- **Impact**: LOW (calculation works, display issue only)
-- **Priority**: P3 (fix later)
-- **Estimated**: 30 minutes
-- **File**: Likely `src/components/DailyProfileModal.jsx` or similar
+- **Details**: 
+  - Insulin breakdown (bolus/basal split) missing in some profiles
+  - Vrijdag: Volledig data aanwezig, maar geen TDD of opsplitsing getoond
+  - Sensor overview lijkt prima en consistent
+- **Impact**: MEDIUM (calculation works, display issue, but TDD is clinically important)
+- **Priority**: P2 (should fix soon)
+- **Estimated**: 30-45 minutes
+- **File**: Likely `src/components/DailyProfileModal.jsx` or insulin display logic
 
-**Status**: Deferred to v3.4.0 or later
+**BUG #2: Deleted Sensors Storage Errors** (Reported: 2025-11-01 20:05)
+- **Problem**: Console errors in deleted sensors migration/loading
+- **Errors**:
+  ```
+  sensorStorage.js:365 - migrateDeletedSensors: fastDeleted.forEach is not a function
+  sensorStorage.js:282 - getAllDeletedSensors: cacheDeleted is not iterable
+  ```
+- **Impact**: LOW (functionality still works, but errors in console)
+- **Root cause**: Type mismatch - expecting array/iterable, getting Object
+- **Priority**: P3 (fix when convenient)
+- **Estimated**: 20 minutes
+- **Files**: 
+  - `src/storage/sensorStorage.js` (lines 341, 266)
+  - `src/storage/deletedSensorsDB.js` (related)
+- **Fix**: Add type checking, ensure arrays/iterables
+
+---
+
+### 🎨 Design Improvements (Priority Order)
+
+**DESIGN #1: AGP Layout Optimization** (Requested: 2025-11-01 20:05)
+- **Request**: Rearrange cards under AGP graph
+- **Current**: Two rows of cards, grafiek + metrics don't fit on one screen
+- **Desired**: Flip card rows so AGP graph + key metrics fit on one screen
+- **Reasoning**: 
+  - Hypo-count is klinisch belangrijk maar info al in grafiek
+  - Metrics should be immediately visible with graph
+- **Priority**: P2 (improves clinical workflow)
+- **Estimated**: 15-20 minutes
+- **Files**: 
+  - `src/components/AGPGenerator.jsx` (layout/grid)
+  - `src/styles/` (if grid CSS is separate)
+- **Implementation**: Swap order of metric cards (move hypo cards down)
+
+---
+
+### ✅ Completed Bugs/Fixes
+
+(Previously listed TDD bug moved to active bugs above with more details)
 
 ---
 
