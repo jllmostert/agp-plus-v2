@@ -1,35 +1,42 @@
 ---
 tier: 1
 status: active
-last_updated: 2025-11-01 22:10
-purpose: Central navigation for AGP+ v3.5.0-rc
+last_updated: 2025-11-01 22:40
+purpose: Central navigation for AGP+ v3.5.0 → v3.6.0
 ---
 
-# 🧭 START HERE - AGP+ v3.5.0-rc
+# 🧭 START HERE - AGP+ Post-v3.5.0
 
-**Status**: Block B.8 - 83% complete (15/18 tests passing)  
-**Last Session**: 2025-11-01 21:45-22:05 (20 min)  
-**Next**: Fix 3 test failures (10 min) → Complete B.8
+**Status**: Block B.8 Complete ✅ → TIER2 Analysis Next  
+**Version**: v3.5.0 (released, tagged, pushed)  
+**Last Session**: 2025-11-01 22:20-22:40 (20 min)  
+**Next**: TIER2 Comprehensive Analysis (60-90 min)
 
 ---
 
 ## 🎯 NEW SESSION CHECKLIST
 
-1. **Read HANDOFF.md** ← Complete instructions (30 min work)
-2. **Check PROGRESS.md** ← History (lines 1-150)
-3. **Run tests**: `npx vitest run` (should show 15/18)
-
-**⚠️ Token Warning**: Previous session 98K. Keep next <80K!
+1. **Read HANDOFF.md** ← Full analysis plan (60-90 min)
+2. **Verify v3.5.0**: `git log --oneline -3` (should show tag)
+3. **Run tests**: `npx vitest run` (should show 18/18 passing)
 
 ---
 
 ## 📂 KEY FILES
 
-- `HANDOFF.md` - Next tasks
-- `PROGRESS.md` - Session history  
-- `CHANGELOG.md` - v3.5.0 entry ✅
-- `src/core/__tests__/` - Test files
-- `src/core/parsers.js` - Main parser (708 lines)
+**Operational** (Tier 1):
+- `HANDOFF.md` - Next session plan (TIER2 analysis)
+- `PROGRESS.md` - Session history (B.8 complete)
+- `START_HERE.md` - This file
+
+**Tests** (Block B.8 ✅):
+- `src/core/__tests__/*.test.js` (5 files, 18 passing, 7 skipped)
+- `src/core/__tests__/fixtures/*.csv` (6 fixtures)
+
+**Analysis** (Tier 3):
+- `docs/analysis/TIER2_SYNTHESIS.md` - Original analysis
+- `docs/analysis/DUAL_STORAGE_ANALYSIS.md` - Storage review
+- `docs/analysis/BLOCK_B8_TEST_PLAN.md` - Completed
 
 ---
 
@@ -39,30 +46,52 @@ purpose: Central navigation for AGP+ v3.5.0-rc
 cd /Users/jomostert/Documents/Projects/agp-plus
 export PATH="/opt/homebrew/bin:$PATH"
 
-# Check tests
-npx vitest run  # 15/18 passing
+# Verify v3.5.0
+git tag --list | grep v3.5  # Should show v3.5.0
+npx vitest run              # 18/18 passing
 
 # Check git
-git log --oneline -3  # Last: 99116ea
-git status           # Should be clean
+git log --oneline -3  # Latest: 158ddac
+git status           # Clean
 ```
 
 ---
 
-## 🎯 WHAT'S LEFT (30 min)
+## 🎯 NEXT SESSION (60-90 min)
 
-1. **Fix 3 test failures** (10 min)
-   - Add data lines to fixture CSVs
-   - Fix field name in metadata test
+**Phase 1**: TIER2 Comprehensive Analysis (45 min)
+- Performance evaluation
+- Architecture assessment
+- Block prioritization (C1-C3, D)
 
-2. **Add edge case tests** (15 min)
-   - Create parser.edge-cases.test.js
+**Phase 2**: Block C Planning (15 min)
+- Choose highest priority block
+- Design implementation
+- Create test plan
+- Prep for v3.6.0
 
-3. **Document + release** (5 min)
-   - README update
-   - Tag v3.5.0
+**Create**: `docs/analysis/TIER2_COMPREHENSIVE_ANALYSIS.md`
 
 ---
 
-**Version**: 1.0 (Compact for token efficiency)  
-**Git**: Clean, commit `99116ea`, ready to work
+## 📊 PROJECT STATUS
+
+**Completed**:
+- ✅ Block A: Performance benchmarking (metrics 3-64ms)
+- ✅ Block B.1-B.7: Glucose validation (bounds filtering)
+- ✅ Block B.8: Parser test suite (18/18 tests)
+
+**Next**:
+- 🔄 TIER2 Analysis (identify priorities)
+- 📋 Block C: Critical fixes (dynamic columns, storage, validation)
+- 📋 Block D: Error recovery logging
+
+**On Horizon**:
+- Repository cleanup (docs/archive/)
+- GitHub maintenance
+- v4.0 planning
+
+---
+
+**Version**: 2.0 (Post-B.8)  
+**Git**: Clean, v3.5.0 tagged, ready for analysis
