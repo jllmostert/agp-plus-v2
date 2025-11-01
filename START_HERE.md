@@ -8,13 +8,13 @@
 
 ## 🎯 YOU ARE HERE
 
-**Status**: Option C Implementation - Sprint B1 (Metrics Validation)  
-**Location**: `docs/optionc/block-c-robustness/sprint-b1-metrics/`
+**Status**: Option C Implementation - Sprint A1 (Parser Robustness)  
+**Location**: `docs/optionc/block-c-robustness/sprint-a1-parser/`
 
 **Quick Access**:
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
-cd docs/optionc/block-c-robustness/sprint-b1-metrics
+cd docs/optionc/block-c-robustness/sprint-a1-parser
 cat HANDOFF.md
 ```
 
@@ -26,7 +26,7 @@ cat HANDOFF.md
 
 **Contains**:
 - Complete Option C overview (4 blocks, 67 hours)
-- Current sprint location (Sprint B1)
+- Current sprint location (Sprint A1)
 - All sprint details and progress tracking
 - Git workflow instructions
 
@@ -40,7 +40,7 @@ cat HANDOFF.md
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
 git pull origin develop
-cd docs/optionc/block-c-robustness/sprint-b1-metrics
+cd docs/optionc/block-c-robustness/sprint-a1-parser
 cat HANDOFF.md  # Read sprint details
 ```
 
@@ -51,13 +51,13 @@ nano PROGRESS.md
 
 # Commit often
 git add .
-git commit -m "test(metrics): [what you did]"
+git commit -m "refactor(parser): [what you did]"
 git push origin develop
 ```
 
 ### Key Files
-- **Sprint Details**: `docs/optionc/block-c-robustness/sprint-b1-metrics/HANDOFF.md`
-- **Progress Tracking**: `docs/optionc/block-c-robustness/sprint-b1-metrics/PROGRESS.md`
+- **Sprint Details**: `docs/optionc/block-c-robustness/sprint-a1-parser/HANDOFF.md`
+- **Progress Tracking**: `docs/optionc/block-c-robustness/sprint-a1-parser/PROGRESS.md`
 - **Master Progress**: `docs/optionc/MASTER_PROGRESS.md`
 - **Git Help**: `GIT_CHEATSHEET.md`
 
