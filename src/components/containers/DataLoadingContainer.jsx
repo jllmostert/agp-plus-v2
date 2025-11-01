@@ -32,10 +32,52 @@ function DataLoadingContainer({
       marginBottom: '1rem'
     }}>
       
-      {/* Buttons will go here */}
-      <div style={{ padding: '1rem', border: '1px solid white' }}>
-        DataLoadingContainer - Placeholder
-      </div>
+      {/* 1. IMPORT Button (Collapsible) */}
+      <button
+        onClick={() => setDataImportExpanded(!dataImportExpanded)}
+        style={{
+          background: dataImportExpanded ? 'var(--color-black)' : 'var(--bg-secondary)',
+          border: '3px solid var(--border-primary)',
+          color: dataImportExpanded ? 'var(--color-white)' : 'var(--text-primary)',
+          cursor: 'pointer',
+          padding: '1.5rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          minHeight: '100px'
+        }}
+        title="Upload and import data"
+      >
+        <h2 style={{ 
+          fontSize: '0.875rem',
+          fontWeight: 700,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          marginBottom: 0
+        }}>
+          {dataImportExpanded ? '▼' : '▶'} IMPORT
+        </h2>
+        <span style={{ 
+          fontSize: '0.625rem',
+          color: dataImportExpanded ? 'var(--color-white)' : 'var(--text-secondary)',
+          fontWeight: 600,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase'
+        }}>
+          Data Sources
+        </span>
+        {csvData && (
+          <span style={{ 
+            fontSize: '1.25rem',
+            color: 'var(--color-green)',
+            marginTop: '0.25rem'
+          }}>
+            ✓
+          </span>
+        )}
+      </button>
       
     </div>
   );
