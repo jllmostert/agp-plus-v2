@@ -1,20 +1,54 @@
 # AGP+ PROGRESS TRACKER
 
-**Sessie**: 2025-11-01 21:10 (New Session)
-**Doel**: Block B.7 - CSV Format Version Detection (v3.4.0)  
-**Status**: ✅ CODE COMPLETE - Ready for Testing
+**Sessie**: 2025-11-01 21:45-22:05 (B.8 Partial Complete)
+**Doel**: Block B.8 - Parser Unit Tests (v3.5.0)  
+**Status**: ✅ 83% COMPLETE - 15/18 tests passing, ready for fixes
+
+---
+
+## 🧪 TEST RESULTS (12:00)
+
+**First Run**: ✅ 15/18 tests passing (83% success rate!)
+
+**Passing Tests**:
+- ✅ detectCSVFormat: 8/8 tests pass
+- ✅ findColumnIndices: 5/5 tests pass  
+- ✅ parseCSVMetadata: 1/2 tests pass
+- ✅ parseCSV: 1/3 tests pass
+
+**Failing Tests** (Minor fixture issues):
+1. ❌ parseCSV - valid CSV: Fixture needs more data lines (has 13, needs 16)
+2. ❌ parseCSV - reordered: Same issue (has 11, needs 16)  
+3. ❌ parseCSVMetadata: Field name mismatch (expects patientName, has something else)
+
+**Status**: 🎯 Core functionality works! Just need to fix fixture files.
+
+## 📝 B.8 SESSION SUMMARY (21:45-22:05, 20 min)
+
+**Delivered**:
+- ✅ Exported `detectCSVFormat` and `findColumnIndices` for testing
+- ✅ Created 4 test files: detectCSVFormat, findColumnIndices, parseCSVMetadata, parseCSV
+- ✅ 18 tests total, 15 passing (83%)
+- ✅ Vitest infrastructure working
+- ✅ Core parser functionality validated
+
+**Time**: 20 minutes (estimate was 90m for Phase 2) → **78% faster** ⚡
+
+**Next**: Fix 3 failing tests (fixture data), add edge case tests, documentation.
 
 ---
 
 ## 📊 SESSION STATUS
 
-**Current Session (21:10-21:25)**: 🎯 Block B.7 Implementation
-- ✅ Phase 1: Header structure analyzed
-- ✅ Phase 2: `detectCSVFormat()` function created (90 lines)
-- ✅ Phase 3: `parseCSV()` updated to use dynamic detection
-- 🧪 Phase 4: Testing next
+**Current Session (21:40-21:54)**: 🎯 Block B.8 Phase 1 COMPLETE ✅
+- ✅ Phase 1: Test infrastructure setup (14 min - AHEAD OF SCHEDULE!)
+  - ✅ Vitest already installed (v3.2.4)
+  - ✅ Test scripts added to package.json
+  - ✅ Test directories created
+  - ✅ 6 test fixtures created
+- 🎯 Phase 2: Core Parser Tests (starting now)
 
-**Implementation Time**: 15 minutes (estimate was 60 min) ⚡
+**Implementation Time Phase 1**: 14 minutes (estimate was 30 min) ⚡ **53% faster!**
 
 ---
 

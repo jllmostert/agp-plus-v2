@@ -1,0 +1,10 @@
+Last Name;First Name;Patient ID;System ID;Start Date;End Date;Device;MiniMed 780G MMT-1886;Hardware Version;A2.01;Firmware Version;8.13.2
+"Mostert";"Jo";"";"";"02/08/2025 00:00:00";"30/10/2025 00:00:00";"Serial Number";NG4114235H;Software Version;
+Patient DOB;;;;;;CGM;Guardian™ 4 Sensor
+Device data shown may exceed selected date range.
+
+-------;MiniMed 780G MMT-1886;Pump;NG4114235H;------- 
+Index;Sensor Glucose (mg/dL);Time;Date;BG Reading (mg/dL);Bolus Volume Delivered (U);Alert;Rewind;BWZ Carb Input (grams)
+0,00000;131;17:36:29;2025/10/30;;;;;
+1,00000;150;17:35:40;2025/10/30;;;;;
+2,00000;123;15:55:56;2025/10/30;;;;;

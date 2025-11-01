@@ -274,7 +274,7 @@ export const parseSection2 = (text) => {
  *   confidence: 'high'       // Detection confidence: high|medium|low
  * }
  */
-const detectCSVFormat = (text) => {
+export const detectCSVFormat = (text) => {
   if (!text || text.trim().length === 0) {
     return null;
   }
@@ -354,7 +354,7 @@ const detectCSVFormat = (text) => {
  *   ...
  * }
  */
-const findColumnIndices = (headerRow) => {
+export const findColumnIndices = (headerRow) => {
   if (!headerRow || typeof headerRow !== 'string') {
     return null;
   }

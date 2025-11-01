@@ -1,0 +1,12 @@
+Last Name;First Name;Patient ID;System ID;Start Date;End Date;Device;MiniMed 780G MMT-1886;Hardware Version;A2.01;Firmware Version;8.13.2
+"Mostert";"Jo";"";"";"02/08/2025 00:00:00";"30/10/2025 00:00:00";"Serial Number";NG4114235H;Software Version;
+Patient DOB;;;;;;CGM;Guardian™ 4 Sensor
+Device data shown may exceed selected date range.
+
+-------;MiniMed 780G MMT-1886;Pump;NG4114235H;------- 
+Index;Date;Time;New Device Time;BG Source;BG Reading (mg/dL);Linked BG Meter ID;Basal Rate (U/h);Temp Basal Amount;Temp Basal Type;Temp Basal Duration (h:mm:ss);Bolus Type;Bolus Volume Selected (U);Bolus Volume Delivered (U);Bolus Duration (h:mm:ss);Prime Type;Prime Volume Delivered (U);Estimated Reservoir Volume after Fill (U);Alert;User Cleared Alerts;Suspend;Rewind;BWZ Estimate (U);BWZ Target High BG (mg/dL);BWZ Target Low BG (mg/dL);BWZ Carb Ratio (g/U);BWZ Insulin Sensitivity (mg/dL/U);BWZ Carb Input (grams);BWZ BG/SG Input (mg/dL);BWZ Correction Estimate (U);BWZ Food Estimate (U);BWZ Active Insulin (U);BWZ Status;Sensor Calibration BG (mg/dL);Sensor Glucose (mg/dL);ISIG Value;Event Marker;Bolus Number;Bolus Cancellation Reason;BWZ Unabsorbed Insulin Total (U);Final Bolus Estimate;Scroll Step Size;Insulin Action Curve Time;Sensor Calibration Rejected Reason;Preset Bolus;Bolus Source;BLE Network Device;Device Update Event;Network Device Associated Reason;Network Device Disassociated Reason;Network Device Disconnected Reason;Sensor Exception;Preset Temp Basal Name;Sensor State
+0,00000;2025/10/30;17:36:29;;;;;;;;;Normal;1,175;1,175;;;;;;;;;;;;;;;;;;;;;;;;131;;;;;;;;CLOSED_LOOP_BG_CORRECTION_AND_FOOD_BOLUS;;;;;;;;
+1,00000;2025/10/30;17:35:40;;;;;;;;;Normal;1,175;;;;;;;;;;;;;;;;;;;;;;;;;150;;;;;;;;CLOSED_LOOP_BG_CORRECTION_AND_FOOD_BOLUS;;;;;;;;
+2,00000;2025/10/30;16:00:00;;;;;0,9;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+3,00000;2025/10/30;15:55:56;;;;;;;;;Normal;2,625;;;;;;;;;;;;;;;;;;;;;;;;;123;;;;;;;;CLOSED_LOOP_BG_CORRECTION_AND_FOOD_BOLUS;;;;;;;;
+4,00000;2025/10/30;15:50:00;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;200;;;;;;;;;;;;;;;;;;;;
