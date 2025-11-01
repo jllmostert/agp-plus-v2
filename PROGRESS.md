@@ -64,20 +64,51 @@ const headerRow = dataLines[0]; // Header is first line after metadata
 
 ---
 
-## 🧪 PHASE 4: TESTING (Next)
+## 🧪 PHASE 4: TESTING (In Progress)
 
-**Test Plan**:
-1. Upload 90-day CSV
-2. Check console for format detection logs
-3. Verify device model + serial displayed
-4. Verify all metrics calculate correctly
-5. Check for any errors/warnings
+**Status**: ⏳ Awaiting Test Execution (~21:30)
 
-**Expected Console Output**:
+### Test Checklist
+- [ ] Dev server running on port 3001
+- [ ] Browser DevTools console open
+- [ ] Upload: `test-data/Jo Mostert 30-10-2025_90d.csv`
+- [ ] Check console for format detection logs
+- [ ] Verify device model displayed
+- [ ] Verify serial number displayed
+- [ ] Check all metrics calculate correctly
+- [ ] No console errors/warnings
+
+### Expected Console Output
 ```
 [CSV Format] Detected: MiniMed 780G MMT-1886 (NG4114235H)
 [CSV Format] Version: 1.0, Header at line: 6
+[Parser] Found 26,640 glucose readings (after filtering)
+[Metrics] Calculation completed in 45ms
 ```
+
+### Test Results (Fill in after testing)
+
+**Console Output**:
+```
+[Paste actual console output here]
+```
+
+**Verification**:
+- [ ] âœ… Format detected correctly
+- [ ] âœ… Device model matches (MiniMed 780G MMT-1886)
+- [ ] âœ… Serial number matches (NG4114235H)
+- [ ] âœ… Header line = 6 (expected)
+- [ ] âœ… All metrics display correctly
+- [ ] âœ… No errors in console
+
+**Issues Found** (if any):
+```
+[List any problems here]
+```
+
+**Decision**:
+- [ ] âœ… Tests PASS → Tag v3.4.0 and continue to B.8
+- [ ] âŒ Tests FAIL → Debug and fix issues
 
 ---
 
