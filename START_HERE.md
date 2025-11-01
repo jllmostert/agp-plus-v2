@@ -1,42 +1,45 @@
 ---
 tier: 1
 status: active
-last_updated: 2025-11-01 22:40
-purpose: Central navigation for AGP+ v3.5.0 → v3.6.0
+last_updated: 2025-11-01 23:45
+purpose: Central navigation for AGP+ v3.6.0 → Domain F or G Next
 ---
 
-# 🧭 START HERE - AGP+ Post-v3.5.0
+# 🧭 START HERE - AGP+ v3.6.0
 
-**Status**: Block B.8 Complete ✅ → TIER2 Analysis Next  
-**Version**: v3.5.0 (released, tagged, pushed)  
-**Last Session**: 2025-11-01 22:20-22:40 (20 min)  
-**Next**: TIER2 Comprehensive Analysis (60-90 min)
+**Status**: Domain C Complete ✅ → Domain F or G Next  
+**Version**: v3.6.0 (committed: 8b73b4b, analysis docs pending)  
+**Last Session**: 2025-11-01 23:15-23:45 (Domain C recovery + completion, 30 min)  
+**Next**: Domain F (Viz, 60 min) OR Domain G (Export, 45 min)
 
 ---
 
 ## 🎯 NEW SESSION CHECKLIST
 
-1. **Read HANDOFF.md** ← Full analysis plan (60-90 min)
-2. **Verify v3.5.0**: `git log --oneline -3` (should show tag)
-3. **Run tests**: `npx vitest run` (should show 18/18 passing)
+1. **Read HANDOFF.md** ← Domain F or G analysis options
+2. **Verify git**: `git log --oneline -3` (pending commit for analysis docs)
+3. **Choose next domain**: 
+   - Domain F: Visualization (60 min)
+   - Domain G: Export/Import (45 min)
 
 ---
 
 ## 📂 KEY FILES
 
-**Operational** (Tier 1):
-- `HANDOFF.md` - Next session plan (TIER2 analysis)
-- `PROGRESS.md` - Session history (B.8 complete)
-- `START_HERE.md` - This file
+**For Next Session**:
+- `HANDOFF.md` - Domain F/G options and instructions
+- `docs/analysis/DOMAIN_C_UI_COMPONENTS_ANALYSIS.md` - Just completed (666 lines)
+- `docs/analysis/TIER2_ANALYSIS_SUMMARY.md` - Updated status
 
-**Tests** (Block B.8 ✅):
-- `src/core/__tests__/*.test.js` (5 files, 18 passing, 7 skipped)
-- `src/core/__tests__/fixtures/*.csv` (6 fixtures)
+**Visualization Files** (if Domain F):
+- `src/components/AGPChart.jsx`
+- `src/components/DayNightChart.jsx`
+- `src/components/HypoglycemiaEvents.jsx`
 
-**Analysis** (Tier 3):
-- `docs/analysis/TIER2_SYNTHESIS.md` - Original analysis
-- `docs/analysis/DUAL_STORAGE_ANALYSIS.md` - Storage review
-- `docs/analysis/BLOCK_B8_TEST_PLAN.md` - Completed
+**Export/Import Files** (if Domain G):
+- `src/utils/exportUtils.js`
+- `src/utils/importUtils.js`
+- Report generation logic
 
 ---
 
@@ -46,52 +49,37 @@ purpose: Central navigation for AGP+ v3.5.0 → v3.6.0
 cd /Users/jomostert/Documents/Projects/agp-plus
 export PATH="/opt/homebrew/bin:$PATH"
 
-# Verify v3.5.0
-git tag --list | grep v3.5  # Should show v3.5.0
-npx vitest run              # 18/18 passing
-
-# Check git
-git log --oneline -3  # Latest: 158ddac
+# Verify status
+git log --oneline -3  # Latest: 8b73b4b (B.6.4)
 git status           # Clean
+
+# Start analysis
+# Read DOMAIN_C_PLAN.md first (10 min)
+# Then start reading components
 ```
-
----
-
-## 🎯 NEXT SESSION (60-90 min)
-
-**Phase 1**: TIER2 Comprehensive Analysis (45 min)
-- Performance evaluation
-- Architecture assessment
-- Block prioritization (C1-C3, D)
-
-**Phase 2**: Block C Planning (15 min)
-- Choose highest priority block
-- Design implementation
-- Create test plan
-- Prep for v3.6.0
-
-**Create**: `docs/analysis/TIER2_COMPREHENSIVE_ANALYSIS.md`
 
 ---
 
 ## 📊 PROJECT STATUS
 
 **Completed**:
-- ✅ Block A: Performance benchmarking (metrics 3-64ms)
-- ✅ Block B.1-B.7: Glucose validation (bounds filtering)
-- ✅ Block B.8: Parser test suite (18/18 tests)
+- ✅ Block A: Performance (metrics 3-64ms)
+- ✅ Block B.1-B.8: Parser (dynamic, validated, tested)
+- ✅ B.6.4: Validation layer (3-tier system)
+- ✅ TIER2 Analysis: 5/6 domains complete
+  - ✅ Domain A: Parsing (8.5/10)
+  - ✅ Domain B: Metrics (9.0/10)
+  - ✅ Domain C: UI Components (6.5/10) ← Just completed
+  - ✅ Domain D: Storage (7.0/10)
+  - ✅ Domain E: Stock (8.0/10)
 
 **Next**:
-- 🔄 TIER2 Analysis (identify priorities)
-- 📋 Block C: Critical fixes (dynamic columns, storage, validation)
-- 📋 Block D: Error recovery logging
+- 🔄 Domain F: Visualization (60 min)
+- 📋 Domain G: Export/Import (45 min)
 
-**On Horizon**:
-- Repository cleanup (docs/archive/)
-- GitHub maintenance
-- v4.0 planning
+**Architecture Score**: 7.3/10 (down from 8.0 due to UI complexity)
 
 ---
 
-**Version**: 2.0 (Post-B.8)  
-**Git**: Clean, v3.5.0 tagged, ready for analysis
+**Version**: 3.0 (Post-B.6.4)  
+**Git**: 8b73b4b (v3.6.0), ready for Domain C

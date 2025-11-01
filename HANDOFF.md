@@ -1,106 +1,102 @@
 ---
 tier: 1
 status: active
-session: 2025-11-01 22:40
-purpose: TIER2 Analysis + Block C Planning
+session: 2025-11-01 23:45
+purpose: Domain C Complete, F+G Next
 ---
 
-# AGP+ Session Handoff - v3.5.0 Released, TIER2 Analysis Next
+# AGP+ Session Handoff - v3.6.0, Domain C Complete
 
-**Version**: v3.5.0 ✅ (Block B.8 complete)  
-**Last Session**: 2025-11-01 22:20-22:40 (20 min)  
-**Git**: Commit `158ddac`, Tag `v3.5.0` pushed
+**Version**: v3.6.0 (B.6.4 + Domain C analysis)  
+**Last Session**: 2025-11-01 23:15-23:45 (30 min recovery + completion)  
+**Git**: Commit 8b73b4b (code unchanged, analysis docs updated)
 
 ---
 
-## ✅ WHAT'S DONE (B.8 Complete!)
+## ✅ WHAT'S DONE
 
-**Block B.8 Achievement**:
-- ✅ 18/18 core tests passing (100%)
-- ✅ 4 test files created and validated
-- ✅ Test fixtures complete with proper data
-- ✅ Git tagged and released as v3.5.0
+**Domain C Analysis: COMPLETE** ✅
+- ✅ All 8 components analyzed (5,301 lines total)
+- ✅ User flows mapped (CSV → detection → storage)
+- ✅ Performance assessed (virtualization needed)
+- ✅ Accessibility gaps identified
+- ✅ Issues prioritized (P0, P1, P2, P3)
+- ✅ Refactoring roadmap created (42h total)
+- ✅ Document completed: `DOMAIN_C_UI_COMPONENTS_ANALYSIS.md`
 
-**Test Coverage**:
-- `detectCSVFormat`: 8/8 tests ✅
-- `findColumnIndices`: 5/5 tests ✅
-- `parseCSVMetadata`: 2/2 tests ✅
-- `parseCSV`: 3/3 integration tests ✅
+**Key Findings**:
+- âŒ AGPGenerator.jsx: 1,962 lines (god component, P0)
+- âŒ SensorHistoryModal.jsx: 1,387 lines (too many responsibilities, P0)
+- âŒ No table virtualization (500ms render for 1000 sensors)
+- âœ… User flows clear and functional
+- ⚠️ Accessibility incomplete (ARIA, keyboard nav)
 
-**Edge Cases**: 7 tests created, marked as TODO for v3.6.0 (need full-format fixtures)
+**Architecture Score**: 6.5/10 ⚠️ (pulls overall down to 7.3/10)
 
 ---
 
 ## 🎯 NEXT SESSION (60-90 min)
 
-### Phase 1: TIER2 Analysis (45 min)
+### Option A: Domain F Analysis (60 min) - RECOMMENDED
 
-**Goal**: Comprehensive architecture analysis to inform Block C/D priorities
+**Goal**: Analyze visualization components
 
-**Create**: `/Users/jomostert/Documents/Projects/agp-plus/docs/analysis/TIER2_COMPREHENSIVE_ANALYSIS.md`
+**Focus**:
+- AGPChart.jsx performance (Recharts)
+- Canvas vs SVG rendering
+- Data transformation efficiency
+- Color scheme consistency
+- Chart accessibility
 
-**Topics to Cover**:
-1. **Performance Analysis** (15 min)
-   - Review metrics calculation benchmarks (3-64ms achieved)
-   - Identify bottlenecks in large dataset processing
-   - Memory usage patterns with 500k+ readings
-   
-2. **Architecture Assessment** (15 min)
-   - Dual storage system evaluation (completed ✅)
-   - Code organization and module boundaries
-   - Dependencies and coupling analysis
-   - Technical debt mapping
-   
-3. **Block Prioritization** (15 min)
-   - Rank remaining TIER2 blocks (C1-C3, D)
-   - Risk/impact matrix for each block
-   - Implementation sequence recommendation
-   - Estimated effort per block
+**Files** (~2,200 lines):
+- AGPChart.jsx
+- DayNightChart.jsx  
+- HypoglycemiaEvents.jsx
+- Visualization hooks
 
-**Output Format**:
-```markdown
-# TIER2 Comprehensive Analysis
-## Executive Summary
-- Architecture score: X/10
-- Priority blocks: [...]
-- Critical issues: [...]
+**Deliverable**: `DOMAIN_F_VISUALIZATION_ANALYSIS.md`
 
-## Performance Analysis
-[benchmarks, bottlenecks]
+---
 
-## Architecture Assessment  
-[strengths, weaknesses, recommendations]
+### Option B: Domain G Analysis (45 min)
 
-## Block Roadmap
-[prioritized list with effort estimates]
-```
+**Goal**: Analyze export/import system
 
-### Phase 2: Block C Planning (15 min)
+**Focus**:
+- Export formats (PDF, JSON, CSV)
+- Import validation
+- Data transformation
+- Error handling
 
-**Block C: Critical Fixes**
-- C1: Dynamic column detection (prevent parser breakage)
-- C2: Storage backend consistency
-- C3: Missing validation layers
+**Files** (~1,400 lines):
+- Export utilities
+- Import validators
+- Report generators
 
-**Choose highest priority** from TIER2 analysis, then:
-1. Read relevant code sections
-2. Design implementation approach
-3. Create test plan
-4. Update CHANGELOG for v3.6.0
+**Deliverable**: `DOMAIN_G_EXPORT_IMPORT_ANALYSIS.md`
+
+---
+
+### Option C: Start Domain C Refactoring (4+ hours)
+
+**Not Recommended Yet**: Wait until F+G analyses complete for full picture
+
+**If Chosen**:
+1. Start with C0.2: Table virtualization (3h) - quick win
+2. Then C0.1: Extract ModalManager from AGPGenerator (4h)
 
 ---
 
 ## 📂 KEY FILES
 
-**Current Status**:
-- `PROGRESS.md` - Updated with B.8 completion ✅
-- `CHANGELOG.md` - v3.5.0 entry exists ✅
-- `src/core/__tests/` - 5 test files (18 passing, 7 skipped)
+**Just Created/Updated**:
+- `docs/analysis/DOMAIN_C_UI_COMPONENTS_ANALYSIS.md` (666 lines) ✅
+- `docs/analysis/TIER2_ANALYSIS_SUMMARY.md` (updated)
 
-**For Next Session**:
-- `docs/analysis/TIER2_SYNTHESIS.md` - Original analysis (reference)
-- `docs/analysis/BLOCK_B8_TEST_PLAN.md` - Completed plan
-- `docs/analysis/DUAL_STORAGE_ANALYSIS.md` - Storage review (reference)
+**To Read Next**:
+- `src/components/AGPChart.jsx`
+- `src/components/DayNightChart.jsx`
+- `src/hooks/useChartData.js` (if exists)
 
 ---
 
@@ -110,51 +106,45 @@ purpose: TIER2 Analysis + Block C Planning
 cd /Users/jomostert/Documents/Projects/agp-plus
 export PATH="/opt/homebrew/bin:$PATH"
 
-# Verify tests
-npx vitest run  # Should show 18/18 passing
+# Verify
+git log --oneline -3  # Should show 8b73b4b
+git status           # Clean (no code changes, just docs)
 
-# Check git
-git log --oneline -3  # Should show v3.5.0 tag
-git status           # Clean
+# Review completed analysis
+cat docs/analysis/DOMAIN_C_UI_COMPONENTS_ANALYSIS.md | head -100
 
-# Start analysis
-# Create TIER2_COMPREHENSIVE_ANALYSIS.md next to TIER2_SYNTHESIS.md
+# Start Domain F
+# Use Desktop Commander to read visualization components
 ```
 
 ---
 
-## 🎯 SUCCESS CRITERIA
+## ✅ SUCCESS CRITERIA
 
-**TIER2 Analysis Complete When**:
-- [ ] Performance bottlenecks identified
-- [ ] Architecture score calculated (X/10)
-- [ ] Blocks C1-C3, D prioritized with effort estimates
-- [ ] Next block chosen (likely C1: Dynamic columns)
-- [ ] v3.6.0 scope defined
-
-**Block C Planning Complete When**:
-- [ ] Implementation approach documented
-- [ ] Test strategy defined
-- [ ] Code sections identified
-- [ ] Ready to code in next session
+**Session Complete When**:
+- [ ] Domain F analysis document created
+- [ ] Visualization performance assessed
+- [ ] Chart accessibility evaluated
+- [ ] Issues documented with priorities
+- [ ] Architecture score calculated
 
 ---
 
-## ⚡ EFFICIENCY TIPS
+## ⚡ SESSION NOTES
 
-**Token Management**:
-- Analysis session may be text-heavy (documentation)
-- Use `read_file` with offset/length for large files
-- Reference line numbers instead of copying code
-- Keep analysis concise but comprehensive
+**What Happened**:
+- Started Domain C, crashed due to context overflow (reading 1,962 line file)
+- Recovered: read analysis doc in chunks, found it incomplete
+- Completed missing sections: Issues & Recommendations, Roadmap, Conclusion
+- Updated TIER2_ANALYSIS_SUMMARY with Domain C findings
 
-**Time Allocation**:
-- 45 min analysis → detailed but not exhaustive
-- 15 min planning → enough to start coding next time
-- Don't over-engineer → AGP+ is pragmatic, not perfect
+**Lessons**:
+- ✅ Always use offset/length with large files
+- ✅ Chunk writes to 25-30 lines max
+- ✅ Document as you go (don't save it all for end)
 
 ---
 
-**Handoff Version**: 2.0  
-**Status**: B.8 Complete, Ready for TIER2  
-**Next Priority**: Architecture analysis + Block C planning
+**Handoff Version**: 5.0  
+**Status**: Domain C Complete (5/6), F+G Remaining  
+**Next**: Domain F Visualization (60 min) - RECOMMENDED
