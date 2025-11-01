@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { CONFIG } from '../core/metrics-engine.js';
 import TIRBar from './TIRBar.jsx';
-import HypoglycemiaEvents from './HypoglycemiaEvents.jsx';
 
 /**
  * AGPChart - Ambulatory Glucose Profile SVG Visualization
@@ -167,13 +166,6 @@ export default function AGPChart({
           />
         </svg>
       </div>
-
-      {/* Hypoglycemia Events Warning Panel */}
-      <HypoglycemiaEvents 
-        events={events} 
-        tbrPercent={metrics?.tbr}
-        gri={metrics?.gri}
-      />
     </div>
   );
 }

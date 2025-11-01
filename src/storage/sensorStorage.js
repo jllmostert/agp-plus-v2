@@ -260,7 +260,7 @@ export async function getAllDeletedSensors() {
       const dbDeleted = await getDeletedSensorsFromDB();
       
       // Also check localStorage cache
-      const cacheDeleted = getDeletedSensors();
+      const cacheDeleted = await getDeletedSensors();
       
       // Merge and deduplicate
       const allDeleted = [...new Set([...dbDeleted, ...cacheDeleted])];
@@ -276,12 +276,12 @@ export async function getAllDeletedSensors() {
     
     // Fallback: localStorage only (IndexedDB not available)
     console.warn('[getAllDeletedSensors] IndexedDB unavailable, using localStorage only');
-    return getDeletedSensors();
+    return await getDeletedSensors();
     
   } catch (err) {
     console.error('[getAllDeletedSensors] Error loading deleted sensors:', err);
     // Final fallback: localStorage
-    return getDeletedSensors();
+    return await getDeletedSensors();
   }
 }
 
@@ -329,11 +329,11 @@ export function cleanupOldDeletedSensors() {
  * Migrate old deleted sensors format to new persistent store
  * Run once on app startup to preserve existing deleted sensors
  * 
- * @returns {Object} Migration result
+ * @returns {Promise<Object>} Migration result
  */
-export function migrateDeletedSensors() {
+export async function migrateDeletedSensors() {
   try {
-    const fastDeleted = getDeletedSensors();
+    const fastDeleted = await getDeletedSensors();
     const persistentStore = getPersistentDeletedSensors();
     
     let migrated = 0;

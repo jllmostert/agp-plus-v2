@@ -209,7 +209,7 @@ export function useSensorDatabase() {
 
       // PHASE 2A: RESURRECTION BUG FIX
       // Migrate old deleted sensors to persistent store (one-time migration)
-      const migrationResult = migrateDeletedSensors();
+      const migrationResult = await migrateDeletedSensors();
       if (migrationResult.migrated > 0) {
         debug.log('[useSensorDatabase] Migrated deleted sensors:', migrationResult);
       }

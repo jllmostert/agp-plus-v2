@@ -25,6 +25,7 @@ import SensorImport from './SensorImport';
 import PeriodSelector from './PeriodSelector';
 import MetricsDisplay from './MetricsDisplay';
 import AGPChart from './AGPChart';
+import HypoglycemiaEvents from './HypoglycemiaEvents';
 import ComparisonView from './ComparisonView';
 import DayNightSplit from './DayNightSplit';
 import WorkdaySplit from './WorkdaySplit';
@@ -1739,7 +1740,16 @@ export default function AGPGenerator() {
                   />
                 </section>
 
-                {/* 3. DAY/NIGHT SPLIT */}
+                {/* 3. HYPOGLYCEMIA EVENTS - Warning Panel */}
+                <section className="section">
+                  <HypoglycemiaEvents 
+                    events={metricsResult.events} 
+                    tbrPercent={metricsResult.metrics?.tbr}
+                    gri={metricsResult.metrics?.gri}
+                  />
+                </section>
+
+                {/* 4. DAY/NIGHT SPLIT */}
                 <section className="section">
                   <DayNightSplit
                     dayMetrics={metricsResult.dayMetrics}
@@ -1749,7 +1759,7 @@ export default function AGPGenerator() {
                   />
                 </section>
 
-                {/* 4. WORKDAY SPLIT - Only show when ProTime loaded */}
+                {/* 5. WORKDAY SPLIT - Only show when ProTime loaded */}
                 {workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics && (
                   <section className="section">
                     <WorkdaySplit
@@ -1762,7 +1772,7 @@ export default function AGPGenerator() {
                   </section>
                 )}
 
-                {/* 5. PERIOD COMPARISON - Last */}
+                {/* 6. PERIOD COMPARISON - Last */}
                 {comparisonData && (
                   <section className="section">
                     <ComparisonView
