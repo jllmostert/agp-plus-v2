@@ -1,639 +1,578 @@
-# 📋 HANDOFF - AGP+ v3.15.1
+---
+tier: 1
+status: active
+last_updated: 2025-11-01
+purpose: Current session state - Priority 1 architecture fixes after Tier 2 analysis
+---
+
+# 🎯 HANDOFF - Priority 1 Architecture Fixes
 
 **Date**: 2025-11-01  
-**Version**: v3.15.1 ✅ PRODUCTION READY  
-**Status**: Two-Phase Upload Flow Complete  
-**Branch**: main  
-**Server**: http://localhost:3001
+**Session Focus**: Implement quick-win validation and UX improvements  
+**Estimated Time**: 2 hours  
+**Risk Level**: LOW (additive changes, no breaking modifications)
 
 ---
 
-## ⚠️ CRITICAL: WORK IN SMALL CHUNKS!
+## 📍 CONTEXT - WHERE WE ARE
 
-**Before you start coding:**
-1. 🛑 **STOP after every 1-2 edits** and wait for user input
-2. 🛑 **NEVER write more than 30 lines** in one write_file call
-3. 🛑 **Use edit_block for surgical changes** instead of rewriting files
-4. 🛑 **Ask before continuing** to next step
+### Analysis Complete ✅
+- **Tier 2 Synthesis**: Complete review of 4,258 LOC across 12 core files
+- **Verdict**: Architecture fundamentally sound (7.9/10) but needs validation layers
+- **Document**: `/docs/analysis/TIER2_SYNTHESIS.md` (764 lines)
 
-**Why?** Context window limits (190k tokens). Large operations cause crashes and lost work.
+### Key Findings
+1. ❌ **No batch capacity validation** - can over-assign sensors
+2. ❌ **No storage source indicator** - users confused by read-only SQLite sensors  
+3. ❌ **Sensor ID collisions possible** - rare but unhandled (same-second detection)
 
-**Pattern:**
-```
-1. Read file (view with line ranges)
-2. Make 1-2 small edits (write_file or edit_block)
-3. 🛑 STOP - Ask: "Continue to next edit?"
-4. Wait for user "go" or "test" command
-5. Repeat
-```
+### Current State
+- ✅ **v3.1.0 working** - deduplication fixed, deleted sensors persistent
+- ⚠️ **Production-ready** with known limitations
+- 🎯 **Goal**: Close gaps with 3 quick fixes (2 hours total)
 
 ---
 
-## 🎯 CURRENT STATE
+## 🎯 MISSION - PRIORITY 1 FIXES
 
-### ✅ v3.15.1 - Two-Phase Upload Flow (NEW!)
+Implement 3 high-value, low-risk improvements:
 
-**Architecture Refactor - COMPLETE!**
+### Fix #1: Batch Capacity Validation (15 min)
+**Problem**: Can assign 12 sensors to batch with quantity=10  
+**Impact**: Data quality, inventory tracking unreliable  
+**File**: `src/storage/stockStorage.js:129`
 
-**What Changed:**
-- ✅ Split detection from storage (`detectSensors()` + `storeSensors()`)
-- ✅ Pre-storage batch matching (`findBatchSuggestionsForSensors()`)
-- ✅ Two-phase upload coordinator (`uploadCSVToV3()`)
-- ✅ Atomic completion handler (`completeCSVUploadWithAssignments()`)
-- ✅ Updated UI handlers for two-phase flow
+### Fix #2: Storage Source Indicator (30 min)
+**Problem**: No visual distinction between localStorage vs SQLite sensors  
+**Impact**: Users try to edit read-only sensors, confusing errors  
+**Files**: `src/hooks/useSensorDatabase.js:50`, `src/components/SensorHistoryModal.jsx`
 
-**New Flow:**
-```
-Upload CSV
-  ↓
-detectSensors() (NO storage yet)
-  ↓
-findBatchSuggestionsForSensors() (pre-store hook)
-  ↓
-IF matches found:
-  → Show BatchAssignmentDialog
-  → User confirms
-  → completeCSVUploadWithAssignments()
-  → storeSensors() + assignSensorToBatch() (atomic!)
-ELSE:
-  → storeSensors() immediately
-```
-
-**Benefits:**
-- ✅ True pre-processing (suggestions BEFORE storage)
-- ✅ Atomic operations (no partial state)
-- ✅ Fully idempotent (works with or without batches)
-- ✅ More transparent to user
-
-**Files Modified:**
-- `src/storage/masterDatasetStorage.js` - Detection/storage split
-- `src/components/AGPGenerator.jsx` - Two-phase handlers
+### Fix #3: Sensor ID Uniqueness Check (30 min)
+**Problem**: Two sensors detected at same second → ID collision → silent overwrite  
+**Impact**: Data loss (rare but undetected)  
+**File**: `src/storage/masterDatasetStorage.js:413`
 
 ---
 
-### ✅ Base System (v3.14.1)
-- Master dataset with multi-upload support
-- 220 sensors tracked (no duplicates)
-- Patient info auto-extraction
-- Storage source badges (RECENT/HISTORICAL)
-- Smart lock toggle
-- Export/Import system (backup & restore)
-- All clinical metrics (TIR, TAR, TBR, GMI, MAGE, MODD)
-- TDD insulin metrics (27.9E ± 5.4 SD)
+## 🔧 IMPLEMENTATION GUIDE
 
-### ✅ Stock Management (v3.15.0) - ALL 5 PHASES COMPLETE!
+### ⚡ Fix #1: Batch Capacity Validation
 
-#### Phase 1: Data Layer ✅ (371 lines)
-- `src/storage/stockStorage.js` (169 lines)
-  - CRUD operations for batches and assignments
-  - localStorage persistence
-  - Validation helpers
-  
-- `src/core/stock-engine.js` (202 lines)
-  - Statistics calculations
-  - Auto-matching algorithms (lot number prefix)
-  - Sorting, filtering, search
-  - `suggestBatchAssignments()` - NEW in Phase 4
+**Location**: `src/storage/stockStorage.js`  
+**Function**: `assignSensorToBatch()` (line ~129)
 
-#### Phase 2: Stock Modal UI ✅ (585 lines)
-- `src/components/StockManagementModal.jsx` (257 lines)
-  - Full-screen modal with brutalist design
-  - Summary statistics (5 metrics)
-  - Search functionality
-  - Keyboard shortcuts (N/Escape) - NEW in Phase 5
-  
-- `src/components/StockBatchCard.jsx` (102 lines)
-  - Batch display with usage stats
-  - Edit/Delete actions
-  
-- `src/components/StockBatchForm.jsx` (226 lines)
-  - Add/Edit form with validation
-  - Month/exact date handling
-  - Source dropdown
-
-#### Phase 3: Assignment Integration ✅
-**Modified:** `src/components/SensorHistoryModal.jsx`
-- Added BATCH column to sensor table
-- Dropdown per sensor for batch assignment
-- BATCH badge indicator for assigned sensors
-- Manual assign/unassign functionality
-- Persists to localStorage
-
-#### Phase 4: Auto-Assignment ✅ (207 lines + integration)
-**New Files:**
-- `src/components/BatchAssignmentDialog.jsx` (207 lines)
-  - Confirmation dialog for auto-suggestions
-  - Auto-selects exact matches
-  - Checkbox per sensor
-  - Shows lot number and confidence
-
-**Modified:**
-- `src/storage/masterDatasetStorage.js`
-  - Added `getSensorBatchSuggestions()` (41 lines)
-  - Gets recent sensors, finds matches
-  
-- `src/components/AGPGenerator.jsx`
-  - Integrated auto-assignment into CSV upload flow
-  - Dialog appears after successful upload
-  - Handlers for confirm/cancel
-
-**Flow:**
-```
-CSV Upload → detectSensors() 
-           → getSensorBatchSuggestions() 
-           → Dialog appears (if matches)
-           → User confirms
-           → assignSensorToBatch()
-```
-
-#### Phase 5: Polish ✅
-**Keyboard Shortcuts:**
-- `N` - Add new batch (StockManagementModal)
-- `Escape` - Close modal (StockManagementModal)
-- Only active when modal open and form closed
-
-**Export Integration:** `src/storage/sensorStorage.js`
-- `exportSensorsToJSON()` now includes:
-  - `batches` array (all batches)
-  - `assignments` array (all assignments)
-  - Updated metadata counts
-- Backward compatible (works without stock data)
-
-**Import Integration:** `src/storage/sensorStorage.js`
-- `importSensorsFromJSON()` now restores:
-  - All batches from export
-  - All assignments (with deduplication)
-  - Preserves `assigned_by` field
-- Non-fatal: continues even if stock import fails
-
-**UI Integration:** `src/components/AGPGenerator.jsx`
-- **📦 VOORRAAD button** added to main header
-- Grid: 4 → 5 columns (IMPORT - DAGPROFIELEN - VOORRAAD - SENSOR HISTORY - EXPORT)
-- StockManagementModal import and portal rendering
-- Version updated: v3.12.0 → v3.15.0
-
----
-
-## 📊 COMPLETE FEATURE SET
-
-### What Works ✅
-
-**Stock Batch Management:**
-- [x] Add batch with lot number, month, source
-- [x] Edit batch (all fields editable)
-- [x] Delete batch (with cascade warning)
-- [x] Search by lot number
-- [x] Sort by date/lot/assigned count
-- [x] Summary statistics (5 metrics)
-- [x] Keyboard shortcuts (N/Escape)
-
-**Sensor Assignment:**
-- [x] Manual assignment via dropdown
-- [x] Auto-assignment on CSV upload
-- [x] Lot number prefix matching
-- [x] Confidence levels (exact/prefix)
-- [x] User confirmation dialog
-- [x] BATCH badge display
-- [x] Unassign functionality
-
-**Data Persistence:**
-- [x] localStorage storage (consistent with sensors)
-- [x] Export to JSON (includes batches/assignments)
-- [x] Import from JSON (restores full state)
-- [x] Cascade delete (batch removes assignments)
-- [x] Deduplication on import
-
-**UI/UX:**
-- [x] Brutalist design matching app style
-- [x] Full-screen modal
-- [x] Responsive layout
-- [x] Loading states
-- [x] Error handling
-- [x] Tooltips and help text
-
----
-
-## 🧪 TESTING STATUS
-
-### ✅ Tested (Development)
-- Data layer CRUD operations
-- Lot number matching algorithm
-- localStorage persistence
-- Component rendering
-- State management
-- Error boundaries
-
-### 🔄 Needs Testing (Production)
-- [ ] Full end-to-end flow
-- [ ] CSV upload auto-assignment
-- [ ] Export/import cycle
-- [ ] Keyboard shortcuts
-- [ ] Multiple batches with same lot
-- [ ] Edge cases (no matches, deleted sensors)
-- [ ] Browser compatibility
-- [ ] Performance with large datasets
-- [ ] localStorage quota limits
-
----
-
-## 📁 FILES STRUCTURE
-
-### New Files (v3.15.0)
-```
-src/storage/stockStorage.js              - 169 lines - CRUD + localStorage
-src/core/stock-engine.js                  - 202 lines - Business logic
-src/components/StockManagementModal.jsx   - 257 lines - Main modal
-src/components/StockBatchCard.jsx         - 102 lines - Batch card
-src/components/StockBatchForm.jsx         - 226 lines - Add/Edit form
-src/components/BatchAssignmentDialog.jsx  - 207 lines - Auto-assign UI
-```
-
-### Modified Files
-```
-src/components/SensorHistoryModal.jsx     - BATCH column + dropdown
-src/components/AGPGenerator.jsx           - VOORRAAD button + integration
-src/storage/masterDatasetStorage.js       - getSensorBatchSuggestions()
-src/storage/sensorStorage.js              - Export/import integration
-```
-
-**Total new code:** ~1,363 lines  
-**Total modified code:** ~250 lines
-
----
-
-## 🎨 DATA MODEL
-
-### Batch (localStorage: `agp-stock-batches`)
+**Current Code**:
 ```javascript
-{
-  batch_id: "BATCH-1730380800000",        // Auto-generated
-  lot_number: "NG4A12345",                // Required
-  received_date: "2025-10",               // Required (YYYY-MM)
-  received_date_exact: "2025-10-15",      // Optional (YYYY-MM-DD)
-  source: "hospital" | "medtronic" | "pharmacy" | "other",
-  expiry_date: "2026-10-31",              // Optional
-  box_quantity: 10,                       // Optional
-  total_quantity: 30,                     // Optional
-  assigned_count: 2,                      // Auto-calculated
-  notes: "",                              // Optional
-  created_at: "2025-10-31T15:30:00Z",     // Auto
-  updated_at: "2025-10-31T15:30:00Z"      // Auto
+export function assignSensorToBatch(sensorId, batchId, assignedBy = 'manual') {
+  const assignments = getAllAssignments();
+  
+  // ❌ NO VALIDATION HERE
+  
+  const filtered = assignments.filter(a => a.sensor_id !== sensorId);
+  const newAssignment = {
+    assignment_id: `ASSIGN-${Date.now()}`,
+    sensor_id: sensorId,
+    batch_id: batchId,
+    assigned_at: new Date().toISOString(),
+    assigned_by: assignedBy
+  };
+  
+  filtered.push(newAssignment);
+  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(filtered));
+  return newAssignment;
 }
 ```
 
-### Assignment (localStorage: `agp-stock-assignments`)
+**Add This** (after line 130):
 ```javascript
-{
-  assignment_id: "ASSIGN-1730380800000",  // Auto-generated
-  sensor_id: "NG4A12345-001",             // Sensor to assign
-  batch_id: "BATCH-1730380800000",        // Target batch
-  assigned_at: "2025-10-15T10:00:00Z",    // Auto
-  assigned_by: "manual" | "auto" | "import"  // Assignment method
+export function assignSensorToBatch(sensorId, batchId, assignedBy = 'manual') {
+  const assignments = getAllAssignments();
+  
+  // ✅ NEW: Validate batch exists and has capacity
+  const batch = getBatchById(batchId);
+  if (!batch) {
+    throw new Error(`Batch ${batchId} not found - cannot assign sensor`);
+  }
+  
+  const currentAssignments = assignments.filter(a => a.batch_id === batchId);
+  if (batch.total_quantity && currentAssignments.length >= batch.total_quantity) {
+    const remaining = batch.total_quantity - currentAssignments.length;
+    throw new Error(
+      `Batch ${batch.lot_number} is at capacity ` +
+      `(${currentAssignments.length}/${batch.total_quantity} sensors assigned). ` +
+      `Cannot assign additional sensors.`
+    );
+  }
+  
+  // Remove existing assignment for this sensor (if any)
+  const filtered = assignments.filter(a => a.sensor_id !== sensorId);
+  
+  const newAssignment = {
+    assignment_id: `ASSIGN-${Date.now()}`,
+    sensor_id: sensorId,
+    batch_id: batchId,
+    assigned_at: new Date().toISOString(),
+    assigned_by: assignedBy
+  };
+  
+  filtered.push(newAssignment);
+  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(filtered));
+  
+  return newAssignment;
 }
 ```
 
----
+**Testing**:
+```javascript
+// In browser console or test file:
+import { createBatch, assignSensorToBatch } from './src/storage/stockStorage.js';
 
-## 🔧 IMPLEMENTATION NOTES
+// Create batch with capacity 2
+const batch = createBatch({
+  lot_number: 'TEST-001',
+  total_quantity: 2,
+  received_date: '2025-11-01'
+});
 
-### Why localStorage (not IndexedDB)?
-- ✅ Consistency with sensors storage
-- ✅ Synchronous API (simpler code)
-- ✅ Sufficient for batch volumes (<10MB)
-- ✅ Easy to debug and export
-- ✅ No async complexity in UI
+// Should succeed
+assignSensorToBatch('sensor-1', batch.batch_id, 'test');  // ✅ 1/2
+assignSensorToBatch('sensor-2', batch.batch_id, 'test');  // ✅ 2/2
 
-### Auto-Matching Logic
-1. Extract lot prefix from sensor ID (e.g., "NG4A12345" from "NG4A12345-001")
-2. Find batches with matching lot numbers
-3. Sort by: exact match first, then newest received_date
-4. User confirms before assignment
-5. Apply with `assigned_by: 'auto'`
-
-### Cascade Delete
-- Deleting batch removes all assignments
-- Warning shown if batch has assigned sensors
-- User must confirm destructive action
-- Count displayed in warning message
-
-### Keyboard Shortcuts
-- Only active when modal open and form closed
-- Prevents conflicts with form inputs
-- `event.preventDefault()` to avoid browser defaults
-- Window-level event listeners with cleanup
-
----
-
-## 🚀 DEPLOYMENT CHECKLIST
-
-### Pre-Deployment
-- [ ] Run full test suite (see Testing section)
-- [ ] Test on Chrome, Firefox, Safari
-- [ ] Verify no console errors
-- [ ] Check localStorage quota handling
-- [ ] Test with large datasets (100+ batches)
-- [ ] Verify export/import cycle
-- [ ] Test auto-assignment flow
-
-### Deployment Steps
-1. [ ] Update CHANGELOG.md
-2. [ ] Git commit: `v3.15.0: Complete - Stock management with auto-assignment`
-3. [ ] Git tag: `v3.15.0`
-4. [ ] Push to repository
-5. [ ] Deploy to production
-6. [ ] Smoke test in production
-7. [ ] Monitor error logs
-
-### Post-Deployment
-- [ ] Update user documentation
-- [ ] Create video tutorial (optional)
-- [ ] Announce new feature
-- [ ] Gather user feedback
-- [ ] Plan v3.16.0 enhancements
-
----
-
-## 🧪 TESTING GUIDE
-
-### Test 1: Basic CRUD (10 min)
-```
-1. Open http://localhost:3001
-2. Click 📦 VOORRAAD
-3. Press N to add batch
-   - Lot: "NG4A12345"
-   - Month: "2025-10"
-   - Source: "hospital"
-   - Save
-4. Verify batch appears in list
-5. Click Edit, change lot number, save
-6. Verify changes persist
-7. Click Delete, confirm
-8. Verify batch removed
-```
-
-### Test 2: Keyboard Shortcuts (5 min)
-```
-1. Open stock modal
-2. Press N → Form opens
-3. Press Escape (in form) → No effect
-4. Cancel form manually
-5. Press Escape (in modal) → Modal closes
-6. Reopen modal
-7. Press N again → Form opens
-```
-
-### Test 3: Auto-Assignment (15 min)
-```
-1. Create batch: lot "NG4A12345", month "2025-10"
-2. Upload CSV with sensor "NG4A12345-001"
-3. Verify dialog appears automatically
-4. Check sensor is pre-selected (exact match)
-5. Click Bevestig
-6. Open sensor history
-7. Verify BATCH badge shows "NG4A12345"
-8. Hover badge → tooltip shows full batch info
-```
-
-### Test 4: Manual Assignment (10 min)
-```
-1. Open sensor history
-2. Find sensor without BATCH badge
-3. Click dropdown in BATCH column
-4. Select batch from list
-5. Verify badge appears immediately
-6. Refresh page
-7. Verify assignment persisted
-8. Select "-" in dropdown
-9. Verify badge removed
-```
-
-### Test 5: Export/Import (15 min)
-```
-1. Create 2-3 batches with assignments
-2. Export sensors to JSON
-3. Open JSON file
-4. Verify "batches" array present
-5. Verify "assignments" array present
-6. Open DevTools → localStorage.clear()
-7. Refresh page (empty state)
-8. Import JSON file
-9. Open stock modal → verify batches restored
-10. Open sensor history → verify BATCH badges present
-11. Check console for import summary
-```
-
-### Test 6: Edge Cases (15 min)
-```
-1. Upload CSV without matching batches
-   → No dialog should appear
-2. Create batch after uploading CSV
-   → Manual assignment should work
-3. Delete batch with assignments
-   → Warning should show count
-   → Confirm delete
-   → Verify assignments removed
-4. Import JSON without stock data
-   → Should work (backward compatible)
-5. Assign sensor to batch A
-   → Reassign to batch B
-   → Verify only batch B shown
+// Should FAIL with clear error
+assignSensorToBatch('sensor-3', batch.batch_id, 'test');  // ❌ "Batch TEST-001 is at capacity"
 ```
 
 ---
 
-## 💡 FOR NEW DEVELOPERS
+### ⚡ Fix #2: Storage Source Indicator
 
-### Architecture Overview
+#### Part A: Add Fields to Sensors (Backend)
+
+**Location**: `src/hooks/useSensorDatabase.js`  
+**Function**: Main sensor loading logic (line ~50-80)
+
+**Current Code**:
+```javascript
+// Convert localStorage sensors
+const localSensorsConverted = localStorageSensors.map(s => ({
+  sensor_id: s.sensor_id,
+  start_date: s.start_date,
+  end_date: s.end_date,
+  is_manually_locked: s.is_manually_locked
+}));
+
+// Load SQLite sensors
+const sensorData = rows.map(row => ({
+  sensor_id: row.sensor_id,
+  start_date: row.start_date,
+  end_date: row.end_date
+}));
 ```
-Storage Layer (localStorage)
-  ├── stockStorage.js - CRUD operations
-  └── sensorStorage.js - Export/import
 
-Business Logic
-  ├── stock-engine.js - Matching, stats, sorting
-  └── masterDatasetStorage.js - Suggestions
+**Change To**:
+```javascript
+// Convert localStorage sensors
+const localSensorsConverted = localStorageSensors.map(s => ({
+  sensor_id: s.sensor_id,
+  start_date: s.start_date,
+  end_date: s.end_date,
+  is_manually_locked: s.is_manually_locked,
+  storageSource: 'localStorage',  // ✅ NEW
+  isEditable: true                // ✅ NEW
+}));
 
-UI Components
-  ├── StockManagementModal.jsx - Main container
-  ├── StockBatchCard.jsx - Batch display
-  ├── StockBatchForm.jsx - Add/Edit
-  ├── BatchAssignmentDialog.jsx - Auto-assign
-  └── SensorHistoryModal.jsx - BATCH column
-
-Integration
-  └── AGPGenerator.jsx - Orchestration
+// Load SQLite sensors
+const sensorData = rows.map(row => ({
+  sensor_id: row.sensor_id,
+  start_date: row.start_date,
+  end_date: row.end_date,
+  storageSource: 'sqlite',        // ✅ NEW
+  isEditable: false               // ✅ NEW
+}));
 ```
 
-### Key Functions
-- `assignSensorToBatch(sensorId, batchId, 'manual')` - Create assignment
-- `unassignSensor(sensorId)` - Remove assignment
-- `findMatchingBatches(sensorId)` - Auto-match by lot
-- `suggestBatchAssignments(sensorIds)` - Bulk suggestions
-- `getSensorBatchSuggestions()` - Recent sensors + matches
-- `calculateBatchStats(batch)` - Usage statistics
+#### Part B: Update UI (Frontend)
 
-### Data Flow
+**Location**: `src/components/SensorHistoryModal.jsx`  
+**Function**: Sensor table rendering
+
+**Find**: The table cell that shows sensor ID or lock status  
+**Add**: Badge next to sensor information
+
+**Add This Helper** (top of component):
+```javascript
+const StorageSourceBadge = ({ source }) => {
+  if (source === 'localStorage') {
+    return (
+      <span 
+        className="storage-badge storage-badge-recent"
+        title="Recent sensor - editable"
+      >
+        RECENT
+      </span>
+    );
+  }
+  
+  return (
+    <span 
+      className="storage-badge storage-badge-historical"
+      title="Historical sensor - read-only (from SQLite database)"
+    >
+      HISTORICAL
+    </span>
+  );
+};
 ```
-CSV Upload
-  ↓
-parseCSV()
-  ↓
-detectAndStoreEvents() - Store sensors
-  ↓
-getSensorBatchSuggestions() - Find matches
-  ↓
-BatchAssignmentDialog - User confirms
-  ↓
-assignSensorToBatch() - Create assignments
-  ↓
-SensorHistoryModal - Display BATCH badges
+
+**Add CSS** (in `SensorHistoryModal.jsx` or global styles):
+```css
+.storage-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 2px solid;
+  background: white;
+}
+
+.storage-badge-recent {
+  color: #059669;
+  border-color: #059669;
+}
+
+.storage-badge-historical {
+  color: #6b7280;
+  border-color: #6b7280;
+}
+```
+
+**Use in Table**:
+```javascript
+// In sensor row rendering:
+<td>
+  {sensor.sensor_id}
+  <StorageSourceBadge source={sensor.storageSource} />
+</td>
+```
+
+#### Part C: Disable Lock Toggle for SQLite Sensors
+
+**Location**: Same file, lock toggle button
+
+**Find**: Button that calls `toggleSensorLock()`
+
+**Change From**:
+```javascript
+<button onClick={() => toggleSensorLock(sensor.sensor_id)}>
+  {isLocked ? '🔒 Locked' : '🔓 Unlocked'}
+</button>
+```
+
+**Change To**:
+```javascript
+<button 
+  onClick={() => toggleSensorLock(sensor.sensor_id)}
+  disabled={!sensor.isEditable}  // ✅ NEW
+  title={!sensor.isEditable ? 'Historical sensors are read-only' : ''}
+  className={!sensor.isEditable ? 'disabled' : ''}
+>
+  {isLocked ? '🔒 Locked' : '🔓 Unlocked'}
+</button>
+```
+
+**Testing**:
+1. Upload CSV with recent sensors → should see green "RECENT" badge
+2. Find sensor >30 days old → should see gray "HISTORICAL" badge
+3. Try to toggle lock on historical sensor → button should be disabled
+4. Hover over disabled button → tooltip should explain why
+
+---
+
+### ⚡ Fix #3: Sensor ID Uniqueness Check
+
+**Location**: `src/storage/masterDatasetStorage.js`  
+**Function**: `findBatchSuggestionsForSensors()` (line ~413)
+
+**Current Code**:
+```javascript
+async function findBatchSuggestionsForSensors(detectedEvents) {
+  // Extract sensor IDs from events
+  const sensorIds = detectedEvents.sensorEvents.map(event => {
+    const timestamp = new Date(event.timestamp);
+    const year = timestamp.getFullYear();
+    const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+    const day = String(timestamp.getDate()).padStart(2, '0');
+    const hours = String(timestamp.getHours()).padStart(2, '0');
+    const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+    const seconds = String(timestamp.getSeconds()).padStart(2, '0');
+    return `Sensor-${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+  });
+  
+  // Get batch suggestions
+  const { suggestBatchAssignments } = await import('../core/stock-engine.js');
+  return suggestBatchAssignments(sensorIds);
+}
+```
+
+**Change To**:
+```javascript
+async function findBatchSuggestionsForSensors(detectedEvents) {
+  // Extract sensor IDs from events with collision detection
+  const sensorIdSet = new Set();
+  const sensorIds = detectedEvents.sensorEvents.map((event, index) => {
+    const timestamp = new Date(event.timestamp);
+    const year = timestamp.getFullYear();
+    const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+    const day = String(timestamp.getDate()).padStart(2, '0');
+    const hours = String(timestamp.getHours()).padStart(2, '0');
+    const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+    const seconds = String(timestamp.getSeconds()).padStart(2, '0');
+    
+    // Generate base sensor ID
+    let sensorId = `Sensor-${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+    
+    // ✅ NEW: Check for collision
+    if (sensorIdSet.has(sensorId)) {
+      console.warn(
+        `[Stock] Sensor ID collision detected at ${timestamp.toISOString()}`,
+        `- adding suffix to ensure uniqueness`
+      );
+      sensorId = `${sensorId}-${index}`;
+    }
+    
+    sensorIdSet.add(sensorId);
+    return sensorId;
+  });
+  
+  // Log summary
+  const collisions = sensorIds.length - sensorIdSet.size;
+  if (collisions > 0) {
+    console.warn(`[Stock] Resolved ${collisions} sensor ID collision(s)`);
+  }
+  
+  // Get batch suggestions
+  const { suggestBatchAssignments } = await import('../core/stock-engine.js');
+  return suggestBatchAssignments(sensorIds);
+}
+```
+
+**Testing**:
+```javascript
+// Create test CSV with two sensors at same timestamp
+const testData = {
+  sensorEvents: [
+    { timestamp: '2025-11-01T14:23:45Z', type: 'sensor_insert' },
+    { timestamp: '2025-11-01T14:23:45Z', type: 'sensor_insert' }  // Same second!
+  ]
+};
+
+// Expected result:
+// - Sensor-2025-11-01-142345
+// - Sensor-2025-11-01-142345-1  (suffix added)
+// - Console warning logged
 ```
 
 ---
 
-## ⚡ QUICK REFERENCE
+## ✅ ACCEPTANCE CRITERIA
 
-### Start Server
+### Fix #1: Batch Capacity
+- [ ] `assignSensorToBatch()` throws error when batch is at capacity
+- [ ] Error message includes batch lot number and current count
+- [ ] Existing assignments are checked correctly
+- [ ] Test case passes (2 assigns succeed, 3rd fails)
+
+### Fix #2: Storage Source
+- [ ] All sensors have `storageSource` field ('localStorage' or 'sqlite')
+- [ ] All sensors have `isEditable` field (true/false)
+- [ ] UI shows "RECENT" badge for localStorage sensors (green)
+- [ ] UI shows "HISTORICAL" badge for SQLite sensors (gray)
+- [ ] Lock toggle button disabled for SQLite sensors
+- [ ] Tooltip explains why historical sensors are read-only
+
+### Fix #3: Sensor ID Uniqueness
+- [ ] Collision detection works (Set-based checking)
+- [ ] Collisions get suffix added (`-0`, `-1`, etc.)
+- [ ] Console warning logged when collision occurs
+- [ ] Summary shows total collisions resolved
+- [ ] Test case with same-second timestamps passes
+
+---
+
+## 🧪 TESTING PLAN
+
+### Manual Testing Workflow
+
+1. **Start Dev Server**
+   ```bash
+   cd /Users/jomostert/Documents/Projects/agp-plus
+   export PATH="/opt/homebrew/bin:$PATH"
+   npx vite --port 3001
+   ```
+
+2. **Test Fix #1 (Batch Capacity)**
+   - Open Stock Management
+   - Create batch with `total_quantity = 2`
+   - Assign 2 sensors → should succeed
+   - Try to assign 3rd sensor → should fail with clear error
+   - Verify error message shows lot number + capacity
+
+3. **Test Fix #2 (Storage Source)**
+   - Upload recent CSV → check for green "RECENT" badges
+   - Find sensor >30 days old → check for gray "HISTORICAL" badge
+   - Try to toggle lock on historical sensor → button should be disabled
+   - Hover over disabled button → tooltip should appear
+
+4. **Test Fix #3 (Sensor ID Uniqueness)**
+   - Open DevTools Console
+   - Upload CSV (or simulate detection)
+   - Check console for collision warnings (if any same-second detections)
+   - Verify sensor IDs in database have suffixes if needed
+
+---
+
+## 📝 COMMIT STRATEGY
+
+### After Fix #1
 ```bash
-cd /Users/jomostert/Documents/Projects/agp-plus
-export PATH="/opt/homebrew/bin:$PATH"
-npx vite --port 3001
+git add src/storage/stockStorage.js
+git commit -m "feat(stock): add batch capacity validation
+
+- Prevent over-assignment of sensors to batches
+- Check batch.total_quantity before assignment
+- Throw descriptive error with lot number + capacity
+- Addresses TIER2_SYNTHESIS Priority 1 Action 1.1
+
+Closes #[issue-number] (if tracking)"
 ```
 
-### View Storage (Browser Console)
-```javascript
-// Batches
-JSON.parse(localStorage.getItem('agp-stock-batches'))
+### After Fix #2
+```bash
+git add src/hooks/useSensorDatabase.js src/components/SensorHistoryModal.jsx
+git commit -m "feat(sensors): add storage source indicators
 
-// Assignments
-JSON.parse(localStorage.getItem('agp-stock-assignments'))
+- Add storageSource field ('localStorage' | 'sqlite')
+- Add isEditable field (true | false)
+- Show 'RECENT' badge for localStorage sensors (green)
+- Show 'HISTORICAL' badge for SQLite sensors (gray)
+- Disable lock toggle for read-only historical sensors
+- Add tooltip explaining read-only restriction
+- Addresses TIER2_SYNTHESIS Priority 1 Action 1.2
 
-// Sensors
-JSON.parse(localStorage.getItem('agp-sensor-database'))
+Closes #[issue-number]"
 ```
 
-### Clear Stock Data (Testing)
-```javascript
-localStorage.removeItem('agp-stock-batches')
-localStorage.removeItem('agp-stock-assignments')
-location.reload()
+### After Fix #3
+```bash
+git add src/storage/masterDatasetStorage.js
+git commit -m "feat(sensors): prevent sensor ID collisions
+
+- Add Set-based collision detection in ID generation
+- Append suffix (-0, -1, etc.) when collision detected
+- Log warning when collisions occur
+- Add summary of total collisions resolved
+- Addresses TIER2_SYNTHESIS Priority 1 Action 1.3
+
+Closes #[issue-number]"
 ```
 
-### Test Data Location
-```
-test-data/SAMPLE__Jo Mostert 31-10-2025_14d.csv
+### Final Integration Commit
+```bash
+git commit --allow-empty -m "chore(release): prepare v3.1.1
+
+Priority 1 fixes implemented:
+- Batch capacity validation (data quality)
+- Storage source indicators (UX clarity)
+- Sensor ID collision prevention (data integrity)
+
+Total changes: ~50 LOC
+Risk: LOW (additive changes, no breaking)
+Testing: Manual validation complete
+
+See docs/analysis/TIER2_SYNTHESIS.md for full context"
 ```
 
 ---
 
-## 🐛 KNOWN ISSUES
+## 🚦 NEXT STEPS AFTER COMPLETION
 
-**None currently!** 🎉
+### Immediate (Today)
+- [ ] Complete all 3 Priority 1 fixes
+- [ ] Run manual test plan
+- [ ] Commit each fix with descriptive messages
+- [ ] Update `project/STATUS.md` with completion
 
-All phases tested and working in development.
+### Short-term (This Week)
+- [ ] Implement Priority 2: Error recovery logging (1 hour)
+- [ ] Document known limitations in README
+- [ ] Consider creating GitHub issues for Priority 3-4 items
 
----
-
-## 🎯 FUTURE ENHANCEMENTS (v3.16.0+)
-
-### Priority 1 (High Value)
-1. **Batch Expiry Tracking**
-   - Alert when batch near expiry
-   - Filter by expired/active
-   - Visual indicator in cards
-
-2. **Usage Analytics**
-   - Average days per sensor
-   - Batch depletion rate
-   - Forecast next order date
-
-### Priority 2 (Nice to Have)
-3. **Multi-select Assignment**
-   - Assign multiple sensors at once
-   - Bulk reassignment
-   - Keyboard navigation
-
-4. **Batch Import from CSV**
-   - Import batches from supplier CSV
-   - Auto-parse lot numbers
-   - Validation and preview
-
-5. **Integration with Calendar**
-   - Schedule sensor changes
-   - Reminder notifications
-   - Batch order reminders
-
-### Priority 3 (Future)
-6. **Batch Photos**
-   - Upload photo of batch label
-   - OCR for lot number extraction
-   - Image storage in localStorage (base64)
-
-7. **Cost Tracking**
-   - Price per batch
-   - Total inventory value
-   - Cost per sensor day
+### Long-term (v3.2.0 / v4.0.0)
+- [ ] Priority 3: Maintenance features (2 hours)
+- [ ] Priority 4: IndexedDB migration (8-12 hours)
+- [ ] Performance profiling
+- [ ] Advanced metrics (GRI, CONGA) if needed
 
 ---
 
-## 📞 HANDOFF NOTES
+## 📚 REFERENCE DOCUMENTS
 
-**Status**: ✅ v3.15.0 COMPLETE - Ready for Testing
+**Required Reading**:
+- `/docs/analysis/TIER2_SYNTHESIS.md` - Full analysis + all 4 priorities
+- `/reference/metric_definitions.md` - If touching metrics
+- `/reference/minimed_780g_ref.md` - Device context
 
-**What's Done:**
-- All 5 phases implemented
-- VOORRAAD button integrated
-- Auto-assignment working
-- Export/import working
-- Keyboard shortcuts working
-- No known bugs
-
-**Next Steps:**
-1. **Testing** (2-3 hours)
-   - Run full test suite above
-   - Document any issues found
-   - Fix bugs if found
-
-2. **Documentation** (1 hour)
-   - Update README.md
-   - Update CHANGELOG.md
-   - Create user guide
-
-3. **Deployment** (30 min)
-   - Git commit and tag
-   - Deploy to production
-   - Smoke test
-
-**Estimated Total Time to Production:** 4-5 hours
-
-**Critical Path:**
-Testing → Bug Fixes (if any) → Documentation → Deployment
+**Optional Context**:
+- `/docs/analysis/DUAL_STORAGE_ANALYSIS.md` - Deep dive on storage issues
+- `/project/V3_ARCHITECTURE.md` - Overall system design
+- `/reference/GIT_WORKFLOW.md` - Commit conventions
 
 ---
 
-## 🎉 MILESTONE ACHIEVED
+## ⏱️ TIME TRACKING
 
-**AGP+ v3.15.0 Stock Management is COMPLETE!**
+**Estimated Breakdown**:
+- Fix #1 (Batch Capacity): 15 minutes
+- Fix #2 (Storage Source): 30 minutes
+- Fix #3 (Sensor ID): 30 minutes
+- Testing: 30 minutes
+- Documentation: 15 minutes
+- **Total: ~2 hours**
 
-**Delivered:**
-- ✅ 6 new files (1,363 lines)
-- ✅ 4 modified files (250 lines)
-- ✅ 5 phases complete
-- ✅ Full feature set operational
-- ✅ Zero known bugs
-- ✅ Clean architecture
-- ✅ Comprehensive error handling
-- ✅ Backward compatible
-
-**Quality Metrics:**
-- Code: Clean, well-documented
-- Architecture: Solid separation of concerns
-- UX: Brutalist, consistent, accessible
-- Performance: Fast, no lag
-- Data: Safe, validated, backed up
-
-**Ready for:** Testing & Deployment! 🚀
+**Actual Time**: _(fill in after completion)_
 
 ---
 
-**v3.15.0 Handoff Complete - Let's ship it! 🎉**
+## 🎓 LESSONS TO CAPTURE
+
+_(Fill in after session)_
+
+**What Went Well**:
+- 
+
+**What Was Challenging**:
+- 
+
+**What to Remember Next Time**:
+- 
+
+---
+
+## ✅ SESSION COMPLETION CHECKLIST
+
+- [ ] All 3 fixes implemented
+- [ ] Manual testing complete
+- [ ] Git commits pushed
+- [ ] `STATUS.md` updated with completion
+- [ ] This handoff archived to `/docs/handoffs/2025-11-01_priority1-fixes.md`
+- [ ] New handoff created for next session (Priority 2 or other work)
+
+---
+
+**Last Updated**: 2025-11-01 14:30  
+**Status**: ðŸŸ¡ Ready to start  
+**Assigned**: Jo or Claude (pick up and execute)  
+**Priority**: HIGH (closes architectural gaps)
