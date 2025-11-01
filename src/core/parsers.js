@@ -488,14 +488,18 @@ export const parseCSV = (text) => {
       );
     }
     
-    // Helper function to get column value with fallback to old index
-    const getColumn = (parts, columnName, fallbackIndex) => {
+    // Helper function to get column value (dynamic only - no hardcoded fallbacks)
+    const getColumn = (parts, columnName) => {
       const index = columnMap[columnName];
       if (index !== undefined) {
         return parts[index];
       }
-      // Fallback to old hardcoded index (for backwards compatibility)
-      return parts[fallbackIndex];
+      // If column not found, this is a critical error (column map validation should have caught this)
+      throw new Error(
+        `[Parser] CRITICAL: Column "${columnName}" not found in column map.\n` +
+        `This should never happen - column validation should have caught this earlier.\n` +
+        `Available columns: ${Object.keys(columnMap).join(', ')}`
+      );
     };
     
     // Validate CSV structure by checking first data line
@@ -532,16 +536,16 @@ export const parseCSV = (text) => {
         }
         
         // Parse glucose value (may be null for event-only rows like Rewind)
-        const glucose = utils.parseDecimal(getColumn(parts, 'Sensor Glucose (mg/dL)', 34));
+        const glucose = utils.parseDecimal(getColumn(parts, 'Sensor Glucose (mg/dL)'));
         const hasGlucose = !isNaN(glucose);
         
         // Parse alert field for sensor events
-        const alert = getColumn(parts, 'Alarm', 18)?.trim() || null;
+        const alert = getColumn(parts, 'Alarm')?.trim() || null;
         const hasSensorAlert = alert && (alert.includes('SENSOR') || alert.includes('Sensor'));
         
         // Skip rows that have neither glucose nor important events
-        const hasRewind = getColumn(parts, 'Rewind', 21)?.trim() === 'Rewind';
-        const hasBolus = !isNaN(utils.parseDecimal(getColumn(parts, 'Bolus Volume Delivered (U)', 13)));
+        const hasRewind = getColumn(parts, 'Rewind')?.trim() === 'Rewind';
+        const hasBolus = !isNaN(utils.parseDecimal(getColumn(parts, 'Bolus Volume Delivered (U)')));
         
         if (!hasGlucose && !hasRewind && !hasBolus && !hasSensorAlert) {
           skippedRows++;
@@ -560,12 +564,12 @@ export const parseCSV = (text) => {
         
         // Parse optional fields
         return {
-          date: getColumn(parts, 'Date', 1),
-          time: getColumn(parts, 'Time', 2),
+          date: getColumn(parts, 'Date'),
+          time: getColumn(parts, 'Time'),
           glucose: hasGlucose ? glucose : null,  // mg/dL (may be null)
-          bolus: utils.parseDecimal(getColumn(parts, 'Bolus Volume Delivered (U)', 13)) || 0,
-          bg: utils.parseDecimal(getColumn(parts, 'BG Reading (mg/dL)', 5)) || null,
-          carbs: utils.parseDecimal(getColumn(parts, 'BWZ Carb Input (g)', 27)) || 0,
+          bolus: utils.parseDecimal(getColumn(parts, 'Bolus Volume Delivered (U)')) || 0,
+          bg: utils.parseDecimal(getColumn(parts, 'BG Reading (mg/dL)')) || null,
+          carbs: utils.parseDecimal(getColumn(parts, 'BWZ Carb Input (g)')) || 0,
           rewind: hasRewind,
           alert: alert  // Alert field for sensor events
         };
