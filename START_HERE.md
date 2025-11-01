@@ -1,34 +1,142 @@
 ---
 tier: 1
 status: active
-last_updated: 2025-11-01
+last_updated: 2025-11-01 19:50
 purpose: Central navigation hub for AGP+ v3.x development
 ---
 
 # 🧭 AGP+ Development - START HERE
 
-**Version**: v3.1.1 (in progress)  
-**Last Updated**: 2025-11-01  
-**Current Phase**: Post-Release Cleanup
+**Version**: v3.3.0 (in progress)  
+**Last Updated**: 2025-11-01 19:50  
+**Current Phase**: Block B - Critical Parser Fixes
 
 ---
 
 ## 📍 QUICK STATUS
 
-**What Just Happened** (2025-11-01):
-- ✅ **v3.1.1 COMPLETE**: All Priority 1, 2, and 3 features shipped
-- ✅ **Priority 1**: Batch validation + collision detection + storage indicators
-- ✅ **Priority 2**: Error recovery logging with rollback records
-- ✅ **Priority 3**: Deleted sensors cleanup + localStorage warning + enhanced lock API
-- ✅ **Documentation**: CHANGELOG.md updated (172-line entry)
-- ✅ **Git**: 10 commits pushed to main
+**Current Session** (2025-11-01 Evening):
+- ✅ **Block A COMPLETE** (v3.2.0): Performance benchmarking + glucose validation
+- ✅ **Block B.6 COMPLETE** (v3.3.0): Dynamic column detection implemented
+- 🎯 **Next**: Documentation update OR continue Block B (B.7/B.8)
 
-**What's Next**:
-- 🧹 **Cleanup Phase**: Repository hygiene + file organization (1 hour)
-- 🏷️ **Release Tag**: Create and push v3.1.1 tag
-- 📋 **Planning**: Prepare for Priority 4 (v4.0 architecture)
+**Last Commits**:
+- `017b7ec` - Dynamic column detection (TESTED ✅)
+- `827a038` - Helper function (safety checkpoint)
+- `3b2c5d8` - Block A handoff archived
 
-**Current Focus**: See `HANDOFF.md` for cleanup tasks
+**Safety Checkpoint**: Can rollback to `827a038` if needed
+
+---
+
+## 🔄 WHAT CHANGED RECENTLY (v3.2.0 → v3.3.0)
+
+### Session 1: Block A - Quick Wins (v3.2.0) ✅
+**Time**: 18:35-19:10 (35 minutes)  
+**Status**: COMPLETE
+
+**Changes**:
+- ✅ Performance benchmarking added to `metrics-engine.js`
+- ✅ Glucose bounds validation (<20 or >600 mg/dL)
+- ✅ Console timing logs (<1s target for 90 days)
+- ✅ All tests passed
+
+**Impact**: Can now track performance bottlenecks
+
+---
+
+### Session 2: Block B.6 - Dynamic Columns (v3.3.0) ✅
+**Time**: 19:17-19:49 (32 minutes)  
+**Status**: COMPLETE (TESTED)
+
+**Changes**:
+- ✅ `findColumnIndices()` helper function
+- ✅ Dynamic column name → index mapping
+- ✅ Replaced 8 hardcoded indices in `parsers.js`
+- ✅ Fallback logic for backwards compatibility
+- ✅ Clear error messages if columns missing
+
+**Impact**: 
+- **Before**: Parser breaks silently if Medtronic changes column order
+- **After**: Parser detects columns dynamically, fails gracefully with clear errors
+- **Risk**: MEDIUM-HIGH → LOW
+
+**Files Modified**:
+- `src/core/parsers.js` (+45 lines, major refactor)
+- `PROGRESS.md` (real-time tracking)
+
+**Test Results**: ✅ 90-day CSV verified, all metrics calculate correctly
+
+---
+
+## 🚨 READ THIS FIRST (New Session)
+
+**If starting a new chat/session, read in this order**:
+
+1. **`PROGRESS.md`** ← **PRIMARY SOURCE OF TRUTH**
+   - Current session state (real-time updates)
+   - What was just completed
+   - Test results
+   - TODO list
+   - Exact timestamps
+
+2. **`HANDOFF.md`** ← Context & Strategy
+   - Overall Block B plan (7.5h roadmap)
+   - Coding principles
+   - Safety guidelines
+   - Reference materials
+
+3. **This file (START_HERE.md)** ← Navigation
+   - Quick status overview
+   - File structure
+   - Git commands
+
+**Golden Rule**: **PROGRESS.md is always up-to-date**. If there's a conflict, trust PROGRESS.md.
+
+---
+
+## 🎯 WHERE WE ARE (Block B Status)
+
+### ✅ Completed
+- **B.6.1**: Header structure analysis (8 min)
+- **B.6.2**: `findColumnIndices()` helper (5 min)
+- **B.6.3**: Dynamic column detection (9 min, TESTED ✅)
+
+### 🎯 Next Up (Choose One)
+- **B.7**: CSV format version detection (1h estimated)
+- **B.8**: Unit tests for parser (3h estimated)
+- **Docs**: Update CHANGELOG + tag v3.3.0 (15 min)
+
+**Efficiency**: 73% faster than estimated (32 min vs 120 min!)
+
+---
+
+## 🔥 QUICK START (New Session)
+
+**Step 1: Check Current State**
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus
+git log --oneline -5
+git status
+```
+
+**Step 2: Read PROGRESS.md**
+- See what was just completed
+- Check test results
+- Read TODO list
+- Note any blockers
+
+**Step 3: Start Dev Server**
+```bash
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+# Opens at http://localhost:3001
+```
+
+**Step 4: Decide Next Action**
+- Continue Block B? (Check PROGRESS.md for next task)
+- Document + tag release? (v3.3.0)
+- New feature? (Check HANDOFF.md)
 
 ---
 
@@ -36,31 +144,75 @@ purpose: Central navigation hub for AGP+ v3.x development
 
 ### Primary Navigation
 
-**🔥 Start Here First**:
-- `HANDOFF.md` - **Current session state** (Priority 2 & 3 fixes)
-  - What to build next
-  - Complete code snippets
-  - Testing procedures
-  - Git workflow
+**🔥 Essential Files (Read First)**:
+1. **`PROGRESS.md`** ← Current state (ALWAYS read this!)
+   - Real-time session tracking
+   - What just shipped
+   - Test results
+   - TODO items
+   - Exact timestamps
 
-**📊 Project Status**:
-- `project/STATUS.md` - Phase tracking + completion checkboxes
-- `CHANGELOG.md` - Version history + release notes
+2. **`HANDOFF.md`** ← Strategy & context
+   - Block B roadmap (7 tasks)
+   - Coding principles
+   - Safety guidelines
+   - Reference materials
 
-**🏃 Quick Actions**:
+3. **`CHANGELOG.md`** ← Version history
+   - v3.2.0: Performance + validation (shipped)
+   - v3.3.0: Dynamic columns (in progress)
+
+**📊 Status Tracking**:
+- `project/STATUS.md` - Phase completion checkboxes
+
+---
+
+## 🛡️ SAFETY & ROLLBACK INFO
+
+### Recent Major Changes (v3.3.0 in progress)
+
+**⚠️ CRITICAL: Parser Refactor Active**
+- File: `src/core/parsers.js`
+- Change: Replaced hardcoded column indices with dynamic detection
+- Status: **Tested ✅** (90-day CSV verified)
+- Risk: LOW (fallback logic in place)
+
+**Last Safe Checkpoints**:
 ```bash
-# Start development server
-cd /Users/jomostert/Documents/Projects/agp-plus
-export PATH="/opt/homebrew/bin:$PATH"
-npx vite --port 3001
-
-# Check git status
-git status
-git log --oneline -5
-
-# Run tests (if implemented)
-npm test
+017b7ec  # Current (Block B.6 complete, tested ✅)
+827a038  # Safety point (helper function only)
+3b2c5d8  # Block A complete (v3.2.0)
 ```
+
+### Rollback Procedure (If Things Break)
+
+**Option 1: Soft Revert (Undo last commit)**
+```bash
+git log --oneline -5  # Find commit to revert to
+git revert HEAD       # Undo last commit (keeps history)
+git push origin main
+```
+
+**Option 2: Hard Reset (Nuclear option)**
+```bash
+# ONLY IF THINGS ARE VERY BROKEN
+git reset --hard 827a038   # Go back to safe point
+# WARNING: Loses uncommitted work!
+```
+
+**Option 3: Create Safety Branch**
+```bash
+git checkout -b safety-backup-$(date +%Y%m%d)
+git checkout main
+# Now you can experiment safely
+```
+
+### Known Issues (Non-Blocking)
+
+📝 **From TODO list in PROGRESS.md**:
+- ⚠️ TDD not showing in all daily profiles (display only)
+- Priority: P3 (low, fix later)
+- File: Likely `src/components/DailyProfileModal.jsx`
 
 ---
 
@@ -69,20 +221,14 @@ npm test
 ### Architecture & Planning
 
 **Deep Dive Analysis**:
-- `docs/analysis/TIER2_SYNTHESIS.md` - **Complete architecture review**
+- `docs/analysis/TIER2_SYNTHESIS.md` - Complete architecture review
   - 4,258 LOC analyzed across 12 files
   - Risk assessment: MEDIUM → LOW
-  - Priority 1-4 action items
-  - Implementation roadmap
+  - Block-by-block roadmap
 
-**Project Documents**:
-- `project/V3_ARCHITECTURE.md` - System design overview
-- `project/V3_IMPLEMENTATION_GUIDE.md` - Module interfaces
-- `project/TEST_PLAN.md` - Validation scenarios
-
-**Recent Handoffs** (Archived):
-- `docs/handoffs/2025-10-31_sensor-detection.md` - Sensor detection fixes
-- `docs/handoffs/2025-11-01_priority1-fixes.md` - Batch validation + collision detection (will be archived)
+**Archived Handoffs**:
+- `docs/handoffs/2025-11-01_block-a-quick-wins.md` - v3.2.0 (Block A)
+- `docs/handoffs/` - Previous sessions
 
 ---
 
