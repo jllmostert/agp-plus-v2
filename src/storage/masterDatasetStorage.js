@@ -712,37 +712,103 @@ export async function uploadCSVToV3(csvText) {
  * @returns {Object} Upload completion result
  */
 export async function completeCSVUploadWithAssignments(detectedEvents, confirmedAssignments) {
+  const startTime = performance.now();
+  const storedSensorIds = [];
+  const createdAssignmentIds = [];
+  
   try {
-    // Store sensors
+    // Phase 1: Store sensors
     await storeSensors(detectedEvents);
     
-    // Create batch assignments
+    // Track stored sensor IDs (reconstruct from events)
+    detectedEvents.sensorEvents.forEach(e => {
+      const timestamp = new Date(e.timestamp);
+      const year = timestamp.getFullYear();
+      const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+      const day = String(timestamp.getDate()).padStart(2, '0');
+      const hours = String(timestamp.getHours()).padStart(2, '0');
+      const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+      const seconds = String(timestamp.getSeconds()).padStart(2, '0');
+      storedSensorIds.push(`Sensor-${year}-${month}-${day}-${hours}${minutes}${seconds}`);
+    });
+    
+    debug.log('[completeCSVUploadWithAssignments] Phase 1 complete - Sensors stored:', {
+      count: storedSensorIds.length,
+      ids: storedSensorIds
+    });
+    
+    // Phase 2: Create batch assignments
     const { assignSensorToBatch } = await import('./stockStorage.js');
     for (const { sensorId, batchId } of confirmedAssignments) {
-      assignSensorToBatch(sensorId, batchId, 'auto');
+      const result = assignSensorToBatch(sensorId, batchId, 'auto');
+      createdAssignmentIds.push(result.assignment_id);
     }
     
-    // Rebuild cache
+    debug.log('[completeCSVUploadWithAssignments] Phase 2 complete - Assignments created:', {
+      count: createdAssignmentIds.length,
+      ids: createdAssignmentIds
+    });
+    
+    // Phase 3: Rebuild cache
     await rebuildSortedCache();
     
     // Get stats
     const stats = await getMasterDatasetStats();
+    const duration = performance.now() - startTime;
     
     debug.log('[completeCSVUploadWithAssignments] Complete:', {
-      sensorsStored: detectedEvents.sensorEvents.length,
-      assignmentsCreated: confirmedAssignments.length
+      duration: `${duration.toFixed(0)}ms`,
+      sensorsStored: storedSensorIds.length,
+      assignmentsCreated: createdAssignmentIds.length
     });
     
     return {
       success: true,
       totalReadings: stats.totalReadings,
       dateRange: stats.dateRange,
-      assignmentsCreated: confirmedAssignments.length
+      assignmentsCreated: createdAssignmentIds.length,
+      duration
     };
     
   } catch (err) {
-    console.error('[completeCSVUploadWithAssignments] Failed:', err);
-    throw err;
+    // ROLLBACK LOGGING - Store recovery data for partial failures
+    const rollbackRecord = {
+      timestamp: new Date().toISOString(),
+      error: {
+        message: err.message,
+        stack: err.stack
+      },
+      progress: {
+        sensorsStored: storedSensorIds.length,
+        sensorsExpected: detectedEvents.sensorEvents.length,
+        assignmentsCreated: createdAssignmentIds.length,
+        assignmentsExpected: confirmedAssignments.length
+      },
+      data: {
+        storedSensorIds,
+        createdAssignmentIds,
+        pendingAssignments: confirmedAssignments.slice(createdAssignmentIds.length)
+      }
+    };
+    
+    // Store rollback record for manual recovery
+    const recordKey = `agp-failed-upload-${Date.now()}`;
+    try {
+      localStorage.setItem(recordKey, JSON.stringify(rollbackRecord));
+      console.error('[completeCSVUploadWithAssignments] PARTIAL FAILURE - Rollback record saved:', {
+        key: recordKey,
+        record: rollbackRecord
+      });
+    } catch (storageErr) {
+      console.error('[completeCSVUploadWithAssignments] Failed to save rollback record:', storageErr);
+    }
+    
+    // Enhanced error message for user
+    throw new Error(
+      `Upload partially failed: ${storedSensorIds.length}/${detectedEvents.sensorEvents.length} sensors stored, ` +
+      `${createdAssignmentIds.length}/${confirmedAssignments.length} assignments created. ` +
+      `Recovery data saved. Original error: ${err.message}`
+    );
   }
 }
 

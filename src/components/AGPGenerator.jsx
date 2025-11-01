@@ -75,6 +75,24 @@ export default function AGPGenerator() {
     });
   }, [sensors]);
   
+  // Priority 3.2: localStorage Clear Warning
+  useEffect(() => {
+    const STORAGE_KEY = 'agp-sensor-database';
+    const DELETED_SENSORS_KEY = 'agp-deleted-sensors';
+    
+    const hasDatabase = localStorage.getItem(STORAGE_KEY);
+    const hasDeletedList = localStorage.getItem(DELETED_SENSORS_KEY);
+    
+    if (!hasDatabase && !hasDeletedList) {
+      // Both missing → likely fresh start OR manual clear
+      console.warn(
+        '[AGPGenerator] localStorage appears cleared - deleted sensor history may be lost. ' +
+        'If this was intentional, you can ignore this warning. ' +
+        'If not, deleted sensors from SQLite may reappear on next sync.'
+      );
+    }
+  }, []); // Run once on mount
+  
   // V2: Legacy CSV uploads (fallback during transition)
   const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
   

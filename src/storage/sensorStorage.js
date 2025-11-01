@@ -959,6 +959,7 @@ export function toggleSensorLock(sensorId) {
  *   - isEditable: boolean - Whether sensor can be modified (localStorage only)
  *   - storageSource: string - 'localStorage' | 'sqlite' | 'unknown'
  *   - reason: string - Why sensor is in this state
+ *   - detail: string - User-friendly explanation (Priority 3.3 enhancement)
  */
 export function getManualLockStatus(sensorId, startDate = null) {
   const db = getSensorDatabase();
@@ -971,7 +972,8 @@ export function getManualLockStatus(sensorId, startDate = null) {
         autoCalculated: true,
         isEditable: false,
         storageSource: 'unknown',
-        reason: 'no-database'
+        reason: 'no-database',
+        detail: 'Sensor database not found. This sensor cannot be edited.'
       };
     }
     return { 
@@ -979,7 +981,8 @@ export function getManualLockStatus(sensorId, startDate = null) {
       autoCalculated: true, 
       isEditable: false,
       storageSource: 'unknown',
-      reason: 'no-database' 
+      reason: 'no-database',
+      detail: 'Sensor database not found. This sensor cannot be edited.'
     };
   }
 
@@ -994,7 +997,9 @@ export function getManualLockStatus(sensorId, startDate = null) {
         autoCalculated: true,
         isEditable: false,
         storageSource: 'sqlite',
-        reason: 'read-only-historical'
+        reason: 'read-only-historical',
+        detail: 'This sensor is from the historical database (>30 days old) and cannot be edited. ' +
+                'Only recent sensors (<30 days) can be locked/unlocked.'
       };
     }
     // No startDate provided - assume locked (safe default for old sensors)
@@ -1003,7 +1008,8 @@ export function getManualLockStatus(sensorId, startDate = null) {
       autoCalculated: true, 
       isEditable: false,
       storageSource: 'sqlite',
-      reason: 'no-start-date' 
+      reason: 'no-start-date',
+      detail: 'Sensor not found in editable database. It may be historical (>30 days old).'
     };
   }
 
@@ -1011,12 +1017,16 @@ export function getManualLockStatus(sensorId, startDate = null) {
   // If manual lock not set, calculate based on age
   if (sensor.is_manually_locked === undefined) {
     const daysSinceStart = Math.floor((new Date() - new Date(sensor.start_date)) / (1000 * 60 * 60 * 24));
+    const isLocked = daysSinceStart > 30;
     return {
-      isLocked: daysSinceStart > 30,
+      isLocked,
       autoCalculated: true,
       isEditable: true,
       storageSource: 'localStorage',
-      reason: 'auto-calculated'
+      reason: 'auto-calculated',
+      detail: isLocked 
+        ? `Automatically locked because sensor is ${daysSinceStart} days old (>30 days).`
+        : `Sensor is ${daysSinceStart} days old. Lock status can be changed manually.`
     };
   }
 
@@ -1026,7 +1036,8 @@ export function getManualLockStatus(sensorId, startDate = null) {
     autoCalculated: false,
     isEditable: true,
     storageSource: 'localStorage',
-    reason: 'manual'
+    reason: 'manual',
+    detail: 'Lock status has been manually set by user.'
   };
 }
 
@@ -1413,5 +1424,62 @@ export function clearDatabaseBackup() {
     console.log('[clearDatabaseBackup] Backup cleared');
   } catch (err) {
     console.error('[clearDatabaseBackup] Clear failed:', err);
+  }
+}
+
+/**
+ * Clean up old deleted sensor records
+ * Removes entries older than specified days (default: 90)
+ * Migrates old format (string IDs) to new format ({ sensorId, deletedAt })
+ * @param {number} expiryDays - Days after which to expire deleted records
+ * @returns {Object} Cleanup statistics
+ */
+export function cleanupDeletedSensors(expiryDays = 90) {
+  const startTime = performance.now();
+  
+  try {
+    const deleted = JSON.parse(localStorage.getItem(DELETED_SENSORS_KEY) || '[]');
+    const now = Date.now();
+    const expiryMs = expiryDays * 24 * 60 * 60 * 1000;
+    
+    let migrated = 0;
+    let removed = 0;
+    
+    // Phase 1: Migrate old format to new format
+    const withTimestamps = deleted.map(entry => {
+      if (typeof entry === 'string') {
+        // Old format: just sensor ID
+        migrated++;
+        return { sensorId: entry, deletedAt: now };
+      }
+      // New format: already has timestamp
+      return entry;
+    });
+    
+    // Phase 2: Remove expired entries
+    const active = withTimestamps.filter(entry => {
+      const age = now - entry.deletedAt;
+      const isExpired = age > expiryMs;
+      if (isExpired) removed++;
+      return !isExpired;
+    });
+    
+    // Phase 3: Save cleaned list
+    localStorage.setItem(DELETED_SENSORS_KEY, JSON.stringify(active));
+    
+    const duration = performance.now() - startTime;
+    const stats = {
+      migrated,
+      removed,
+      remaining: active.length,
+      duration: `${duration.toFixed(1)}ms`
+    };
+    
+    console.log('[cleanupDeletedSensors] Cleanup complete:', stats);
+    return stats;
+    
+  } catch (err) {
+    console.error('[cleanupDeletedSensors] Cleanup failed:', err);
+    return { error: err.message };
   }
 }
