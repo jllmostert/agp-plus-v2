@@ -33,6 +33,7 @@ import { MigrationBanner } from './MigrationBanner';
 
 // Container Components
 import ModalManager from './containers/ModalManager';
+import DataLoadingContainer from './containers/DataLoadingContainer';
 import { DateRangeFilter } from './DateRangeFilter';
 
 /**
@@ -1214,6 +1215,16 @@ export default function AGPGenerator() {
 
         {/* Control Buttons: IMPORT - DAGPROFIELEN - VOORRAAD - SENSOR HISTORY - EXPORT */}
         <section className="section">
+          {/* TEST: DataLoadingContainer (will replace buttons below) */}
+          <DataLoadingContainer 
+            csvData={csvData}
+            workdays={workdays}
+            metricsResult={metricsResult}
+            startDate={startDate}
+            endDate={endDate}
+          />
+          
+          {/* OLD BUTTONS (will remove after testing) */}
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(5, 1fr)',
