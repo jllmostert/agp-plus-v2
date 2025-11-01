@@ -1,26 +1,87 @@
 # AGP+ PROGRESS TRACKER
 
-**Sessie**: 2025-11-01 20:30 (New Session)
-**Doel**: UI Improvements + Bug Fixes (v3.3.1)  
-**Status**: ✅ COMPLETED
+**Sessie**: 2025-11-01 21:10 (New Session)
+**Doel**: Block B.7 - CSV Format Version Detection (v3.4.0)  
+**Status**: ✅ CODE COMPLETE - Ready for Testing
 
 ---
 
 ## 📊 SESSION STATUS
 
-**Current Session (20:30-20:45)**: ✅ Complete
-- Section reordering: Hero Metrics now above Hypoglycemia Events
-- Fixed deleted sensors async/await bugs
-- Eliminated console errors
-- All commits pushed (6884343)
+**Current Session (21:10-21:25)**: 🎯 Block B.7 Implementation
+- ✅ Phase 1: Header structure analyzed
+- ✅ Phase 2: `detectCSVFormat()` function created (90 lines)
+- ✅ Phase 3: `parseCSV()` updated to use dynamic detection
+- 🧪 Phase 4: Testing next
 
-**Previous Session (19:15-19:49)**: ✅ Block B.6 Complete (v3.3.0)
-- Dynamic column detection implemented
-- Parser now robust to Medtronic format changes
+**Implementation Time**: 15 minutes (estimate was 60 min) ⚡
 
 ---
 
-## 🎯 SESSION WORK (2025-11-01 20:30)
+## 🎯 BLOCK B.7 WORK SUMMARY
+
+### What Was Implemented
+
+**1. detectCSVFormat() Function** (`parsers.js`, ~line 255):
+- Dynamically finds header row (looks for "Index;Date;Time")
+- Extracts device model from Line 0 (e.g., "MiniMed 780G")
+- Extracts serial number from Line 1
+- Returns format version, header position, confidence level
+- No more hardcoded `CSV_SKIP_LINES` assumption!
+
+**2. Updated parseCSV()** (`parsers.js`, ~line 385):
+- Calls `detectCSVFormat()` first
+- Uses `format.headerLineCount` instead of hardcoded 6
+- Logs device and format info to console
+- Warns if confidence is low
+- Clearer error messages
+
+### Technical Details
+
+**Before** (B.6):
+```javascript
+const dataLines = lines.slice(CONFIG.CSV_SKIP_LINES); // Hardcoded 6
+const headerRow = dataLines.find(line => ...); // Search for header
+```
+
+**After** (B.7):
+```javascript
+const format = detectCSVFormat(text); // Detect dynamically
+const dataLines = lines.slice(format.headerLineCount); // Use detected value
+const headerRow = dataLines[0]; // Header is first line after metadata
+```
+
+### Impact
+
+**Robustness Level**: LOW → VERY LOW RISK
+- ✅ B.6: Handles column reordering
+- ✅ B.7: Handles header structure changes
+- ✅ Detects device model + serial
+- ✅ Clear error messages
+- ✅ Graceful degradation
+
+**Next**: If Medtronic changes header from 6 lines to 8 lines, parser automatically adapts!
+
+---
+
+## 🧪 PHASE 4: TESTING (Next)
+
+**Test Plan**:
+1. Upload 90-day CSV
+2. Check console for format detection logs
+3. Verify device model + serial displayed
+4. Verify all metrics calculate correctly
+5. Check for any errors/warnings
+
+**Expected Console Output**:
+```
+[CSV Format] Detected: MiniMed 780G MMT-1886 (NG4114235H)
+[CSV Format] Version: 1.0, Header at line: 6
+```
+
+---
+
+## 📊 PREVIOUS SESSIONS
 
 ### 1. Section Reordering ✅
 **Problem**: Hero metrics were below hypoglycemia events, requiring scroll

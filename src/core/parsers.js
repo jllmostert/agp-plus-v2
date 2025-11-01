@@ -256,6 +256,90 @@ export const parseSection2 = (text) => {
 };
 
 /**
+ * Detect CSV format version and structure
+ * Dynamically identifies header lines, device type, and format version
+ * 
+ * @param {string} text - Raw CSV text content
+ * @returns {Object|null} Format info {version, device, headerLineCount, headerRowIndex, confidence}
+ * 
+ * Returns null if detection fails or invalid CSV format
+ * 
+ * Example return:
+ * {
+ *   version: '1.0',          // Format version (1.0 = current MiniMed format)
+ *   device: 'MiniMed 780G',  // Device model from header
+ *   serial: 'NG4114235H',    // Device serial number
+ *   headerLineCount: 6,      // Number of lines to skip before header row
+ *   headerRowIndex: 6,       // Index of column header row
+ *   confidence: 'high'       // Detection confidence: high|medium|low
+ * }
+ */
+const detectCSVFormat = (text) => {
+  if (!text || text.trim().length === 0) {
+    return null;
+  }
+  
+  const lines = text.split('\n');
+  
+  if (lines.length < 7) {
+    console.warn('[CSV Format] File too short for detection');
+    return null;
+  }
+  
+  // Find header row (contains "Index;Date;Time")
+  let headerRowIndex = -1;
+  for (let i = 0; i < Math.min(lines.length, 20); i++) {
+    const line = lines[i];
+    if (line.includes('Index') && line.includes('Date') && line.includes('Time')) {
+      headerRowIndex = i;
+      break;
+    }
+  }
+  
+  if (headerRowIndex === -1) {
+    console.error('[CSV Format] Could not find header row');
+    return null;
+  }
+  
+  // Extract device info from Line 0
+  const line0 = lines[0] || '';
+  let device = null;
+  if (line0.includes('MiniMed')) {
+    const parts = line0.split(';');
+    const devicePart = parts.find(p => p.includes('MiniMed'));
+    device = devicePart ? devicePart.trim() : 'Unknown MiniMed';
+  }
+  
+  // Extract serial number from Line 1
+  const line1 = lines[1] || '';
+  let serial = null;
+  if (line1.includes('Serial Number')) {
+    const parts = line1.split(';');
+    const serialIndex = parts.findIndex(p => p.replace(/"/g, '').trim() === 'Serial Number');
+    if (serialIndex !== -1 && serialIndex + 1 < parts.length) {
+      serial = parts[serialIndex + 1].replace(/"/g, '').trim();
+    }
+  }
+  
+  // Determine confidence based on what we found
+  let confidence = 'high';
+  if (!device) confidence = 'medium';
+  if (!device && !serial) confidence = 'low';
+  
+  // Determine version (currently only 1.0 is known)
+  const version = '1.0'; // MiniMed CareLink export format v1.0
+  
+  return {
+    version,
+    device: device || 'Unknown Device',
+    serial: serial || 'Unknown Serial',
+    headerLineCount: headerRowIndex,  // Lines to skip
+    headerRowIndex,                   // Index of header row
+    confidence
+  };
+};
+
+/**
  * Find column indices from CSV header row
  * Builds a map of column name → index for dynamic column access
  * 
@@ -312,23 +396,30 @@ export const parseCSV = (text) => {
     
     const lines = text.split('\n');
     
-    // Check minimum line count
-    if (lines.length < CONFIG.CSV_SKIP_LINES + 10) {
-      throw new Error(`CSV file too short. Expected at least ${CONFIG.CSV_SKIP_LINES + 10} lines, got ${lines.length}`);
+    // Detect CSV format version and structure
+    const format = detectCSVFormat(text);
+    if (!format) {
+      throw new Error('Unable to detect CSV format. Is this a valid CareLink export?');
     }
     
-    // Skip header lines (first 6 lines are metadata)
-    const dataLines = lines.slice(CONFIG.CSV_SKIP_LINES);
+    // Log format detection results
+    console.log(`[CSV Format] Detected: ${format.device} (${format.serial})`);
+    console.log(`[CSV Format] Version: ${format.version}, Header at line: ${format.headerRowIndex}`);
     
-    // Find header row and build column index map
-    const headerRow = dataLines.find(line => {
-      const parts = line.split(';');
-      // Header contains "Date", "Time", and "Sensor Glucose"
-      return parts.some(p => p.trim() === 'Date') && 
-             parts.some(p => p.trim() === 'Time') &&
-             parts.some(p => p.trim().includes('Sensor Glucose'));
-    });
+    if (format.confidence === 'low') {
+      console.warn('[CSV Format] Low confidence detection - file may not parse correctly');
+    }
     
+    // Check minimum line count (using detected header position)
+    if (lines.length < format.headerLineCount + 10) {
+      throw new Error(`CSV file too short. Expected at least ${format.headerLineCount + 10} lines, got ${lines.length}`);
+    }
+    
+    // Skip header lines (dynamically detected, not hardcoded!)
+    const dataLines = lines.slice(format.headerLineCount);
+    
+    // Get header row (should be first line after skipping header metadata)
+    const headerRow = dataLines[0];
     if (!headerRow) {
       throw new Error('Could not find CSV header row. Is this a valid CareLink export?');
     }
