@@ -1,703 +1,408 @@
 ---
 tier: 2
 status: active
-last_updated: 2025-11-01
-purpose: Complete project overview for AGP+ v3.15.1 with two-phase upload architecture
+last_updated: 2025-11-02
+purpose: AGP+ v3.6.0 project briefing - Option C implementation in progress
 ---
 
-# PROJECT BRIEFING — AGP+ v3.15.1 Production Ready
+# PROJECT BRIEFING — AGP+ v3.6.0 + Option C
 
-**Version:** v3.15.1  
-**Phase:** Stable - Two-Phase Upload Flow Complete  
-**Date:** 2025-11-01  
-**Status:** âœ… Production Ready, Stock Management + Refactored Architecture
-
----
-
-## 🎯 1. Project Overview
-
-### What is AGP+?
-
-**AGP+ (Ambulatory Glucose Profile Plus)** is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. Designed for healthcare professionals and diabetes management, AGP+ generates clinical reports following ADA/ATTD 2025 guidelines.
-
-**Core Mission**: Transform raw CGM data into actionable glucose insights through professional-grade analysis and visualization.
-
-**Design Philosophy**: Brutalist — maximizing information density, print compatibility, and clinical workflow efficiency over aesthetic appeal.
-
-### Current Situation (Nov 1, 2025)
-
-**Production Status**: v3.15.1 is stable and production-ready. Stock management system (v3.15.0) complete with sensor batch tracking. Two-phase upload architecture (v3.15.1) implemented for atomic operations and improved user flow. Dual storage architecture (SQLite + localStorage) remains stable.
-
-**Recent Achievements**:
-- âœ… v3.10.0: IndexedDB tombstone store (localStorage clear protection)
-- âœ… v3.11.0: Storage source badges (RECENT/HISTORICAL visual distinction)
-- âœ… v3.12.0: Enhanced error messages (full context, explains WHY actions fail)
-- âœ… v3.13.0: Patient info auto-extraction from CSV (name, CGM, device serial)
-
-**Current State**: System is production-ready with full feature set. All major dual storage issues resolved. Patient info automatically extracted from CSV uploads and displayed in header. Ready for optional enhancements (sensor export/import) or deployment.
+**Version**: v3.6.0 → v4.0  
+**Phase**: Option C Implementation  
+**Date**: 2025-11-02  
+**Status**: 🔄 Development - Sprint B1 (Metrics Validation)
 
 ---
 
-## 📊 2. Technical Architecture
+## 🎯 EXECUTIVE SUMMARY
 
-### System Design
+**AGP+ (Ambulatory Glucose Profile Plus)** is a React-based medical web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. Designed for healthcare professionals following ADA/ATTD 2023 guidelines.
 
-**Stack**:
-- **Frontend**: React 18.3 + Vite
-- **Storage**: 
-  - IndexedDB (master dataset + patient info + deleted sensors tombstone)
-  - localStorage (sensor metadata, events)
-  - SQLite (historical sensor database via sql.js)
-- **Parsing**: sql.js (SQLite), custom CSV parsers
-- **Styling**: Tailwind CSS (brutalist theme)
-- **Icons**: Lucide React
+**Current Status**: v3.6.0 is stable and functional. TIER2 architecture analysis complete (6/6 domains, average 7.5/10). Now implementing Option C (67 hours, 9 sprints) to reach production-grade v4.0.
 
-**Data Flow**:
+**Active Work**: Sprint B1 - Metrics Validation (7h) - Performance benchmarks + unit tests
+
+---
+
+## 📍 QUICK NAVIGATION
+
+**For Development**: → `docs/optionc/START_HERE.md`  
+**For Current Sprint**: → `docs/optionc/block-c-robustness/sprint-b1-metrics/HANDOFF.md`  
+**For Progress**: → `docs/optionc/MASTER_PROGRESS.md`  
+**For Git**: → `GIT_CHEATSHEET.md`
+
+**This document**: High-level overview + maintained documents index
+
+---
+
+## 📊 CURRENT STATUS (v3.6.0)
+
+### What Works ✅
+
+**Core Features**:
+- CSV upload & parsing (Medtronic CareLink format)
+- Metrics calculation (TIR, MAGE, MODD, GRI, CV, GMI)
+- AGP visualization (percentile charts, daily patterns)
+- Sensor management (dual storage: SQLite + localStorage)
+- Stock management (batch tracking, auto-assignment)
+- HTML report export (brutalist, print-optimized)
+- JSON data export (versioned)
+**Clinical Accuracy**:
+- All metrics verified against published literature
+- MAGE: Service & Nelson (1970) ✅
+- MODD: Molnar et al. (1972) ✅
+- GRI: Klonoff et al. (2018) ✅
+
+### Known Limitations ⚠️
+
+**Critical** (P0 - Must fix for v4.0):
+- No accessibility (charts lack ARIA labels, screen reader support)
+- No JSON import (export-only = incomplete backup)
+
+**Important** (P1 - Should fix):
+- Parser uses hardcoded column indices (breaks if Medtronic changes format)
+- No performance benchmarking (metrics speed unvalidated)
+- No unit tests (calculation correctness unverified)
+
+**Nice-to-have** (P2/P3):
+- God components (AGPGenerator: 1962 lines, hard to maintain)
+- No table virtualization (slow with >1000 sensors)
+- Incomplete WCAG compliance (color contrast untested)
+
+**Full details**: → `STATUS.md`
+
+---
+
+## 🏗️ ARCHITECTURE (v3.6.0)
+
+### Tech Stack
+
+**Frontend**: React 18.2.0, Vite 4.x, Pure CSS  
+**Storage**: localStorage (recent), IndexedDB (tombstones), SQLite (historical)  
+**Libraries**: sql.js 1.8.0, minimal dependencies  
+**Testing**: ⚠️ None (Sprint B1 will add Jest)
+
+### Data Flow
+
 ```
-CSV Upload → Parse (+ Extract Patient Metadata) → 
-IndexedDB (readings + patient info) → localStorage (events) →
-Calculate Metrics → Generate AGP → Render Components → HTML Export
-```
-
-### Dual-Source Sensor Architecture
-
-**Critical Design Pattern** (stable v3.13.0):
-
-```
-SQLite Database (Guardian.db)
-    ├─ Source: External sensor tracking (2022-2025)
-    ├─ Records: 219 historical sensors
-    ├─ Access: Read-only via sql.js
-    └─ Status: Locked (>30 days old, HISTORICAL badge)
-         ↓
-    MERGE LAYER (with deduplication v3.10.0)
-         ↓
-localStorage (agp-sensor-database)
-    ├─ Source: Recent sensors + user edits
-    ├─ Records: Rolling 30-day window
-    ├─ Access: Read-write via sensorStorage.js
-    └─ Status: Editable (unlocked, RECENT badge)
-         ↓
-IndexedDB Tombstone (agp-deleted-sensors)
-    ├─ Purpose: Persist deleted sensor list
-    ├─ Survives: localStorage.clear() events
-    └─ Expiry: 90 days auto-cleanup
-         ↓
-    UI DISPLAY (SensorHistoryModal)
-         └─ Shows: Deduplicated union, badges, smart locks
-```
-
-**Patient Info Storage** (v3.13.0):
-- **IndexedDB** (agp-database → settings store)
-- **Auto-extracted from CSV**: Name, CGM device, device serial, pump device
-- **User-editable**: DOB, physician, email
-- **Displayed**: Header shows name, CGM, serial (SN: XXX)
-
-**Key Rules**:
-1. **30-Day Boundary**: Sensors ≤30 days in localStorage (editable), >30 days in SQLite only (read-only)
-2. **Deduplication**: Merge eliminates duplicates by sensor_id (see Fix #1)
-3. **Lock System**: Recent sensors unlocked 🔓, old sensors locked 🔒
-4. **Tombstone List**: Deleted sensors tracked in localStorage to prevent resurrection
-5. **Idempotency**: Re-upload same CSV skips existing sensors
-
----
-
-## 🛠️ 3. Stability Evolution (v3.10 - v3.13)
-
-### v3.10.0: Core Stability Fixes
-
-**Fix #1: Duplicate Sensors Elimination**
-- Map-based deduplication in useSensorDatabase
-- Prevents sensors appearing twice (localStorage + SQLite)
-- CSV import counts now correct
-
-**Fix #2: IndexedDB Tombstone Store**
-- Deleted sensors persist in IndexedDB (not just localStorage)
-- Survives localStorage.clear() operations
-- 90-day auto-expiry prevents bloat
-
-**Fix #3: Sync Prevention**
-- syncUnlockedSensorsToLocalStorage checks existing IDs
-- No re-adding of already-synced sensors
-
----
-
-### v3.11.0: Visual Clarity
-
-**Storage Source Badges**
-- Color-coded badges: RECENT (green) vs HISTORICAL (gray)
-- Lock toggle disabled for read-only SQLite sensors
-- Clear visual distinction of data source
-
----
-
-### v3.12.0: Enhanced Error Messages
-
-**Context-Aware Errors**
-- getManualLockStatus returns full context (isLocked, isEditable, storageSource, reason)
-- Delete errors explain WHY action failed
-- Multi-line error details in UI
-- Debug logging for troubleshooting
-
----
-
-### v3.13.0: Patient Info Auto-Extraction
-
-**CSV Metadata Parsing**
-- parseCSVMetadata() extracts from CSV header:
-  - Patient name (First + Last)
-  - CGM device model
-  - Device serial number
-  - Pump device name
-- Auto-saved to IndexedDB on upload
-- Displayed in header: "Jo Mostert | CGM: Guardian™ 4 Sensor | SN: NG4114235H"
-- Manual fields preserved: DOB, physician, email
-<button
-  disabled={sensor.is_manually_locked}  // ✓ Same as onClick
-  style={{
-    backgroundColor: sensor.is_manually_locked ? '#6b7280' : '#dc2626',
-    cursor: sensor.is_manually_locked ? 'not-allowed' : 'pointer'
-  }}
->
-  {sensor.is_manually_locked ? '🔒 DEL' : '✓ DEL'}
-</button>
+CSV Upload → Parse → IndexedDB (master) → localStorage (cache) →
+Calculate Metrics → Render Charts → Export (HTML/JSON)
 ```
 
-**Impact**:
-- Delete button correctly disabled when locked
-- Visual feedback matches functional state
-- No accidental deletes of locked sensors
+### File Structure
 
----
-
-### Fix #4: Lock Status for SQLite-Only Sensors
-
-**Problem**:
-- `getManualLockStatus()` returned `isLocked: false` for sensors not in localStorage
-- Old sensors (>30 days, SQLite-only) showed incorrect 🔓 icons
-
-**Solution** (`src/storage/sensorStorage.js`):
-```javascript
-export function getManualLockStatus(sensorId, startDate = null) {
-  const db = getSensorDatabase();
-  const sensor = db.sensors.find(s => s.sensor_id === sensorId);
-  
-  if (!sensor) {
-    // Not in localStorage? Calculate lock based on age
-    if (startDate) {
-      const daysSinceStart = Math.floor(
-        (new Date() - new Date(startDate)) / (1000 * 60 * 60 * 24)
-      );
-      return {
-        isLocked: daysSinceStart > 30,  // ✓ Correct for old sensors
-        autoCalculated: true,
-        reason: 'sqlite-only'
-      };
-    }
-    return { isLocked: true, autoCalculated: true }; // Safe default
-  }
-  
-  // ... rest of function for localStorage sensors
-}
 ```
+src/
+├── components/      # React UI components
+├── engines/         # Pure calculation functions
+│   ├── metrics-engine.js  (422 lines)
+│   └── stock-engine.js    (201 lines)
+├── hooks/           # React hooks
+├── utils/           # Parsing, storage, validation
+└── styles/          # CSS (brutalist theme)
 
-**Impact**:
-- Old sensors (>30d) show correct 🔒 icons
-- SQLite-only sensors get auto-calculated lock status
-- Lock icons correct for ALL sensors (recent + old)
+docs/
+├── optionc/         # Option C implementation docs ← ACTIVE
+├── analysis/        # TIER2 architecture analysis
+├── archive/         # Historical documentation
+└── reference/       # Clinical & technical references
 
----
-
-### Fix #5: Toggle Lock Error Messages
-
-**Problem**:
-- Toggle attempt on old sensor (#219) gave generic "Sensor niet gevonden"
-- Unclear WHY toggle failed (SQLite-only, too old, etc.)
-
-**Solution** (`src/storage/sensorStorage.js`):
-```javascript
-if (!sensor) {
-  console.log('[toggleSensorLock] Sensor not in localStorage:', sensorId);
-  console.log('[toggleSensorLock] This sensor is SQLite only (>30d old)');
-  
-  return {
-    success: false,
-    message: '⚠️ Sensor is read-only (>30 dagen oud, alleen in SQLite)\n' +
-             'Kan lock status niet wijzigen.',
-    isLocked: null
-  };
-}
-```
-
-**Impact**:
-- Clear error message for read-only sensors
-- Console logging aids debugging
-- User understands why toggle failed
-
----
-
-## 🚨 4. Known Issues & Technical Debt
-
-**Note**: Many critical issues documented here were resolved in v3.10-v3.13. See "Stability Evolution" section for solutions. Remaining items are low-priority edge cases.
-
-### CRITICAL: Time Boundary Drift
-
-**Problem**:
-- Sensor starts at day 1 → localStorage (editable)
-- Day 31 arrives → sensor now "too old" but STILL in localStorage
-- Conflict: Sensor editable (localStorage) but should be read-only (SQLite)
-
-**Impact**:
-- Sensors aging past 30 days don't auto-migrate
-- User can still edit sensors that "should" be locked
-- Boundary enforcement is soft, not hard
-
-**Proposed Solution** (Phase 2):
-```javascript
-// Auto-prune localStorage sensors >30d on mount
-const validLocalStorageSensors = localStorageSensors.filter(sensor => {
-  const startDate = new Date(sensor.start_date);
-  return startDate >= thirtyDaysAgo;
-});
-
-// Expired sensors: preserve lock metadata, remove from localStorage
-const expiredSensors = localStorageSensors.filter(sensor => {
-  const startDate = new Date(sensor.start_date);
-  return startDate < thirtyDaysAgo;
-});
-
-if (expiredSensors.length > 0) {
-  expiredSensors.forEach(sensor => {
-    if (sensor.is_manually_locked) {
-      saveLockMetadata(sensor.sensor_id, sensor.is_manually_locked);
-    }
-    removeFromLocalStorage(sensor.sensor_id);
-  });
-}
+test-data/           # Sample CSV files
 ```
 
 ---
 
-### HIGH: Lock Status Orphaning
+## 🔍 TIER2 ARCHITECTURE ANALYSIS
 
-**Problem**:
-- User manually locks sensor #221 on day 25
-- Day 35: Sensor aged out → removed from localStorage
-- Lock intent (manual lock) lost forever (not in SQLite schema)
+**Status**: Complete (6/6 domains analyzed)  
+**Date**: 2025-11-01  
+**Overall Score**: 7.5/10 (solid, actionable issues)
 
-**Impact**:
-- User lock choices don't survive 30-day boundary
-- If sensor needs unlocking later, can't restore original intent
+### Domain Scores
 
-**Proposed Solution** (Phase 2):
-```javascript
-// New localStorage store: "lock-metadata"
-const lockMetadata = {
-  version: 1,
-  locks: {
-    "221": { manually_locked: true, locked_at: "2025-10-01" },
-    "219": { manually_locked: false, locked_at: null }
-  }
-};
+| Domain | Score | Status | Priority Fix |
+|--------|-------|--------|--------------|
+| A: Parsing | 8.5/10 | Good | Dynamic columns (P1) |
+| B: Metrics | 9.0/10 | Excellent | Tests needed (P1) |
+| C: UI Components | 6.5/10 | Functional | Refactor gods (P2) |
+| D: Storage | 7.0/10 | Working | Complexity noted |
+| E: Stock | 8.0/10 | Good | N/A |
+| F: Visualization | 6.5/10 | Good | Accessibility (P0) |
+| G: Export/Import | 7.0/10 | Incomplete | JSON import (P0) |
 
-// Persistent lock history for ALL sensors
-// Survives localStorage age-out
-```
+**Analysis Files**:
+- `docs/analysis/TIER2_SYNTHESIS.md` - Executive summary
+- `docs/analysis/DOMAIN_*_ANALYSIS.md` - Detailed per-domain
+- `docs/analysis/TIER2_ANALYSIS_SUMMARY.md` - Quick overview
 
 ---
 
-### HIGH: Resurrection via localStorage.clear()
+## 🎯 OPTION C ROADMAP (v4.0)
 
-**Problem**:
-- User deletes sensor #215
-- Tombstone stored: `localStorage.setItem('agp-deleted-sensors', ['215'])`
-- Debugging or user does: `localStorage.clear()`
-- Tombstone gone! Next sync: sensor #215 respawns from SQLite
+**Total Effort**: 67 hours over 4 weeks  
+**Structure**: 4 blocks, 9 sprints  
+**Start Date**: 2025-11-02
 
-**Impact**:
-- Deletes not persistent across localStorage wipe
-- Common debugging step breaks production data
+### Block A: Documentation (5h)
+**Status**: ⏸️ TODO
 
-**Proposed Solution** (Phase 2):
-```javascript
-// Dual persistence: localStorage + SQLite
-CREATE TABLE IF NOT EXISTS deleted_sensors (
-  sensor_id TEXT PRIMARY KEY,
-  deleted_at TEXT NOT NULL
-);
+**Sprints**:
+- Update TIER2_SYNTHESIS.md (2h)
+- Update PROJECT_BRIEFING.md (2h) ← This file
+- Update README.md (1h)
 
-// On delete:
-// 1. localStorage tombstone (fast access)
-// 2. SQLite tombstone (persistent truth)
+### Block B: Safety (15h)
+**Status**: ⏸️ TODO
 
-// On sync check:
-// 1. Check localStorage (fast)
-// 2. Fallback: SQLite (slower but reliable)
-```
+**Sprints**:
+- F1: Accessibility (5h) - ARIA labels, screen readers
+- G1: Backup/Restore (10h) - JSON import, validation
 
----
+**Why P0**: Medical apps MUST be accessible + have reliable backup
 
-### MEDIUM: Chronological Index Instability
+### Block C: Robustness (15h)
+**Status**: 🔄 ACTIVE ← **YOU ARE HERE**
 
-**Problem** (documented in handoff):
-- #ID calculated on-the-fly, not stored
-- Delete sensor #214 → all later sensors shift down
-- User expects "#214" to be stable identifier
+**Sprints**:
+- B1: Metrics Validation (7h) - Performance + tests ← **CURRENT**
+- A1: Parser Robustness (8h) - Dynamic columns, bounds validation
 
-**Impact**:
-- Confusing UX (numbers change after operations)
-- Can't use #ID as stable reference in discussions
+**Why P1**: Future-proof parser, validated metrics
 
-**Proposed Solution** (Phase 3):
-```javascript
-// Add UUID to sensors on first detection
-const sensor = {
-  uuid: crypto.randomUUID(),     // Persistent ID
-  chrono_index: 214,             // Calculated, display only
-  sensor_id: "221",              // Medtronic ID
-  // ...
-};
+### Block D: Quality (35h)
+**Status**: ⏸️ TODO
 
-// Operations use UUID, #ID is pure display
-```
+**Sprints**:
+- C1: Split God Components (20h) - AGPGenerator refactor
+- C2: Virtualization (3h) - Table performance
+- F2: WCAG Compliance (9h) - Color contrast, keyboard nav
+
+**Why P2/P3**: Code quality, not critical for function
+
+**Full Roadmap**: → `PLAN_VAN_AANPAK.md`  
+**Progress Tracking**: → `docs/optionc/MASTER_PROGRESS.md`
 
 ---
 
-### LOW: Sync Race Conditions
+## 📚 MAINTAINED DOCUMENTS
 
-**Problem**:
-- Multi-tab scenario:
-  - Tab A: User deletes sensor #221
-  - Tab B: Page reload triggers sync
-  - Race: Tab B sync happens BEFORE Tab A delete propagates
-  - Result: Sensor #221 re-added from SQLite
+### Active Documentation (Read These)
 
-**Impact**:
-- Rare edge case (requires multi-tab + exact timing)
-- Delete potentially lost
+**Root Level**:
+- `START_HERE.md` - Points to docs/optionc/ hub
+- `HANDOFF.md` - Current sprint quick reference
+- `PROGRESS.md` - Session log
+- `STATUS.md` - What works, known issues
+- `PLAN_VAN_AANPAK.md` - Complete Option C plan
+- `GIT_CHEATSHEET.md` - Git workflow
+- `CHANGELOG.md` - Version history
 
-**Proposed Solution** (Phase 3):
-```javascript
-// Sync lock with version check
-const syncVersion = Date.now();
-localStorage.setItem('agp-last-sync', syncVersion);
+**Option C Hub** (`docs/optionc/`):
+- `START_HERE.md` - Main navigation
+- `MASTER_PROGRESS.md` - All sprints tracking
+- `block-*/sprint-*/HANDOFF.md` - Sprint details
+- `block-*/sprint-*/PROGRESS.md` - Real-time tracking (source of truth)
 
-const lastSync = localStorage.getItem('agp-last-sync');
-if (Date.now() - lastSync < 5000) {
-  console.log('[Sync] Recent sync detected, coalescing');
-  return; // Wait for lock
-}
-```
+**Analysis** (`docs/analysis/`):
+- `TIER2_SYNTHESIS.md` - Architecture executive summary
+- `TIER2_ANALYSIS_SUMMARY.md` - Quick scores overview
+- `DOMAIN_*_ANALYSIS.md` - Detailed domain analyses
 
----
+**Reference** (`docs/reference/`, `reference/`):
+- `metric_definitions.md` - All glucose metrics formulas
+- `minimed_780g_ref.md` - Device specifications
+- Clinical papers (MAGE, MODD, GRI)
 
-## 📋 5. Active Files & Infrastructure
+### Archived Documentation
 
-### Project Structure
+**Location**: `docs/archive/2025-11/pre-optionc/`
 
-**Root**: `/Users/jomostert/Documents/Projects/agp-plus`
+**Contents**:
+- Pre-Option-C HANDOFF, START_HERE, PROGRESS
+- Old CURRENT_SPRINT.md
+- Backup copies of root docs
 
-```
-agp-plus/
-├── src/
-│   ├── components/        # React UI (AGPGenerator, SensorHistoryModal, etc.)
-│   ├── core/             # Pure calculation engines (metrics, AGP, day profiles)
-│   ├── hooks/            # Orchestration layer (useMetrics, useSensorDatabase)
-│   ├── storage/          # IndexedDB + localStorage modules
-│   └── utils/            # Shared utilities
-├── project/              # Tier 2 docs (STATUS, TEST_PLAN, briefings)
-├── reference/            # Tier 3 docs (metrics, device ref, git workflow)
-├── docs/                 # Handoffs, phase documentation
-├── test-data/           # Real CSV exports (READ-ONLY)
-├── public/
-│   ├── sensor_database.db  # SQLite sensor history (219 sensors)
-│   └── debug/              # Temporary debug output
-└── scripts/              # Utility scripts (cleanup, git helpers)
-```
-
-### Development Environment
-
-**Server**: Vite dev on port 3001  
-**Startup**: `cd agp-plus && export PATH="/opt/homebrew/bin:$PATH" && npx vite --port 3001`  
-**Browser**: Chrome with DevTools  
-**Desktop Commander**: File operations, git, process management
-
-### Key Data Files
-
-**Sensor Database**:
-- `public/sensor_database.db` — SQLite, 219 sensors (March 2022 - Oct 2025)
-- `localStorage['agp-sensor-database']` — Recent sensors + edits
-- `localStorage['agp-deleted-sensors']` — Tombstone list
-
-**Master Dataset**:
-- IndexedDB: `agp-plus-v3` → `months` table (glucose readings)
-- localStorage: Patient info, event cache
-
-**Test Data**:
-- `test-data/SAMPLE__Jo Mostert 30-10-2025_7d.csv` (7 days, 2826 lines)
-- `test-data/Jo Mostert 30-10-2025_90d.csv` (90 days)
-- `test-data/CSVs_permaand/*.csv` (historical monthly exports)
+**Access**: Only for historical reference
 
 ---
 
-## 🧪 6. Testing Status & Checklist
+## 🔒 GIT & SAFETY
 
-### Current Phase: User Validation
+### Branches
 
-**Testing started**: Oct 31, 2025 (post-fix)  
-**Testing focus**: Verify all 5 bug fixes work in production
+**main**: (not used) - Reserved for stable releases  
+**develop**: (active) - All development happens here  
+**feature/***: (optional) - Experimental branches
 
-### Priority 1: Duplicate Fix Validation
+**Current Branch**: `develop`
 
-**Goal**: Confirm dedupe logic works correctly
+### Safety Checkpoints
 
-- [ ] Hard refresh (Cmd+Shift+R)
-- [ ] Check console: "duplicatesRemoved: X" (X > 0 if duplicates existed)
-- [ ] Import CSV with 8 sensors (4 ignore, 4 confirm)
-- [ ] Verify: Only 4 added (not 8)
-- [ ] Delete sensor → stays deleted after refresh
-- [ ] Sort by START → clean, predictable order (no jumps)
+**Available Tags**:
+- `v3.6.0-pre-optionc` - Before Option C start (2025-11-02)
+- `v3.6.0` - Stable v3.6.0 release
+- More tags created per block completion
 
-### Priority 2: Lock System Validation
+**Rollback**: `git checkout v3.6.0-pre-optionc`  
+**Return**: `git checkout develop`
 
-**Goal**: Verify lock icons + delete button work correctly
+### Git Workflow
 
-- [ ] Old sensors (>30d): Show 🔒 icon
-- [ ] Recent sensors (≤30d): Show 🔓 icon
-- [ ] Click 🔒 on old sensor → expect "read-only" error
-- [ ] Click 🔓 on recent sensor → toggles to 🔒
-- [ ] Locked sensor: Delete button grayed out, shows "🔒 DEL"
-- [ ] Unlocked sensor: Delete button active, shows "✓ DEL"
-
-### Priority 3: CSV Import Count
-
-**Goal**: Toast messages show correct counts
-
-- [ ] Import CSV
-- [ ] Ignore 4 candidates
-- [ ] Confirm 4 candidates
-- [ ] Check toast: "Total: 4" (not 8)
-- [ ] Reload page
-- [ ] Open Sensor History
-- [ ] Verify: Count increased by 4 exactly
-
-### Performance Validation
-
-**Expected benchmarks**:
-- CSV parse: < 500ms (30-day file, ~10k rows)
-- Sensor merge: < 100ms (219 SQLite + N localStorage)
-- UI render: < 1s (full sensor table)
-- Delete operation: < 50ms (localStorage update)
-
-### Regression Testing
-
-**Verify no breaks**:
-- AGP generation still works
-- Day profiles render correctly
-- Period comparison functions
-- HTML export includes all data
-- Patient info persists
-
----
-
-## ✅ 7. Definition of Done (v3.10.0)
-
-### Functional Completion
-
-- [x] Duplicate sensors eliminated (Fix #1)
-- [x] Sync prevention working (Fix #2)
-- [x] Delete button lock check correct (Fix #3)
-- [x] Lock icons accurate for all sensors (Fix #4)
-- [x] Toggle error messages clear (Fix #5)
-- [x] All code committed & pushed
-- [ ] User validation complete (all test cases pass)
-- [ ] No console errors in production build
-- [ ] Git tagged: `v3.10.0-sensor-stability`
-
-### Documentation Completion
-
-- [x] `FIXES_IMPLEMENTED.md` — Complete fix details
-- [x] `START_HERE.md` — Updated handoff
-- [ ] `PROJECT_BRIEFING.md` — This document finalized
-- [ ] `CHANGELOG.md` — v3.10.0 entry added
-- [ ] `agp-project-status.html` — Status updated
-
-### Quality Gates
-
-- [x] No TypeScript/ESLint errors
-- [x] Code follows architecture patterns (engines/hooks/components)
-- [ ] Performance targets met (see benchmarks above)
-- [ ] 219 historical sensors remain intact
-- [ ] localStorage + SQLite sync stable
-
-### Exit Criteria
-
-**v3.10.0 complete when**:
-1. All checkbox items above checked
-2. Jo validates all 5 fixes work in production
-3. No new bugs discovered during validation
-4. Git tag created: `v3.10.0-sensor-stability`
-5. Handoff prepared for Phase 2 (architecture hardening)
-
----
-
-## 🔄 8. Next Phase Preview (v3.11 - Architecture Hardening)
-
-### Phase 2 Priorities (After v3.10 validation)
-
-**Goal**: Eliminate architectural technical debt
-
-1. **Time Boundary Enforcement** (1-2 hours)
-   - Auto-prune localStorage sensors >30d
-   - Preserve lock metadata before removal
-   - Hard boundary guarantee (no drift)
-
-2. **Persistent Lock Metadata** (1 hour)
-   - New localStorage store for lock history
-   - Survives 30-day boundary crossing
-   - Enables future "promote to editable" feature
-
-3. **Tombstone Resilience** (2 hours)
-   - Dual persistence (localStorage + SQLite)
-   - Survive `localStorage.clear()`
-   - New SQLite table: `deleted_sensors`
-
-4. **Persistent UUID System** (3 hours)
-   - Add UUID to all sensors
-   - Decouple operations from chronological index
-   - Stable references for discussions/debugging
-
-**Total estimated effort**: 7-9 hours
-
-**Not started until**: v3.10.0 validated & tagged
-
----
-
-## 🎯 9. Success Metrics
-
-### Quantitative
-
-- **Sensor detection accuracy**: >95% (current: ~98% based on 219 sensors)
-- **False positive rate**: <5% (manual locks prevent false positives)
-- **Delete persistence**: 100% (tombstone system)
-- **Duplicate prevention**: 100% (dedupe logic)
-- **Lock system accuracy**: 100% (age-based + manual)
-
-### Qualitative
-
-- UI clearly indicates locked vs unlocked sensors
-- Error messages provide actionable feedback
-- Delete operations feel reliable (no resurrection)
-- CSV import counts match expectations
-- Sort/filter operations stable (no jumps)
-
-### Performance
-
-- 219 sensors load in <200ms
-- CSV parse + import <2s total workflow
-- UI responsive during all operations
-- No janks/freezes with large datasets
-
----
-
-## 🔒 10. What's NOT in This Briefing
-
-**Documented elsewhere**:
-
-- **Metrics calculations** → `reference/metric_definitions.md`
-- **Device specifications** → `reference/minimed_780g_ref.md`
-- **Git workflow** → `reference/GIT_WORKFLOW.md`
-- **Architecture details** → `project/V3_ARCHITECTURE.md`
-- **Test procedures** → `project/TEST_PLAN.md`
-- **Phase handoffs** → `docs/handoffs/*.md`
-
-**This briefing focuses on**: Current v3.10 status, recent fixes, known issues, and roadmap.
-
----
-
-## 📞 11. Emergency Contacts & Rollback
-
-### If Something Breaks
-
-**Last known good commit**: `5d22534` (Oct 31, 2025)
-
-**Quick rollback**:
+**Start**:
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
-git log --oneline -5
-git revert HEAD
-git push origin main
+git pull origin develop
 ```
 
-**Debug checklist**:
-1. Check browser console for errors
-2. Check server console (Vite) for errors
-3. Inspect localStorage state (`agp-sensor-database`, `agp-deleted-sensors`)
-4. Check git log for recent changes
-5. Read `FIXES_IMPLEMENTED.md` for context
-6. Test in clean browser profile (no extensions)
+**During**:
+```bash
+git add .
+git commit -m "test(metrics): Add MAGE tests"
+git push origin develop
+```
 
-### Contacts
+**Full Guide**: → `GIT_CHEATSHEET.md`
+
+---
+
+## 🚀 QUICK START (Development)
+
+### First Time Setup
+
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus
+export PATH="/opt/homebrew/bin:$PATH"
+
+# Install dependencies (if needed)
+npm install
+
+# Start dev server
+npx vite --port 3001
+```
+
+**Open**: http://localhost:3001
+
+### Daily Workflow
+
+```bash
+# Pull latest
+git pull origin develop
+
+# Start server
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+
+# Test with sample data
+# Upload CSV from test-data/ folder
+
+# Commit work
+git add .
+git commit -m "feat(sprint-b1): [what you did]"
+git push origin develop
+```
+
+---
+
+## 🐛 TROUBLESHOOTING
+
+### Common Issues
+
+**Server won't start**:
+```bash
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+```
+
+**Git conflicts**:
+```bash
+git status
+git pull origin develop --rebase
+# Fix conflicts, then:
+git add .
+git rebase --continue
+```
+
+**Lost work**:
+```bash
+# Check recent commits
+git log --oneline -10
+
+# Check safety tags
+git tag -l
+
+# Rollback if needed
+git checkout v3.6.0-pre-optionc
+```
+
+**Performance issues**:
+- Clear browser cache
+- Restart Vite server
+- Check console for errors
+
+---
+
+## 📞 CONTACTS & RESOURCES
 
 **Project Owner**: Jo Mostert  
 **Development**: Claude (Sonnet 4.5) via Desktop Commander  
-**Repository**: [Local Git repo]
+**Repository**: Local Git + GitHub (jllmostert/agp-plus-v2)
+
+**Key Commands**:
+```bash
+# All paths use Desktop Commander
+/Users/jomostert/Documents/Projects/agp-plus
+
+# Dev server must use PATH export
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+```
 
 ---
 
-## 📚 12. Reading Order for New Developers
+## 📖 READING ORDER
 
-**Start here** (30 min):
-1. This document (`PROJECT_BRIEFING.md`)
-2. `START_HERE.md` — Quick handoff
-3. `README.md` — Project overview
+**New Developer (1 hour)**:
+1. This document (PROJECT_BRIEFING.md)
+2. `STATUS.md` - What works
+3. `docs/optionc/START_HERE.md` - Current work
+4. `GIT_CHEATSHEET.md` - Git workflow
 
-**Architecture** (1 hour):
-4. `project/V3_ARCHITECTURE.md` — System design
-5. `reference/V3_ARCHITECTURE_DECISIONS.md` — Why we built it this way
-6. `CHANGELOG.md` — Version history
+**Deep Dive (3 hours)**:
+5. `PLAN_VAN_AANPAK.md` - Complete roadmap
+6. `docs/analysis/TIER2_SYNTHESIS.md` - Architecture analysis
+7. `reference/metric_definitions.md` - Clinical formulas
+8. Sprint-specific HANDOFF.md files
 
-**Current work** (30 min):
-7. `FIXES_IMPLEMENTED.md` — Recent bug fixes
-8. `BUG_ANALYSIS_SUMMARY.md` — Why bugs happened
-9. `project/STATUS.md` — Phase tracking
-
-**Deep dives** (as needed):
-10. `reference/metric_definitions.md` — Clinical metrics
-11. `reference/minimed_780g_ref.md` — Device knowledge
-12. `reference/GIT_WORKFLOW.md` — Commit conventions
+**Contributing**:
+9. Read current sprint HANDOFF
+10. Update sprint PROGRESS.md (real-time!)
+11. Commit often (small chunks)
+12. Update MASTER_PROGRESS.md after sprint
 
 ---
 
-## 🎬 13. Session Startup Checklist
+## 🎯 SUCCESS CRITERIA (v4.0)
 
-**Before starting development**:
+**Must Have** (P0):
+- [ ] Charts accessible (ARIA labels, screen readers)
+- [ ] JSON import works (complete backup/restore)
+- [ ] All unit tests pass
+- [ ] Performance <1000ms validated
 
-1. [ ] Read `START_HERE.md` for latest context
-2. [ ] Check git status: `git status`
-3. [ ] Review recent commits: `git log --oneline -5`
-4. [ ] Start server: `npx vite --port 3001`
-5. [ ] Open browser: `http://localhost:3001`
-6. [ ] Check console for errors (should be clean)
-7. [ ] Verify localStorage intact: `localStorage.getItem('agp-sensor-database')`
+**Should Have** (P1):
+- [ ] Parser uses dynamic columns
+- [ ] Glucose bounds validation (20-600 mg/dL)
+- [ ] WCAG color contrast validated
 
-**Before ending session**:
+**Nice to Have** (P2/P3):
+- [ ] God components split
+- [ ] Table virtualization
+- [ ] Full keyboard navigation
 
-1. [ ] Commit all changes with descriptive message
-2. [ ] Push to origin: `git push origin main`
-3. [ ] Update `START_HERE.md` with handoff
-4. [ ] Update this briefing if architecture changed
-5. [ ] Document any new issues discovered
-6. [ ] Stop server (Ctrl+C in terminal)
-7. [ ] Create handoff for next session
+**Definition of Done**: All P0 + P1 complete, v4.0 tagged
 
 ---
 
-**Document Status**: ✅ COMPLETE  
-**Version**: v3.10.0 (post-bug-fixes)  
-**Next Update**: After Phase 2 (Architecture Hardening) completion  
-**Maintained by**: Claude (Sonnet 4.5) + Jo Mostert
-
----
-
-*Last updated: 2025-10-31 | Bug fixes documented | Testing phase active*
+**Document Version**: 2.0  
+**Last Update**: 2025-11-02  
+**For Questions**: See docs/optionc/ or ask Claude
