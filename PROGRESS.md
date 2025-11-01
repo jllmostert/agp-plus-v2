@@ -1,22 +1,152 @@
 # AGP+ PROGRESS TRACKER
 
-**Sessie**: 2025-11-01 18:00  
-**Doel**: Block A - Quick Wins (v3.2.0)  
-**Status**: 🟡 IN PROGRESS
+**Sessie**: 2025-11-01 19:15 (New Session)
+**Doel**: Block B.6 - Dynamic Column Detection (v3.3.0)  
+**Status**: 🟢 READY TO START
 
 ---
 
-## 📊 OVERZICHT
+## 📊 SESSION STATUS
+
+**Previous Session (18:00-19:10)**: ✅ Block A Complete (v3.2.0)
+- Performance benchmarking added
+- Glucose bounds validation completed
+- All tests passed, commits pushed
+
+**Current Session (19:15+)**: 🎯 Block B.6 Starting
+- Safety commit done (3b2c5d8)
+- Ready for dynamic column detection
+
+---
+
+## 📊 BLOCK B.6 OVERZICHT
+
+| Item | Taak | Tijd | Status | Start | Eind |
+|------|------|------|--------|-------|------|
+| **B.6.1** | Analyze header structure | 15m | ✅ DONE | 19:17 | 19:25 |
+| **B.6.2** | Create findColumnIndices() | 30m | ✅ DONE | 19:26 | 19:31 |
+| **B.6.3** | Update parseCSV() | 30m | ⏸️ WAITING | - | - |
+| **B.6.4** | Add validation | 15m | ⏸️ WAITING | - | - |
+| **B.6.5** | Testing & commit | 30m | ⏸️ WAITING | - | - |
+
+**Totaal**: 2 uur (120 minuten)  
+**Geschat klaar**: ~21:15
+
+## 🎯 TAAK B.6.2: CREATE findColumnIndices()
+
+**Doel**: Create helper function to map column names to indices  
+**File**: `src/core/parsers.js`  
+**Tijd**: 30 minuten
+
+### Checklist
+- [x] Design function signature
+- [x] Implement column parsing (split by ;)
+- [x] Build column name → index map
+- [x] Add validation for required columns
+- [x] Add JSDoc comments
+- [x] Insert function before parseCSV() (line ~255)
+- [ ] **STOP → Ask Jo for feedback before using it**
+
+### Code Added
+```javascript
+// Location: parsers.js, line ~256 (before parseCSV)
+const findColumnIndices = (headerRow) => {
+  // Parse semicolon-separated header
+  const columns = headerRow.split(';');
+  const columnMap = {};
+  
+  columns.forEach((col, index) => {
+    const trimmed = col.trim();
+    if (trimmed) columnMap[trimmed] = index;
+  });
+  
+  // Validate critical columns exist
+  const required = ['Date', 'Time', 'Sensor Glucose (mg/dL)'];
+  const missing = required.filter(col => !(col in columnMap));
+  
+  if (missing.length > 0) {
+    console.error(`Missing columns: ${missing.join(', ')}`);
+    return null;
+  }
+  
+  return columnMap;
+};
+```
+
+### Notes
+- 19:26 Started B.6.2
+- 19:27 Designed function signature
+- 19:28 Implemented column parsing logic
+- 19:29 Added validation for required columns
+- 19:30 Added to parsers.js (45 lines total with docs)
+- Function ready but NOT USED YET (safe!)
+
+---
+
+**Doel**: Understand CSV header row format (READ ONLY - no code changes)  
+**Files**: `src/core/parsers.js`, test CSV data  
+**Tijd**: 15 minuten
+
+### Checklist
+- [x] Read parseCSV() function (lines 250-400)
+- [x] Identify header row detection logic
+- [x] List all currently hardcoded indices
+- [x] Document expected column names
+- [x] Create column mapping strategy
+- [ ] **STOP → Ask Jo for feedback**
+
+### Analysis Notes
+```
+HEADER ROW DETECTION (Line 303):
+- Current check: parts[1] === 'Date' && parts[2] === 'Time'
+- This works but uses hardcoded indices!
+
+HARDCODED INDICES FOUND (10 total):
+1. parts[1]  → Date (YYYY/MM/DD)
+2. parts[2]  → Time (HH:MM:SS)
+3. parts[5]  → BG (manual finger stick)
+4. parts[13] → Bolus Volume Delivered (U)
+5. parts[18] → Alert (sensor events)
+6. parts[21] → Rewind (event type)
+7. parts[27] → BWZ Carb Input (g)
+8. parts[34] → Sensor Glucose (mg/dL)
+
+COLUMN NAMES (expected in header row):
+- "Date" → parts[1]
+- "Time" → parts[2]
+- "BG Reading (mg/dL)" → parts[5]
+- "Bolus Volume Delivered (U)" → parts[13]
+- "Alarm" or "Alert" → parts[18]
+- "Rewind" → parts[21]
+- "BWZ Carb Input (g)" → parts[27]
+- "Sensor Glucose (mg/dL)" → parts[34]
+
+PROPOSED SOLUTION:
+1. Find header row (contains "Date", "Time", "Sensor Glucose")
+2. Build column map: { 'Date': 1, 'Time': 2, ..., 'Sensor Glucose (mg/dL)': 34 }
+3. Replace all parts[N] with parts[columnMap['Column Name']]
+4. Validate that critical columns exist
+5. Clear error if missing columns
+
+RISK ASSESSMENT:
+- Current code assumes column 34 is glucose → FRAGILE
+- If Medtronic adds/removes columns → SILENT BREAKAGE
+- Dynamic detection will make code ROBUST
+```
+
+---
+
+## PREVIOUS SESSION: BLOCK A (COMPLETE)
 
 | Item | Taak | Tijd | Status | Start | Eind |
 |------|------|------|--------|-------|------|
 | **A.1** | Performance benchmarking | 30m | ✅ DONE | 18:35 | 18:42 |
 | **A.2** | Empty glucose bounds fix | 15m | ✅ DONE | 18:42 | 18:48 |
 | **A.3** | Testing & commit | 15m | ✅ DONE | 18:50 | 18:54 |
-| **A.4** | Documentation | 10m | 🟡 IN PROGRESS | 18:55 | - |
+| **A.4** | Documentation | 10m | ✅ DONE | 18:55 | 19:10 |
 
 **Totaal**: 70 minuten  
-**Geschat klaar**: -
+**Werkelijk**: 75 minuten (18:35-19:10)
 
 ---
 

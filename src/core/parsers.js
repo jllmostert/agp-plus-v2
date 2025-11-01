@@ -256,6 +256,48 @@ export const parseSection2 = (text) => {
 };
 
 /**
+ * Find column indices from CSV header row
+ * Builds a map of column name → index for dynamic column access
+ * 
+ * @param {string} headerRow - CSV header row (semicolon-separated)
+ * @returns {Object} Column name → index map, or null if invalid
+ * 
+ * Example return:
+ * {
+ *   'Date': 1,
+ *   'Time': 2,
+ *   'Sensor Glucose (mg/dL)': 34,
+ *   ...
+ * }
+ */
+const findColumnIndices = (headerRow) => {
+  if (!headerRow || typeof headerRow !== 'string') {
+    return null;
+  }
+  
+  const columns = headerRow.split(';');
+  const columnMap = {};
+  
+  columns.forEach((col, index) => {
+    const trimmed = col.trim();
+    if (trimmed) {
+      columnMap[trimmed] = index;
+    }
+  });
+  
+  // Validate critical columns exist
+  const requiredColumns = ['Date', 'Time', 'Sensor Glucose (mg/dL)'];
+  const missingColumns = requiredColumns.filter(col => !(col in columnMap));
+  
+  if (missingColumns.length > 0) {
+    console.error(`[Parser] Missing required columns: ${missingColumns.join(', ')}`);
+    return null;
+  }
+  
+  return columnMap;
+};
+
+/**
  * Parse Medtronic CareLink CSV export
  * @param {string} text - Raw CSV text content
  * @returns {Object} {data: Array, section2: Array} - Main glucose data + Section 2 insulin data
