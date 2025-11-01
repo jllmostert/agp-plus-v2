@@ -292,6 +292,7 @@ export const parseCSV = (text) => {
     // Parse data rows
     let validRows = 0;
     let skippedRows = 0;
+    let outOfBoundsCount = 0; // Track out-of-bounds glucose readings specifically
     
     const data = dataLines
       .filter(line => line.trim())
@@ -327,8 +328,12 @@ export const parseCSV = (text) => {
           return null;
         }
         
-        // Validate glucose range if present (40-400 mg/dL is reasonable)
-        if (hasGlucose && (glucose < 40 || glucose > 400)) {
+        // Validate glucose range if present (skip out-of-bounds readings)
+        // Spec: <20 or >600 mg/dL are invalid sensor readings
+        if (hasGlucose && (glucose < 20 || glucose > 600)) {
+          outOfBoundsCount++;
+          skippedRows++;
+          return null; // Skip this row
         }
         
         validRows++;
@@ -362,6 +367,11 @@ export const parseCSV = (text) => {
     // Calculate coverage
     const coverage = (validRows / (validRows + skippedRows) * 100).toFixed(1);
     debug.info(`CSV parsed successfully: ${validRows} valid rows (${coverage}% coverage), ${skippedRows} skipped`);
+    
+    // Warn about out-of-bounds glucose readings
+    if (outOfBoundsCount > 0) {
+      console.warn(`[Parser] Skipped ${outOfBoundsCount} out-of-bounds glucose readings (<20 or >600 mg/dL)`);
+    }
     
     // Warn if coverage is low
     if (coverage < 70) {

@@ -78,6 +78,9 @@ export const utils = {
  * @returns {Object} Metrics object with TIR, CV, MAGE, MODD, etc.
  */
 export const calculateMetrics = (data, startDate, endDate, filterDates = null, timeFilter = null) => {
+  // Performance timing
+  const perfStart = performance.now();
+  
   // Filter data by date range and optional filters
   const filtered = data.filter(row => {
     const dt = utils.parseDate(row.date, row.time);
@@ -247,6 +250,17 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   });
   const completeDays = Object.values(readingsPerDay).filter(count => count === 288).length;
 
+  // Performance timing - end
+  const perfEnd = performance.now();
+  const perfDuration = Math.round(perfEnd - perfStart);
+  
+  // Log warning if calculation took >1s
+  if (perfDuration > 1000) {
+    console.warn(`[Metrics] Calculation took ${perfDuration}ms (target: <1000ms for 90-day data)`);
+  } else {
+    console.log(`[Metrics] Calculation completed in ${perfDuration}ms`);
+  }
+
   return {
     mean: Math.round(mean),
     sd: sd.toFixed(1),
@@ -270,6 +284,10 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
       totalDays: uniqueDays,
       expectedReadings: expectedReadings,
       actualReadings: actualReadings
+    },
+    // Performance metrics (NEW - v3.2.0)
+    performance: {
+      calculationTime: perfDuration
     }
   };
 };
