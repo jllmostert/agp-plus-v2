@@ -1,180 +1,198 @@
 ---
 tier: 1
 status: active
-session: 2025-11-02 00:55
-purpose: TIER2 Synthesis (6/6 domains complete)
+session: 2025-11-02 01:30
+purpose: v4.0 Implementation - Safety Commit + Setup
 ---
 
-# AGP+ Session Handoff - v3.6.0, TIER2 Complete
+# AGP+ Session Handoff - v3.6.1 → v4.0 Prep
 
-**Version**: v3.6.0  
-**Last Session**: 2025-11-02 00:30-00:55 (Domain F completion, 25 min)  
-**Git**: Commit 3a2a2ba, pushed ✅
-
----
-
-## ✅ WHAT'S DONE
-
-**TIER2 Analysis: COMPLETE** ✅ (6/6 domains)
-- Domain A: Parsing (8.5/10) - Dynamic columns, robust
-- Domain B: Metrics (9.0/10) - Performance excellent
-- Domain C: UI Components (6.5/10) - God components identified
-- Domain D: Storage (7.0/10) - Dual storage working
-- Domain E: Stock (8.0/10) - Two-phase batch system
-- Domain F: Visualization (6.5/10) - No accessibility ⚠️
-- Domain G: Export/Import (7.0/10) - No JSON import ⚠️
-
-**Overall Architecture Score**: 7.5/10
-
-**Latest Session (Domain F)**:
-- Completed missing sections (issues, roadmap, conclusion)
-- 26h effort identified (P0: 5h, P1: 9h, P2/P3: 12h)
-- Critical: No ARIA labels, no screen readers, no keyboard nav
-- Performance: Excellent (SVG, memoization)
-- Brutalist design: Perfect execution
-
-**Files Created**:
-- `docs/analysis/DOMAIN_F_VISUALIZATION_ANALYSIS.md` (370 lines)
-- `docs/analysis/TIER2_ANALYSIS_SUMMARY.md` (updated)
-- `PROGRESS.md` (session log)
+**Version**: v3.6.1 (develop branch)  
+**Last Session**: 2025-11-02 01:00-01:30 (Implementation planning)  
+**Git**: develop branch, commit 470d570  
+**Next**: Safety commit → Archiving → Sprint B1 (Metrics)
 
 ---
 
-## 🎯 NEXT SESSION (30 min)
+## âœ… WHAT'S DONE
 
-### Priority 1: TIER2 Synthesis ← START HERE
+**Implementation Plan**: âœ… COMPLETE
+- `PLAN_VAN_AANPAK.md` created (444 lines)
+- 3 options defined (20h/35h/67h)
+- **Decision**: Optie C (Full, 67h)
+- Start with: Sprint B1 (Metrics Validation, 7h)
 
-**Goal**: Consolidate all findings into master recommendations
+**TIER2 Analysis**: âœ… COMPLETE (6/6 domains)
+- Overall score: 7.5/10
+- All domains documented
+- Roadmap clear
 
-**Deliverable**: Update `TIER2_SYNTHESIS.md`
-
-**Structure**:
-1. **Executive Summary**
-   - Overall architecture assessment
-   - Key strengths and weaknesses
-   - Production readiness verdict
-
-2. **Critical Issues Across Domains**
-   - P0 issues (must fix before v4.0)
-   - Consolidated effort estimates
-   - Risk assessment
-
-3. **Master Implementation Roadmap**
-   - Sprint priorities (F1, G1, C1)
-   - Effort breakdown
-   - Dependencies
-
-4. **Recommendations**
-   - Immediate actions
-   - Near-term improvements
-   - Long-term architecture evolution
-
-**Estimated Time**: 30 minutes
-
-**Output**: `TIER2_SYNTHESIS.md` (comprehensive, ready for PROJECT_BRIEFING.md update)
+**Branch Setup**: âœ… DONE
+- On `develop` branch
+- `main` = production (stable)
+- Safety commits strategy defined
 
 ---
 
-## 📊 TIER2 COMPLETION SUMMARY
+## ðŸš€ IMMEDIATE NEXT STEPS (30 min)
 
-**Total Analysis Time**: ~6 hours over multiple sessions
-**Domains Analyzed**: 6/6 (100%)
-**Files Analyzed**: ~9,000 lines of code
-**Issues Identified**: 30+ (P0: 10, P1: 12, P2/P3: 8+)
-**Total Remediation Effort**: ~100+ hours across all domains
-
-**Critical Findings**:
-
-1. **Accessibility Gap** (Domain F)
-   - No ARIA labels, screen readers, keyboard nav
-   - Medical app MUST be accessible
-   - P0: 5 hours to baseline compliance
-
-2. **Incomplete Backup** (Domain G)
-   - Export works, import doesn't
-   - No data validation on import
-   - P0: 6 hours to complete feature
-
-3. **God Components** (Domain C)
-   - AGPGenerator: 1,962 lines
-   - SensorHistoryModal: 1,387 lines
-   - P0: 19 hours to split + virtualize
-
-4. **Performance** (All Domains)
-   - Metrics: 3-64ms ✅ Excellent
-   - Charts: Fast rendering ✅
-   - UI: No virtualization ❌ (500ms for 1000 items)
-
----
-
-## 🔧 QUICK START
-
+### 1. Safety Commit & Push (5 min)
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
-export PATH="/opt/homebrew/bin:$PATH"
+git add -A
+git commit -m "safety: v3.6.1 baseline before v4.0 implementation"
+git push origin develop
+```
 
-# Verify status
-git log --oneline -3  # Latest: 3a2a2ba (TIER2 complete)
-git status           # Should be clean
+### 2. Archive Old Handoffs (10 min)
+**Goal**: Clean root, move old docs to archive
 
-# Review analyses
-ls -lh docs/analysis/DOMAIN_*.md
-cat docs/analysis/TIER2_ANALYSIS_SUMMARY.md
+**Create structure**:
+```
+docs/
+  archive/
+    handoffs/         # Old HANDOFF*.md files
+    progress-logs/    # Old PROGRESS*.md files
+    planning/         # Old planning docs
+  phases/            # NEW: Per-phase handoffs
+    phase1-docs/     # Documentation sprint
+    phase2-safety/   # P0 sprints
+    phase3-robust/   # P1 sprints
+    phase4-quality/  # P2/P3 sprints
+```
+
+### 3. Create Phase Structure (15 min)
+**Per phase folder**:
+- `HANDOFF.md` - Sprint-specific handoff
+- `PROGRESS.md` - Sprint progress (cumulative)
+- `CHECKLIST.md` - Sprint tasks
+
+---
+
+## 📋 v4.0 IMPLEMENTATION OVERVIEW
+
+**Total Effort**: 67 hours across 4 phases
+
+### Phase 1: Documentation (5h)
+- TIER2_SYNTHESIS.md complete
+- PROJECT_BRIEFING.md update
+- README.md update
+
+### Phase 2: Safety & Compliance (20h)
+- Sprint F1: Accessibility (5h)
+- Sprint G1: Backup/Restore (10h)
+- Sprint B1: **Metrics Validation (7h)** ← **START HERE**
+
+### Phase 3: Robustness (15h)
+- Sprint A1: Parser Robustness (8h)
+- Sprint F2: WCAG Compliance (9h)
+
+### Phase 4: Quality & Scale (32h)
+- Sprint C1: Split God Components (20h)
+- Sprint C2: Virtualization (3h)
+- Sprint F3: Chart Enhancements (9h)
+
+---
+
+## 🎯 SPRINT B1: METRICS VALIDATION (7h)
+
+**Why First**: 
+- Concrete, testable output
+- Proves performance claims
+- Foundation for confidence
+- Easy wins for motivation
+
+**Tasks**:
+1. Performance Benchmarking (3h)
+   - 14 days: ~4,000 readings
+   - 90 days: ~26,000 readings
+   - 365 days: ~100,000 readings
+   - Verify <1000ms target
+
+2. Unit Tests (4h)
+   - MAGE calculation
+   - MODD calculation
+   - GRI calculation
+   - Edge cases (DST, single day, missing data)
+
+**Deliverables**:
+- `/src/engines/__tests__/metrics-engine.test.js`
+- `/docs/performance/METRICS_BENCHMARK.md`
+- All tests passing âœ…
+- Performance proof: <1000ms âœ…
+
+---
+
+## ðŸ› ï¸ CHEATSHEET: BRANCH MANAGEMENT
+
+### Switch to Develop (Work Branch)
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus
+git checkout develop
+git pull origin develop
+```
+
+### Return to Safe Main
+```bash
+git checkout main
+git pull origin main
+```
+
+### Create Safety Point
+```bash
+git add -A
+git commit -m "safety: [description]"
+git push origin develop
+```
+
+### Emergency: Undo Changes
+```bash
+# Discard all changes (NUCLEAR!)
+git reset --hard HEAD
+
+# Go back to last commit
+git reset --hard origin/develop
 ```
 
 ---
 
-## 💡 LESSONS LEARNED (Apply These!)
+## ðŸ"‚ FILE LOCATIONS
 
-From multiple crash recoveries:
+**Root Level** (keep clean!):
+- PLAN_VAN_AANPAK.md
+- README.md
+- CHANGELOG.md
 
-1. **Large files**: Use offset/length for files >800 lines
-2. **Write ops**: Max 25-30 lines per call
-3. **Progress**: Document DURING work, not at end
-4. **Recovery**: Chunk-based reading works perfectly
+**Active Docs** (current sprint):
+- docs/phases/phase2-safety/sprint-b1/
+  - HANDOFF.md
+  - PROGRESS.md
+  - CHECKLIST.md
 
-**Applied Successfully**:
-- Domain F completed in chunks (no crash)
-- Real-time PROGRESS.md updates
-- Incremental git commits
-
----
-
-## ✅ SUCCESS CRITERIA
-
-**TIER2 Synthesis Complete When**:
-- [ ] `TIER2_SYNTHESIS.md` updated with all findings
-- [ ] Executive summary written
-- [ ] Master roadmap created
-- [ ] Priority sprints defined
-- [ ] PROJECT_BRIEFING.md updated
-- [ ] Git commit + push
-
-**Then**: Ready for implementation sprints (Sprint F1 → G1 → C1)
+**Archive** (old docs):
+- docs/archive/handoffs/
+- docs/archive/progress-logs/
 
 ---
 
-## 📈 IMPLEMENTATION PRIORITY
+## âœ… SUCCESS CRITERIA
 
-**Immediate** (P0, ~30h):
-1. Sprint F1: Accessibility (5h)
-2. Sprint G1: JSON import + validation (12h)
-3. Sprint C1: Split AGPGenerator (16h)
+**Before Starting Sprint B1**:
+- [ ] Safety commit pushed to GitHub
+- [ ] Old docs archived
+- [ ] Phase structure created
+- [ ] Sprint B1 folder ready with templates
+- [ ] Git cheatsheet accessible
 
-**Near-Term** (P1, ~30h):
-- Color-blind palette (3h)
-- Keyboard navigation (4h)
-- Split SensorHistoryModal (8h)
-- Duplicate detection (2h)
-
-**Medium-Term** (P2/P3, ~40h):
-- Table virtualization (3h)
-- Performance optimizations (5h)
-- Interactive charts (10h)
-- Enhanced exports (8h)
+**Sprint B1 Complete When**:
+- [ ] Benchmark shows <1000ms for 90 days
+- [ ] All unit tests passing
+- [ ] METRICS_BENCHMARK.md published
+- [ ] Commit + push to develop
 
 ---
 
-**Handoff Version**: 7.0  
-**Status**: TIER2 Complete (6/6), Synthesis Next  
-**Architecture**: 7.5/10 (solid, actionable issues identified)
+**Handoff Version**: 8.0  
+**Status**: Ready for v4.0 implementation  
+**Next Sprint**: B1 - Metrics Validation (7h)  
+**Branch**: develop (safe, clean)

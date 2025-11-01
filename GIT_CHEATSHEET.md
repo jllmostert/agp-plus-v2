@@ -1,277 +1,335 @@
-# AGP+ Git Branch Cheatsheet
+# Git Workflow Cheatsheet - AGP+ v4.0
 
-**Last Updated**: 2025-11-02  
-**Safe Version**: v3.6.0 (commit 80fb1fd)  
-**Development Branch**: develop
+**Quick Reference**: Voor dagelijks werk op AGP+ develop branch
 
 ---
 
-## ðŸŽ¯ QUICK REFERENCE
+## ðŸš€ DAILY WORKFLOW
 
-### Current Branch
+### Start Session
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
-git branch  # Shows current branch with *
+git checkout develop              # Switch to work branch
+git pull origin develop           # Get latest changes
+git status                        # Check current state
 ```
 
-### Switch to Safe Version (main)
+### During Work
 ```bash
-cd /Users/jomostert/Documents/Projects/agp-plus
+# Check what changed
+git status
+git diff [filename]
+
+# Stage specific files
+git add [filename]
+
+# Stage all changes
+git add -A
+
+# Commit with good message
+git commit -m "feat(sprint-b1): Add performance benchmarks"
+
+# Push to GitHub
+git push origin develop
+```
+
+### End Session
+```bash
+git add -A
+git commit -m "chore: End of session, progress saved"
+git push origin develop
+```
+
+---
+
+## 🔒 SAFETY COMMITS
+
+### Before Risky Changes
+```bash
+# Create safety point
+git add -A
+git commit -m "safety: Before refactoring AGPGenerator"
+git push origin develop
+
+# Now you can experiment safely!
+```
+
+### Create Milestone Tag
+```bash
+# For major checkpoints
+git tag -a v3.6.1 -m "TIER2 complete, v4.0 prep"
+git push origin v3.6.1
+```
+
+---
+
+## ðŸš¨ EMERGENCY PROCEDURES
+
+### Undo Uncommitted Changes
+```bash
+# Discard ALL uncommitted changes (NUCLEAR!)
+git reset --hard HEAD
+
+# Discard specific file
+git checkout -- [filename]
+```
+
+### Undo Last Commit (Not Pushed)
+```bash
+# Keep changes, undo commit
+git reset --soft HEAD~1
+
+# Discard changes AND commit
+git reset --hard HEAD~1
+```
+
+### Go Back to Last Pushed State
+```bash
+# Sync with GitHub (lose local changes!)
+git reset --hard origin/develop
+```
+
+---
+
+## 🔄 BRANCH OPERATIONS
+
+### Switch Branches
+```bash
+# Go to stable production
 git checkout main
 git pull origin main
 
-# Verify you're on safe version
-git log --oneline -1  # Should show: 80fb1fd
-```
-
-### Switch to Development (develop)
-```bash
-cd /Users/jomostert/Documents/Projects/agp-plus
+# Return to work
 git checkout develop
 git pull origin develop
 ```
 
----
-
-## ðŸš¨ EMERGENCY: Revert to Safe Version
-
-Als develop branch kapot is, terug naar v3.6.0-safe:
-
+### Create New Branch
 ```bash
-cd /Users/jomostert/Documents/Projects/agp-plus
+# For experimental features
+git checkout -b feature/new-thing
+git push -u origin feature/new-thing
+```
 
-# Save current work (optional)
-git stash save "Emergency stash before revert"
+### Delete Branch
+```bash
+# Local only
+git branch -d feature/old-thing
 
-# Go to safe version
-git checkout main
-git pull origin main
-
-# Verify
-git log --oneline -1  # Should show: 80fb1fd
-
-# Delete broken develop (optional)
-git branch -D develop
-git push origin --delete develop
-
-# Start fresh develop from main
-git checkout -b develop
-git push -u origin develop
+# Remote also
+git push origin --delete feature/old-thing
 ```
 
 ---
 
-## ðŸ"„ WORKFLOW: Daily Development
+## 📊 INSPECTION COMMANDS
 
-### Start van de dag
+### View History
 ```bash
-cd /Users/jomostert/Documents/Projects/agp-plus
+# Last 10 commits
+git log --oneline -10
 
-# Ensure you're on develop
-git checkout develop
+# Detailed last 3
+git log -3
 
-# Get latest changes
-git pull origin develop
+# See branch graph
+git log --graph --oneline --all -10
+```
 
-# Check status
+### Check Changes
+```bash
+# Uncommitted changes
+git status
+git diff
+
+# Changes in specific commit
+git show [commit-hash]
+
+# File history
+git log --follow -- [filename]
+```
+
+### Compare Branches
+```bash
+# See what's in develop but not main
+git log main..develop
+
+# See differences
+git diff main..develop
+```
+
+---
+
+## 🔍 FINDING THINGS
+
+### Search Commits
+```bash
+# Find commit by message
+git log --grep="metrics"
+
+# Find commits that changed specific file
+git log -- [filename]
+
+# Find when text was added/removed
+git log -S "function calculateMAGE"
+```
+
+### Check Remote Status
+```bash
+# See all remotes
+git remote -v
+
+# Check if local is behind/ahead
+git fetch origin
 git status
 ```
 
-### Tijdens werk (frequent commits)
+---
+
+## ðŸ› ï¸ MAINTENANCE
+
+### Clean Up
 ```bash
-# After completing a task
-git add .
-git commit -m "feat(sprint-B1): Add performance benchmarks"
-git push origin develop
+# Remove deleted files from tracking
+git add -A
+
+# Clean untracked files (dry run first!)
+git clean -n
+git clean -f
+
+# Remove old branches
+git fetch --prune
 ```
 
-### Einde van de dag
+### Sync with Remote
 ```bash
-# Commit all work
-git add .
-git commit -m "wip: End of day checkpoint - [description]"
-git push origin develop
+# Update all branches
+git fetch origin
+
+# See what changed
+git log origin/develop..develop
+
+# Fast-forward merge
+git merge origin/develop
 ```
 
 ---
 
-## ✅ RELEASE: Merge develop → main
+## ðŸ'¡ BEST PRACTICES
 
-**Wanneer**: Na een complete sprint (bijv. Sprint B1 done)
-
+### Commit Messages
 ```bash
-cd /Users/jomostert/Documents/Projects/agp-plus
+# Good format: <type>(<scope>): <description>
 
-# Ensure develop is up to date
-git checkout develop
-git pull origin develop
+feat(sprint-b1): Add MAGE unit tests
+fix(metrics): Correct DST handling in MODD
+docs(readme): Update installation instructions
+chore: Update dependencies
+safety: Before major refactor
+```
 
-# Switch to main
+### Types
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation only
+- `chore`: Maintenance
+- `test`: Adding tests
+- `refactor`: Code restructure
+- `safety`: Safety checkpoint
+
+### Commit Frequency
+- âœ… Commit after each small task (every 15-30 min)
+- âœ… Push at end of session
+- âœ… Safety commit before risky changes
+- âŒ Don't wait until "everything works"
+
+---
+
+## ðŸš© RED FLAGS
+
+**DON'T DO THIS**:
+```bash
+# âŒ Never force push to shared branches
+git push -f origin develop  # BAD!
+
+# âŒ Never commit secrets/passwords
+git commit -m "Add API key"  # BAD!
+
+# âŒ Never work directly on main
 git checkout main
-git pull origin main
-
-# Merge develop into main
-git merge develop --no-ff -m "release: v4.0-sprint-B1 complete"
-
-# Push to GitHub
-git push origin main
-
-# Tag release (optional but recommended)
-git tag v4.0.0-sprint-B1
-git push --tags
-
-# Go back to develop
-git checkout develop
+# make changes  # BAD!
 ```
 
----
-
-## 🔍 STATUS CHECKS
-
-### View commit history
+**DO THIS INSTEAD**:
 ```bash
-git log --oneline -10  # Last 10 commits
-git log --graph --oneline --all  # Visual tree
-```
-
-### View changes
-```bash
-git status  # Current changes
-git diff  # Detailed diff
-```
-
-### View branches
-```bash
-git branch -a  # All branches (local + remote)
-```
-
----
-
-## ðŸ'¾ BACKUP STRATEGY
-
-### Local backup (before risky changes)
-```bash
-cd /Users/jomostert/Documents/Projects/agp-plus
+# âœ… Always work on develop
 git checkout develop
 
-# Create backup branch
-git branch backup-before-[sprint-name]
-git push origin backup-before-[sprint-name]
+# âœ… Remove secrets before committing
+# Check .gitignore includes .env, etc.
 
-# Now work on develop safely
-```
-
-### Remote backup (GitHub)
-Every push to develop = automatic backup on GitHub.
-
----
-
-## 🎯 BRANCH PURPOSES
-
-### main
-- **Status**: Always stable, production-ready
-- **Safe version**: v3.6.0-safe (80fb1fd)
-- **Updates**: Only via merge from develop after sprint complete
-- **Never**: Direct commits to main
-
-### develop
-- **Status**: Active development
-- **Start**: v3.6.0-safe (80fb1fd)
-- **Updates**: Frequent commits during sprints
-- **Purpose**: Sprint B1 → C1 → F1 → G1 → etc.
-
----
-
-## ðŸ"Š SPRINT WORKFLOW
-
-### Sprint Start
-```bash
-git checkout develop
-git pull origin develop
-
-# Optional: Create sprint branch
-git checkout -b sprint-B1
-```
-
-### Sprint Work
-```bash
-# Work on files
-# Commit frequently (every 1-2 hours)
-git add .
-git commit -m "feat(sprint-B1): [what you did]"
-git push origin develop  # or sprint-B1
-```
-
-### Sprint Complete
-```bash
-# Merge sprint branch to develop (if using sprint branches)
-git checkout develop
-git merge sprint-B1 --no-ff
-
-# Push to GitHub
-git push origin develop
-
-# Optional: Merge to main for release
-git checkout main
-git merge develop --no-ff
-git push origin main
-git tag v4.0.0-sprint-B1-complete
-git push --tags
+# âœ… Use --force-with-lease if you must force
+git push --force-with-lease origin feature/thing
 ```
 
 ---
 
-## âš ï¸ TROUBLESHOOTING
+## ðŸ†˜ COMMON PROBLEMS
 
-### "Your branch is behind origin/develop"
+### "Your branch is behind"
 ```bash
 git pull origin develop
-# Resolve conflicts if any
-git push origin develop
+# or
+git fetch origin
+git merge origin/develop
 ```
 
 ### "Merge conflict"
 ```bash
-# Edit conflicted files
-# Look for <<<<<<< HEAD markers
-# Choose which code to keep
-# Remove markers
-
-git add .
-git commit -m "fix: Resolve merge conflict"
-git push
+# Open conflicted files, resolve manually
+# Look for <<<<<<< ======= >>>>>>>
+git add [resolved-files]
+git commit -m "fix: Resolve merge conflicts"
 ```
 
-### "I committed to wrong branch"
+### "Detached HEAD"
 ```bash
-# If you committed to main instead of develop
-git checkout main
-git reset --soft HEAD~1  # Undo last commit, keep changes
-git stash  # Save changes
+# Create branch from current state
+git checkout -b recovery-branch
 
+# Or go back to develop
 git checkout develop
-git stash pop  # Apply changes
-git add .
-git commit -m "[your message]"
-git push origin develop
+```
+
+### "Accidentally committed to main"
+```bash
+# On main branch with unwanted commit
+git reset --hard origin/main
+
+# Or move commit to develop
+git branch -f develop HEAD
+git checkout develop
+git checkout main
+git reset --hard origin/main
 ```
 
 ---
 
-## 🎯 CHEATSHEET SUMMARY
+## 📚 QUICK REFERENCE
 
-| Action | Command |
-|--------|---------|
-| Check current branch | `git branch` |
-| Switch to safe | `git checkout main` |
-| Switch to dev | `git checkout develop` |
-| Save work | `git add . && git commit -m "msg"` |
-| Push to GitHub | `git push` |
-| Emergency revert | `git checkout main` |
-| View history | `git log --oneline -10` |
+| Command | What It Does |
+|---------|--------------|
+| `git status` | Show current state |
+| `git add -A` | Stage all changes |
+| `git commit -m "msg"` | Commit with message |
+| `git push` | Upload to GitHub |
+| `git pull` | Download from GitHub |
+| `git checkout [branch]` | Switch branch |
+| `git reset --hard HEAD` | Undo all changes |
+| `git log --oneline -10` | Show last 10 commits |
 
 ---
 
-**Version**: 1.0  
-**Safe Commit**: 80fb1fd (main)  
-**Development**: develop branch
+**Cheatsheet Version**: 2.0  
+**Last Updated**: 2025-11-02  
+**For**: AGP+ v4.0 development

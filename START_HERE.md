@@ -1,159 +1,215 @@
-# AGP+ Master START_HERE - v4.0 Development
+---
+tier: 1
+status: active
+last_updated: 2025-11-02 01:30
+purpose: Central navigation for v4.0 implementation
+---
 
-**Version**: v4.0-develop  
-**Base**: v3.6.0-safe (commit 80fb1fd)  
-**Branch**: develop  
-**Last Updated**: 2025-11-02
+# ðŸ§­ START HERE - AGP+ v3.6.1 → v4.0
+
+**Status**: âœ… TIER2 Complete â†' Implementation Starting  
+**Version**: v3.6.1 (develop branch)  
+**Decision**: Full Implementation (Optie C, 67h)  
+**First Sprint**: B1 - Metrics Validation (7h)
 
 ---
 
-## 🎯 QUICK START (30 seconds)
+## ðŸš€ NEW SESSION QUICKSTART
 
-1. **Check branch**: `git branch` (should show `* develop`)
-2. **Current sprint**: See `CURRENT_SPRINT.md`
-3. **Progress**: See `PROGRESS.md` (source of truth)
-4. **Switch branches**: See `GIT_CHEATSHEET.md`
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus
+git status  # Verify on develop branch
+git pull origin develop  # Get latest
+```
+
+**Then**:
+1. Read `HANDOFF.md` (current sprint status)
+2. Check `docs/phases/[current-phase]/PROGRESS.md`
+3. Review `PLAN_VAN_AANPAK.md` (master roadmap)
 
 ---
 
-## ðŸ"Š PROJECT STATUS
+## 📋 CURRENT STATE
 
-**Architecture Score**: 7.5/10 (TIER2 complete)  
-**Implementation Plan**: Option C (Full, 67h)  
-**Current Sprint**: B1 - Metrics Validation (7h)
+**Git Branch**: `develop` (work branch)  
+**Last Commit**: 470d570 - v3.6.1 development setup  
+**TIER2 Score**: 7.5/10 (6/6 domains analyzed)
 
-**Safe Version**: 
-- Branch: main
-- Commit: 80fb1fd
-- Tag: v3.6.0-safe
+**Implementation Decision**:
+- âœ… Optie C: Full (67h, ~4 weeks)
+- âœ… Start: Sprint B1 (Metrics Validation)
+- âœ… Strategy: Concrete results first, then safety, then quality
 
-**Development Version**:
-- Branch: develop
-- Status: Active
-- Starting: Sprint B1
+---
+
+## ðŸ—ºï¸ v4.0 ROADMAP
+
+### Phase 1: Documentation (5h)
+Sprint docs: `docs/phases/phase1-docs/`
+- [ ] TIER2_SYNTHESIS.md update
+- [ ] PROJECT_BRIEFING.md update
+- [ ] README.md update
+
+### Phase 2: Safety & Compliance (20h)
+Sprint docs: `docs/phases/phase2-safety/`
+- [ ] **Sprint B1: Metrics Validation (7h)** ← **YOU ARE HERE**
+- [ ] Sprint F1: Accessibility (5h)
+- [ ] Sprint G1: Backup/Restore (10h)
+
+### Phase 3: Robustness (15h)
+Sprint docs: `docs/phases/phase3-robust/`
+- [ ] Sprint A1: Parser Robustness (8h)
+- [ ] Sprint F2: WCAG Compliance (9h)
+
+### Phase 4: Quality & Scale (32h)
+Sprint docs: `docs/phases/phase4-quality/`
+- [ ] Sprint C1: God Components (20h)
+- [ ] Sprint C2: Virtualization (3h)
+- [ ] Sprint F3: Chart Enhancements (9h)
 
 ---
 
 ## ðŸ"‚ DOCUMENTATION STRUCTURE
 
-### Root Level (Always Current)
-- `PROGRESS.md` - **SOURCE OF TRUTH** (what's done, what's next)
-- `CURRENT_SPRINT.md` - Active sprint info
-- `GIT_CHEATSHEET.md` - Branch switching guide
-- `PLAN_VAN_AANPAK.md` - Complete v4.0 roadmap
-- `README.md` - User-facing info
-- `CHANGELOG.md` - Version history
-
-### Per-Sprint (Organized by Sprint)
-- `docs/sprints/sprint-B1-metrics/` - Sprint B1 handoff + progress
-- `docs/sprints/sprint-A1-parser/` - Sprint A1 handoff + progress
-- `docs/sprints/sprint-F1-accessibility/` - Sprint F1 handoff + progress
-- (etc. for each sprint)
-
-### Reference (Read-Only)
-- `docs/analysis/` - TIER2 domain analyses
-- `docs/archive/` - Old versions
-- `/mnt/project/` - MiniMed reference docs (read-only)
-
----
-
-## 🚀 SPRINT ROADMAP
-
-### Phase 1: P1 Sprints (15h)
-1. ✅ **Sprint B1**: Metrics Validation (7h) ← **START HERE**
-2. ⏳ **Sprint A1**: Parser Robustness (8h)
-
-### Phase 2: P0 Sprints (15h)
-3. ⏳ **Sprint F1**: Chart Accessibility (5h)
-4. ⏳ **Sprint G1**: Backup/Restore Complete (10h)
-
-### Phase 3: P2 Sprints (30h)
-5. ⏳ **Sprint C1**: Split God Components (20h)
-6. ⏳ **Sprint C2**: Table Virtualization (3h)
-7. ⏳ **Sprint F2**: WCAG Full Compliance (9h)
-
-### Phase 4: Polish (Optional)
-- Performance optimizations
-- Additional tests
-- UX improvements
+```
+agp-plus/
+├─ HANDOFF.md           # Current session (active)
+├─ START_HERE.md        # This file (navigation)
+├─ PLAN_VAN_AANPAK.md   # Master v4.0 plan
+├─ CHANGELOG.md         # Version history
+├─ README.md            # User-facing docs
+│
+├─ docs/
+│  ├─ phases/           # NEW: Per-phase tracking
+│  │  ├─ phase1-docs/
+│  │  │  ├─ HANDOFF.md
+│  │  │  ├─ PROGRESS.md
+│  │  │  └─ CHECKLIST.md
+│  │  ├─ phase2-safety/
+│  │  │  ├─ sprint-b1/  # Metrics (current)
+│  │  │  ├─ sprint-f1/  # Accessibility
+│  │  │  └─ sprint-g1/  # Backup
+│  │  ├─ phase3-robust/
+│  │  └─ phase4-quality/
+│  │
+│  ├─ analysis/         # TIER2 domain analyses
+│  ├─ performance/      # Benchmarks (will create)
+│  └─ archive/          # OLD docs (cleaned up)
+│
+└─ src/
+   ├─ engines/
+   │  ├─ metrics-engine.js
+   │  └─ __tests__/     # NEW: Will create tests
+   └─ ...
+```
 
 ---
 
-## ðŸ"‹ FILE LOCATIONS
+## ðŸ› ï¸ GIT WORKFLOW CHEAT SHEET
 
-**Root** (`/Users/jomostert/Documents/Projects/agp-plus/`):
-- PROGRESS.md
-- CURRENT_SPRINT.md
-- GIT_CHEATSHEET.md
-- PLAN_VAN_AANPAK.md
+### Daily Work
+```bash
+# Start session
+cd /Users/jomostert/Documents/Projects/agp-plus
+git checkout develop
+git pull origin develop
 
-**Sprint Docs** (`docs/sprints/[sprint-name]/`):
-- START_HERE.md (sprint-specific)
-- HANDOFF.md (sprint-specific)
-- PROGRESS.md (copied from root after sprint)
+# During work (commit often!)
+git add [files]
+git commit -m "feat(sprint-b1): [what you did]"
 
-**Reference** (`docs/analysis/`):
-- TIER2 domain analyses
-- Architecture scores
+# End session
+git push origin develop
+```
 
-**Archive** (`docs/archive/`):
-- Old handoff versions
-- Deprecated docs
+### Safety Points
+```bash
+# Before risky changes
+git add -A
+git commit -m "safety: before [risky thing]"
+git push origin develop
+```
 
----
+### Emergency Undo
+```bash
+# Discard uncommitted changes
+git reset --hard HEAD
 
-## âš ï¸ CRITICAL RULES
+# Go back to last pushed state
+git reset --hard origin/develop
+```
 
-### Token Efficiency
-- **Large files** (>800 lines): Use offset/length
-- **Write operations**: Max 25-30 lines per call
-- **Progress**: Update PROGRESS.md during work (not at end)
-- **Recovery**: Chunk-based reading if crash
+### Switch to Safe Version
+```bash
+# Go to stable main
+git checkout main
+git pull origin main
 
-### Git Workflow
-- **Frequent commits**: Every 1-2 hours
-- **Never commit to main**: Always use develop
-- **Emergency revert**: `git checkout main` (see GIT_CHEATSHEET.md)
-
-### Documentation
-- **PROGRESS.md**: Source of truth, update real-time
-- **CURRENT_SPRINT.md**: Update at sprint start/end
-- **Per-sprint docs**: Create at sprint start
-
----
-
-## 🎯 STARTING A NEW SESSION
-
-### Quick Checklist
-1. [ ] Verify branch: `git branch` (should be `develop`)
-2. [ ] Read `CURRENT_SPRINT.md` (what sprint are we on?)
-3. [ ] Read `PROGRESS.md` (what's the latest status?)
-4. [ ] Read sprint handoff: `docs/sprints/[sprint-name]/HANDOFF.md`
-5. [ ] Start work!
-
-### During Session
-- Update PROGRESS.md every 30-60 minutes
-- Commit frequently (`git add . && git commit -m "..."`)
-- Push to GitHub (`git push origin develop`)
-
-### End of Session
-- Update PROGRESS.md with final status
-- Update CURRENT_SPRINT.md if sprint complete
-- Commit + push
-- Create handoff for next session (if needed)
+# Return to work
+git checkout develop
+```
 
 ---
 
-## 📞 HELP
+## ðŸš¨ CRITICAL REMINDERS
 
-**Branch confusion?** → See `GIT_CHEATSHEET.md`  
-**Sprint info?** → See `CURRENT_SPRINT.md`  
-**Latest status?** → See `PROGRESS.md`  
-**Roadmap?** → See `PLAN_VAN_AANPAK.md`  
-**Technical details?** → See sprint's `HANDOFF.md`
+**Token Efficiency**:
+- ⚠️ Files >800 lines: Use offset/length
+- ⚠️ Write ops: Max 25-30 lines per call
+- ⚠️ Progress: Document DURING work
+- ⚠️ Commits: Small, frequent
+
+**Work Location**:
+- âœ… Always: `/Users/jomostert/Documents/Projects/agp-plus`
+- âœ… Desktop Commander for all file ops
+- âœ… Absolute paths required
+
+**Safety**:
+- âœ… Commit before risky operations
+- âœ… Push to GitHub regularly
+- âœ… `develop` branch = experimental
+- âœ… `main` branch = stable fallback
 
 ---
 
-**Version**: 1.0  
-**Status**: Ready for Sprint B1  
-**Next**: Read `CURRENT_SPRINT.md` and start!
+## âœ… NEXT SESSION CHECKLIST
+
+Before starting Sprint B1:
+- [ ] Read this file (START_HERE.md)
+- [ ] Read HANDOFF.md (detailed sprint info)
+- [ ] Verify on develop branch (`git branch`)
+- [ ] Create sprint folder structure
+- [ ] Review metrics-engine.js briefly
+
+During Sprint B1:
+- [ ] Work in small chunks (≤30 lines)
+- [ ] Update PROGRESS.md frequently
+- [ ] Commit after each task
+- [ ] Test before committing
+
+After Sprint B1:
+- [ ] Update CHANGELOG.md
+- [ ] Push to GitHub
+- [ ] Update phase HANDOFF.md
+- [ ] Prep for Sprint F1
+
+---
+
+## ðŸ"Š KEY METRICS
+
+**Current Status** (v3.6.1):
+- Code Quality: 7.5/10
+- Test Coverage: ~0% (⚠️ no tests yet)
+- Documentation: Excellent
+- Performance: Unproven (⚠️ no benchmarks)
+
+**Sprint B1 Goals**:
+- Test Coverage: 0% → 80% (metrics engine)
+- Performance: Unproven → <1000ms proven
+- Confidence: Medium → High
+
+---
+
+**Version**: 6.0 (v4.0 prep)  
+**Status**: Ready for implementation  
+**Next**: Safety commit → Archiving → Sprint B1

@@ -151,3 +151,36 @@
 
 ---
 
+
+
+---
+
+## 🎯 DECISION - Optie C (Full Implementation, 67u)
+
+**Sessie**: 2025-11-02 01:30-02:00  
+**Besluit**: Go for FULL v4.0 implementation (Optie C)
+
+**Scope**:
+- âœ… P0: Safety & Compliance (20h)
+- âœ… P1: Robustness (15h)  
+- âœ… P2/P3: Quality & Scale (32h)
+- **Total**: 67 hours over ~4 weeks
+
+**Start Sprint**: **B1 - Metrics Validation** (7h)
+- Reden: Concrete bewijs van performance
+- Direct testbare output
+- Fundament voor verdere work
+
+**Branch Strategy**:
+- âœ… Already on `develop` branch
+- `main` = production (stable)
+- Safety commits before each sprint
+
+**Next Steps**:
+1. Safety commit (v3.6.1 baseline)
+2. Archiveer oude handoffs
+3. Nieuwe docs structuur (per-phase handoffs)
+4. Start Sprint B1
+
+---
+
