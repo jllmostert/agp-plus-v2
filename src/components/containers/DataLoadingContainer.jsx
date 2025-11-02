@@ -10,7 +10,7 @@
 
 import React from 'react';
 
-function DataLoadingContainer({
+const DataLoadingContainer = React.memo(function DataLoadingContainer({
   // Upload props
   csvData,
   workdays,
@@ -248,6 +248,6 @@ function DataLoadingContainer({
       
     </div>
   );
-}
+});
 
 export default DataLoadingContainer;
