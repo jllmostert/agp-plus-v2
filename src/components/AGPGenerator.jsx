@@ -22,18 +22,13 @@ import { exportAndDownload } from '../storage/export';
 import FileUpload from './FileUpload';
 import SensorImport from './SensorImport';
 import PeriodSelector from './PeriodSelector';
-import MetricsDisplay from './MetricsDisplay';
-import AGPChart from './AGPChart';
-import HypoglycemiaEvents from './HypoglycemiaEvents';
-import ComparisonView from './ComparisonView';
-import DayNightSplit from './DayNightSplit';
-import WorkdaySplit from './WorkdaySplit';
 import SavedUploadsList from './SavedUploadsList';
 import { MigrationBanner } from './MigrationBanner';
 
 // Container Components
 import ModalManager from './containers/ModalManager';
 import DataLoadingContainer from './containers/DataLoadingContainer';
+import VisualizationContainer from './containers/VisualizationContainer';
 import { DateRangeFilter } from './DateRangeFilter';
 
 /**
@@ -1512,73 +1507,16 @@ export default function AGPGenerator() {
 
         {/* Main Content - Show when data loaded (v2 or v3) and period selected */}
         {((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
-          <>
-                {/* 1. AGP CHART - Visual Overview First */}
-                <section className="section">
-                  <AGPChart
-                    agpData={metricsResult.agp}
-                    events={metricsResult.events}
-                    metrics={metricsResult.metrics}
-                    comparison={comparisonData?.comparisonAGP || null}
-                  />
-                </section>
-
-                {/* 2. HERO METRICS - TIR, Mean, CV, GMI + All Secondary */}
-                <section className="section">
-                  <MetricsDisplay
-                    metrics={metricsResult.metrics}
-                    tddData={tddData}
-                    startDate={startDate}
-                    endDate={endDate}
-                  />
-                </section>
-
-                {/* 3. HYPOGLYCEMIA EVENTS - Warning Panel */}
-                <section className="section">
-                  <HypoglycemiaEvents 
-                    events={metricsResult.events} 
-                    tbrPercent={metricsResult.metrics?.tbr}
-                    gri={metricsResult.metrics?.gri}
-                  />
-                </section>
-
-                {/* 4. DAY/NIGHT SPLIT */}
-                <section className="section">
-                  <DayNightSplit
-                    dayMetrics={metricsResult.dayMetrics}
-                    nightMetrics={metricsResult.nightMetrics}
-                    enabled={dayNightEnabled}
-                    onToggle={handleDayNightToggle}
-                  />
-                </section>
-
-                {/* 5. WORKDAY SPLIT - Only show when ProTime loaded */}
-                {workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics && (
-                  <section className="section">
-                    <WorkdaySplit
-                      workdayMetrics={metricsResult.workdayMetrics}
-                      restdayMetrics={metricsResult.restdayMetrics}
-                      workdays={workdays}
-                      startDate={startDate}
-                      endDate={endDate}
-                    />
-                  </section>
-                )}
-
-                {/* 6. PERIOD COMPARISON - Last */}
-                {comparisonData && (
-                  <section className="section">
-                    <ComparisonView
-                      currentMetrics={metricsResult.metrics}
-                      previousMetrics={comparisonData.comparison}
-                      startDate={startDate}
-                      endDate={endDate}
-                      prevStart={comparisonData.prevStart}
-                      prevEnd={comparisonData.prevEnd}
-                    />
-                  </section>
-                )}
-              </>
+          <VisualizationContainer
+            metricsResult={metricsResult}
+            comparisonData={comparisonData}
+            tddData={tddData}
+            startDate={startDate}
+            endDate={endDate}
+            workdays={workdays}
+            dayNightEnabled={dayNightEnabled}
+            onDayNightToggle={handleDayNightToggle}
+          />
         )}
 
         {/* Modal Manager - All modals rendered via portals */}
