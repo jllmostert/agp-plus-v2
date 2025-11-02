@@ -22,7 +22,7 @@ import DayNightSplit from '../DayNightSplit';
 import WorkdaySplit from '../WorkdaySplit';
 import ComparisonView from '../ComparisonView';
 
-function VisualizationContainer({
+const VisualizationContainer = React.memo(function VisualizationContainer({
   // Metrics data
   metricsResult,
   comparisonData,
@@ -110,6 +110,6 @@ function VisualizationContainer({
       )}
     </>
   );
-}
+});
 
 export default VisualizationContainer;
