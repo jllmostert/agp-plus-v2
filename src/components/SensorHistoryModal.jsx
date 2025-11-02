@@ -14,6 +14,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { debug } from '../utils/debug.js';
+import SensorRow from './SensorRow.jsx';
 import { 
   calculateOverallStats, 
   calculateHWVersionStats,

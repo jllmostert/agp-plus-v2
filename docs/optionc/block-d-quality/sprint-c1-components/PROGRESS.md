@@ -3,8 +3,8 @@
 **Sprint**: C1 - Split God Components  
 **Started**: 2025-11-02  
 **Completed**: [IN PROGRESS]  
-**Status**: 🔄 **IN PROGRESS** - Taak 3  
-**Effort**: 9.5/20 hours
+**Status**: 🔄 **IN PROGRESS** - Taak 3.3  
+**Effort**: 11/20 hours
 
 ---
 
@@ -37,12 +37,73 @@
 
 ## 🔄 IN PROGRESS
 
-### Taak 3.2: DataExportPanel (1.5h) - STARTING 🎯
-**Status**: Ready to extract EXPORT expanded content
+### Taak 4.1: Simple Memoization (0.5h) - STARTING 🚀
+**Status**: Extracting SensorRow component with React.memo
+**Goal**: 30% performance boost with minimal risk
+
+**Approach**:
+- Extract SensorRow component from SensorHistoryModal
+- Apply React.memo for prevented re-renders
+- Keep current table structure (no virtualization yet)
+- Low risk, quick win
+
+**Next Steps**:
+1. Extract SensorRow component (15 min)
+2. Apply React.memo wrapper (5 min)
+3. Test performance (10 min)
 
 ---
 
 ## ✅ JUST COMPLETED
+
+### Taak 3: Extract Features (6h) - SKIPPED ⏭️
+**Status**: SKIPPED - Focus on high-impact work (Table Virtualization)
+**Completed**: 2025-11-02
+
+**Decision Rationale**:
+- **Optie B Selected**: Skip MetricsPanel integration
+- HeroMetricsPanel exists (96 lines) but NOT used
+- MetricsDisplay works well (452 lines, inline cards)
+- Integration = 2h work + risk of bugs
+- Better ROI: Focus on Table Virtualization (Taak 4)
+
+**Assessment Summary**:
+- DataImportPanel ✅ - Already exists and integrated (178 lines)
+- DataExportPanel ✅ - Already exists and integrated (144 lines)
+- HeroMetricsPanel ⚠️ - Exists but orphaned (not integrated)
+- ChartPanel âŒ - Does NOT exist
+- FilterPanel âŒ - Does NOT exist
+
+**Current AGPGenerator State**:
+- AGPGenerator.jsx: 1430 lines (was 1962)
+- Reduction achieved: 532 lines (-27%)
+- Target <300 lines = needs 1130 line reduction
+- Reality: Target may be unrealistic without major refactoring
+
+**Next**: Taak 4 - Table Virtualization (3h) for performance boost
+
+---
+
+### Taak 3.2: DataExportPanel (1.5h) - DONE ✅
+**Completed**: 2025-11-02
+
+**What Was Done**:
+- ✅ DataExportPanel.jsx already exists (144 lines)
+- ✅ Handles 4 export buttons:
+  - AGP+ Profile HTML export
+  - Day Profiles HTML export  
+  - Database JSON export
+  - Sensor History link
+- ✅ Already integrated in AGPGenerator (line 1250-1272)
+- ✅ Proper prop passing (onExportHTML, onExportDayProfiles, onExportDatabase)
+
+**File State**:
+- DataExportPanel.jsx: 144 lines (complete)
+- AGPGenerator.jsx: 1431 lines (export section already extracted)
+
+**Commits**: Already committed
+
+**Next**: Taak 3.3 - Extract MetricsPanel
 
 ### Taak 3.1: DataImportPanel (1.5h) - DONE ✅
 **Completed**: 2025-11-02

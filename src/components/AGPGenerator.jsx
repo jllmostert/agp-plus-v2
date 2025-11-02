@@ -33,6 +33,7 @@ import { DateRangeFilter } from './DateRangeFilter';
 
 // Panel Components
 import DataImportPanel from './panels/DataImportPanel';
+import DataExportPanel from './panels/DataExportPanel';
 
 /**
  * AGPGenerator - Main application container
@@ -1248,129 +1249,26 @@ export default function AGPGenerator() {
 
           {/* EXPORT Expanded Content */}
           {dataExportExpanded && metricsResult && startDate && endDate && (
-            <div className="mb-4" style={{ 
-              background: 'var(--bg-secondary)',
-              border: '2px solid var(--border-primary)',
-              borderRadius: '4px',
-              padding: '1rem',
-              marginTop: '1rem'
-            }}>
-              {/* Sub-buttons for export options */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '0.75rem'
-              }}>
-                <button
-                  onClick={handleExportHTML}
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '2px solid var(--border-primary)',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    padding: '1rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase'
-                  }}
-                  title="Export AGP+ profile as HTML"
-                >
-                  📊 AGP+ Profile (HTML)
-                </button>
-
-                <button
-                  onClick={() => {
-                    if (dayProfiles && dayProfiles.length > 0) {
-                      downloadDayProfilesHTML(dayProfiles, patientInfo);
-                    } else {
-                      alert('No day profiles available');
-                    }
-                  }}
-                  disabled={!dayProfiles || dayProfiles.length === 0}
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '2px solid var(--border-primary)',
-                    color: dayProfiles && dayProfiles.length > 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    cursor: dayProfiles && dayProfiles.length > 0 ? 'pointer' : 'not-allowed',
-                    padding: '1rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    opacity: dayProfiles && dayProfiles.length > 0 ? 1 : 0.5
-                  }}
-                  title="Export day profiles as HTML"
-                >
-                  📅 Day Profiles (HTML)
-                </button>
-
-                <button
-                  onClick={async () => {
-                    const result = await exportAndDownload();
-                    if (result.success) {
-                      alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
-                    } else {
-                      alert(`❌ Export failed: ${result.error}`);
-                    }
-                  }}
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '2px solid var(--border-primary)',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    padding: '1rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase'
-                  }}
-                  title="Export complete IndexedDB dataset as JSON"
-                >
-                  💾 Database (JSON)
-                </button>
-
-                <button
-                  onClick={() => alert('Sensor database export coming soon')}
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '2px solid var(--border-primary)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'not-allowed',
-                    padding: '1rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    opacity: 0.5
-                  }}
-                  disabled
-                  title="Coming soon"
-                >
-                  💾 Sensor Database (CSV)
-                </button>
-
-                <button
-                  onClick={() => {
-                    window.open('/Users/jomostert/Documents/Projects/Sensoren/sensor_database_brutalist.html', '_blank');
-                  }}
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '2px solid var(--border-primary)',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    padding: '1rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase'
-                  }}
-                  title="View sensor history database"
-                >
-                  🔍 View Sensor History →
-                </button>
-              </div>
-            </div>
+            <DataExportPanel
+              onExportHTML={handleExportHTML}
+              onExportDayProfiles={() => {
+                if (dayProfiles && dayProfiles.length > 0) {
+                  downloadDayProfilesHTML(dayProfiles, patientInfo);
+                } else {
+                  alert('No day profiles available');
+                }
+              }}
+              onExportDatabase={async () => {
+                const result = await exportAndDownload();
+                if (result.success) {
+                  alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
+                } else {
+                  alert(`❌ Export failed: ${result.error}`);
+                }
+              }}
+              dayProfiles={dayProfiles}
+              patientInfo={patientInfo}
+            />
           )}
         </section>
 
