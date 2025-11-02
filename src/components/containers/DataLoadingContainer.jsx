@@ -8,7 +8,7 @@
  * @created 2025-11-02
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 
 function DataLoadingContainer({
   // Upload props
@@ -27,11 +27,15 @@ function DataLoadingContainer({
   sensors,
   sensorsLoading,
   sensorsError,
-  setSensorHistoryOpen
+  setSensorHistoryOpen,
+  
+  // Expanded state (controlled by parent)
+  dataImportExpanded,
+  setDataImportExpanded,
+  dataExportExpanded,
+  setDataExportExpanded
 }) {
-  // Local state
-  const [dataImportExpanded, setDataImportExpanded] = useState(false);
-  const [dataExportExpanded, setDataExportExpanded] = useState(false);
+  // No local state needed - controlled by parent
 
   return (
     <div style={{
@@ -202,10 +206,6 @@ function DataLoadingContainer({
           {sensorsLoading ? 'Loading...' : sensors && sensors.length > 0 ? `${sensors.length} Sensors` : 'No Data'}
         </span>
       </button>
-      
-      {/* 5. EXPORT Button */}
-      <div />
-      <div />
       
       {/* 5. EXPORT Button (Collapsible) */}
       <button
