@@ -383,7 +383,7 @@ export const findColumnIndices = (headerRow) => {
     'BWZ Carb Input (grams)',
     'Bolus Volume Delivered (U)',
     'Basal Rate (U/h)',
-    'Alarm'
+    'Alert'  // Changed from 'Alarm' - CareLink uses 'Alert' column name
   ];
   
   // Optional columns (nice to have, but not critical)
@@ -540,7 +540,8 @@ export const parseCSV = (text) => {
         const hasGlucose = !isNaN(glucose);
         
         // Parse alert field for sensor events
-        const alert = getColumn(parts, 'Alarm')?.trim() || null;
+        // Support both 'Alert' (current) and 'Alarm' (legacy) column names
+        const alert = getColumn(parts, 'Alert')?.trim() || getColumn(parts, 'Alarm')?.trim() || null;
         const hasSensorAlert = alert && (alert.includes('SENSOR') || alert.includes('Sensor'));
         
         // Skip rows that have neither glucose nor important events
