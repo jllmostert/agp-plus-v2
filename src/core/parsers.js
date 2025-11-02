@@ -541,7 +541,9 @@ export const parseCSV = (text) => {
         
         // Parse alert field for sensor events
         // Support both 'Alert' (current) and 'Alarm' (legacy) column names
-        const alert = getColumn(parts, 'Alert')?.trim() || getColumn(parts, 'Alarm')?.trim() || null;
+        // Check columnMap directly to avoid getColumn throwing error
+        const alertIndex = columnMap['Alert'] ?? columnMap['Alarm'];
+        const alert = alertIndex !== undefined ? parts[alertIndex]?.trim() : null;
         const hasSensorAlert = alert && (alert.includes('SENSOR') || alert.includes('Sensor'));
         
         // Skip rows that have neither glucose nor important events
