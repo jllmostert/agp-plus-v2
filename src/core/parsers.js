@@ -572,7 +572,11 @@ export const parseCSV = (text) => {
           glucose: hasGlucose ? glucose : null,  // mg/dL (may be null)
           bolus: utils.parseDecimal(getColumn(parts, 'Bolus Volume Delivered (U)')) || 0,
           bg: utils.parseDecimal(getColumn(parts, 'BG Reading (mg/dL)')) || null,
-          carbs: utils.parseDecimal(getColumn(parts, 'BWZ Carb Input (g)')) || 0,
+          // Support both 'BWZ Carb Input (grams)' and legacy 'BWZ Carb Input (g)'
+          carbs: (() => {
+            const carbIndex = columnMap['BWZ Carb Input (grams)'] ?? columnMap['BWZ Carb Input (g)'];
+            return carbIndex !== undefined ? (utils.parseDecimal(parts[carbIndex]) || 0) : 0;
+          })(),
           rewind: hasRewind,
           alert: alert  // Alert field for sensor events
         };
