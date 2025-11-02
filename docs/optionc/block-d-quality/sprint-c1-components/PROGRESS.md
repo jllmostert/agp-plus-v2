@@ -4,7 +4,7 @@
 **Started**: 2025-11-02  
 **Completed**: [IN PROGRESS]  
 **Status**: 🔄 **IN PROGRESS** - Taak 3  
-**Effort**: 8/20 hours
+**Effort**: 9.5/20 hours
 
 ---
 
@@ -37,12 +37,37 @@
 
 ## 🔄 IN PROGRESS
 
-### Taak 3: Extract Features (6h) - STARTING 🎯
-**Status**: Ready to begin extract smaller feature panels
+### Taak 3.2: DataExportPanel (1.5h) - STARTING 🎯
+**Status**: Ready to extract EXPORT expanded content
 
 ---
 
 ## ✅ JUST COMPLETED
+
+### Taak 3.1: DataImportPanel (1.5h) - DONE ✅
+**Completed**: 2025-11-02
+
+**What Was Done**:
+- [x] Created panels/ directory
+- [x] Created DataImportPanel.jsx (178 lines)
+- [x] Extracted IMPORT expanded content section:
+  - CSV upload button + hidden input
+  - SensorImport component
+  - ProTime PDF upload button + hidden input
+  - FileUpload component (backwards compat)
+  - Error display (CSV/V3 errors)
+- [x] Fixed import path (../../utils/pdfParser)
+- [x] Cleaned AGPGenerator imports (removed AlertCircle)
+- [x] Replaced 131 lines with single component call
+
+**Final File State**:
+- DataImportPanel.jsx: 178 lines (complete panel)
+- AGPGenerator.jsx: 1532 lines (was 1663)
+- Reduction: -131 lines from AGPGenerator
+
+**Commits**: (pending)
+
+**Next**: Taak 3.2 - Extract EXPORT expanded content
 
 ### Taak 2.3: VisualizationContainer (2h) - DONE ✅
 **Completed**: 2025-11-02

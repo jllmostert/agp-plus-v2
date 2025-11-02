@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Activity, Download, ChevronDown, AlertCircle, Save, User } from 'lucide-react';
+import { Activity, Download, ChevronDown, Save, User } from 'lucide-react';
 import { debug } from '../utils/debug.js';
 
 // Custom hooks
@@ -30,6 +30,9 @@ import ModalManager from './containers/ModalManager';
 import DataLoadingContainer from './containers/DataLoadingContainer';
 import VisualizationContainer from './containers/VisualizationContainer';
 import { DateRangeFilter } from './DateRangeFilter';
+
+// Panel Components
+import DataImportPanel from './panels/DataImportPanel';
 
 /**
  * AGPGenerator - Main application container
@@ -1232,149 +1235,15 @@ export default function AGPGenerator() {
 
           {/* IMPORT Expanded Content */}
           {dataImportExpanded && (
-            <div className="mb-4" style={{ 
-              background: 'var(--bg-secondary)',
-              border: '2px solid var(--border-primary)',
-              borderRadius: '4px',
-              padding: '1rem',
-              marginTop: '1rem'
-            }}>
-              {/* Sub-buttons for import options */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '0.75rem',
-                marginBottom: '1rem'
-              }}>
-                <button
-                  onClick={() => document.getElementById('csv-upload-input')?.click()}
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '2px solid var(--border-primary)',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    padding: '1rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}
-                  title="Upload CareLink CSV"
-                >
-                  📄 Upload CSV
-                  {csvData && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
-                </button>
-
-                <div>
-                  <SensorImport />
-                </div>
-
-                <button
-                  onClick={() => document.getElementById('protime-upload-input')?.click()}
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '2px solid var(--border-primary)',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    padding: '1rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}
-                  title="Upload ProTime PDF for workday analysis"
-                >
-                  📋 ProTime PDFs
-                  {workdays && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
-                </button>
-              </div>
-
-              {/* Hidden file inputs for Upload CSV and ProTime */}
-              <input
-                id="csv-upload-input"
-                type="file"
-                accept=".csv"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file && file.name.endsWith('.csv')) {
-                    const text = await file.text();
-                    handleCSVLoad(text);
-                  }
-                  e.target.value = ''; // Reset for re-upload
-                }}
-                style={{ display: 'none' }}
-              />
-              
-              <input
-                id="protime-upload-input"
-                type="file"
-                accept=".pdf"
-                multiple
-                onChange={async (e) => {
-                  const files = Array.from(e.target.files || []);
-                  if (files.length > 0) {
-                    try {
-                      const { extractTextFromPDF, extractTextFromMultiplePDFs } = await import('../utils/pdfParser');
-                      const text = files.length === 1 
-                        ? await extractTextFromPDF(files[0])
-                        : await extractTextFromMultiplePDFs(files);
-                      handleProTimeLoad(text);
-                    } catch (err) {
-                      console.error('PDF processing error:', err);
-                    }
-                  }
-                  e.target.value = ''; // Reset for re-upload
-                }}
-                style={{ display: 'none' }}
-              />
-
-              {/* FileUpload component - hidden, just for backwards compat */}
-              <div style={{ display: 'none' }}>
-                <FileUpload
-                  onCSVLoad={handleCSVLoad}
-                  onProTimeLoad={handleProTimeLoad}
-                  onProTimeDelete={handleProTimeDelete}
-                  csvLoaded={!!csvData}
-                  proTimeLoaded={!!workdays}
-                />
-              </div>
-              
-              {/* CSV Error Display (V2 or V3) - Only show errors */}
-              {(csvError || v3UploadError) && (
-                <div className="card mt-4" style={{ 
-                  background: 'rgba(220, 38, 38, 0.1)', 
-                  color: 'var(--color-red)',
-                  border: '2px solid var(--color-red)',
-                  padding: '1rem'
-                }}>
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-red)' }} />
-                    <div>
-                      <p style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                        CSV Import Error
-                      </p>
-                      <p style={{ fontSize: '0.875rem', lineHeight: '1.5' }}>
-                        {csvError || v3UploadError}
-                      </p>
-                      <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.8 }}>
-                        Please ensure you're uploading a valid CareLink CSV export.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Saved Uploads List - REMOVED for clean UI */}
-              {/* User can access via localStorage if needed */}
-            </div>
+            <DataImportPanel
+              csvData={csvData}
+              workdays={workdays}
+              csvError={csvError}
+              v3UploadError={v3UploadError}
+              onCSVLoad={handleCSVLoad}
+              onProTimeLoad={handleProTimeLoad}
+              onProTimeDelete={handleProTimeDelete}
+            />
           )}
 
           {/* EXPORT Expanded Content */}
