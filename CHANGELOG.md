@@ -6,6 +6,50 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v3.7.0 - Sprint C1 Progress] - 2025-11-02 - Component Refactoring
+
+### 🔄 Sprint C1: Split God Components (55% Complete)
+- **Status**: PAUSED after 11/20 hours
+- **Target**: AGPGenerator.jsx (1962 lines) → smaller components
+
+### ✅ Completed Tasks
+- **Taak 1**: Strategy Planning (2h)
+  - Created SPLIT_STRATEGY.md with component hierarchy
+  - Identified 3 containers + 5 feature panels
+  
+- **Taak 2**: Extract Containers (6h)
+  - ✅ ModalManager.jsx created (169 lines) - All 7 modals via React portals
+  - ✅ DataLoadingContainer.jsx created (250 lines) - All 5 buttons in one row
+  - ✅ VisualizationContainer.jsx created (115 lines) - 6 viz sections
+  
+- **Taak 3**: Extract Features (6h)
+  - ⏭️ SKIPPED - Components already exist or don't exist
+  - DataImportPanel.jsx ✅ (178 lines) - Already integrated
+  - DataExportPanel.jsx ✅ (144 lines) - Already integrated
+  - HeroMetricsPanel.jsx ⚠️ (96 lines) - Orphaned, not integrated
+
+### 📊 Impact
+- **AGPGenerator.jsx**: 1962 → 1430 lines (-532 lines, -27%)
+- **New components**: 3 containers + 2 panels
+- **Performance**: Ready for memoization + virtualization
+
+### 🔧 Technical Changes
+- Installed `react-window` for table virtualization (ready to use)
+- Fixed localStorage + SQLite dual storage issues
+- Improved modal rendering via React portals
+
+### ⏸️ Paused Tasks
+- **Taak 4**: Table Virtualization (0/3h) - Not started
+  - react-window installed and ready
+  - Quick wins identified: SensorRow memo + VisualizationContainer memo
+  
+- **Taak 5**: Testing (0/3h) - Not started
+
+### 📝 Next Session
+See `HANDOFF_PAUSE.md` for detailed pickup instructions
+
+---
+
 ## [v3.6.0 + Option C] - 2025-11-02 - Development Restructure
 
 ### 🏗️ Option C Implementation Started
