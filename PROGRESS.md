@@ -42,7 +42,7 @@
 
 **Goals**:
 1. ✅ **Taak 0+1: Version unification** - Unified all version numbers to v3.8.0
-2. ⏳ **Taak 2: MAGE in day profiles** - Add MAGE to footer (TIR // Mean±SD // CV // MAGE)
+2. ✅ **Taak 2: MAGE in day profiles** - Add MAGE to footer (TIR // Mean±SD // CV // MAGE)
 3. ⏳ **Taak 3: Workday indicator** - Add "Werkdag" or "Vrije dag" text to day profile header
 4. ⏳ **Taak 4: README professionalization** - Rewrite first paragraph with journalistic flair
 
@@ -65,9 +65,21 @@
 
 **Now unified**: All files show **v3.8.0** ✅
 
+**Progress - Taak 2: MAGE in Day Profiles** ✅ COMPLETE (10 min)
+**Changed**:
+- ✅ Modified `src/core/day-profiles-exporter.js` day-metrics footer
+- ✅ Removed TAR and TBR metrics (user request)
+- ✅ Added MAGE metric (already calculated in metrics-engine.js)
+- ✅ New format: **TIR // Mean±SD // CV // MAGE**
+
+**Why this works**:
+- MAGE already calculated in `calculateMetrics()` (metrics-engine.js)
+- Day profiles use `calculateMetrics()` via day-profile-engine.js
+- Simply needed to display `metrics.mage` in footer
+- Format cleaner, more focused on variability (CV + MAGE)
+
 **Next steps**:
-- Commit version unification
-- Add MAGE to day profiles footer
+- Commit MAGE addition
 - Add workday indicator
 - Professionalize README
 

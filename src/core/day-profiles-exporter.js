@@ -304,20 +304,16 @@ const generateDayCard = (profile) => {
           <span class="value">${metrics.tir}%</span>
         </div>
         <div class="metric">
-          <span class="label">TAR</span>
-          <span class="value">${metrics.tar}%</span>
-        </div>
-        <div class="metric">
-          <span class="label">TBR</span>
-          <span class="value">${metrics.tbr}%</span>
-        </div>
-        <div class="metric">
           <span class="label">Mean±SD</span>
           <span class="value">${metrics.mean}±${metrics.sd}</span>
         </div>
         <div class="metric">
           <span class="label">CV</span>
           <span class="value">${metrics.cv}%</span>
+        </div>
+        <div class="metric">
+          <span class="label">MAGE</span>
+          <span class="value">${metrics.mage}</span>
         </div>
       </div>
     </div>
