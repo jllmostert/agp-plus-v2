@@ -37,6 +37,40 @@
 
 ## 📝 SESSION LOG (Most Recent First)
 
+### Session 6: 2025-11-03 (TDD Bug Fix - Data Merge Issue, ~90 min) ✅
+**Status**: ✅ FIXED
+
+**Problem Identified**:
+- TDD worked correctly in day profiles but showed wrong values on dashboard
+- Root cause: Short CSV uploads (7d) **overwrote** entire TDD history
+- System only kept TDD data from most recent upload, losing historical data
+
+**Solution Implemented**:
+- Modified `masterDatasetStorage.js` to **merge** TDD data instead of overwrite
+- Now: Load existing TDD → calculate new TDD → merge by date → recalculate stats
+- Old data preserved, new data updates only matching dates
+- Added debug logging to track merge process
+
+**Files Modified**:
+- `src/storage/masterDatasetStorage.js` - TDD merge logic
+- `src/components/AGPGenerator.jsx` - Debug logs for TDD filtering
+
+**Testing**:
+- Verified merge logic with console logs
+- Confirmed period filtering works correctly (9 days in 1-year period)
+- Next: Upload full 3-month CSV to verify complete TDD history
+
+**Git**: Commit 7d15586  
+**Impact**: Users can now upload short CSV files without losing historical TDD data
+
+**Still TODO** (deferred):
+- Versioning consistency (v3.7.2 vs v4.0-dev)
+- MAGE in day profiles
+- Workday indicator in day profiles  
+- README.md professionalization
+
+---
+
 ### Session 5: 2025-11-03 (Port Enforcement, ~20 min)
 **Done**:
 - ✅ Enforced port 3001 across all documentation
