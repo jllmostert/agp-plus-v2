@@ -37,6 +37,26 @@
 
 ## 📝 SESSION LOG (Most Recent First)
 
+### Session 5: 2025-11-03 (Port Enforcement, ~20 min)
+**Done**:
+- ✅ Enforced port 3001 across all documentation
+- ✅ Updated package.json: `npm run dev` now uses `--port 3001`
+- ✅ Added comprehensive port management section to HANDOFF.md
+  - Alias setup guide (`alias 3001='...'`)
+  - Manual port killing commands
+  - Why port 3001 (consistency, alias support)
+- ✅ Updated all port references: 5173 → 3001
+  - HANDOFF.md (3 locations)
+  - START_HERE.md
+  - HANDOFF_PAUSE.md (Sprint C1)
+- ✅ Updated CHANGELOG.md (v3.7.2 entry)
+
+**Impact**: Consistent port usage, easy restart with `npm run dev` or `3001` alias  
+**Git**: Commit 3f97007  
+**Next**: Continue documentation work or resume Sprint C1
+
+---
+
 ### Session 4: 2025-11-03 (Documentation Overhaul, ~60 min)
 **Done**:
 - ✅ Rewrote root HANDOFF.md (general workflow + best practices)
