@@ -1,15 +1,17 @@
 ---
-tier: 0
+tier: 1
 status: active
-last_updated: 2025-10-30
+last_updated: 2025-11-03
 purpose: Define documentation structure and maintenance guidelines
+location: root (moved from archive, now actively enforced)
 ---
 
 # 📁 AGP+ Documentation Hygiene Guide
 
-**Version:** 2.0  
-**Last Updated:** 30 October 2025  
-**Status:** Active structure in use
+**Version:** 2.1  
+**Last Updated:** 3 November 2025  
+**Status:** ✅ ACTIVE - Enforced structure  
+**Location**: Root directory (promoted from archive)
 
 ---
 

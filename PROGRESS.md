@@ -1,52 +1,75 @@
-# AGP+ PROGRESS - OPTION C
+# AGP+ PROGRESS - SESSION LOG
 
-**Version**: v3.6.0 → v4.0  
-**Current Sprint**: B1 - Metrics Validation  
-**Last Update**: 2025-11-02
+**Version**: v3.7.0 → v4.0 (Option C Development)  
+**Current Sprint**: C1 - Split God Components (PAUSED)  
+**Last Update**: 2025-11-03  
+**Purpose**: Track what you did, when, and what's next
 
 ---
 
-## 📊 MASTER PROGRESS
+## 🎯 ROLE OF THIS FILE
+
+**PROGRESS.md Purpose**: Session-by-session work log
+- **Update**: After EVERY work session
+- **Contains**: What you did, commits, time spent, next steps
+- **NOT FOR**: Day-to-day task tracking (use sprint PROGRESS.md)
+
+**For current sprint details**: See `docs/optionc/block-d-quality/sprint-c1-components/PROGRESS.md`  
+**For project status**: See `STATUS.md`  
+**For version history**: See `CHANGELOG.md`
+
+---
+
+## 📍 CURRENT STATE
+
+**Active Sprint**: C1 - Split God Components (20h total)  
+**Status**: ⏸️ PAUSED at 55% (11/20 hours)  
+**Location**: `docs/optionc/block-d-quality/sprint-c1-components/`
+
+**Quick Status**:
+- Blocks A, B: ⏸️ TODO
+- Block C: ✅ COMPLETE  
+- Block D: 🔄 ACTIVE (Sprint C1, 55% done)
 
 **See**: `docs/optionc/MASTER_PROGRESS.md` for complete tracking
 
-**Quick Status**:
-- Block A: Documentation (5h) - ⏸️ TODO
-- Block B: Safety (15h) - ⏸️ TODO  
-- Block C: Robustness (15h) - 🔄 ACTIVE (Sprint B1)
-- Block D: Quality (35h) - ⏸️ TODO
-
-**Total**: 0/67 hours completed
-
 ---
 
-## 🔄 CURRENT SPRINT: B1
+## 📝 SESSION LOG (Most Recent First)
 
-**Goal**: Metrics Validation (7h)
-
-**Progress**: `docs/optionc/block-c-robustness/sprint-b1-metrics/PROGRESS.md` ← **SOURCE OF TRUTH**
-
-**Tasks**:
-- [x] Performance Benchmarking (3h) ✅ COMPLETE
-- [ ] Unit Tests (4h) ⏸️ TODO
-
-**Update this file after every work session!**
-
----
-
-## 📝 SESSION LOG
-
-### Session 1: 2025-11-02 (Housekeeping, 30 min)
+### Session 4: 2025-11-03 (Documentation Overhaul, ~60 min)
 **Done**:
-- ✅ Archived old docs to `docs/archive/2025-11/pre-optionc/`
-- ✅ Created Option C structure (`docs/optionc/`)
-- ✅ Safety commit: `v3.6.0-pre-optionc`
-- ✅ Created all documentation (START_HERE, MASTER_PROGRESS, Sprint B1 HANDOFF)
-- ✅ Updated GIT_CHEATSHEET.md
-- ✅ Updated root docs (START_HERE, HANDOFF, PROGRESS)
+- ✅ Rewrote root HANDOFF.md (general workflow + best practices)
+- ✅ Moved DocumentHygiene.md from archive → root (now ACTIVE)
+- ✅ Updated START_HERE.md (better navigation)
+- ✅ Updated PROGRESS.md (this file - clarified roles)
+- ✅ Clarified Progress/Status/Changelog roles
+- ✅ Added context overflow prevention guide
 
-**Git**: Commits 84aba00, 1f8d211, 7ee57e4  
-**Next**: Start Sprint B1 work (performance benchmarking)
+**Why**:
+- Old HANDOFF was sprint-specific, needed general workflow guide
+- DocumentHygiene needed to be actively enforced
+- Confusion about which file tracks what
+
+**Git**: Commit pending  
+**Next**: Archive old files, update CHANGELOG, commit everything
+
+---
+
+### Session 3: 2025-11-02 (Sprint C1 Pause, ~240 min)
+**Done**:
+- ✅ Extracted 3 containers from AGPGenerator (ModalManager, DataLoadingContainer, VisualizationContainer)
+- ✅ Reduced AGPGenerator: 1962 → 1430 lines (-532, -27%)
+- ✅ Created HANDOFF_PAUSE.md with recovery instructions
+- ✅ Installed react-window for virtualization
+- ✅ Fixed localStorage + SQLite dual storage issues
+
+**Status**: Sprint C1 at 55% (11/20 hours)  
+**Remaining**: Quick wins (SensorRow memo), virtualization, testing  
+**Git**: Multiple commits (see CHANGELOG.md)  
+**Next**: Resume Sprint C1 with quick wins
+
+---
 
 ### Session 2: 2025-11-02 (Sprint B1 - Task 1, ~60 min) ✅
 **Done**:
@@ -54,25 +77,85 @@
 - ✅ Tested 3 datasets: 7d (9ms), 14d (28ms), 90d (89ms)
 - ✅ All metrics <1000ms target (best: 8.9% of target!)
 - ✅ Created comprehensive benchmark doc
-- ✅ All tests passing (9/9)
 
 **Results**: 🚀 Performance EXCELLENT - far exceeds requirements  
 **Git**: Commit 9827c9b  
-**Next**: Task 2 (Unit Tests for MAGE, MODD, GRI)
+**Next**: Task 2 (Unit Tests for MAGE, MODD, GRI) - But moved to Sprint C1 instead
 
 ---
 
-## 🎯 NEXT SESSION
+### Session 1: 2025-11-02 (Housekeeping, ~30 min)
+**Done**:
+- ✅ Archived old docs to `docs/archive/2025-11/pre-optionc/`
+- ✅ Created Option C structure (`docs/optionc/`)
+- ✅ Safety commit: `v3.6.0-pre-optionc`
+- ✅ Created all Option C documentation
+- ✅ Updated GIT_CHEATSHEET.md
 
-**Start here**: `docs/optionc/block-c-robustness/sprint-b1-metrics/`
-
-**Read**:
-1. HANDOFF.md - Sprint details
-2. PROGRESS.md - Current status
-
-**Then**: Begin Task 1 (Performance Benchmarking)
+**Git**: Commits 84aba00, 1f8d211, 7ee57e4  
+**Next**: Start Option C development
 
 ---
 
-**For detailed tracking**: See `docs/optionc/MASTER_PROGRESS.md`  
-**For sprint details**: See sprint-specific PROGRESS.md files
+## 🎯 NEXT SESSION CHECKLIST
+
+**Before starting**:
+- [ ] Read HANDOFF.md (general workflow)
+- [ ] Read sprint HANDOFF_PAUSE.md (Sprint C1 context)
+- [ ] Read sprint PROGRESS.md (current tasks)
+- [ ] Pull latest: `git pull origin develop`
+- [ ] Start server: `npm run dev`
+
+**During work**:
+- [ ] Work in 30-60 min chunks
+- [ ] Update sprint PROGRESS.md after EVERY task
+- [ ] Test in browser after EVERY change
+- [ ] Commit every 30-60 min
+
+**After session**:
+- [ ] Add session entry to this file (above)
+- [ ] Push to remote: `git push origin develop`
+- [ ] Update sprint PROGRESS.md final status
+
+---
+
+## 📚 DOCUMENTATION GUIDE
+
+**This file (PROGRESS.md)**: Session log, what you did  
+**Sprint PROGRESS.md**: Real-time task tracking within sprint  
+**STATUS.md**: High-level project status (what works/doesn't)  
+**CHANGELOG.md**: Formal version history for releases  
+**HANDOFF.md**: General workflow + best practices  
+
+**See**: DocumentHygiene.md for complete tier system
+
+---
+
+## 🔍 FINDING THINGS
+
+**Current sprint location**:
+```bash
+cd docs/optionc/block-d-quality/sprint-c1-components/
+```
+
+**Sprint details**:
+```bash
+cat docs/optionc/block-d-quality/sprint-c1-components/HANDOFF_PAUSE.md
+cat docs/optionc/block-d-quality/sprint-c1-components/PROGRESS.md
+```
+
+**All sprints**:
+```bash
+cat docs/optionc/MASTER_PROGRESS.md
+```
+
+---
+
+**Remember**: This file is for SESSION SUMMARIES. For task-by-task tracking within a sprint, use the sprint's PROGRESS.md file.
+
+**Update this file**: After every work session (add new session entry at top of log)
+
+---
+
+**Last Update**: 2025-11-03  
+**Version**: 2.0 (Clarified purpose + roles)

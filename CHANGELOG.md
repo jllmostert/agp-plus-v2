@@ -6,6 +6,82 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v3.7.1 - Documentation Overhaul] - 2025-11-03 - Development Workflow
+
+### 📚 Documentation Restructure
+**Goal**: Improve development workflow, prevent context overflow, clarify document roles
+
+### ✅ Changes
+
+#### Core Documentation Rewrite
+- **HANDOFF.md**: Completely rewritten
+  - Now general development workflow guide (was sprint-specific)
+  - Added comprehensive context overflow prevention guide
+  - Added healthy development practices
+  - Clarified Progress/Status/Changelog roles
+  - Added recovery procedures
+  
+- **DocumentHygiene.md**: Activated
+  - Moved from `docs/archive/` to root directory
+  - Now actively enforced tier system
+  - Updated metadata (tier 1, active status)
+  
+- **START_HERE.md**: Updated navigation
+  - Better routing to current work
+  - Clearer documentation structure
+  - Added quick commands for common tasks
+  
+- **PROGRESS.md**: Clarified purpose
+  - Now explicitly session log only
+  - Added role definitions (vs STATUS, CHANGELOG)
+  - Updated current sprint status (C1, paused)
+  - Added Session 4 entry (this documentation work)
+
+#### Documentation Philosophy
+- Established clear separation:
+  - **PROGRESS.md**: Session log, what you did
+  - **Sprint PROGRESS.md**: Real-time task tracking
+  - **STATUS.md**: High-level project status
+  - **CHANGELOG.md**: Formal version history
+  - **HANDOFF.md**: General workflow guide
+  
+- Tier system enforced (DocumentHygiene):
+  - Tier 1: Operational (daily updates)
+  - Tier 2: Planning (weekly updates)
+  - Tier 3: Reference (rarely updated)
+
+#### Context Overflow Prevention
+Added comprehensive guide to prevent Claude crashes:
+1. One file at a time (non-negotiable)
+2. Use references, not full text
+3. Strip comments + test data
+4. Hard budget in prompts
+5. Request minimal outputs
+6. Rolling context governor
+7. Never include binary/large JSON
+8. Work in 30-60 min chunks
+9. Use edit_block, not append
+10. Automate hygiene with scripts
+
+#### Branch Status Clarification
+- Documented current state: `develop` is stable, should become `main`
+- Documented planned promotion: `develop` → `main`, `main` → `safety-v3.6.0`
+- Added manual action instructions in HANDOFF.md
+
+### 🎯 Impact
+- **Clearer workflow**: Easy to start/resume work
+- **Better recovery**: PROGRESS.md as anchor after crashes
+- **Reduced crashes**: Context overflow prevention tactics
+- **Active hygiene**: DocumentHygiene now enforced
+- **Role clarity**: Each doc file has clear purpose
+
+### 📝 Next Steps
+- Continue Sprint C1 (Component Splitting, 55% complete)
+- Follow new workflow guidelines
+- Use context management tactics to prevent crashes
+
+---
+
 ## [v3.7.0 - Sprint C1 Progress] - 2025-11-02 - Component Refactoring
 
 ### 🔄 Sprint C1: Split God Components (55% Complete)
