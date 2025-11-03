@@ -341,11 +341,6 @@ export default function AGPGenerator() {
   // Calculate TDD statistics for selected period (not entire dataset)
   const tddData = useMemo(() => {
     if (!tddByDay || !startDate || !endDate) {
-      console.log('[TDD DEBUG] Missing dependencies:', { 
-        hasTddByDay: !!tddByDay, 
-        hasStartDate: !!startDate, 
-        hasEndDate: !!endDate 
-      });
       return null;
     }
     
@@ -361,34 +356,17 @@ export default function AGPGenerator() {
       const startStr = formatDate(startDate);
       const endStr = formatDate(endDate);
       
-      console.log('[TDD DEBUG] Period:', { 
-        startStr, 
-        endStr, 
-        totalDaysInTddByDay: Object.keys(tddByDay).length 
-      });
-      
       // Filter tddByDay to only include dates within selected period
       const periodTddByDay = Object.fromEntries(
         Object.entries(tddByDay).filter(([date, _]) => date >= startStr && date <= endStr)
       );
       
-      console.log('[TDD DEBUG] Filtered period:', { 
-        daysInPeriod: Object.keys(periodTddByDay).length,
-        sampleDates: Object.keys(periodTddByDay).slice(0, 3)
-      });
-      
       if (Object.keys(periodTddByDay).length === 0) {
-        console.warn('[TDD DEBUG] No TDD data in selected period');
         return null;
       }
       
       // Calculate statistics for the filtered period using imported function
-      const stats = calculateTDDStatistics(periodTddByDay);
-      console.log('[TDD DEBUG] Calculated stats:', { 
-        meanTDD: stats?.meanTDD, 
-        dataPoints: stats?.dataPoints 
-      });
-      return stats;
+      return calculateTDDStatistics(periodTddByDay);
     } catch (err) {
       console.error('[AGPGenerator] Failed to calculate period TDD:', err);
       return null;
