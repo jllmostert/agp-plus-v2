@@ -39,6 +39,9 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
   // State for TDD data (loaded async from IndexedDB)
   const [tddData, setTddData] = useState(null);
   
+  // State for workday data (loaded async from IndexedDB)
+  const [workdaySet, setWorkdaySet] = useState(null);
+  
   // Load TDD data on mount and when dependencies change
   useEffect(() => {
     async function loadTDD() {
@@ -57,6 +60,21 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
     }
     
     loadTDD();
+  }, [csvData, dateRange]); // Reload when data changes
+  
+  // Load ProTime workday data on mount and when dependencies change
+  useEffect(() => {
+    async function loadWorkdays() {
+      try {
+        const { loadProTimeData } = await import('../storage/masterDatasetStorage.js');
+        const workdays = await loadProTimeData();
+        setWorkdaySet(workdays); // Can be null or Set
+      } catch (err) {
+        setWorkdaySet(null);
+      }
+    }
+    
+    loadWorkdays();
   }, [csvData, dateRange]); // Reload when data changes
   
   return useMemo(() => {
@@ -93,16 +111,21 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       const overallMean = currentMetrics?.metrics?.mean || null;
       const agpCurve = currentMetrics?.agp || null;
       
-      // Add AGP overlay data AND TDD data to each profile
+      // Add AGP overlay data, TDD data, AND workday info to each profile
       const enrichedProfiles = profiles.map(profile => {
         // Get TDD for this specific day
         const dayTDD = tddData && tddData[profile.date] ? tddData[profile.date] : null;
+        
+        // Check if this day is a workday (ProTime data)
+        // workdaySet is a Set of "YYYY/MM/DD" strings
+        const isWorkday = workdaySet ? workdaySet.has(profile.date) : null;
         
         return {
           ...profile,
           overallMean,
           agpCurve,
-          tdd: dayTDD // âœ¨ NEW: Per-day TDD data
+          tdd: dayTDD, // âœ¨ Per-day TDD data
+          isWorkday // âœ¨ NEW: Workday indicator (null if no ProTime data)
         };
       });
       
@@ -112,7 +135,7 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       console.error('[useDayProfiles] Failed to generate day profiles:', err);
       return null;
     }
-  }, [csvData, dateRange, currentMetrics, tddData]); // Added tddData dependency
+  }, [csvData, dateRange, currentMetrics, tddData, workdaySet]); // Added tddData and workdaySet dependencies
 }
 
 /**

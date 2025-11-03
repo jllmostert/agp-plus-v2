@@ -43,7 +43,7 @@
 **Goals**:
 1. ✅ **Taak 0+1: Version unification** - Unified all version numbers to v3.8.0
 2. ✅ **Taak 2: MAGE in day profiles** - Add MAGE to footer (TIR // Mean±SD // CV // MAGE)
-3. ⏳ **Taak 3: Workday indicator** - Add "Werkdag" or "Vrije dag" text to day profile header
+3. ✅ **Taak 3: Workday indicator** - Add "Werkdag" or "Vrije dag" text to day profile header
 4. ⏳ **Taak 4: README professionalization** - Rewrite first paragraph with journalistic flair
 
 **Progress - Taak 0+1: Version Unification** ✅ COMPLETE (15 min)
@@ -78,10 +78,25 @@
 - Simply needed to display `metrics.mage` in footer
 - Format cleaner, more focused on variability (CV + MAGE)
 
-**Next steps**:
-- Commit MAGE addition
-- Add workday indicator
-- Professionalize README
+**Progress - Taak 3: Workday Indicator** ✅ COMPLETE (20 min)
+**Changed**:
+- ✅ Modified `src/hooks/useDayProfiles.js` - Load workday data from IndexedDB
+- ✅ Added `isWorkday` property to each profile object
+- ✅ Modified `src/core/day-profiles-exporter.js` - Display indicator in header
+- ✅ Added CSS for `.workday-indicator` - Clean text badge, no icons
+
+**How it works**:
+1. **Data loading**: useDayProfiles loads ProTime workdays via `loadProTimeData()`
+2. **Workday check**: For each day, check if date is in workday Set
+3. **Display**: Show "Werkdag" or "Vrije dag" text badge in header
+4. **Fallback**: If no ProTime data, indicator is hidden (no badge shown)
+
+**Styling**:
+- Small text badge (6.5pt) next to date
+- Black border, white background (brutalist style)
+- No emojis, no icons - just clean text
+
+**Next step**: Professionalize README first paragraph
 
 ---
 

@@ -263,13 +263,16 @@ const generateTIRBarSVG = (metrics) => {
  * Generate single day profile card (compact print version)
  */
 const generateDayCard = (profile) => {
-  const { date, dayOfWeek, metrics, curve, events, sensorChanges, cartridgeChanges, badges } = profile;
+  const { date, dayOfWeek, metrics, curve, events, sensorChanges, cartridgeChanges, badges, isWorkday } = profile;
   
   const dateStr = profile.dateObj.toLocaleDateString('nl-NL', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
   });
+  
+  // Workday indicator text
+  const workdayText = isWorkday === null ? '' : (isWorkday ? 'Werkdag' : 'Vrije dag');
   
   return `
     <div class="day-card">
@@ -278,6 +281,7 @@ const generateDayCard = (profile) => {
         <div class="day-date">
           <strong>${dayOfWeek}</strong>
           <span>${dateStr}</span>
+          ${workdayText ? `<span class="workday-indicator">${workdayText}</span>` : ''}
         </div>
         <div class="day-badges">
           ${badges.map(badge => `
@@ -469,6 +473,17 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
       margin-left: 2mm;
       font-size: 7pt;
       color: var(--color-gray-light);
+    }
+    
+    .workday-indicator {
+      margin-left: 3mm;
+      padding: 0.5mm 1.5mm;
+      font-size: 6.5pt;
+      font-weight: normal;
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
     
     .day-badges {
