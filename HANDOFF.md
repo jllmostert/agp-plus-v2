@@ -18,10 +18,16 @@ git pull origin develop
 cat START_HERE.md  # Navigation hub
 cat PROGRESS.md    # Recent work + current sprint
 
-# 3. Start server
+# 3. Start server (ALWAYS use port 3001)
 export PATH="/opt/homebrew/bin:$PATH"
-npm run dev
-# Opens: http://localhost:5173
+npm run dev  # Automatically uses port 3001
+# Opens: http://localhost:3001
+
+# Or use explicit port:
+npx vite --port 3001
+
+# Or use alias (if configured):
+3001
 
 # 4. Work safely
 # - Read sprint-specific HANDOFF.md in docs/optionc/[block]/[sprint]/
@@ -29,6 +35,54 @@ npm run dev
 # - Commit frequently (every 30-60 min)
 # - Test in browser after EVERY file change
 ```
+
+---
+
+## 🔌 PORT MANAGEMENT (CRITICAL)
+
+**ALWAYS use port 3001** - Never use other ports (like 5173)
+
+### Quick Start with Port 3001
+```bash
+# Standard start command
+cd /Users/jomostert/Documents/Projects/agp-plus
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+```
+
+### Alias "3001" (Recommended Setup)
+You can create an alias that always kills port 3001 and restarts the server:
+
+```bash
+# Add to ~/.zshrc or ~/.bashrc:
+alias 3001='lsof -ti:3001 | xargs kill -9 2>/dev/null; cd /Users/jomostert/Documents/Projects/agp-plus && export PATH="/opt/homebrew/bin:$PATH" && npx vite --port 3001'
+```
+
+**Then just use**:
+```bash
+3001  # Kills any process on 3001 and starts server
+```
+
+### Manual Port Management
+```bash
+# Check what's on port 3001
+lsof -i:3001
+
+# Kill process on port 3001
+lsof -ti:3001 | xargs kill -9
+
+# Kill all node processes (nuclear option)
+pkill -9 node
+
+# Then start server
+npx vite --port 3001
+```
+
+### Why Port 3001?
+- **Consistency**: Always the same URL across sessions
+- **Alias support**: Easy `3001` command to restart
+- **No conflicts**: Avoids Vite's default 5173
+- **Memory aid**: Easy to remember
 
 ---
 
@@ -237,10 +291,10 @@ cat docs/optionc/[block]/[sprint]/HANDOFF.md
 cat docs/optionc/[block]/[sprint]/PROGRESS.md
 
 # [ ] Start dev server
-npm run dev
+npm run dev  # Uses port 3001
 
 # [ ] Open browser
-open http://localhost:5173
+open http://localhost:3001
 ```
 
 ### During Work (CRITICAL)
@@ -678,10 +732,10 @@ cat PROGRESS.md
 # 4. Start server
 cd /Users/jomostert/Documents/Projects/agp-plus
 export PATH="/opt/homebrew/bin:$PATH"
-npm run dev
+npm run dev  # Uses port 3001
 
 # 5. Open browser
-# http://localhost:5173
+open http://localhost:3001
 
 # 6. Pick ONE small task from PROGRESS.md
 

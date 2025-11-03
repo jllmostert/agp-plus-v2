@@ -97,7 +97,7 @@ cd /Users/jomostert/Documents/Projects/agp-plus
 git pull origin develop
 cat HANDOFF.md              # Read workflow
 cat PROGRESS.md             # Check current sprint
-npm run dev                 # Start server (localhost:5173)
+npm run dev                 # Start server (port 3001)
 ```
 
 ### During Work

@@ -288,10 +288,10 @@ cat docs/optionc/block-d-quality/sprint-c1-components/HANDOFF_PAUSE.md
 
 # 5. Start dev server
 export PATH="/opt/homebrew/bin:$PATH"
-npm run dev
+npm run dev  # Uses port 3001
 
 # 6. Open browser
-# http://localhost:5173
+open http://localhost:3001
 
 # 7. Pick a quick win and start!
 ```

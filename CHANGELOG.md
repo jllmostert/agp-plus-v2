@@ -6,6 +6,58 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v3.7.2 - Port Enforcement] - 2025-11-03 - Port Management
+
+### 🔌 Port 3001 Enforcement
+**Goal**: Standardize on port 3001, eliminate confusion with other ports
+
+### ✅ Changes
+
+#### Port Configuration
+- **package.json**: Updated `dev` script to use `--port 3001`
+  - `npm run dev` now automatically uses port 3001
+  - No more default Vite port 5173
+  
+#### Documentation Updates
+- **HANDOFF.md**: Added comprehensive port management section
+  - Port 3001 enforcement
+  - Alias setup guide (`alias 3001='...'`)
+  - Manual port killing commands
+  - Why port 3001 (consistency, alias support, memory aid)
+  - Updated all localhost references: 5173 → 3001
+  
+- **START_HERE.md**: Updated port references
+  - All commands now use port 3001
+  
+- **HANDOFF_PAUSE.md** (Sprint C1): Updated port references
+  - Consistent with root docs
+
+#### Port Management Guide
+Added to HANDOFF.md:
+- **Alias setup**: One-command kill + restart
+- **Manual management**: `lsof` commands to check/kill ports
+- **Why 3001**: Consistency, alias support, easy to remember
+
+### 🎯 Impact
+- **Consistency**: Always port 3001, no more confusion
+- **Ease of use**: `npm run dev` or `3001` alias
+- **Quick recovery**: Easy to kill stuck processes
+- **Documentation clarity**: All docs reference same port
+
+### 📝 Usage
+```bash
+# Option 1: Standard npm script
+npm run dev  # Automatically uses port 3001
+
+# Option 2: Explicit port
+npx vite --port 3001
+
+# Option 3: Alias (if configured)
+3001  # Kills port 3001 and starts server
+```
+
+---
+
 ## [v3.7.1 - Documentation Overhaul] - 2025-11-03 - Development Workflow
 
 ### 📚 Documentation Restructure
