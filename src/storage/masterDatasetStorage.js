@@ -620,14 +620,33 @@ export async function uploadCSVToV3(csvText) {
       const { calculateDailyTDD, calculateTDDStatistics, validateTDDData } = 
         await import('../core/insulin-engine.js');
       
-      const tddByDay = calculateDailyTDD(section1, section2);
-      const tddStats = calculateTDDStatistics(tddByDay);
-      const validation = validateTDDData(tddByDay);
+      // Calculate TDD for new upload
+      const newTddByDay = calculateDailyTDD(section1, section2);
       
-      // Store TDD data in settings
+      // Load existing TDD data from storage
+      const existingTddRecord = await getRecord(STORES.SETTINGS, 'tdd_data');
+      const existingTddByDay = existingTddRecord?.tddByDay || {};
+      
+      // Merge: new data overwrites old data for same dates, old dates preserved
+      const mergedTddByDay = {
+        ...existingTddByDay,
+        ...newTddByDay
+      };
+      
+      debug.log('[uploadCSVToV3] TDD merge:', {
+        existingDays: Object.keys(existingTddByDay).length,
+        newDays: Object.keys(newTddByDay).length,
+        totalDays: Object.keys(mergedTddByDay).length
+      });
+      
+      // Recalculate statistics over merged data
+      const tddStats = calculateTDDStatistics(mergedTddByDay);
+      const validation = validateTDDData(mergedTddByDay);
+      
+      // Store merged TDD data in settings
       await putRecord(STORES.SETTINGS, {
         key: 'tdd_data',
-        tddByDay,
+        tddByDay: mergedTddByDay,
         tddStats,
         validation,
         lastUpdated: Date.now()

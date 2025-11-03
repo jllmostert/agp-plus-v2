@@ -17,6 +17,7 @@ import { parseProTime } from '../core/parsers';
 import { downloadHTML } from '../core/html-exporter';
 import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
 import { exportAndDownload } from '../storage/export';
+import { calculateTDDStatistics } from '../core/insulin-engine';
 
 // UI Components
 import FileUpload from './FileUpload';
@@ -141,7 +142,7 @@ export default function AGPGenerator() {
   const [showStockModal, setShowStockModal] = useState(false); // Stock management modal state
   const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
-  const [tddData, setTddData] = useState(null); // TDD statistics {meanTDD, sdTDD, ...}
+  const [tddByDay, setTddByDay] = useState(null); // TDD data by day (all days) from storage
 
   // Load patient info from storage
   useEffect(() => {
@@ -168,8 +169,10 @@ export default function AGPGenerator() {
       try {
         const { loadTDDData } = await import('../storage/masterDatasetStorage');
         const tdd = await loadTDDData();
-        if (tdd && tdd.tddStats) {
-          setTddData(tdd.tddStats);
+        if (tdd && tdd.tddByDay) {
+          // Store ALL daily TDD values, not just stats
+          // We'll calculate period-specific stats in useMemo below
+          setTddByDay(tdd.tddByDay);
         }
       } catch (err) {
         console.error('Failed to load TDD data:', err);
@@ -334,6 +337,63 @@ export default function AGPGenerator() {
   
   // Calculate metrics for current period
   const metricsResult = useMetrics(activeReadings, startDate, endDate, workdays);
+  
+  // Calculate TDD statistics for selected period (not entire dataset)
+  const tddData = useMemo(() => {
+    if (!tddByDay || !startDate || !endDate) {
+      console.log('[TDD DEBUG] Missing dependencies:', { 
+        hasTddByDay: !!tddByDay, 
+        hasStartDate: !!startDate, 
+        hasEndDate: !!endDate 
+      });
+      return null;
+    }
+    
+    try {
+      // Format dates to YYYY/MM/DD for matching with tddByDay keys
+      const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}/${month}/${day}`;
+      };
+      
+      const startStr = formatDate(startDate);
+      const endStr = formatDate(endDate);
+      
+      console.log('[TDD DEBUG] Period:', { 
+        startStr, 
+        endStr, 
+        totalDaysInTddByDay: Object.keys(tddByDay).length 
+      });
+      
+      // Filter tddByDay to only include dates within selected period
+      const periodTddByDay = Object.fromEntries(
+        Object.entries(tddByDay).filter(([date, _]) => date >= startStr && date <= endStr)
+      );
+      
+      console.log('[TDD DEBUG] Filtered period:', { 
+        daysInPeriod: Object.keys(periodTddByDay).length,
+        sampleDates: Object.keys(periodTddByDay).slice(0, 3)
+      });
+      
+      if (Object.keys(periodTddByDay).length === 0) {
+        console.warn('[TDD DEBUG] No TDD data in selected period');
+        return null;
+      }
+      
+      // Calculate statistics for the filtered period using imported function
+      const stats = calculateTDDStatistics(periodTddByDay);
+      console.log('[TDD DEBUG] Calculated stats:', { 
+        meanTDD: stats?.meanTDD, 
+        dataPoints: stats?.dataPoints 
+      });
+      return stats;
+    } catch (err) {
+      console.error('[AGPGenerator] Failed to calculate period TDD:', err);
+      return null;
+    }
+  }, [tddByDay, startDate, endDate]);
   
   // Debug: Check if AGP data exists
   if (metricsResult && activeReadings && activeReadings.length > 0) {
