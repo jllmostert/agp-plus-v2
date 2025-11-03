@@ -1,7 +1,7 @@
 # AGP+ PROGRESS - SESSION LOG
 
-**Version**: v3.7.0 → v4.0 (Option C Development)  
-**Current Sprint**: C1 - Split God Components (PAUSED)  
+**Version**: v3.8.0 → v4.0 (Option C Development)  
+**Current Sprint**: Feature additions (Session 7)  
 **Last Update**: 2025-11-03  
 **Purpose**: Track what you did, when, and what's next
 
@@ -36,6 +36,42 @@
 ---
 
 ## 📝 SESSION LOG (Most Recent First)
+
+### Session 7: 2025-11-03 (Feature Additions: MAGE + Workday + Versioning, ~150 min) 🔄
+**Status**: 🔄 IN PROGRESS
+
+**Goals**:
+1. ✅ **Taak 0+1: Version unification** - Unified all version numbers to v3.8.0
+2. ⏳ **Taak 2: MAGE in day profiles** - Add MAGE to footer (TIR // Mean±SD // CV // MAGE)
+3. ⏳ **Taak 3: Workday indicator** - Add "Werkdag" or "Vrije dag" text to day profile header
+4. ⏳ **Taak 4: README professionalization** - Rewrite first paragraph with journalistic flair
+
+**Progress - Taak 0+1: Version Unification** ✅ COMPLETE (15 min)
+**Files updated to v3.8.0**:
+- ✅ `package.json` - version + description
+- ✅ `src/components/AGPGenerator.jsx` - @version comment
+- ✅ `src/core/html-exporter.js` - header (was V2.1 😱)
+- ✅ `src/core/day-profiles-exporter.js` - footer (was v2.2 😱)
+- ✅ `README.md` - Current Version header
+- ✅ `HANDOFF.md` - Version header
+
+**Previous chaos**:
+- package.json: v3.1.1
+- AGPGenerator: v3.12.0
+- html-exporter: V2.1
+- day-profiles-exporter: v2.2
+- README: v3.10.0
+- HANDOFF: v3.7.0
+
+**Now unified**: All files show **v3.8.0** ✅
+
+**Next steps**:
+- Commit version unification
+- Add MAGE to day profiles footer
+- Add workday indicator
+- Professionalize README
+
+---
 
 ### Session 6: 2025-11-03 (TDD Bug Fix - Data Merge Issue, ~120 min) ✅
 **Status**: ✅ COMPLETE & VERIFIED

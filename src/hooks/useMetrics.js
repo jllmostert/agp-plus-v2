@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { calculateMetrics, calculateAGP, detectEvents } from '../core/metrics-engine.js';
+import { calculateTDDStatistics } from '../core/insulin-engine.js';
 
 /**
  * Convert Date object to YYYY/MM/DD string format

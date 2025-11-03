@@ -2,8 +2,8 @@
 
 **Professional diabetes data analysis tool following ADA/ATTD clinical guidelines**
 
-**Current Version:** v3.10.0 (Sensor Database Stability)  
-**Status:** ✅ Production-ready with verified bug fixes
+**Current Version:** v3.8.0 (Advanced Day Analytics)  
+**Status:** ✅ Production-ready with MAGE metrics and workday tracking
 
 ---
 

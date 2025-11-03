@@ -708,7 +708,7 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
   
   <!-- Footer -->
   <div class="report-footer">
-    AGP+ v2.2 - Day Profiles Export | Medtronic MiniMed 780G Data | 
+    AGP+ v3.8.0 - Day Profiles Export | Medtronic MiniMed 780G Data | 
     Generated: ${new Date().toLocaleString('nl-NL')}
   </div>
   

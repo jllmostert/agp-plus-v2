@@ -46,7 +46,7 @@ import DataExportPanel from './panels/DataExportPanel';
  * - Metrics calculation coordination
  * - Component composition and data flow
  * 
- * @version 3.12.0
+ * @version 3.8.0
  */
 export default function AGPGenerator() {
   // ============================================

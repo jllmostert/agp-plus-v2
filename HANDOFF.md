@@ -1,6 +1,6 @@
 # AGP+ DEVELOPMENT HANDOFF
 
-**Version**: v3.7.0 (developing towards v4.0)  
+**Version**: v3.8.0 (developing towards v4.0)  
 **Branch**: develop (active development)  
 **Last Update**: 2025-11-03  
 **Purpose**: General development workflow, health practices, and context management
