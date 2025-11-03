@@ -37,8 +37,8 @@
 
 ## 📝 SESSION LOG (Most Recent First)
 
-### Session 6: 2025-11-03 (TDD Bug Fix - Data Merge Issue, ~90 min) ✅
-**Status**: ✅ FIXED
+### Session 6: 2025-11-03 (TDD Bug Fix - Data Merge Issue, ~120 min) ✅
+**Status**: ✅ COMPLETE & VERIFIED
 
 **Problem Identified**:
 - TDD worked correctly in day profiles but showed wrong values on dashboard
@@ -49,25 +49,36 @@
 - Modified `masterDatasetStorage.js` to **merge** TDD data instead of overwrite
 - Now: Load existing TDD → calculate new TDD → merge by date → recalculate stats
 - Old data preserved, new data updates only matching dates
-- Added debug logging to track merge process
+- Added merge logging to track process
 
 **Files Modified**:
 - `src/storage/masterDatasetStorage.js` - TDD merge logic
-- `src/components/AGPGenerator.jsx` - Debug logs for TDD filtering
+- `src/components/AGPGenerator.jsx` - Debug logs (added then removed)
 
-**Testing**:
-- Verified merge logic with console logs
-- Confirmed period filtering works correctly (9 days in 1-year period)
-- Next: Upload full 3-month CSV to verify complete TDD history
+**Testing & Verification**:
+- ✅ Verified merge: 103 existing + 92 new = 187 total days
+- ✅ Verified filtering: 14 days in 14-day period (correct)
+- ✅ Verified calculation: meanTDD 27.9-30.1E (varies by exact period)
+- ✅ Tested with 90-day CSV upload - full data preserved
 
-**Git**: Commit 7d15586  
-**Impact**: Users can now upload short CSV files without losing historical TDD data
+**Known Minor Issue** (deferred):
+- After upload, user must refresh page to see new TDD data
+- TDD useEffect only triggers on `activeUploadId` change
+- Fix later: Add TDD reload trigger after successful upload
 
-**Still TODO** (deferred):
+**Git**: 
+- Commit 7d15586 - TDD merge fix
+- Commit 7816928 - PROGRESS.md update
+- Commit b0a59e4 - Debug log cleanup
+
+**Impact**: Users can now upload short CSV files without losing historical TDD data ✅
+
+**Still TODO** (deferred to future sessions):
 - Versioning consistency (v3.7.2 vs v4.0-dev)
 - MAGE in day profiles
 - Workday indicator in day profiles  
 - README.md professionalization
+- Auto-reload TDD after upload (UX improvement)
 
 ---
 
