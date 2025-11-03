@@ -9,23 +9,27 @@
 
 ## What is AGP+?
 
-AGP+ is a React-based web application for analyzing continuous glucose monitoring (CGM) data from Medtronic CareLink CSV exports. It provides comprehensive glycemic metrics, AGP visualization, period comparisons, day profiles, and device event tracking.
+Your endocrinologist takes three months to schedule an appointment, then spends five minutes glancing at your glucose data before declaring "looks fine." AGP+ gives you the clinical analysis they don't have time for—in three seconds, with metrics your diabetes educator would high-five you over.
 
-**Key Features:**
-- Master dataset with multi-upload support
-- Period-to-period comparison (14/30/90 days)
-- Day/Night glucose analysis
-- Workday vs Rest day metrics (ProTime PDF integration)
-- Individual 24h day profiles with event markers
-- Sensor and cartridge change detection
-- Complete database export/import
-- Dual-source sensor tracking (SQLite + localStorage)
+Built by a type 1 diabetic who got tired of waiting for healthcare software to catch up with hardware, AGP+ transforms Medtronic CareLink exports into publication-ready Ambulatory Glucose Profiles following ADA/ATTD 2025 guidelines. Think of it as the endocrinologist's desktop toolset, minus the white coat and three-month wait time.
 
-**Clinical Standards:**
-- ADA/ATTD 2025 guidelines
-- TIR/TAR/TBR thresholds (70-180 mg/dL)
-- GMI calculation (HbA1c estimate)
-- mg/dL units only
+**What you get:**
+- **Clinical-grade analytics**: TIR, TAR, TBR, GMI, CV, MAGE, MODD—the metrics that actually matter
+- **Period comparison**: See if your last 14 days beat your last 90 (spoiler: they usually do)
+- **Day/night analysis**: Because 3 AM glucose hits different than 3 PM
+- **Workday tracking**: Import ProTime PDFs to see if Monday ruins your control (it does)
+- **Individual day profiles**: Every 24-hour period as a separate story, complete with event markers
+- **Master dataset**: Keep years of data, upload whenever, never lose history
+- **Sensor intelligence**: Automatic detection of sensor and cartridge changes from device logs
+- **Export everything**: HTML reports that look like they came from a diabetes clinic, not a spreadsheet
+
+**Clinical standards baked in:**
+- ADA/ATTD 2025 consensus guidelines (we read the boring PDFs so you don't have to)
+- Industry-standard ranges (70-180 mg/dL, because that's what the research says)
+- GMI calculation using the latest formula (it's basically HbA1c, but faster)
+- MAGE and MODD variability metrics (for when CV alone doesn't tell the whole story)
+
+No cloud uploads, no subscriptions, no "premium features." Just your data, your browser, and metrics that would make a diabetes researcher nerd out.
 
 ---
 
