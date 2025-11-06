@@ -339,10 +339,18 @@ export const calculateAGP = (data, startDate, endDate) => {
 
 /**
  * Detect hypoglycemic and hyperglycemic events
+ * 
+ * HYPO STATE MACHINE (v3.8.0):
+ * - Single episode per drop below 70 mg/dL
+ * - Track nadir (lowest point) during episode
+ * - Classify AFTER completion based on nadir:
+ *   - nadir <54: severity = 'severe' (Level 2)
+ *   - nadir ≥54: severity = 'low' (Level 1)
+ * 
  * @param {Array} data - Array of glucose data objects
  * @param {string} startDate - Start date in YYYY/MM/DD format
  * @param {string} endDate - End date in YYYY/MM/DD format
- * @returns {Object} Object with hypoL1, hypoL2, hyper event counts and details
+ * @returns {Object} Object with hypoEpisodes and hyper event counts
  */
 export const detectEvents = (data, startDate, endDate) => {
   const filtered = data
@@ -354,64 +362,78 @@ export const detectEvents = (data, startDate, endDate) => {
     })
     .sort((a, b) => utils.parseDate(a.date, a.time) - utils.parseDate(b.date, b.time));
 
-  const hypoL1 = [];
-  const hypoL2 = [];
+  const hypoEpisodes = [];
   const hyper = [];
-  let currentEvent = null;
+  let currentHypoEpisode = null;
+  let currentHyperEvent = null;
 
   filtered.forEach(row => {
     const glucose = row.glucose;
     const timestamp = utils.parseDate(row.date, row.time);
     const minuteOfDay = timestamp.getHours() * 60 + timestamp.getMinutes();
 
-    if (glucose < CONFIG.GLUCOSE.CRITICAL_LOW) {
-      // Level 2 hypoglycemia (<54 mg/dL)
-      if (!currentEvent || currentEvent.type !== 'hypoL2') {
-        currentEvent = { type: 'hypoL2', start: timestamp, minuteOfDay, startGlucose: glucose };
+    // HYPO STATE MACHINE (single episode tracker)
+    if (glucose < CONFIG.GLUCOSE.LOW) {
+      // Below 70: hypoglycemia
+      if (!currentHypoEpisode) {
+        // Start new episode
+        currentHypoEpisode = { 
+          start: timestamp, 
+          minuteOfDay, 
+          startGlucose: glucose,
+          nadir: glucose 
+        };
+      } else {
+        // Update nadir (lowest point during episode)
+        currentHypoEpisode.nadir = Math.min(currentHypoEpisode.nadir, glucose);
       }
-    } else if (glucose < CONFIG.GLUCOSE.LOW) {
-      // Level 1 hypoglycemia (54-69 mg/dL)
-      if (currentEvent?.type === 'hypoL2') {
-        const duration = Math.round((timestamp - currentEvent.start) / 60000);
-        if (duration >= CONFIG.HYPO_MIN_DURATION) {
-          hypoL2.push({ ...currentEvent, end: timestamp, duration });
-        }
+    } else if (glucose >= CONFIG.GLUCOSE.LOW && currentHypoEpisode) {
+      // Above 70: close episode
+      const duration = Math.round((timestamp - currentHypoEpisode.start) / 60000);
+      
+      if (duration >= CONFIG.HYPO_MIN_DURATION) {
+        // Classify based on nadir
+        const severity = currentHypoEpisode.nadir < CONFIG.GLUCOSE.CRITICAL_LOW ? 'severe' : 'low';
+        
+        hypoEpisodes.push({
+          ...currentHypoEpisode,
+          end: timestamp,
+          duration,
+          severity
+        });
       }
-      if (!currentEvent || currentEvent.type !== 'hypoL1') {
-        currentEvent = { type: 'hypoL1', start: timestamp, minuteOfDay, startGlucose: glucose };
-      }
-    } else if (glucose > CONFIG.GLUCOSE.CRITICAL_HIGH) {
+      
+      currentHypoEpisode = null;
+    }
+
+    // HYPER STATE MACHINE (unchanged)
+    if (glucose > CONFIG.GLUCOSE.CRITICAL_HIGH) {
       // Hyperglycemia (>250 mg/dL)
-      if (currentEvent?.type.startsWith('hypo')) {
-        const duration = Math.round((timestamp - currentEvent.start) / 60000);
-        if (duration >= CONFIG.HYPO_MIN_DURATION) {
-          if (currentEvent.type === 'hypoL2') hypoL2.push({ ...currentEvent, end: timestamp, duration });
-          if (currentEvent.type === 'hypoL1') hypoL1.push({ ...currentEvent, end: timestamp, duration });
-        }
-        currentEvent = null;
+      if (!currentHyperEvent) {
+        currentHyperEvent = { 
+          start: timestamp, 
+          minuteOfDay, 
+          startGlucose: glucose 
+        };
       }
-      if (!currentEvent || currentEvent.type !== 'hyper') {
-        currentEvent = { type: 'hyper', start: timestamp, minuteOfDay, startGlucose: glucose };
+    } else if (glucose <= CONFIG.GLUCOSE.CRITICAL_HIGH && currentHyperEvent) {
+      // Close hyperglycemia event
+      const duration = Math.round((timestamp - currentHyperEvent.start) / 60000);
+      if (duration >= CONFIG.HYPER_MIN_DURATION) {
+        hyper.push({ 
+          ...currentHyperEvent, 
+          end: timestamp, 
+          duration 
+        });
       }
-    } else {
-      // In range - close any open events
-      if (currentEvent) {
-        const duration = Math.round((timestamp - currentEvent.start) / 60000);
-        if (currentEvent.type === 'hypoL2' && duration >= CONFIG.HYPO_MIN_DURATION) {
-          hypoL2.push({ ...currentEvent, end: timestamp, duration });
-        }
-        if (currentEvent.type === 'hypoL1' && duration >= CONFIG.HYPO_MIN_DURATION) {
-          hypoL1.push({ ...currentEvent, end: timestamp, duration });
-        }
-        if (currentEvent.type === 'hyper' && duration >= CONFIG.HYPER_MIN_DURATION) {
-          hyper.push({ ...currentEvent, end: timestamp, duration });
-        }
-        currentEvent = null;
-      }
+      currentHyperEvent = null;
     }
   });
 
-  // Calculate average durations for each event type
+  // Calculate statistics
+  const severeEpisodes = hypoEpisodes.filter(e => e.severity === 'severe');
+  const lowEpisodes = hypoEpisodes.filter(e => e.severity === 'low');
+  
   const calcAvgDuration = (eventList) => {
     if (eventList.length === 0) return 0;
     const totalDuration = eventList.reduce((sum, e) => sum + e.duration, 0);
@@ -419,22 +441,19 @@ export const detectEvents = (data, startDate, endDate) => {
   };
 
   return {
-    hypoL1: { 
-      count: hypoL1.length, 
-      events: hypoL1,
-      avgDuration: calcAvgDuration(hypoL1)
-    },
-    hypoL2: { 
-      count: hypoL2.length, 
-      events: hypoL2,
-      avgDuration: calcAvgDuration(hypoL2)
+    hypoEpisodes: {
+      count: hypoEpisodes.length,
+      severeCount: severeEpisodes.length,
+      lowCount: lowEpisodes.length,
+      events: hypoEpisodes,
+      avgDuration: calcAvgDuration(hypoEpisodes),
+      avgDurationSevere: calcAvgDuration(severeEpisodes),
+      avgDurationLow: calcAvgDuration(lowEpisodes)
     },
     hyper: { 
       count: hyper.length, 
       events: hyper,
       avgDuration: calcAvgDuration(hyper)
-    },
-    totalHypo: hypoL1.length + hypoL2.length,
-    avgDuration: calcAvgDuration([...hypoL1, ...hypoL2]) // Combined hypo average
+    }
   };
 };

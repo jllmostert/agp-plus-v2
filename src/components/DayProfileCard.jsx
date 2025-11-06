@@ -15,7 +15,7 @@ import { calculateAdaptiveYAxis, createYScale, createXScale } from '../core/visu
 export default function DayProfileCard({ profile }) {
   if (!profile) return null;
 
-  const { date, dayOfWeek, metrics, curve, events, sensorChanges, cartridgeChanges, badges, readingCount, tdd } = profile;
+  const { date, dayOfWeek, metrics, curve, events, sensorChanges, cartridgeChanges, badges, readingCount, tdd, isWorkday } = profile;
 
   // TDD display logic
   const showTDD = tdd && tdd.tdd > 0;
@@ -105,7 +105,34 @@ export default function DayProfileCard({ profile }) {
               </span>
             </div>
           ))}
-          {badges.length === 0 && (
+          
+          {/* Workday indicator - only if ProTime data available */}
+          {isWorkday !== null && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '8px 16px',
+                border: '2px solid var(--color-white)',
+                backgroundColor: isWorkday ? 'rgba(59, 130, 246, 0.2)' : 'rgba(34, 197, 94, 0.2)'
+              }}
+              title={isWorkday ? 'Werkdag volgens ProTime data' : 'Vrije dag volgens ProTime data'}
+            >
+              <span
+                style={{
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}
+              >
+                {isWorkday ? 'WERKDAG' : 'VRIJE DAG'}
+              </span>
+            </div>
+          )}
+          
+          {badges.length === 0 && isWorkday === null && (
             <span
               style={{
                 fontFamily: 'Courier New, monospace',
@@ -224,16 +251,15 @@ export default function DayProfileCard({ profile }) {
           borderTop: '3px solid var(--color-black)',
           padding: '16px 24px',
           display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
+          gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '16px',
           backgroundColor: 'var(--bg-secondary)'
         }}
       >
         <MetricBox label="TIR" value={`${metrics.tir}%`} target="≥70%" />
-        <MetricBox label="TAR" value={`${metrics.tar}%`} target="≤25%" />
-        <MetricBox label="TBR" value={`${metrics.tbr}%`} target="<4%" />
         <MetricBox label="Mean±SD" value={`${metrics.mean}±${metrics.sd}`} unit="mg/dL" />
         <MetricBox label="CV" value={`${metrics.cv}%`} target="≤36%" />
+        <MetricBox label="MAGE" value={`${metrics.mage}`} unit="mg/dL" />
       </div>
     </div>
   );
@@ -469,28 +495,17 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
           <path d={curvePath} fill="none" stroke="var(--color-black)" strokeWidth={2} />
         )}
 
-        {/* Event markers */}
-        {events.hypoL2.events.map((event, i) => (
+        {/* Event markers - colored by severity */}
+        {events.hypoEpisodes?.events?.map((episode, i) => (
           <circle
-            key={`hypoL2-${i}`}
-            cx={xScale((event.minuteOfDay || 0) / 5)}
-            cy={yScale(event.startGlucose || 50)}
+            key={`hypo-${i}`}
+            cx={xScale((episode.minuteOfDay || 0) / 5)}
+            cy={yScale(episode.startGlucose || 60)}
             r={6}
-            fill="#DC2626"
+            fill={episode.severity === 'severe' ? '#DC2626' : '#F59E0B'}
             stroke="var(--color-black)"
             strokeWidth={2}
-          />
-        ))}
-
-        {events.hypoL1.events.map((event, i) => (
-          <circle
-            key={`hypoL1-${i}`}
-            cx={xScale((event.minuteOfDay || 0) / 5)}
-            cy={yScale(event.startGlucose || 65)}
-            r={6}
-            fill="#F59E0B"
-            stroke="var(--color-black)"
-            strokeWidth={2}
+            title={`${episode.severity === 'severe' ? 'Severe' : 'Low'} episode (nadir: ${Math.round(episode.nadir)} mg/dL, ${episode.duration}min)`}
           />
         ))}
 

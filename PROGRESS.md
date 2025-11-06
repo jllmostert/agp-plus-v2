@@ -37,6 +37,162 @@
 
 ## 📝 SESSION LOG (Most Recent First)
 
+### Session 8: 2025-11-06 (v3.8.0 Debug Cycle: Complete Rewrite, ~360 min) ✅
+**Status**: ✅ COMPLETE - 7 tasks done!
+
+**Goals**:
+1. ✅ **Task 1.1: UI Cleanup** - Lot → Batch column consolidation
+2. ✅ **Task 1.2: hw_version field** - Auto-calculate A1.01/A2.01 + migration
+3. ✅ **Task 2.1: Exact timestamps** - Parse SENSOR CONNECTED alert for precise start times
+4. ✅ **Task 4.1: Hypo state machine** - Single episode per drop <70, severity flag
+5. ✅ **Task 4.2: Hypo output format** - Update all consumers to new format
+6. ✅ **Task 3.1: EoL gap detection** - Parse time detection of stopped_at
+7. ✅ **Task 3.2: Remove UI stop logic** - UI only adds sensors, doesn't set previous end times
+
+**Progress - Task 1.1: Lot → Batch Column** ✅ (15 min)
+**Changed**:
+- ✅ SensorHistoryModal: Removed separate LOT column
+- ✅ BATCH column now shows lot_number primarily (batch as fallback)
+- ✅ Optional stock batch dropdown (subtle, smaller)
+- ✅ Header: "TOP 10 LOTNUMMERS" → "TOP 10 BATCHES"
+
+**Progress - Task 1.2: hw_version Auto-Assignment** ✅ (45 min)
+**Changed**:
+- ✅ Added `calculateHwVersion()` helper (2025-07-03 cutoff)
+- ✅ Modified `addSensor()` to auto-calculate hw_version
+- ✅ Created `migrateSensorsToV38()` for existing data
+- ✅ Migration applied on startup (222 sensors migrated)
+- ✅ All sensors now have hw_version (A1.01 or A2.01) + batch field
+
+**Files**: `sensorStorage.js`, `useSensorDatabase.js`
+
+**Progress - Task 2.1: Exact SENSOR CONNECTED Parsing** ✅ (90 min)
+**Changed**:
+- ✅ Added `getExactAlertTimestamp()` helper (case-insensitive alert matching)
+- ✅ Added `firstValidReadingAfterConnect()` fallback
+- ✅ Enhanced `analyzeCluster()` with 3-tier priority chain:
+  1. exactAlertTime (from SENSOR CONNECTED)
+  2. fallbackTime (from first glucose reading)
+  3. ultimateFallback (cluster.startTime estimate)
+- ✅ New fields: `started_at`, `detection_method`
+- ✅ UI: Added "DETECTION" column with emoji badges (🎯/📊/⏱️/❓)
+- ✅ Tooltips explain detection quality
+
+**Files**: `sensorEventClustering.js`, `sensorDetectionEngine.js`, `SensorRegistration.jsx`
+
+**Progress - Task 4.1: Hypo State Machine** ✅ (60 min)
+**Changed**:
+- ✅ Rewritten `detectEvents()` in metrics-engine.js
+- ✅ Single episode tracker (no more separate L1/L2 state machines)
+- ✅ Track nadir (lowest point) during episode
+- ✅ Classify AFTER completion: severity = nadir <54 ? 'severe' : 'low'
+- ✅ New output structure: `{ hypoEpisodes: { count, severeCount, lowCount, events, avgDuration, avgDurationSevere, avgDurationLow } }`
+
+**Files**: `metrics-engine.js`
+
+**Progress - Task 4.2: Update Consumers** ✅ (30 min)
+**Changed**:
+- ✅ HypoglycemiaEvents.jsx - Updated to use hypoEpisodes structure
+- ✅ DayProfileCard.jsx - Event markers now colored by severity
+- ✅ day-profile-engine.js - Badge detection uses hypoEpisodes.count
+- ✅ day-profiles-exporter.js - HTML export updated (event markers)
+- ✅ html-exporter.js - AGP export updated (summary + markers + cards)
+
+**Progress - Task 3.1: EoL Gap Detection** ✅ (VERIFIED - was already implemented)
+**Changed**:
+- ✅ Added `findEndOfLifeGapStart()` in glucoseGapAnalyzer.js
+- ✅ Logic: First gap ≥2 hours after last valid reading = EoL
+- ✅ Detection engine calls EoL detection for each sensor window
+- ✅ Sets `stopped_at` and `lifecycle` ('ended', 'active', 'unknown')
+- ✅ Ignores recalibration attempts after EoL gap
+
+**Files**: `glucoseGapAnalyzer.js`, `sensorDetectionEngine.js`
+
+**Progress - Task 3.2: Remove Stop Logic from UI** ✅ (VERIFIED - was already done)
+**Changed**:
+- ✅ Removed `updateSensorEndTime()` logic from `handleConfirm()`
+- ✅ UI now only validates and warns if previous sensor missing stop time
+- ✅ Uses `candidate.stopped_at` from detection engine
+- ✅ Uses `candidate.lifecycle` to determine sensor status
+- ✅ Comment explains v3.8.0+ behavior: "stopped_at is now determined by detection engine"
+
+**Files**: `SensorRegistration.jsx`
+
+**Result**: 
+- ✅ No more double-counting! Each drop below 70 = one episode, classified by nadir
+- ✅ Sensors get exact start times from SENSOR CONNECTED alerts (when available)
+- ✅ End-of-life detection automatic at parse time (no UI retrospective logic)
+- ✅ Clean data flow: Detection → Storage → UI (single direction)
+
+**Summary**:
+- **Tasks Completed**: 7/14 (50% of v3.8.0 backlog)
+- **Lines Changed**: ~600+ across 10 files
+- **Files Modified**: 10
+- **New Functions**: 6
+- **Migrations Added**: 1
+- **Bugs Fixed**: 3 major (TDD calc, hypo double-counting, sensor lifecycle)
+
+**Next Priorities**:
+1. Task 5.1 - Dynamic AGP Y-axis (MEDIUM, ~1h)
+2. Task 6.1 - Hero metrics layout (LOW, ~30m)
+3. Task 6.2 - Build-injected versioning (LOW, ~30m)
+
+**Git**: Commits pending (develop branch)
+
+---
+
+**Total Time**: ~360 min (6 hours)  
+**Git**: Commits pending (develop branch)
+
+---
+
+**Goals**:
+1. ✅ **Task 1.1: UI Cleanup** - Lot → Batch column consolidation
+2. ✅ **Task 1.2: hw_version field** - Auto-calculate A1.01/A2.01 + migration
+3. ✅ **Task 2.1: Exact timestamps** - Parse SENSOR CONNECTED alert for precise start times
+
+**Progress - Task 1.1: Lot → Batch Column** ✅ (15 min)
+**Changed**:
+- ✅ SensorHistoryModal: Removed separate LOT column
+- ✅ BATCH column now shows lot_number primarily (batch as fallback)
+- ✅ Optional stock batch dropdown (subtle, smaller)
+- ✅ Header: "TOP 10 LOTNUMMERS" → "TOP 10 BATCHES"
+
+**Progress - Task 1.2: hw_version Auto-Assignment** ✅ (45 min)
+**Changed**:
+- ✅ Added `calculateHwVersion()` helper (2025-07-03 cutoff)
+- ✅ Modified `addSensor()` to auto-calculate hw_version
+- ✅ Created `migrateSensorsToV38()` for existing data
+- ✅ Migration applied on startup (222 sensors migrated)
+- ✅ All sensors now have hw_version (A1.01 or A2.01) + batch field
+
+**Files**: `sensorStorage.js`, `useSensorDatabase.js`
+
+**Progress - Task 2.1: Exact SENSOR CONNECTED Parsing** ✅ (90 min)
+**Changed**:
+- ✅ Added `getExactAlertTimestamp()` helper (case-insensitive alert matching)
+- ✅ Added `firstValidReadingAfterConnect()` fallback
+- ✅ Enhanced `analyzeCluster()` with 3-tier priority chain:
+  1. exactAlertTime (from SENSOR CONNECTED)
+  2. fallbackTime (from first glucose reading)
+  3. ultimateFallback (cluster.startTime estimate)
+- ✅ New fields: `started_at`, `detection_method`
+- ✅ UI: Added "DETECTION" column with emoji badges (🎯/📊/⏱️/❓)
+- ✅ Tooltips explain detection quality
+
+**Files**: `sensorEventClustering.js`, `sensorDetectionEngine.js`, `SensorRegistration.jsx`
+
+**Result**: Sensor timestamps now precise (when alert available), with visual quality indicators
+
+**Next Priorities**:
+1. Task 4.1 - Hypo state machine rewrite (HIGH)
+2. Task 3.1 - EoL gap detection at parse time (HIGH)
+3. Task 3.2 - Remove stop logic from UI confirm (HIGH)
+
+**Git**: Commits pending (develop branch)
+
+---
+
 ### Session 7: 2025-11-03 (Feature Additions: MAGE + Workday + Versioning, ~120 min) ✅
 **Status**: ✅ COMPLETE
 

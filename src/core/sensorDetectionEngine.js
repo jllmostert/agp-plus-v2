@@ -3,10 +3,12 @@
  * 
  * Combines alert clustering with glucose gap analysis to detect sensor changes.
  * Produces high/medium/low confidence candidates for user review.
+ * 
+ * v3.8.0: Added End-of-Life (EoL) gap detection to determine stopped_at automatically.
  */
 
 import { clusterSensorAlerts, analyzeCluster } from './sensorEventClustering.js';
-import { detectGlucoseGaps, findGapsNearTime } from './glucoseGapAnalyzer.js';
+import { detectGlucoseGaps, findGapsNearTime, findEndOfLifeGapStart } from './glucoseGapAnalyzer.js';
 import { debug } from '../utils/debug.js';
 
 const MATCH_WINDOW_HOURS = 6; // Time window for cluster-gap correlation
@@ -34,12 +36,16 @@ export function detectSensorChanges(alerts, glucoseReadings) {
   const candidates = [];
   
   for (const cluster of clusters) {
-    const clusterAnalysis = analyzeCluster(cluster);
+    // Pass glucose readings for fallback timestamp detection
+    const clusterAnalysis = analyzeCluster(cluster, glucoseReadings);
+    
+    // Use started_at (exact timestamp) for gap matching, with fallback to estimatedTime
+    const sensorStartTime = clusterAnalysis.started_at || clusterAnalysis.estimatedTime || cluster.startTime;
     
     // Find nearby gaps
     const nearbyGaps = findGapsNearTime(
       gaps, 
-      clusterAnalysis.estimatedTime || cluster.startTime,
+      sensorStartTime,
       MATCH_WINDOW_HOURS
     );
     
@@ -47,7 +53,7 @@ export function detectSensorChanges(alerts, glucoseReadings) {
     const confidence = calculateConfidence(clusterAnalysis, nearbyGaps);
     
     const candidate = {
-      timestamp: clusterAnalysis.estimatedTime || cluster.startTime,
+      timestamp: sensorStartTime,  // Use exact started_at instead of estimatedTime
       confidence: confidence.level,
       score: confidence.score,
       alerts: cluster.alerts.map(a => a.alert),
@@ -55,7 +61,9 @@ export function detectSensorChanges(alerts, glucoseReadings) {
         duration: g.durationMinutes,
         startTime: g.startTime
       })),
-      reason: buildReasonString(clusterAnalysis, nearbyGaps, confidence)
+      reason: buildReasonString(clusterAnalysis, nearbyGaps, confidence),
+      detection_method: clusterAnalysis.detection_method,  // Track how timestamp was determined
+      stopped_at: null  // Will be determined after all candidates are collected
     };
     
     candidates.push(candidate);
@@ -76,7 +84,8 @@ export function detectSensorChanges(alerts, glucoseReadings) {
         score: 60,
         alerts: [],
         gaps: [{ duration: gap.durationMinutes, startTime: gap.startTime }],
-        reason: `Long glucose gap (${gap.durationMinutes} min) without alerts - possible sensor change`
+        reason: `Long glucose gap (${gap.durationMinutes} min) without alerts - possible sensor change`,
+        stopped_at: null
       });
     }
   }
@@ -84,11 +93,40 @@ export function detectSensorChanges(alerts, glucoseReadings) {
   // Sort by timestamp descending (newest first)
   candidates.sort((a, b) => b.timestamp - a.timestamp);
   
+  // Step 5: Determine stopped_at for each sensor using EoL gap detection
+  for (let i = 0; i < candidates.length; i++) {
+    const currentSensor = candidates[i];
+    const nextSensor = candidates[i + 1]; // Next in time (older)
+    
+    const sensorWindow = {
+      start: currentSensor.timestamp,
+      end: nextSensor ? nextSensor.timestamp : null // No end = currently active
+    };
+    
+    // Find EoL gap within this sensor's lifetime
+    const eolGapStart = findEndOfLifeGapStart(glucoseReadings, sensorWindow);
+    
+    if (eolGapStart) {
+      currentSensor.stopped_at = eolGapStart;
+      currentSensor.lifecycle = 'ended';
+      
+      debug.log('[Detection Engine] EoL detected for sensor', {
+        started_at: currentSensor.timestamp,
+        stopped_at: eolGapStart,
+        duration_hours: ((eolGapStart - currentSensor.timestamp) / 1000 / 60 / 60).toFixed(1)
+      });
+    } else {
+      // No EoL gap found - sensor might still be active or just ended
+      currentSensor.lifecycle = nextSensor ? 'unknown' : 'active';
+    }
+  }
+  
   debug.log('[Detection Engine] Detection complete', {
     candidates: candidates.length,
     high: candidates.filter(c => c.confidence === 'high').length,
     medium: candidates.filter(c => c.confidence === 'medium').length,
-    low: candidates.filter(c => c.confidence === 'low').length
+    low: candidates.filter(c => c.confidence === 'low').length,
+    with_eol: candidates.filter(c => c.stopped_at).length
   });
   
   return {

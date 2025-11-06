@@ -398,7 +398,7 @@ function detectCartridgeChanges(dayData) {
  * - Hypo count: Zero tolerance aligns with safety-first approach
  * 
  * @param {Object} metrics - Calculated metrics { tir, cv, ... }
- * @param {Object} events - Detected events { hypoL1, hypoL2, hyper }
+ * @param {Object} events - Detected events { hypoEpisodes, hyper }
  * @returns {Array} Array of badge objects with { id, emoji, name, description }
  */
 export function detectBadges(metrics, events) {
@@ -409,7 +409,7 @@ export function detectBadges(metrics, events) {
   // Extract key metrics for badge evaluation
   const tir = parseFloat(metrics.tir);  // Time in Range (70-180 mg/dL)
   const cv = parseFloat(metrics.cv);    // Coefficient of Variation (glucose stability)
-  const hypoCount = events.hypoL1.count + events.hypoL2.count;  // Total hypoglycemic events
+  const hypoCount = events.hypoEpisodes?.count || 0;  // Total hypoglycemic episodes
   
   /**
    * BADGE LOGIC

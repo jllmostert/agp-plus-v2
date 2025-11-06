@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { parseCareLinkSections } from '../core/csvSectionParser';
 import { detectSensorChanges } from '../core/sensorDetectionEngine';
-import { addSensor, getSensorHistory, getMostRecentSensorBefore, updateSensorEndTime } from '../storage/sensorStorage';
+import { addSensor, getSensorHistory, getMostRecentSensorBefore } from '../storage/sensorStorage';
 import './SensorRegistration.css';
 
 export default function SensorRegistration({ isOpen, onClose }) {
@@ -136,47 +136,43 @@ export default function SensorRegistration({ isOpen, onClose }) {
     try {
       addDebugLog(`Confirming sensor change: ${formatTimestamp(candidate.timestamp)}`);
       
-      // Step 1: If there's a gap, update the previous sensor's end time
-      if (candidate.gaps && candidate.gaps.length > 0) {
-        const gap = candidate.gaps[0]; // Use first gap
-        const gapStartTime = gap.startTime; // Last reading before gap = end of old sensor
-        
-        addDebugLog(`Gap detected: last reading before gap at ${formatTimestamp(gapStartTime)}`);
-        
-        // Find the most recent sensor that started before this gap
-        const previousSensor = getMostRecentSensorBefore(gapStartTime);
-        
-        if (previousSensor) {
-          addDebugLog(`Found previous sensor: ${previousSensor.sensor_id} (started ${formatTimestamp(previousSensor.start_date)})`);
-          
-          // Update its end time to the gap start
-          const updated = await updateSensorEndTime(previousSensor.sensor_id, gapStartTime.toISOString());
-          
-          if (updated) {
-            addDebugLog(`✅ Updated previous sensor end time: ${formatTimestamp(gapStartTime)}`);
-            addDebugLog(`   Duration: ${previousSensor.duration_days?.toFixed(1) || 'calculating...'} days`);
-          } else {
-            addDebugLog(`⚠️ Failed to update previous sensor`);
-          }
-        } else {
-          addDebugLog(`⚠️ No previous sensor found before gap (might be first sensor in dataset)`);
-        }
+      // v3.8.0+: stopped_at is now determined by detection engine (EoL gap detection)
+      // No need to update previous sensor's end time here - it's already set during detection
+      if (candidate.stopped_at) {
+        addDebugLog(`✅ Sensor lifecycle detected: ended at ${formatTimestamp(candidate.stopped_at)}`);
+      } else if (candidate.lifecycle === 'active') {
+        addDebugLog(`ℹ️ Sensor still active (no EoL gap detected)`);
       } else {
-        addDebugLog(`No gap detected - previous sensor end time will remain null`);
+        addDebugLog(`⚠️ Sensor lifecycle unknown (insufficient data)`);
       }
       
-      // Step 2: Add the new sensor
+      // Validation: warn if previous sensor is missing stop time
+      // (This shouldn't happen with v3.8.0+ detection, but keep as safety check)
+      const previousSensor = getMostRecentSensorBefore(candidate.timestamp);
+      if (previousSensor && !previousSensor.end_date) {
+        addDebugLog(`⚠️ Warning: Previous sensor ${previousSensor.sensor_id} has no end_date`);
+        addDebugLog(`   This sensor should have been assigned stopped_at during detection`);
+      }
+      
+      // Add the new sensor using data from detection engine
       const sensorId = `sensor_${candidate.timestamp.getTime()}`;
       
       const sensorData = {
         id: sensorId,
         startTimestamp: candidate.timestamp.toISOString(),
-        endTimestamp: null, // Will be set when NEXT sensor is added
-        durationHours: null,
-        durationDays: null,
-        reasonStop: null,
-        status: 'active',
+        // Use stopped_at from detection engine (EoL gap detection in v3.8.0+)
+        stoppedAt: candidate.stopped_at ? candidate.stopped_at.toISOString() : null,
+        endTimestamp: candidate.stopped_at ? candidate.stopped_at.toISOString() : null, // Backward compat
+        durationHours: candidate.stopped_at 
+          ? (candidate.stopped_at - candidate.timestamp) / (1000 * 60 * 60)
+          : null,
+        durationDays: candidate.stopped_at
+          ? (candidate.stopped_at - candidate.timestamp) / (1000 * 60 * 60 * 24)
+          : null,
+        reasonStop: candidate.stopped_at ? 'EoL gap detected' : null,
+        status: candidate.lifecycle === 'active' ? 'active' : 'ended',
         confidence: candidate.confidence,
+        lifecycle: candidate.lifecycle || 'unknown',
         lotNumber: null,
         hardwareVersion: null,
         firmwareVersion: null,
@@ -255,6 +251,30 @@ export default function SensorRegistration({ isOpen, onClose }) {
     return 'confidence-low';
   };
 
+  const getDetectionMethodBadge = (method) => {
+    if (!method) return null;
+    
+    const badges = {
+      'exact_alert': { emoji: '🎯', text: 'Exact Alert', title: 'Timestamp from SENSOR CONNECTED alert' },
+      'fallback_reading': { emoji: '📊', text: 'First Reading', title: 'Timestamp from first glucose reading after alert' },
+      'estimated': { emoji: '⏱️', text: 'Estimated', title: 'Timestamp estimated from alert cluster' },
+      'none': { emoji: '❓', text: 'Unknown', title: 'No reliable timestamp found' }
+    };
+    
+    const badge = badges[method] || badges['none'];
+    return `${badge.emoji} ${badge.text}`;
+  };
+
+  const getDetectionMethodTitle = (method) => {
+    const titles = {
+      'exact_alert': 'Timestamp from SENSOR CONNECTED alert',
+      'fallback_reading': 'Timestamp from first glucose reading after alert',
+      'estimated': 'Timestamp estimated from alert cluster',
+      'none': 'No reliable timestamp found'
+    };
+    return titles[method] || '';
+  };
+
   if (!isOpen) return null;
   return (
     <div className="sensor-registration-overlay">
@@ -320,6 +340,7 @@ export default function SensorRegistration({ isOpen, onClose }) {
               <div className="table-header">
                 <div>TIMESTAMP</div>
                 <div>CONFIDENCE</div>
+                <div>DETECTION</div>
                 <div>SCORE</div>
                 <div>ACTIONS</div>
               </div>
@@ -328,6 +349,12 @@ export default function SensorRegistration({ isOpen, onClose }) {
                   <div className="timestamp">{formatTimestamp(candidate.timestamp)}</div>
                   <div className={`confidence ${getConfidenceClass(candidate.confidence)}`}>
                     {getConfidenceBadge(candidate.confidence)}
+                  </div>
+                  <div 
+                    className="detection-method"
+                    title={getDetectionMethodTitle(candidate.detection_method)}
+                  >
+                    {getDetectionMethodBadge(candidate.detection_method)}
                   </div>
                   <div className="score">{candidate.score}/100</div>
                   <div className="actions">

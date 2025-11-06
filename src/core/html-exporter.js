@@ -678,10 +678,10 @@ export const generateHTML = (options) => {
     
     <!-- Hypo events summary -->
     <div style="font-size: 8pt; color: #555; margin-bottom: 3mm; text-align: center;">
-      <strong style="color: #000;">Hypo events/day:</strong> 
-      <strong>${(events.hypoL1.events.length / metrics.days).toFixed(1)}</strong> (≥15min, ≤70 mg/dL) • 
-      <strong style="color: #000;">Severe (&lt;54):</strong> 
-      <strong>${(events.hypoL2.events.length / metrics.days).toFixed(1)}</strong>
+      <strong style="color: #000;">Hypo episodes/day:</strong> 
+      <strong>${((events.hypoEpisodes?.count || 0) / metrics.days).toFixed(1)}</strong> (≥15min, &lt;70 mg/dL) • 
+      <strong style="color: #000;">Severe (nadir &lt;54):</strong> 
+      <strong>${((events.hypoEpisodes?.severeCount || 0) / metrics.days).toFixed(1)}</strong>
     </div>
     
     <svg viewBox="0 0 900 450" width="100%">
@@ -726,19 +726,15 @@ export const generateHTML = (options) => {
       <path d="${generateAGPPath(comparison.comparisonAGP, 'p50', yMin, yMax)}" stroke="#000" stroke-width="2" stroke-dasharray="2,4" fill="none" />
       ` : ''}
       
-      <!-- Hypo event markers -->
-      ${events.hypoL2.events.map(event => {
-        const x = 60 + (event.minuteOfDay / 1440) * 780;
-        const y = 350 - ((event.startGlucose - yMin) / yRange) * 300;
+      <!-- Hypo event markers - colored by severity -->
+      ${(events.hypoEpisodes?.events || []).map(episode => {
+        const x = 60 + (episode.minuteOfDay / 1440) * 780;
+        const y = 350 - ((episode.startGlucose - yMin) / yRange) * 300;
+        const isSevere = episode.severity === 'severe';
         return `
-          <circle cx="${x}" cy="${y}" r="5" fill="#dc2626" stroke="#000000" stroke-width="2"/>
-          <text x="${x}" y="${y + 1.5}" text-anchor="middle" fill="#ffffff" font-size="8" font-weight="bold">×</text>
+          <circle cx="${x}" cy="${y}" r="${isSevere ? 5 : 4}" fill="${isSevere ? '#dc2626' : '#ea580c'}" stroke="#000000" stroke-width="2"/>
+          ${isSevere ? `<text x="${x}" y="${y + 1.5}" text-anchor="middle" fill="#ffffff" font-size="8" font-weight="bold">×</text>` : ''}
         `;
-      }).join('')}
-      ${events.hypoL1.events.map(event => {
-        const x = 60 + (event.minuteOfDay / 1440) * 780;
-        const y = 350 - ((event.startGlucose - yMin) / yRange) * 300;
-        return `<circle cx="${x}" cy="${y}" r="4" fill="#ea580c" stroke="#000000" stroke-width="2"/>`;
       }).join('')}
       
       <!-- Legend box -->
@@ -760,12 +756,12 @@ export const generateHTML = (options) => {
     
     <div class="event-summary">
       <div class="event-card">
-        <div class="event-label">HYPO L2 (&lt;54)</div>
-        <div class="event-count">${events.hypoL2.count}</div>
+        <div class="event-label">SEVERE (nadir &lt;54)</div>
+        <div class="event-count">${events.hypoEpisodes?.severeCount || 0}</div>
       </div>
       <div class="event-card">
-        <div class="event-label">HYPO L1 (54-69)</div>
-        <div class="event-count">${events.hypoL1.count}</div>
+        <div class="event-label">LOW (nadir ≥54)</div>
+        <div class="event-count">${events.hypoEpisodes?.lowCount || 0}</div>
       </div>
       <div class="event-card">
         <div class="event-label">HYPER (&gt;250)</div>

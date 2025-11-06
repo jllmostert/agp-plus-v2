@@ -156,21 +156,21 @@ const generateDayCurveSVG = (curve, events, sensorChanges, cartridgeChanges, agp
         <!-- Daily glucose curve -->
         ${curvePath ? `<path d="${curvePath}" fill="none" stroke="var(--ink)" stroke-width="1.5"/>` : ''}
         
-        <!-- Event markers -->
-        ${events.hypoL2.events.map(event => `
-          <circle cx="${xScale((event.minuteOfDay || 0) / 5)}" 
-                  cy="${yScale(event.startGlucose || 50)}" 
-                  r="5" fill="#dc2626" stroke="#000000" stroke-width="2"/>
-          <text x="${xScale((event.minuteOfDay || 0) / 5)}" 
-                y="${yScale(event.startGlucose || 50) + 1.5}" 
+        <!-- Event markers - colored by severity -->
+        ${(events.hypoEpisodes?.events || []).map(episode => {
+          const isSevere = episode.severity === 'severe';
+          return `
+          <circle cx="${xScale((episode.minuteOfDay || 0) / 5)}" 
+                  cy="${yScale(episode.startGlucose || 60)}" 
+                  r="${isSevere ? 5 : 4}" 
+                  fill="${isSevere ? '#dc2626' : '#ea580c'}" 
+                  stroke="#000000" stroke-width="2"/>
+          ${isSevere ? `<text x="${xScale((episode.minuteOfDay || 0) / 5)}" 
+                y="${yScale(episode.startGlucose || 60) + 1.5}" 
                 text-anchor="middle" fill="#ffffff" 
-                font-size="8" font-weight="bold">×</text>
-        `).join('')}
-        ${events.hypoL1.events.map(event => `
-          <circle cx="${xScale((event.minuteOfDay || 0) / 5)}" 
-                  cy="${yScale(event.startGlucose || 65)}" 
-                  r="4" fill="#ea580c" stroke="#000000" stroke-width="2"/>
-        `).join('')}
+                font-size="8" font-weight="bold">×</text>` : ''}
+        `;
+        }).join('')}
         ${events.hyper.events.map(event => `
           <circle cx="${xScale((event.minuteOfDay || 0) / 5)}" 
                   cy="${yScale(event.startGlucose || 260)}" 

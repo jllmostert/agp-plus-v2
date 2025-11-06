@@ -15,6 +15,77 @@ const RELEVANT_ALERTS = ['SENSOR CONNECTED', 'CHANGE SENSOR'];
 const CLUSTER_WINDOW_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 /**
+ * Find exact timestamp of a specific alert type in a cluster
+ * 
+ * @param {Array} alerts - Alert objects with .alert and .timestamp
+ * @param {string} targetAlertType - Alert type to find (e.g., "SENSOR CONNECTED")
+ * @returns {Date|null} Exact timestamp or null if not found
+ */
+export function getExactAlertTimestamp(alerts, targetAlertType) {
+  if (!alerts || alerts.length === 0) return null;
+  
+  // Case-insensitive, flexible matching (handles both "SENSOR CONNECTED" and "SENSOR_CONNECTED")
+  const targetUpper = targetAlertType.toUpperCase().replace(/[_\s]/g, '');
+  
+  const exactAlert = alerts.find(a => {
+    if (!a.alert) return false;
+    const alertUpper = a.alert.toUpperCase().replace(/[_\s]/g, '');
+    return alertUpper.includes(targetUpper);
+  });
+  
+  return exactAlert?.timestamp || null;
+}
+
+/**
+ * Find first valid glucose reading after sensor connection events
+ * Fallback when exact "SENSOR CONNECTED" alert is not available
+ * 
+ * @param {Array} glucoseReadings - Glucose data points with .timestamp
+ * @param {Array} alerts - Sensor alerts for context
+ * @returns {Date|null} Timestamp of first valid reading after connection
+ */
+export function firstValidReadingAfterConnect(glucoseReadings, alerts) {
+  if (!glucoseReadings || glucoseReadings.length === 0) return null;
+  if (!alerts || alerts.length === 0) return null;
+  
+  // Find earliest sensor-related alert (connection, change, etc.)
+  const sensorAlerts = alerts.filter(a => 
+    a.alert && (
+      a.alert.includes('SENSOR') || 
+      a.alert.includes('CONNECTED') ||
+      a.alert.includes('CHANGE')
+    )
+  );
+  
+  if (sensorAlerts.length === 0) return null;
+  
+  // Get earliest alert timestamp
+  const earliestAlertTime = sensorAlerts.reduce((earliest, a) => {
+    const aTime = new Date(a.timestamp);
+    return aTime < earliest ? aTime : earliest;
+  }, new Date(sensorAlerts[0].timestamp));
+  
+  // Find first glucose reading within 4 hours after earliest alert
+  const SEARCH_WINDOW_MS = 4 * 60 * 60 * 1000; // 4 hours
+  
+  const validReading = glucoseReadings
+    .filter(reading => {
+      if (!reading.timestamp) return false;
+      const readingTime = new Date(reading.timestamp);
+      const timeDiff = readingTime - earliestAlertTime;
+      
+      // Within 4 hours after alert, and reading has valid glucose value
+      return timeDiff >= 0 && 
+             timeDiff < SEARCH_WINDOW_MS && 
+             reading.glucose && 
+             !isNaN(reading.glucose);
+    })
+    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))[0];
+  
+  return validReading ? new Date(validReading.timestamp) : null;
+}
+
+/**
  * Cluster sensor alerts by time
  * @param {Array} readings - CSV readings with alert field
  * @returns {Array} Array of clusters, each with {startTime, endTime, alerts: []}
@@ -66,13 +137,37 @@ export function clusterSensorAlerts(readings) {
 
 /**
  * Analyze cluster to determine if it's a real sensor change
+ * Now uses exact alert timestamps with fallback chain
+ * 
  * @param {Object} cluster - {startTime, endTime, alerts: []}
- * @returns {Object} {confidence: 'high'|'medium'|'low', reason: string, needsConfirmation: boolean}
+ * @param {Array} glucoseReadings - Optional glucose readings for fallback
+ * @returns {Object} Analysis with confidence, reason, estimatedTime, detection_method
  */
-export function analyzeCluster(cluster) {
+export function analyzeCluster(cluster, glucoseReadings = null) {
   const { alerts } = cluster;
   const hasConnected = alerts.some(a => a.alert.includes('SENSOR CONNECTED'));
   const hasChange = alerts.some(a => a.alert.includes('CHANGE SENSOR'));
+
+  // Try to get exact "SENSOR CONNECTED" timestamp
+  const exactAlertTime = getExactAlertTimestamp(alerts, 'SENSOR CONNECTED');
+  
+  // Fallback to first valid reading after connection
+  const fallbackTime = glucoseReadings 
+    ? firstValidReadingAfterConnect(glucoseReadings, alerts)
+    : null;
+  
+  // Ultimate fallback: cluster start time
+  const ultimateFallback = cluster.startTime;
+  
+  // Determine started_at with priority chain
+  const started_at = exactAlertTime || fallbackTime || ultimateFallback;
+  
+  // Track detection method for diagnostics
+  const detection_method = exactAlertTime 
+    ? 'exact_alert' 
+    : fallbackTime 
+      ? 'fallback_reading' 
+      : 'estimated';
 
   // High confidence: Both alerts present
   if (hasConnected && hasChange) {
@@ -80,9 +175,9 @@ export function analyzeCluster(cluster) {
       confidence: 'high',
       reason: 'Both SENSOR CONNECTED and CHANGE SENSOR present',
       needsConfirmation: false,
-      estimatedTime: hasConnected 
-        ? alerts.find(a => a.alert.includes('SENSOR CONNECTED')).timestamp
-        : cluster.startTime
+      estimatedTime: cluster.startTime, // Keep for backwards compat
+      started_at,                        // NEW: Exact timestamp
+      detection_method
     };
   }
 
@@ -92,7 +187,9 @@ export function analyzeCluster(cluster) {
       confidence: 'medium',
       reason: 'SENSOR CONNECTED without CHANGE SENSOR prompt',
       needsConfirmation: alerts.length === 1, // Ask if single event
-      estimatedTime: alerts.find(a => a.alert.includes('SENSOR CONNECTED')).timestamp
+      estimatedTime: alerts.find(a => a.alert.includes('SENSOR CONNECTED')).timestamp,
+      started_at,
+      detection_method
     };
   }
 
@@ -102,7 +199,9 @@ export function analyzeCluster(cluster) {
       confidence: 'medium',
       reason: 'CHANGE SENSOR prompt without SENSOR CONNECTED',
       needsConfirmation: true, // Always ask - did they actually change it?
-      estimatedTime: cluster.startTime
+      estimatedTime: cluster.startTime,
+      started_at,
+      detection_method
     };
   }
 
@@ -111,7 +210,9 @@ export function analyzeCluster(cluster) {
     confidence: 'low',
     reason: 'No relevant sensor alerts',
     needsConfirmation: false,
-    estimatedTime: null
+    estimatedTime: null,
+    started_at: null,
+    detection_method: 'none'
   };
 }
 

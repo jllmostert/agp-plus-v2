@@ -195,7 +195,7 @@
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 0.8fr 2.5fr;
+  grid-template-columns: 2fr 1.5fr 1.5fr 0.8fr 2.5fr;
   background: #000;
   color: #FFF;
   padding: 1rem;
@@ -205,7 +205,7 @@
 
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 0.8fr 2.5fr;
+  grid-template-columns: 2fr 1.5fr 1.5fr 0.8fr 2.5fr;
   padding: 1rem;
   border-bottom: 2px solid #CCC;
   align-items: center;
@@ -237,6 +237,13 @@
 
 .confidence-low {
   color: #B22222;
+}
+
+.detection-method {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #555;
+  cursor: help;
 }
 
 .score {
@@ -338,7 +345,7 @@
 @media (max-width: 900px) {
   .table-header,
   .table-row {
-    grid-template-columns: 1.5fr 1fr 0.8fr 2fr;
+    grid-template-columns: 1.5fr 1fr 1fr 0.8fr 2fr;
     font-size: 0.9rem;
   }
   

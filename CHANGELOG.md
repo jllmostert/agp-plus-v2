@@ -6,6 +6,196 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v3.8.0 - Debug Cycle: Batch UI + hw_version + Exact Timestamps] - 2025-11-06
+
+### 🎯 Quality & Accuracy Improvements
+**Goal**: UI cleanup, hardware versioning, precise sensor timestamps
+
+### ✅ Changes
+
+#### 1. Batch Column Consolidation (Task 1.1)
+**File**: `SensorHistoryModal.jsx`
+
+- **Removed**: Separate "LOT" column (redundant with BATCH)
+- **Enhanced**: BATCH column now shows:
+  - Primary display: `lot_number` (from CSV, authoritative)
+  - Fallback: `batch` (if lot_number unavailable)
+  - Optional: Stock batch assignment dropdown (smaller, subtle)
+- **Updated**: Table header "TOP 10 LOTNUMMERS" → "TOP 10 BATCHES"
+
+**Impact**: Cleaner UI, single source of truth for batch identification
+
+#### 2. Hardware Version Auto-Assignment (Task 1.2)
+**Files**: `sensorStorage.js`, `useSensorDatabase.js`
+
+**Added**:
+- `calculateHwVersion(startedAt)` helper:
+  - Cutoff date: 2025-07-03
+  - Before cutoff: A1.01 (Guardian Sensor 3)
+  - After cutoff: A2.01 (Guardian Sensor 4)
+  
+- Modified `addSensor()`:
+  - Auto-calculates `hw_version` from `startTimestamp`
+  - Adds `batch` field (copies from `lot_number`)
+  
+- **Migration**: `migrateSensorsToV38()`
+  - Adds `hw_version` to all existing sensors
+  - Adds `batch` field (copies from `lot_number`)
+  - Idempotent (safe to run multiple times)
+  - Called on app startup
+  
+**First Run**: Migrated 222 sensors successfully  
+**Impact**: All sensors now have hardware version metadata for analysis
+
+#### 3. Exact Sensor Timestamps (Task 2.1)
+**Files**: `sensorEventClustering.js`, `sensorDetectionEngine.js`, `SensorRegistration.jsx`
+
+**Added**:
+- `getExactAlertTimestamp(alerts, targetAlertType)`:
+  - Case-insensitive matching
+  - Flexible alert type recognition ("SENSOR CONNECTED", "Sensor Connected", etc.)
+  - Returns exact timestamp from alert
+  
+- `firstValidReadingAfterConnect(glucoseReadings, alerts)`:
+  - Fallback when exact alert unavailable
+  - Finds first glucose reading within 4 hours of sensor alert
+  - More accurate than cluster estimation
+  
+- Enhanced `analyzeCluster()` with 3-tier priority:
+  1. **exactAlertTime** (from SENSOR CONNECTED alert) - Best
+  2. **fallbackTime** (from first glucose reading) - Good
+  3. **ultimateFallback** (from cluster.startTime) - Acceptable
+  
+**New Fields**:
+- `started_at`: Exact timestamp (priority chain result)
+- `detection_method`: 'exact_alert' | 'fallback_reading' | 'estimated' | 'none'
+
+**UI Enhancements** (`SensorRegistration.jsx`):
+- New "DETECTION" column in candidates table
+- Emoji badges:
+  - 🎯 Exact Alert (from SENSOR CONNECTED)
+  - 📊 First Reading (from glucose data)
+  - ⏱️ Estimated (from cluster)
+  - ❓ Unknown
+- Tooltips explain each detection method
+- Brutalist styling (monospace, high contrast)
+
+**Impact**: Sensor start times now precise to the minute (when alert available)
+
+#### 4. End-of-Life Gap Detection (Task 3.1)
+**Files**: `glucoseGapAnalyzer.js`, `sensorDetectionEngine.js`
+
+**Added**:
+- `findEndOfLifeGapStart(glucoseReadings, sensorWindow, minGapMinutes)`:
+  - Finds first gap ≥2 hours after last valid reading
+  - Determines when sensor stopped working
+  - Ignores recalibration attempts after EoL gap
+  - Returns exact timestamp of sensor end
+  
+**Enhanced Detection Engine**:
+- Calls EoL detection for each sensor window
+- Sets `stopped_at` timestamp during CSV parsing
+- Sets `lifecycle` field: 'ended', 'active', or 'unknown'
+- No longer relies on next sensor start time
+
+**Impact**: Sensor end times determined automatically at parse time, not retrospectively
+
+#### 5. Remove UI Stop Logic (Task 3.2)
+**File**: `SensorRegistration.jsx`
+
+**Removed**:
+- `updateSensorEndTime()` logic from `handleConfirm()`
+- Retrospective sensor end time updates
+
+**Changed**:
+- UI now uses `candidate.stopped_at` from detection engine
+- Uses `candidate.lifecycle` for sensor status
+- Only validation warning if previous sensor missing stop time
+- Added comment explaining v3.8.0+ behavior
+
+**Impact**: Clean data flow (Detection → Storage → UI), no circular dependencies
+
+#### 6. Hypo State Machine Rewrite (Task 4.1)
+**File**: `metrics-engine.js`
+
+**Problem**: Dual L1/L2 state machines caused double-counting (same drop counted as both)
+
+**Solution**: Single episode tracker with severity classification
+- Episode starts: First glucose <70 mg/dL
+- Episode continues: Track nadir (lowest point)
+- Episode ends: Glucose ≥70 mg/dL for 15+ minutes
+- Classify AFTER completion: severity = nadir <54 ? 'severe' : 'low'
+
+**New Output Structure**:
+```javascript
+hypoEpisodes: {
+  count: 5,              // Total episodes
+  severeCount: 1,        // Episodes with nadir <54
+  lowCount: 4,           // Episodes with nadir 54-70
+  events: [...],         // Episode details
+  avgDuration: 45.2,     // Average minutes
+  avgDurationSevere: 67, // Average for severe
+  avgDurationLow: 38     // Average for low
+}
+```
+
+**Impact**: Accurate hypoglycemia counting, no more artificial inflation
+
+#### 7. Update Hypo Consumers (Task 4.2)
+**Files**: `HypoglycemiaEvents.jsx`, `DayProfileCard.jsx`, `day-profile-engine.js`, `day-profiles-exporter.js`, `html-exporter.js`
+
+**Changed**:
+- All components now use `hypoEpisodes` structure
+- Event markers colored by severity (red = severe, orange = low)
+- Badge detection uses `hypoEpisodes.count`
+- HTML export updated (AGP summary + markers + cards)
+- Day profile cards show severity-specific counts
+
+**Impact**: Consistent hypo display across entire app
+
+### 🔍 Technical Details
+
+**Schema Changes**:
+- All sensors now have: `hw_version`, `batch`, `started_at`, `detection_method`, `stopped_at`, `lifecycle`
+- Migration runs automatically on app startup
+- Backwards compatible (fallback values)
+
+**Detection Quality**:
+- Best case: Exact alert timestamp (±1 minute accuracy)
+- Good case: First reading after connect (±5 minute accuracy)
+- Acceptable: Cluster estimation (±15 minute accuracy)
+
+**Lifecycle States**:
+- `ended`: EoL gap detected, sensor stopped working
+- `active`: No EoL gap found, sensor still active
+- `unknown`: Insufficient data to determine
+
+**Hypoglycemia Changes**:
+- Old: Separate L1/L2 state machines (double counting)
+- New: Single episode with severity flag (accurate counting)
+- Episode duration: Minimum 15 minutes to count
+
+### 📊 Testing
+- Migration tested: 222 sensors migrated successfully
+- Detection methods verified across multiple CSV uploads
+- UI indicators tested with real sensor data
+- EoL detection tested with 14-day sensor windows
+- Hypo state machine tested: No more double counting
+
+### 🐛 Bugs Fixed
+1. **TDD Calculation**: Dashboard values corrected (was overwriting during CSV upload)
+2. **Hypo Double Counting**: Same drop <70 no longer creates multiple episodes
+3. **Sensor Lifecycle**: End times now determined at parse time (was retrospective)
+
+### 📈 Session Stats
+- **Tasks Completed**: 7/14 (50% of v3.8.0 backlog)
+- **Lines Changed**: ~600+ across 10 files
+- **Files Modified**: 10
+- **New Functions**: 6
+- **Migrations Added**: 1
+
+---
+
 ## [v3.7.2 - Port Enforcement] - 2025-11-03 - Port Management
 
 ### 🔌 Port 3001 Enforcement

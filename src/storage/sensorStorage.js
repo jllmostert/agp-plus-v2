@@ -28,6 +28,35 @@ const STORAGE_KEY = 'agp-sensor-database';
 const DELETED_SENSORS_KEY = 'agp-deleted-sensors';
 const DELETED_SENSORS_PERSISTENT_KEY = 'agp-deleted-sensors-persistent-v1';
 
+// Hardware version cutoff date (v3.8.0 schema)
+const HW_V2_CUTOFF = new Date('2025-07-03T00:00:00Z');
+
+/**
+ * Calculate hardware version based on sensor start date
+ * 
+ * @param {string|Date|null} startedAt - Sensor start timestamp
+ * @returns {string} Hardware version ('A1.01' or 'A2.01' or 'Unknown')
+ */
+export function calculateHwVersion(startedAt) {
+  if (!startedAt) return 'Unknown';
+  
+  try {
+    const startDate = new Date(startedAt);
+    
+    // Check for invalid date
+    if (isNaN(startDate.getTime())) {
+      console.warn('[calculateHwVersion] Invalid date:', startedAt);
+      return 'Unknown';
+    }
+    
+    // Version logic: < 2025-07-03 → A1.01, >= 2025-07-03 → A2.01
+    return startDate < HW_V2_CUTOFF ? 'A1.01' : 'A2.01';
+  } catch (err) {
+    console.error('[calculateHwVersion] Error calculating hw_version:', err);
+    return 'Unknown';
+  }
+}
+
 /**
  * Import sensor database from parsed SQLite data
  * 
@@ -558,6 +587,9 @@ export function hasSensorDatabase() {
 /**
  * Add a single sensor to the database
  * 
+ * v3.8.0: Now uses stopped_at from detection engine (EoL gap analysis)
+ * instead of relying on manual UI confirmation.
+ * 
  * @param {Object} sensorData - Sensor record
  * @returns {Promise<void>}
  */
@@ -575,7 +607,8 @@ export async function addSensor(sensorData) {
     const sensor = {
       sensor_id: sensorData.id,
       start_date: sensorData.startTimestamp,
-      end_date: sensorData.endTimestamp,
+      // Use stopped_at from detection engine if available (v3.8.0+)
+      end_date: sensorData.stoppedAt || sensorData.endTimestamp,
       duration_hours: sensorData.durationHours,
       duration_days: sensorData.durationDays,
       reason_stop: sensorData.reasonStop,
@@ -583,10 +616,15 @@ export async function addSensor(sensorData) {
       status: sensorData.status,
       confidence: sensorData.confidence,
       lot_number: sensorData.lotNumber,
-      hw_version: sensorData.hardwareVersion,
+      // Auto-calculate hw_version if not provided (v3.8.0)
+      hw_version: sensorData.hardwareVersion || calculateHwVersion(sensorData.startTimestamp),
       fw_version: sensorData.firmwareVersion,
       notes: sensorData.notes,
-      sequence: sensorData.sequence
+      sequence: sensorData.sequence,
+      // Ensure batch field (prefer over lot for future)
+      batch: sensorData.batch || sensorData.lotNumber,
+      // Lifecycle tracking (v3.8.0+): 'active' | 'ended' | 'unknown'
+      lifecycle: sensorData.lifecycle || 'unknown'
     };
     
     db.sensors.push(sensor);
@@ -625,6 +663,77 @@ export async function updateSensorEndTime(sensorId, endTimestamp) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
   
   return true;
+}
+
+/**
+ * Migrate sensors to v3.8.0 schema
+ * - Add hw_version field (auto-calculate from start_date)
+ * - Add batch field (copy from lot_number)
+ * 
+ * @returns {Object} Migration result with counts
+ */
+export function migrateSensorsToV38() {
+  const db = getSensorDatabase();
+  if (!db || !db.sensors) {
+    return { 
+      success: false, 
+      error: 'No sensor database found',
+      migrated: 0,
+      errors: [] 
+    };
+  }
+  
+  let migrated = 0;
+  const errors = [];
+  
+  console.log('[migrateSensorsToV38] Starting migration for', db.sensors.length, 'sensors');
+  
+  db.sensors.forEach((sensor, idx) => {
+    try {
+      let changed = false;
+      
+      // Add hw_version if missing
+      if (!sensor.hw_version) {
+        sensor.hw_version = calculateHwVersion(
+          sensor.start_date || sensor.started_at
+        );
+        changed = true;
+      }
+      
+      // Add batch field if missing (prefer batch over lot)
+      if (!sensor.batch && sensor.lot_number) {
+        sensor.batch = sensor.lot_number;
+        changed = true;
+      }
+      
+      if (changed) {
+        migrated++;
+      }
+    } catch (err) {
+      errors.push({ 
+        sensor_id: sensor.sensor_id, 
+        index: idx,
+        error: err.message 
+      });
+      console.error('[migrateSensorsToV38] Error migrating sensor:', sensor.sensor_id, err);
+    }
+  });
+  
+  // Save updated database if any changes were made
+  if (migrated > 0) {
+    db.lastUpdated = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    console.log(`[migrateSensorsToV38] ✓ Successfully migrated ${migrated} sensors`);
+  } else {
+    console.log('[migrateSensorsToV38] No migration needed - all sensors already up to date');
+  }
+  
+  return { 
+    success: true,
+    migrated,
+    total: db.sensors.length,
+    errors 
+  };
 }
 
 /**

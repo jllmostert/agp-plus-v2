@@ -75,6 +75,62 @@ function classifyGap(durationMinutes) {
 }
 
 /**
+ * Find End-of-Life gap start for a sensor
+ * 
+ * Determines when a sensor stopped working by finding the first significant gap
+ * (≥2 hours) after the last valid glucose reading within the sensor's lifetime.
+ * 
+ * @param {Array} glucoseReadings - All glucose readings (sorted by timestamp)
+ * @param {Object} sensorWindow - { start: Date, end: Date|null }
+ * @param {number} minGapMinutes - Minimum gap to consider EoL (default: 120)
+ * @returns {Date|null} Timestamp when sensor stopped (gap start), or null if still active
+ */
+export function findEndOfLifeGapStart(glucoseReadings, sensorWindow, minGapMinutes = 120) {
+  if (!glucoseReadings || glucoseReadings.length === 0 || !sensorWindow.start) {
+    return null;
+  }
+  
+  const startTime = sensorWindow.start;
+  const endTime = sensorWindow.end || new Date(); // If no end, use now
+  
+  // Filter readings within sensor window
+  const sensorReadings = glucoseReadings.filter(r => 
+    r.timestamp >= startTime && r.timestamp <= endTime
+  );
+  
+  if (sensorReadings.length === 0) {
+    return null;
+  }
+  
+  // Sort by timestamp (just in case)
+  const sorted = [...sensorReadings].sort((a, b) => a.timestamp - b.timestamp);
+  
+  // Find first EoL gap (≥2 hours after last valid reading)
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+    
+    const timeDiffMs = curr.timestamp - prev.timestamp;
+    const timeDiffMin = timeDiffMs / 1000 / 60;
+    
+    if (timeDiffMin >= minGapMinutes) {
+      // Found EoL gap - return start time (after last valid reading)
+      debug.log('[Gap Analyzer] EoL gap detected', {
+        sensorStart: startTime,
+        lastReading: prev.timestamp,
+        gapStart: prev.timestamp,
+        gapDuration: Math.round(timeDiffMin) + 'min'
+      });
+      
+      return prev.timestamp; // Gap starts after last reading
+    }
+  }
+  
+  // No significant gap found - sensor still active
+  return null;
+}
+
+/**
  * Find gaps near a specific timestamp
  * @param {Array} gaps - Array of gap objects
  * @param {Date} targetTime - Timestamp to search near

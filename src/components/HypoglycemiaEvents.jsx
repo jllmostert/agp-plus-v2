@@ -4,28 +4,30 @@ import { AlertTriangle } from 'lucide-react';
 /**
  * HypoglycemiaEvents - Warning Panel for Hypo Events
  * 
- * Displays Level 1 and Level 2 hypoglycemia events with urgent visual styling.
- * Positioned under AGP chart as a high-visibility warning section.
+ * Displays hypoglycemia episodes with severity classification.
+ * Each episode is classified AFTER completion based on nadir:
+ * - Severe: nadir <54 mg/dL (Level 2)
+ * - Low: nadir ≥54 mg/dL (Level 1)
  * 
- * @param {Object} props.events - { hypoL1: {count, events}, hypoL2: {count, events} }
+ * @param {Object} props.events - { hypoEpisodes: {count, severeCount, lowCount, events} }
  * @param {number} props.tbrPercent - Total time below range percentage
  * @param {number} props.gri - Glycemia Risk Index
  * 
- * @version 2.2.0 - Replaced Total Events with GRI
+ * @version 3.8.0 - Updated for new episode-based hypo detection
  */
 export default function HypoglycemiaEvents({ events, tbrPercent, gri }) {
-  if (!events || (!events.hypoL1?.count && !events.hypoL2?.count)) {
+  if (!events?.hypoEpisodes?.count) {
     return null;
   }
 
-  const l1Count = events.hypoL1?.count || 0;
-  const l2Count = events.hypoL2?.count || 0;
-  const totalEvents = l1Count + l2Count;
+  const severeCount = events.hypoEpisodes.severeCount || 0;
+  const lowCount = events.hypoEpisodes.lowCount || 0;
+  const totalCount = events.hypoEpisodes.count || 0;
 
   // Use average durations calculated by metrics engine
-  const l1AvgDuration = events.hypoL1?.avgDuration || 0;
-  const l2AvgDuration = events.hypoL2?.avgDuration || 0;
-  const avgDuration = events.avgDuration || 0; // Combined average for all hypos
+  const severeAvgDuration = events.hypoEpisodes.avgDurationSevere || 0;
+  const lowAvgDuration = events.hypoEpisodes.avgDurationLow || 0;
+  const avgDuration = events.hypoEpisodes.avgDuration || 0; // Combined average
 
   return (
     <div 
@@ -41,44 +43,44 @@ export default function HypoglycemiaEvents({ events, tbrPercent, gri }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
         <AlertTriangle style={{ width: '24px', height: '24px', color: 'var(--text-inverse)' }} />
         <h3 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-inverse)' }}>
-          Hypoglycemia Events
+          Hypoglycemia Episodes ({totalCount} total)
         </h3>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
         
-        {/* Level 2 Critical - RED background with white text */}
+        {/* Severe Episodes (nadir <54) - RED background with white text */}
         <div style={{ backgroundColor: 'var(--bg-card-dark)', border: '2px solid var(--color-red)', padding: '1rem', borderRadius: '4px' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-inverse)', marginBottom: '0.5rem' }}>
-            Level 2 (&lt;54)
+            Severe (nadir &lt;54)
           </div>
           <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-inverse)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-            {l2Count}
+            {severeCount}
           </div>
           <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-red)', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Critical Events
+            Critical Episodes
           </div>
-          {l2AvgDuration > 0 && (
+          {severeAvgDuration > 0 && (
             <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-inverse)', marginTop: '0.5rem', opacity: 0.8 }}>
-              Ø {l2AvgDuration} min
+              Ø {severeAvgDuration} min
             </div>
           )}
         </div>
 
-        {/* Level 1 Warning - ORANGE border with dark background */}
+        {/* Low Episodes (nadir ≥54) - ORANGE border with dark background */}
         <div style={{ backgroundColor: 'var(--bg-card-dark)', border: '2px solid var(--color-orange)', padding: '1rem', borderRadius: '4px' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-inverse)', marginBottom: '0.5rem' }}>
-            Level 1 (54-70)
+            Low (nadir ≥54)
           </div>
           <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--text-inverse)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-            {l1Count}
+            {lowCount}
           </div>
           <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-orange)', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Warning Events
+            Warning Episodes
           </div>
-          {l1AvgDuration > 0 && (
+          {lowAvgDuration > 0 && (
             <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-inverse)', marginTop: '0.5rem', opacity: 0.8 }}>
-              Ø {l1AvgDuration} min
+              Ø {lowAvgDuration} min
             </div>
           )}
         </div>

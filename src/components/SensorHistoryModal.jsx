@@ -841,7 +841,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
             </div>
           )}
 
-          {/* Lot Number Performance (top 10) */}
+          {/* Batch Performance (top 10) - was "Lot Number Performance" */}
           {lotStats.length > 0 && (
             <div style={{
               border: '3px solid var(--paper)',
@@ -857,7 +857,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                 color: 'var(--paper)',
                 marginBottom: '16px'
               }}>
-                TOP 10 LOTNUMMERS
+                TOP 10 BATCHES
               </h2>
               <div style={{
                 display: 'grid',
@@ -997,21 +997,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                   >
                     DUUR {sortColumn === 'duration_days' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th 
-                    onClick={() => handleSort('lot_number')}
-                    style={{
-                      padding: '12px',
-                      textAlign: 'left',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      cursor: 'pointer',
-                      borderRight: '1px solid var(--paper)'
-                    }}
-                  >
-                    LOT {sortColumn === 'lot_number' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
+                  {/* LOT column hidden - lot_number now shown in BATCH column */}
                   <th 
                     onClick={() => handleSort('hw_version')}
                     style={{
@@ -1216,15 +1202,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                         return durationDays.toFixed(1) + 'd';
                       })()}
                     </td>
-                    <td style={{
-                      padding: '10px 12px',
-                      borderRight: '1px solid var(--grid-line)',
-                      color: 'var(--paper)',
-                      fontFamily: 'Monaco, monospace',
-                      fontWeight: 'bold'
-                    }}>
-                      {sensor.lot_number || '-'}
-                    </td>
+                    {/* LOT cell hidden - lot_number now shown in BATCH cell */}
                     <td style={{
                       padding: '10px 12px',
                       borderRight: '1px solid var(--grid-line)',
@@ -1237,6 +1215,18 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                       padding: '10px 12px',
                       borderRight: '1px solid var(--grid-line)'
                     }}>
+                      {/* Show lot_number as main value */}
+                      <div style={{
+                        fontFamily: 'Monaco, monospace',
+                        fontWeight: 'bold',
+                        color: 'var(--paper)',
+                        fontSize: '12px',
+                        marginBottom: '4px'
+                      }}>
+                        {sensor.lot_number || sensor.batch || '-'}
+                      </div>
+                      
+                      {/* Stock batch assignment dropdown (optional) */}
                       <select
                         value={(() => {
                           const assignment = getAssignmentForSensor(sensor.sensor_id);
@@ -1245,20 +1235,21 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
                         onChange={(e) => handleBatchAssignment(sensor.sensor_id, e.target.value)}
                         style={{
                           width: '100%',
-                          padding: '6px',
-                          border: '2px solid var(--paper)',
+                          padding: '4px',
+                          border: '1px solid var(--paper)',
                           backgroundColor: 'rgba(227, 224, 220, 0.05)',
                           color: 'var(--paper)',
-                          fontSize: '11px',
+                          fontSize: '9px',
                           fontFamily: 'Monaco, monospace',
-                          fontWeight: 'bold',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          opacity: 0.6
                         }}
+                        title="Optional: Assign to stock batch"
                       >
-                        <option value="">-</option>
+                        <option value="">Stock: -</option>
                         {batches.map(batch => (
                           <option key={batch.batch_id} value={batch.batch_id}>
-                            {batch.lot_number}
+                            Stock: {batch.lot_number}
                           </option>
                         ))}
                       </select>

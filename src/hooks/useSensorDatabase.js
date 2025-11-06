@@ -33,7 +33,8 @@ import {
   getSensorHistory, 
   syncUnlockedSensorsToLocalStorage,
   migrateDeletedSensors,
-  cleanupOldDeletedSensors
+  cleanupOldDeletedSensors,
+  migrateSensorsToV38
 } from '../storage/sensorStorage.js';
 
 // Database will be served from /public/sensor_database.db
@@ -218,6 +219,20 @@ export function useSensorDatabase() {
       const cleanupResult = cleanupOldDeletedSensors();
       if (cleanupResult.removed > 0) {
         debug.log('[useSensorDatabase] Cleaned up old deleted sensors:', cleanupResult);
+      }
+
+      // V3.8.0 SCHEMA MIGRATION
+      // Add hw_version and batch fields to all sensors
+      const v38Migration = migrateSensorsToV38();
+      if (v38Migration.success) {
+        debug.log('[useSensorDatabase] v3.8.0 schema migration:', {
+          migrated: v38Migration.migrated,
+          total: v38Migration.total,
+          errors: v38Migration.errors.length
+        });
+        if (v38Migration.errors.length > 0) {
+          debug.warn('[useSensorDatabase] Migration errors:', v38Migration.errors);
+        }
       }
 
       // SYNC UNLOCKED SENSORS TO LOCALSTORAGE
