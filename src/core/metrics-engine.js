@@ -297,7 +297,13 @@ function _computeMODD(dayBins, detectedStepMin = 5, coverageThreshold = 0.7) {
     return _parseDateLoose(a) - _parseDateLoose(b);
   });
   
-  if (days.length < 2) return NaN;
+  console.log(`[MODD DEBUG] Total days: ${days.length}`);
+  console.log(`[MODD DEBUG] First day: ${days[0]}, Last day: ${days[days.length-1]}`);
+  
+  if (days.length < 2) {
+    console.log('[MODD DEBUG] Not enough days (need ≥2)');
+    return NaN;
+  }
   
   const diffs = [];
   const MAX_INTERP_MIN = 0; // Set to 10 for light gap bridging
@@ -309,7 +315,12 @@ function _computeMODD(dayBins, detectedStepMin = 5, coverageThreshold = 0.7) {
     const r1 = dayBins.get(d1);
     const r2 = dayBins.get(d2);
     
-    if (!r1 || !r1.length || !r2 || !r2.length) continue;
+    console.log(`[MODD DEBUG] Pair ${d1}/${d2}: r1=${r1?.length || 0} records, r2=${r2?.length || 0} records`);
+    
+    if (!r1 || !r1.length || !r2 || !r2.length) {
+      console.log(`[MODD DEBUG] Skipping pair ${d1}/${d2}: missing data`);
+      continue;
+    }
     
     // Sort records by time
     const sorted1 = r1.slice().sort((a, b) => a.t - b.t);
@@ -323,25 +334,37 @@ function _computeMODD(dayBins, detectedStepMin = 5, coverageThreshold = 0.7) {
     const cov1 = s1.filter(x => Number.isFinite(x)).length / s1.length;
     const cov2 = s2.filter(x => Number.isFinite(x)).length / s2.length;
     
+    console.log(`[MODD DEBUG] Coverage ${d1}=${(cov1*100).toFixed(1)}%, ${d2}=${(cov2*100).toFixed(1)}%`);
+    
     if (cov1 < coverageThreshold || cov2 < coverageThreshold) {
       console.log(`[MODD] Skipping day pair ${d1}/${d2}: coverage ${(cov1*100).toFixed(1)}%/${(cov2*100).toFixed(1)}%`);
       continue;
     }
     
     // Calculate point-wise differences (same time slots)
+    let pairDiffs = 0;
     for (let k = 0; k < s1.length; k++) {
       const a = s1[k];
       const b = s2[k];
       if (Number.isFinite(a) && Number.isFinite(b)) {
         diffs.push(Math.abs(a - b));
+        pairDiffs++;
       }
     }
+    console.log(`[MODD DEBUG] Pair ${d1}/${d2}: ${pairDiffs} valid comparisons`);
   }
   
-  if (diffs.length === 0) return NaN;
+  console.log(`[MODD DEBUG] Total differences collected: ${diffs.length}`);
+  
+  if (diffs.length === 0) {
+    console.log('[MODD DEBUG] No valid differences - returning NaN');
+    return NaN;
+  }
   
   // Mean of all differences
-  return diffs.reduce((s, v) => s + v, 0) / diffs.length;
+  const result = diffs.reduce((s, v) => s + v, 0) / diffs.length;
+  console.log(`[MODD DEBUG] Final MODD: ${result.toFixed(2)} mg/dL`);
+  return result;
 }
 
 /**
@@ -526,7 +549,7 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
     gmi: gmi.toFixed(1),
     gri: gri.toFixed(1),
     mage: mage.toFixed(1),
-    modd: modd.toFixed(1),
+    modd: moddValue.toFixed(1),  // Use moddValue (has NaN safety)
     min: Math.min(...values),
     max: Math.max(...values),
     days: uniqueDays,

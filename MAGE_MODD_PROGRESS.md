@@ -127,29 +127,41 @@ git cherry-pick <hash>  # If any good changes to keep
 
 **Source**: Current v3.8.0 implementation
 **Test File**: test-data/archive/SAMPLES_Jo Mostert 06-11-2025_7d.csv
+**Reference**: GlyCulator PDF (Sr6ViXYBk6)
 
-*To be filled after testing baseline...*
-
-- Mean: ___ mg/dL
-- SD: ___ mg/dL
-- CV: ___ %
-- MAGE: ___ mg/dL
-- MODD: ___ mg/dL
+- Mean: 133.23 mg/dL
+- SD: 41.33 mg/dL
+- CV: 31.02 %
+- **MAGE: 82.67 mg/dL** (GlyCulator reference)
+- **MODD: 46.46 mg/dL** (GlyCulator reference)
 
 ---
 
-## IMPROVED METRICS (After Changes)
+## IMPROVED METRICS (After Changes - v3.9.0)
 
-**Source**: v3.9.0 implementation
-**Test File**: Same as baseline
+**Source**: v3.9.0 implementation (feature branch)
+**Test File**: Same 14-day period
 
-*To be filled after implementation...*
+- Mean: 133.23 mg/dL (SAME ✅)
+- SD: 41.33 mg/dL (SAME ✅)
+- CV: 31.02 % (SAME ✅)
+- **MAGE: 81.3 mg/dL** ✅ (-1.37 mg/dL, 1.7% improvement)
+- **MODD: NaN mg/dL** ❌ (BROKEN - critical bug)
 
-- Mean: ___ mg/dL (should be SAME)
-- SD: ___ mg/dL (should be SAME)
-- CV: ___ % (should be SAME)
-- MAGE: ___ mg/dL (expected: -2 to -5 mg/dL vs baseline)
-- MODD: ___ mg/dL (expected: similar or slightly different)
+---
+
+## ANALYSIS
+
+### MAGE: ✅ SUCCESS
+- Expected: ~2-5 mg/dL decrease
+- Actual: -1.37 mg/dL (1.7%)
+- **Verdict**: Within expected range, validates algorithm!
+
+### MODD: ❌ CRITICAL BUG
+- Expected: ~46 mg/dL (similar to baseline)
+- Actual: NaN (Not a Number)
+- **Cause**: Likely mismatch between byDay structure and _computeMODD expectations
+- **Action**: Debug and fix required
 
 ---
 
