@@ -24,6 +24,10 @@ export async function exportMasterDataset() {
     const workdaysRaw = localStorage.getItem('workday-dates');
     const workdays = workdaysRaw ? JSON.parse(workdaysRaw) : [];
     
+    // Fetch patient info from localStorage
+    const patientInfoRaw = localStorage.getItem('patient-info');
+    const patientInfo = patientInfoRaw ? JSON.parse(patientInfoRaw) : null;
+    
     // Calculate total readings
     const totalReadings = months.reduce((sum, month) => {
       return sum + (month.readings?.length || 0);
@@ -39,10 +43,12 @@ export async function exportMasterDataset() {
       totalSensors: sensors.length,
       totalCartridges: cartridges.length,
       totalWorkdays: workdays.length,
+      hasPatientInfo: !!patientInfo,
       months,
       sensors,
       cartridges,
-      workdays
+      workdays,
+      patientInfo
     };
     
     
