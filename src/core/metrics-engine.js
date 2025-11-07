@@ -405,49 +405,52 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   const gri = (3.0 * tbrVeryLow) + (2.4 * tbrLow) + (1.6 * tarVeryHigh) + (0.8 * tarHigh);
 
   // MAGE - Mean Amplitude of Glycemic Excursions
+  // Reference: Service FJ et al., Diabetes 1970;19:644-655
+  // v3.9.0 Improvement: Per-day SD + mean-crossing requirement
+  
+  // Group glucose readings by day
   const byDay = {};
   glucoseRows.forEach(r => {
     if (!byDay[r.date]) byDay[r.date] = [];
     byDay[r.date].push({ t: utils.parseDate(r.date, r.time), g: r.glucose });
   });
   
+  // Calculate expected readings per day for coverage check
+  const detectedStepMin = 5; // 5-minute sampling (standard for Guardian 4)
+  const expectedPerDay = Math.round((24 * 60) / detectedStepMin); // 288 readings/day
+  
+  // Calculate MAGE for each complete day
   const dailyMAGE = [];
-  Object.values(byDay).forEach(dayData => {
-    const daySeries = dayData.sort((a, b) => a.t - b.t).map(x => x.g);
-    if (daySeries.length < 3) return;
+  Object.entries(byDay).forEach(([date, dayData]) => {
+    // Sort by time
+    const sorted = dayData.sort((a, b) => a.t - b.t);
+    const daySeries = sorted.map(x => x.g);
     
-    // Find extrema (local minima and maxima)
-    const dayExtrema = [];
-    for (let i = 1; i < daySeries.length - 1; i++) {
-      const prev = daySeries[i - 1];
-      const curr = daySeries[i];
-      const next = daySeries[i + 1];
-      if ((curr > prev && curr > next) || (curr < prev && curr < next)) {
-        dayExtrema.push({ value: curr, isPeak: curr > prev });
-      }
+    // Filter incomplete days (≥70% coverage per ATTD consensus)
+    const coverage = daySeries.length / expectedPerDay;
+    if (coverage < 0.7) {
+      // Skip incomplete days - they skew MAGE calculation
+      return;
     }
     
-    // Calculate excursions between alternating peaks/troughs
-    const dayExcursions = [];
-    for (let k = 1; k < dayExtrema.length; k++) {
-      const e1 = dayExtrema[k - 1];
-      const e2 = dayExtrema[k];
-      if (e1.isPeak === e2.isPeak) continue; // Skip same-type extrema
-      const amp = Math.abs(e2.value - e1.value);
-      if (amp >= sd - 1e-9) { // Only count excursions >= 1 SD
-        dayExcursions.push(amp);
-      }
-    }
+    // Calculate MAGE for this day using improved algorithm
+    const dayMAGE = _magePerDayMeanCross(daySeries);
     
-    if (dayExcursions.length > 0) {
-      const dayMAGE = dayExcursions.reduce((sum, e) => sum + e, 0) / dayExcursions.length;
+    if (Number.isFinite(dayMAGE)) {
       dailyMAGE.push(dayMAGE);
     }
   });
   
+  // Average MAGE across all complete days
   const mage = dailyMAGE.length > 0 
     ? dailyMAGE.reduce((sum, m) => sum + m, 0) / dailyMAGE.length 
     : 0;
+  
+  // Debug logging (v3.9.0)
+  if (dailyMAGE.length < Object.keys(byDay).length) {
+    console.log(`[MAGE] Filtered incomplete days: ${Object.keys(byDay).length - dailyMAGE.length}/${Object.keys(byDay).length} (${((dailyMAGE.length/Object.keys(byDay).length)*100).toFixed(0)}% complete)`);
+  }
+  console.log(`[MAGE] Calculated from ${dailyMAGE.length} complete days: ${mage.toFixed(1)} mg/dL`);
 
   // MODD - Mean Of Daily Differences
   const MODD_BINS = CONFIG.AGP_BINS;
