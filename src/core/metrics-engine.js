@@ -453,66 +453,21 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   console.log(`[MAGE] Calculated from ${dailyMAGE.length} complete days: ${mage.toFixed(1)} mg/dL`);
 
   // MODD - Mean Of Daily Differences
-  const MODD_BINS = CONFIG.AGP_BINS;
-  const dayBins = new Map();
+  // Reference: Molnar GD et al., Diabetologia 1972;8:342-348
+  // v3.9.0 Improvement: Chronological date sorting + uniform time grid
   
-  const ensureDay = (date) => {
-    if (!dayBins.has(date)) {
-      dayBins.set(date, {
-        sum: new Float64Array(MODD_BINS),
-        count: new Uint16Array(MODD_BINS),
-        filled: Array(MODD_BINS).fill(false)
-      });
-    }
-    return dayBins.get(date);
-  };
+  // Reuse byDay from MAGE section (already contains {t: Date, g: number}[])
+  const dayBinsForMODD = new Map(Object.entries(byDay));
   
-  // Bin glucose values by time of day
-  glucoseRows.forEach(row => {
-    const dt = utils.parseDate(row.date, row.time);
-    const minuteOfDay = dt.getHours() * 60 + dt.getMinutes();
-    const binIdx = Math.floor(minuteOfDay / 5);
-    if (binIdx < 0 || binIdx >= MODD_BINS) return;
-    
-    const dayData = ensureDay(row.date);
-    dayData.sum[binIdx] += row.glucose;
-    dayData.count[binIdx] += 1;
-    dayData.filled[binIdx] = true;
-  });
+  // Calculate MODD using improved algorithm
+  const modd = _computeMODD(dayBinsForMODD, detectedStepMin, CONFIG.MODD_COVERAGE_THRESHOLD);
   
-  // Check if a day has sufficient coverage
-  const dayHasCoverage = (date) => {
-    const dayData = dayBins.get(date);
-    if (!dayData) return false;
-    const filledCount = dayData.filled.reduce((sum, filled) => sum + (filled ? 1 : 0), 0);
-    return filledCount >= Math.round(CONFIG.MODD_COVERAGE_THRESHOLD * MODD_BINS);
-  };
+  // Handle NaN result
+  const moddValue = Number.isFinite(modd) ? modd : 0;
   
-  // Calculate MODD between consecutive days
-  const sortedDates = Array.from(dayBins.keys()).sort();
-  let moddSum = 0;
-  let moddCount = 0;
+  // Debug logging
+  console.log(`[MODD] Calculated from ${dayBinsForMODD.size} days: ${moddValue.toFixed(1)} mg/dL`);
   
-  for (let d = 0; d < sortedDates.length - 1; d++) {
-    const date1 = sortedDates[d];
-    const date2 = sortedDates[d + 1];
-    
-    if (!dayHasCoverage(date1) || !dayHasCoverage(date2)) continue;
-    
-    const day1 = dayBins.get(date1);
-    const day2 = dayBins.get(date2);
-    
-    for (let bin = 0; bin < MODD_BINS; bin++) {
-      if (day1.count[bin] > 0 && day2.count[bin] > 0) {
-        const val1 = day1.sum[bin] / day1.count[bin];
-        const val2 = day2.sum[bin] / day2.count[bin];
-        moddSum += Math.abs(val2 - val1);
-        moddCount++;
-      }
-    }
-  }
-  
-  const modd = moddCount > 0 ? moddSum / moddCount : 0;
   const uniqueDays = new Set(glucoseRows.map(r => r.date)).size;
 
   // Calculate data quality metrics - TIME-BASED (not day-based)
