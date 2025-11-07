@@ -631,4 +631,51 @@ const { uploadCSVToV3 } = await import('../../storage/masterDatasetStorage.js');
 
 ---
 
+## Session 17: Multi-File Progress + Cleanup ALL-IN (2025-11-08)
+
+### Phase D: Multi-File Import Progress Tracking ✅
+
+**Goal**: Add real-time progress feedback for multi-file CSV and PDF uploads
+
+**Implementation**:
+
+1. **Progress State** (ImportPanel.jsx)
+   - Added `uploadProgress` state with useState hook
+   - Tracks: isUploading, currentFile, totalFiles, fileName, percentage
+
+2. **CSV Upload Handler**
+   - Progress tracking before loop starts
+   - Updates per file: currentFile, fileName, percentage
+   - Completion state after loop finishes
+   - Success alert for multi-file uploads
+
+3. **PDF Upload Handler**
+   - Same progress pattern as CSV
+   - Handles single file (instant) vs multiple files
+   - Error handling resets progress state
+   - Success alert for multi-file uploads
+
+4. **Progress UI Component**
+   - Brutalist styled progress indicator
+   - Header: "📤 Uploading Files (X of Y)"
+   - Progress bar with green fill (percentage-based)
+   - File name display below bar
+   - Monospace typography, high contrast
+   - Only shows when `isUploading === true`
+
+**Testing**:
+- ✅ Single CSV upload (no progress shown - instant)
+- ✅ Multiple CSV uploads (3-5 files - progress bar works)
+- ✅ Multiple PDF uploads (2-3 files - progress bar works)
+- ✅ Progress bar updates correctly per file
+- ✅ Success messages shown after completion
+- ✅ No console errors
+
+**Files Modified**:
+- `src/components/panels/ImportPanel.jsx` (added useState, progress logic, UI component)
+
+**Phase D Complete**: Multi-file progress tracking working ✅
+
+---
+
 
