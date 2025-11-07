@@ -198,9 +198,84 @@ export async function importMasterDataset(file) {
  * @returns {Promise<Object>} Validation result
  */
 export async function validateImportFile(file) {
-  // TODO: Implement validation
-  return {
-    valid: false,
-    errors: ['Validation not yet implemented']
-  };
+  const errors = [];
+  const warnings = [];
+  
+  try {
+    // Step 1: Parse JSON
+    const text = await file.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      return {
+        valid: false,
+        errors: [`Invalid JSON: ${parseError.message}`]
+      };
+    }
+    
+    // Step 2: Check schema version
+    if (!data.version) {
+      errors.push('Missing schema version');
+    } else if (data.version !== '3.8.0') {
+      warnings.push(`Schema version ${data.version} differs from expected 3.8.0 - import may fail`);
+    }
+    
+    // Step 3: Validate required fields
+    if (!data.months || !Array.isArray(data.months)) {
+      errors.push('Missing or invalid months array (required)');
+    } else if (data.months.length === 0) {
+      warnings.push('No months data in export');
+    }
+    
+    // Step 4: Validate optional fields structure
+    if (data.sensors !== undefined && !Array.isArray(data.sensors)) {
+      errors.push('Invalid sensors field (must be array)');
+    }
+    
+    if (data.cartridges !== undefined && !Array.isArray(data.cartridges)) {
+      errors.push('Invalid cartridges field (must be array)');
+    }
+    
+    if (data.workdays !== undefined && !Array.isArray(data.workdays)) {
+      errors.push('Invalid workdays field (must be array)');
+    }
+    
+    if (data.patientInfo !== undefined && typeof data.patientInfo !== 'object') {
+      errors.push('Invalid patientInfo field (must be object)');
+    }
+    
+    if (data.stockBatches !== undefined && !Array.isArray(data.stockBatches)) {
+      errors.push('Invalid stockBatches field (must be array)');
+    }
+    
+    if (data.stockAssignments !== undefined && !Array.isArray(data.stockAssignments)) {
+      errors.push('Invalid stockAssignments field (must be array)');
+    }
+    
+    // Step 5: Count what will be imported
+    const summary = {
+      months: data.months?.length || 0,
+      readings: data.months?.reduce((sum, m) => sum + (m.readings?.length || 0), 0) || 0,
+      sensors: data.sensors?.length || 0,
+      cartridges: data.cartridges?.length || 0,
+      workdays: data.workdays?.length || 0,
+      hasPatientInfo: !!data.patientInfo,
+      stockBatches: data.stockBatches?.length || 0,
+      stockAssignments: data.stockAssignments?.length || 0
+    };
+    
+    return {
+      valid: errors.length === 0,
+      errors: errors.length > 0 ? errors : undefined,
+      warnings: warnings.length > 0 ? warnings : undefined,
+      summary
+    };
+    
+  } catch (error) {
+    return {
+      valid: false,
+      errors: [`Validation failed: ${error.message}`]
+    };
+  }
 }
