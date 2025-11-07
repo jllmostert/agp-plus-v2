@@ -22,6 +22,9 @@ function DataExportPanel({
   onExportDayProfiles,
   onExportDatabase,
   
+  // Import handler
+  onImportDatabase,
+  
   // Data availability
   dayProfiles,
   patientInfo
@@ -93,27 +96,25 @@ function DataExportPanel({
           }}
           title="Export complete IndexedDB dataset as JSON"
         >
-          💾 Database (JSON)
+          💾 Export Database (JSON)
         </button>
 
         <button
-          onClick={() => alert('Sensor database export coming soon')}
+          onClick={onImportDatabase}
           style={{
             background: 'var(--bg-primary)',
             border: '2px solid var(--border-primary)',
-            color: 'var(--text-secondary)',
-            cursor: 'not-allowed',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
             padding: '1rem',
             fontSize: '0.75rem',
             fontWeight: 700,
             letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            opacity: 0.5
+            textTransform: 'uppercase'
           }}
-          disabled
-          title="Coming soon"
+          title="Import complete dataset from JSON backup"
         >
-          💾 Sensor Database (CSV)
+          📥 Import Database (JSON)
         </button>
 
         <button

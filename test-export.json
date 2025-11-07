@@ -1,0 +1,75 @@
+{
+  "version": "3.8.0",
+  "exportDate": "2025-11-07T11:02:05.913Z",
+  "generator": "AGP+ v3.8.0",
+  "totalReadings": 6,
+  "totalMonths": 2,
+  "totalSensors": 2,
+  "totalCartridges": 1,
+  "totalWorkdays": 3,
+  "totalStockBatches": 1,
+  "totalStockAssignments": 1,
+  "hasPatientInfo": true,
+  "months": [
+    {
+      "month": "2025-10",
+      "readings": [
+        { "timestamp": "2025-10-01T10:00:00Z", "value": 120 },
+        { "timestamp": "2025-10-01T10:05:00Z", "value": 125 },
+        { "timestamp": "2025-10-01T10:10:00Z", "value": 130 }
+      ]
+    },
+    {
+      "month": "2025-11",
+      "readings": [
+        { "timestamp": "2025-11-01T10:00:00Z", "value": 115 },
+        { "timestamp": "2025-11-01T10:05:00Z", "value": 118 },
+        { "timestamp": "2025-11-01T10:10:00Z", "value": 122 }
+      ]
+    }
+  ],
+  "sensors": [
+    {
+      "sensor_id": "TEST_SENSOR_1",
+      "start_date": "2025-10-01",
+      "end_date": "2025-10-07",
+      "is_manually_locked": false
+    },
+    {
+      "sensor_id": "TEST_SENSOR_2",
+      "start_date": "2025-11-01",
+      "end_date": null,
+      "is_manually_locked": false
+    }
+  ],
+  "cartridges": [
+    {
+      "cartridge_id": "TEST_CART_1",
+      "change_date": "2025-10-01T08:00:00Z",
+      "units_remaining": 100
+    }
+  ],
+  "workdays": [
+    "2025-10-15",
+    "2025-10-16",
+    "2025-10-17"
+  ],
+  "patientInfo": {
+    "name": "Test Patient",
+    "dob": "1990-01-15",
+    "mrn": "TEST-12345"
+  },
+  "stockBatches": [
+    {
+      "batch_id": "BATCH_TEST_1",
+      "lot_number": "LOT123",
+      "expiry_date": "2026-12-31"
+    }
+  ],
+  "stockAssignments": [
+    {
+      "sensor_id": "TEST_SENSOR_1",
+      "batch_id": "BATCH_TEST_1"
+    }
+  ]
+}

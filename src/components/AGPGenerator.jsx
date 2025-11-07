@@ -18,6 +18,7 @@ import { parseProTime } from '../core/parsers';
 import { downloadHTML } from '../core/html-exporter';
 import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
 import { exportAndDownload } from '../storage/export';
+import { importMasterDataset, validateImportFile } from '../storage/import';
 import { calculateTDDStatistics } from '../core/insulin-engine';
 
 // UI Components
@@ -26,6 +27,7 @@ import SensorImport from './SensorImport';
 import PeriodSelector from './PeriodSelector';
 import SavedUploadsList from './SavedUploadsList';
 import { MigrationBanner } from './MigrationBanner';
+import DataImportModal from './DataImportModal';
 
 // Container Components
 import ModalManager from './containers/ModalManager';
@@ -142,6 +144,12 @@ export default function AGPGenerator() {
   const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
   const [tddByDay, setTddByDay] = useState(null); // TDD data by day (all days) from storage
+  
+  // Import modal state
+  const [dataImportModalOpen, setDataImportModalOpen] = useState(false);
+  const [importValidation, setImportValidation] = useState(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState(null);
 
   // Load patient info from storage
   useEffect(() => {
@@ -860,6 +868,109 @@ export default function AGPGenerator() {
     }
   };
 
+  /**
+   * Handle database import from JSON file
+   * Opens file picker, validates file, shows confirmation modal
+   */
+  const handleDatabaseImport = async () => {
+    // Create file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      try {
+        // Start validation
+        setIsValidating(true);
+        setDataImportModalOpen(true);
+        
+        // Validate file
+        const validation = await validateImportFile(file);
+        
+        setImportValidation(validation);
+        setIsValidating(false);
+        setPendingImportFile(file);
+        
+      } catch (err) {
+        console.error('Validation failed:', err);
+        setImportValidation({
+          valid: false,
+          errors: [err.message]
+        });
+        setIsValidating(false);
+      }
+    };
+    
+    input.click();
+  };
+
+  /**
+   * Confirm and execute import after validation
+   */
+  const handleImportConfirm = async () => {
+    if (!pendingImportFile) return;
+    
+    try {
+      setDataImportModalOpen(false);
+      
+      // Show loading state
+      alert('⏳ Importing data... This may take a moment.');
+      
+      // Execute import
+      const result = await importMasterDataset(pendingImportFile);
+      
+      if (result.success) {
+        // Show success message with stats
+        const stats = result.stats;
+        const message = `✅ Import Complete!\n\n` +
+          `📊 Months: ${stats.monthsImported}\n` +
+          `📈 Readings: ${stats.readingsImported}\n` +
+          `📍 Sensors: ${stats.sensorsImported}\n` +
+          `💉 Cartridges: ${stats.cartridgesImported}\n` +
+          (stats.workdaysImported > 0 ? `📅 Workdays: ${stats.workdaysImported}\n` : '') +
+          (stats.patientInfoImported ? `👤 Patient Info: Yes\n` : '') +
+          (stats.stockBatchesImported > 0 ? `📦 Batches: ${stats.stockBatchesImported}\n` : '') +
+          (stats.stockAssignmentsImported > 0 ? `🔗 Assignments: ${stats.stockAssignmentsImported}\n` : '') +
+          `\n⏱️ Duration: ${(result.duration / 1000).toFixed(1)}s`;
+        
+        alert(message);
+        
+        // Refresh data
+        masterDataset.refresh();
+        
+        // Reload workdays if imported
+        if (stats.workdaysImported > 0) {
+          const { loadProTimeData } = await import('../storage/masterDatasetStorage');
+          const newWorkdays = await loadProTimeData();
+          setWorkdays(newWorkdays || new Set());
+        }
+        
+        // Reload patient info if imported
+        if (stats.patientInfoImported) {
+          const { patientStorage } = await import('../utils/patientStorage');
+          const info = await patientStorage.get();
+          setPatientInfo(info);
+        }
+        
+      } else {
+        // Show error
+        const errorMsg = result.errors?.join('\n') || 'Unknown error';
+        alert(`❌ Import Failed:\n\n${errorMsg}`);
+      }
+      
+    } catch (err) {
+      console.error('Import failed:', err);
+      alert(`❌ Import Failed:\n\n${err.message}`);
+    } finally {
+      // Clean up
+      setPendingImportFile(null);
+      setImportValidation(null);
+    }
+  };
+
   // ============================================
   // RENDER: Main UI
   // ============================================
@@ -1303,6 +1414,7 @@ export default function AGPGenerator() {
                   alert(`❌ Export failed: ${result.error}`);
                 }
               }}
+              onImportDatabase={handleDatabaseImport}
               dayProfiles={dayProfiles}
               patientInfo={patientInfo}
             />
@@ -1360,6 +1472,19 @@ export default function AGPGenerator() {
           batchAssignmentDialog={batchAssignmentDialog}
           onBatchAssignmentConfirm={handleBatchAssignmentConfirm}
           onBatchAssignmentCancel={handleBatchAssignmentCancel}
+        />
+
+        {/* Data Import Modal */}
+        <DataImportModal
+          isOpen={dataImportModalOpen}
+          onClose={() => {
+            setDataImportModalOpen(false);
+            setImportValidation(null);
+            setPendingImportFile(null);
+          }}
+          onConfirm={handleImportConfirm}
+          validationResult={importValidation}
+          isValidating={isValidating}
         />
 
 
