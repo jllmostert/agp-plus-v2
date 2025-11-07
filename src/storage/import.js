@@ -78,10 +78,19 @@ export async function importMasterDataset(file) {
       const allReadings = [];
       for (const monthData of data.months) {
         if (monthData.readings && Array.isArray(monthData.readings)) {
-          allReadings.push(...monthData.readings);
+          // Convert string timestamps to Date objects
+          const convertedReadings = monthData.readings.map(reading => ({
+            ...reading,
+            timestamp: new Date(reading.timestamp),
+            // Ensure 'glucose' field exists (might be 'value' in test data)
+            glucose: reading.glucose ?? reading.value
+          }));
+          allReadings.push(...convertedReadings);
           stats.monthsImported++;
         }
       }
+      
+      console.log(`[importMasterDataset] Converting ${allReadings.length} readings...`);
       
       if (allReadings.length > 0) {
         // Import all readings at once (will be bucketed automatically)
@@ -89,7 +98,7 @@ export async function importMasterDataset(file) {
         stats.readingsImported = allReadings.length;
       }
       
-      console.log(`[importMasterDataset] Imported ${stats.monthsImported} months, ${stats.readingsImported} readings`);
+      console.log(`[importMasterDataset] ✅ Imported ${stats.monthsImported} months, ${stats.readingsImported} readings`);
     } catch (err) {
       errors.push(`Failed to import glucose data: ${err.message}`);
       console.error('[importMasterDataset] Glucose import error:', err);
