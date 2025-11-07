@@ -12,10 +12,14 @@ import { addBatch, assignSensorToBatch } from './stockStorage';
 /**
  * Import master dataset from JSON file
  * @param {File} file - JSON file from exportMasterDataset()
+ * @param {Function} onProgress - Optional progress callback (stage, current, total, percentage)
  * @returns {Promise<Object>} Import result with stats and errors
  */
-export async function importMasterDataset(file) {
+export async function importMasterDataset(file, onProgress = null) {
   const startTime = Date.now();
+  const stages = ['months', 'sensors', 'cartridges', 'workdays', 'patientInfo', 'stockBatches', 'stockAssignments'];
+  const totalStages = stages.length;
+  
   const stats = {
     monthsImported: 0,
     readingsImported: 0,
@@ -27,6 +31,19 @@ export async function importMasterDataset(file) {
     stockAssignmentsImported: 0
   };
   const errors = [];
+  
+  // Helper to report progress
+  const reportProgress = (stageIndex, stageName) => {
+    if (onProgress) {
+      onProgress({
+        stage: stageName,
+        current: stageIndex + 1,
+        total: totalStages,
+        percentage: Math.round(((stageIndex + 1) / totalStages) * 100)
+      });
+    }
+  };
+  
   try {
     // Step 1: Parse JSON file
     const text = await file.text();
@@ -81,6 +98,8 @@ export async function importMasterDataset(file) {
         stats.readingsImported = allReadings.length;
       }
       
+      reportProgress(0, 'glucose readings');
+      
     } catch (err) {
       errors.push(`Failed to import glucose data: ${err.message}`);
       console.error('[importMasterDataset] Glucose import error:', err);
@@ -100,6 +119,7 @@ export async function importMasterDataset(file) {
       }
       console.log(`[importMasterDataset] Imported ${stats.sensorsImported} sensors`);
     }
+    reportProgress(1, 'sensors');
     
     // Step 6: Import cartridges to IndexedDB
     console.log('[importMasterDataset] Importing cartridges...');
@@ -124,6 +144,7 @@ export async function importMasterDataset(file) {
       }
       console.log(`[importMasterDataset] Imported ${stats.cartridgesImported} cartridges`);
     }
+    reportProgress(2, 'cartridges');
     
     // Step 7: Import ProTime workdays to localStorage
     console.log('[importMasterDataset] Importing workdays...');
@@ -137,6 +158,7 @@ export async function importMasterDataset(file) {
         console.error('[importMasterDataset] Workdays import error:', err);
       }
     }
+    reportProgress(3, 'workdays');
     
     // Step 8: Import patient info to localStorage
     console.log('[importMasterDataset] Importing patient info...');
@@ -150,6 +172,7 @@ export async function importMasterDataset(file) {
         console.error('[importMasterDataset] Patient info import error:', err);
       }
     }
+    reportProgress(4, 'patient info');
     
     // Step 9: Import stock batches
     console.log('[importMasterDataset] Importing stock batches...');
@@ -165,6 +188,7 @@ export async function importMasterDataset(file) {
       }
       console.log(`[importMasterDataset] Imported ${stats.stockBatchesImported} stock batches`);
     }
+    reportProgress(5, 'stock batches');
     
     // Step 10: Import stock assignments
     console.log('[importMasterDataset] Importing stock assignments...');
@@ -180,6 +204,7 @@ export async function importMasterDataset(file) {
       }
       console.log(`[importMasterDataset] Imported ${stats.stockAssignmentsImported} stock assignments`);
     }
+    reportProgress(6, 'stock assignments');
     
     const duration = Date.now() - startTime;
     
