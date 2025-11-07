@@ -61,20 +61,26 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
     }
     
     if (deleteProTime) {
-      // Check localStorage for workdays
-      const stored = localStorage.getItem('agp_protime_workdays');
-      if (stored) {
-        const workdays = JSON.parse(stored);
-        counts.proTimeCount = workdays.length || 0;
+      // Load workdays from IndexedDB
+      try {
+        const { loadProTimeData } = await import('../storage/masterDatasetStorage');
+        const workdaySet = await loadProTimeData();
+        counts.proTimeCount = workdaySet ? workdaySet.size : 0;
+      } catch (err) {
+        console.warn('[DataManagementModal] Failed to load ProTime data:', err);
+        counts.proTimeCount = 0;
       }
     }
     
     if (deleteCartridge) {
-      // Check localStorage for cartridge events
-      const stored = localStorage.getItem('agp_cartridge_changes');
-      if (stored) {
-        const events = JSON.parse(stored);
-        counts.cartridgeCount = events.length || 0;
+      // Load cartridge events from IndexedDB
+      try {
+        const { getCartridgeHistory } = await import('../storage/eventStorage');
+        const cartridges = await getCartridgeHistory();
+        counts.cartridgeCount = cartridges ? cartridges.length : 0;
+      } catch (err) {
+        console.warn('[DataManagementModal] Failed to load cartridge data:', err);
+        counts.cartridgeCount = 0;
       }
     }
     

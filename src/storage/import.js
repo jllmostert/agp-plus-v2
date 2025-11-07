@@ -146,13 +146,18 @@ export async function importMasterDataset(file, onProgress = null) {
     }
     reportProgress(2, 'cartridges');
     
-    // Step 7: Import ProTime workdays to localStorage
+    // Step 7: Import ProTime workdays to V3 storage (IndexedDB)
     console.log('[importMasterDataset] Importing workdays...');
     if (data.workdays && Array.isArray(data.workdays)) {
       try {
-        localStorage.setItem('workday-dates', JSON.stringify(data.workdays));
+        const { saveProTimeData } = await import('./masterDatasetStorage');
+        const workdaySet = new Set(data.workdays);
+        await saveProTimeData(workdaySet);
         stats.workdaysImported = data.workdays.length;
-        console.log(`[importMasterDataset] Imported ${stats.workdaysImported} workdays`);
+        console.log(`[importMasterDataset] Imported ${stats.workdaysImported} workdays to IndexedDB`);
+        
+        // Also save to localStorage for V2 compatibility
+        localStorage.setItem('workday-dates', JSON.stringify(data.workdays));
       } catch (err) {
         errors.push(`Failed to import workdays: ${err.message}`);
         console.error('[importMasterDataset] Workdays import error:', err);

@@ -21,9 +21,18 @@ export async function exportMasterDataset() {
     const sensors = await getSensorHistory();
     const cartridges = await getCartridgeHistory();
     
-    // Fetch ProTime workday data from localStorage
-    const workdaysRaw = localStorage.getItem('workday-dates');
-    const workdays = workdaysRaw ? JSON.parse(workdaysRaw) : [];
+    // Fetch ProTime workday data from V3 storage (IndexedDB)
+    let workdays = [];
+    try {
+      const { loadProTimeData } = await import('./masterDatasetStorage');
+      const workdaySet = await loadProTimeData();
+      workdays = workdaySet ? Array.from(workdaySet) : [];
+    } catch (err) {
+      console.warn('[export] Failed to load ProTime from IndexedDB, trying localStorage fallback:', err);
+      // Fallback to localStorage for V2 compatibility
+      const workdaysRaw = localStorage.getItem('workday-dates');
+      workdays = workdaysRaw ? JSON.parse(workdaysRaw) : [];
+    }
     
     // Fetch patient info from localStorage
     const patientInfoRaw = localStorage.getItem('patient-info');
