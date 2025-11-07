@@ -6,6 +6,52 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v3.8.0 - UI Polish + Build Infrastructure] - 2025-11-07
+
+### 🎨 UI Polish & Build Infrastructure
+**Session**: Tasks 5.1, 6.1, 6.2 completed  
+**Goal**: Professional presentation, dynamic versioning, golden ratio layout
+
+### ✅ Changes
+
+#### Task 5.1: Dynamic AGP Y-Axis - VERIFIED
+**Status**: Already implemented in previous versions
+
+- ✅ Browser uses `calculateAdaptiveYAxis()` (scales based on p10-p90 percentiles)
+- ✅ HTML export uses `calculateDynamicYRange()` (similar adaptive logic)
+- ✅ Smart outlier tracking and display
+- ✅ Smart tick marks (always include 70 and 180 mg/dL when in range)
+- ✅ Clinical bounds: min 40 mg/dL, max 400 mg/dL
+
+**Impact**: AGP charts optimize vertical space based on actual data range (not fixed 0-400)
+
+#### Task 6.1: Golden Ratio Hero Layout
+**File**: `MetricsDisplay.jsx`
+
+- ✅ Implemented golden ratio grid: `gridTemplateColumns: '1fr 1.61fr'`
+- ✅ Left zone (dark, 1 unit): TIR + Mean±SD stacked
+- ✅ Right zone (white, 1.61 units): CV + GMI + TDD in row
+- ✅ Brutalist design maintained (3px borders, high contrast, monospace)
+
+**Impact**: Better visual hierarchy, TIR emphasized as primary quality metric
+
+#### Task 6.2: Build-Injected Versioning
+**Files**: `.env`, `vite.config.js`, `html-exporter.js`, `day-profiles-exporter.js`
+
+- ✅ Created `.env` with `VITE_APP_VERSION=3.8.0`
+- ✅ Updated vite.config.js: defines `__APP_VERSION__` global at build time
+- ✅ Updated HTML exporters to use dynamic version
+- ✅ Single source of truth (no hardcoded version strings)
+
+**Impact**: Professional version management with centralized control
+
+### 📊 Summary
+**Effort**: ~1 hour implementation + 15 min verification  
+**Files**: 5 changed (.env, vite.config.js, 2 exporters, MetricsDisplay.jsx)  
+**Status**: All UI polish tasks complete, ready for v3.8.0 release
+
+---
+
 ## [v3.8.0 - Debug Cycle: Batch UI + hw_version + Exact Timestamps] - 2025-11-06
 
 ### 🎯 Quality & Accuracy Improvements

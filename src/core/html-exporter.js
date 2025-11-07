@@ -548,7 +548,7 @@ export const generateHTML = (options) => {
 </head>
 <body>
   <div class="header">
-    <h1>AGP+ v3.8.0</h1>
+    <h1>AGP+ v${__APP_VERSION__}</h1>
     ${patientInfo && patientInfo.name ? `
     <div class="subtitle" style="margin-bottom: 2mm; font-size: 10pt; background: #fff; color: #000; padding: 2mm; border: 2px solid #fff;">
       <div style="margin-bottom: 1mm;">

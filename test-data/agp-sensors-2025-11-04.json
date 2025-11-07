@@ -1,0 +1,282 @@
+{
+  "version": "1.0",
+  "exportDate": "2025-11-04T08:39:35.092Z",
+  "sensors": [
+    {
+      "sensor_id": 10,
+      "start_date": "2025-10-19 01:01:07",
+      "end_date": "2025-10-25T04:26:05.000Z",
+      "lot_number": "B0425",
+      "hw_version": "A2.01",
+      "notes": "",
+      "reason_stop": "CSV_END",
+      "is_manually_locked": true,
+      "duration_hours": 149.41611111111112,
+      "duration_days": 6.225671296296297
+    },
+    {
+      "sensor_id": 9,
+      "start_date": "2025-10-11 21:00:34",
+      "end_date": "2025-10-19 01:01:07",
+      "lot_number": "B0425",
+      "hw_version": "A2.01",
+      "notes": "",
+      "reason_stop": "CONNECTED",
+      "is_manually_locked": true
+    },
+    {
+      "sensor_id": 8,
+      "start_date": "2025-10-09 10:22:52",
+      "end_date": "2025-10-11 21:00:34",
+      "lot_number": "B0425",
+      "hw_version": "A2.01",
+      "notes": "",
+      "reason_stop": "CONNECTED",
+      "is_manually_locked": true
+    },
+    {
+      "sensor_id": "sensor_1761372687000",
+      "start_date": "2025-10-25T06:11:27.000Z",
+      "end_date": "2025-10-30T10:37:34.000Z",
+      "duration_hours": 124.43527777777778,
+      "duration_days": 5.184803240740741,
+      "reason_stop": null,
+      "success": 0,
+      "status": "active",
+      "confidence": "high",
+      "lot_number": null,
+      "hw_version": null,
+      "fw_version": null,
+      "notes": "CSV auto-detected (HIGH, score: 80/100)",
+      "sequence": null,
+      "is_manually_locked": true
+    },
+    {
+      "sensor_id": "sensor_1761828098000",
+      "start_date": "2025-10-30T12:41:38.000Z",
+      "end_date": "2025-11-03T23:36:28.000Z",
+      "duration_hours": 106.91388888888889,
+      "duration_days": 4.454745370370371,
+      "reason_stop": null,
+      "success": 0,
+      "status": "active",
+      "confidence": "high",
+      "lot_number": null,
+      "hw_version": null,
+      "fw_version": null,
+      "notes": "CSV auto-detected (HIGH, score: 90/100)",
+      "sequence": null,
+      "is_manually_locked": true
+    },
+    {
+      "sensor_id": "sensor_1762231226000",
+      "start_date": "2025-11-04T04:40:26.000Z",
+      "end_date": null,
+      "duration_hours": null,
+      "duration_days": null,
+      "reason_stop": null,
+      "success": 0,
+      "status": "active",
+      "confidence": "high",
+      "lot_number": null,
+      "hw_version": null,
+      "fw_version": null,
+      "notes": "CSV auto-detected (HIGH, score: 90/100)",
+      "sequence": null,
+      "is_manually_locked": false
+    }
+  ],
+  "deletedSensors": [],
+  "batches": [
+    {
+      "batch_id": "BATCH-1762243700856",
+      "lot_number": "HG8Z8PE",
+      "received_date": "10/2025",
+      "received_date_exact": "2025-10-16",
+      "source": "medtronic",
+      "expiry_date": "2026-07-30",
+      "box_quantity": 1,
+      "total_quantity": 1,
+      "notes": "",
+      "assigned_count": 1,
+      "created_at": "2025-11-04T08:08:20.856Z",
+      "updated_at": "2025-11-04T08:17:07.447Z"
+    },
+    {
+      "batch_id": "BATCH-1762243777141",
+      "lot_number": "HG90EZ9",
+      "received_date": "07/2025",
+      "received_date_exact": "2025-07-16",
+      "source": "medtronic",
+      "expiry_date": "2026-08-14",
+      "box_quantity": 1,
+      "total_quantity": 2,
+      "notes": "",
+      "assigned_count": 1,
+      "created_at": "2025-11-04T08:09:37.141Z",
+      "updated_at": "2025-11-04T08:20:15.591Z"
+    },
+    {
+      "batch_id": "BATCH-1762243827020",
+      "lot_number": "B0425",
+      "received_date": "07/2025",
+      "received_date_exact": "2025-07-07",
+      "source": "hospital",
+      "expiry_date": "2026-02-04",
+      "box_quantity": 5,
+      "total_quantity": 10,
+      "notes": "",
+      "assigned_count": 7,
+      "created_at": "2025-11-04T08:10:27.019Z",
+      "updated_at": "2025-11-04T08:19:57.171Z"
+    },
+    {
+      "batch_id": "BATCH-1762243883657",
+      "lot_number": "H1125",
+      "received_date": "10/2025",
+      "received_date_exact": "2025-10-16",
+      "source": "medtronic",
+      "expiry_date": "2026-08-11",
+      "box_quantity": 5,
+      "total_quantity": 5,
+      "notes": "",
+      "assigned_count": 0,
+      "created_at": "2025-11-04T08:11:23.657Z",
+      "updated_at": "2025-11-04T08:11:23.657Z"
+    },
+    {
+      "batch_id": "BATCH-1762244085236",
+      "lot_number": "HG8R1EH",
+      "received_date": "07/2025",
+      "received_date_exact": "2025-07-10",
+      "source": "medtronic",
+      "expiry_date": "2026-04-15",
+      "box_quantity": 1,
+      "total_quantity": 1,
+      "notes": "",
+      "assigned_count": 0,
+      "created_at": "2025-11-04T08:14:45.236Z",
+      "updated_at": "2025-11-04T08:14:45.236Z"
+    },
+    {
+      "batch_id": "BATCH-1762244125704",
+      "lot_number": "E2125",
+      "received_date": "07/2025",
+      "received_date_exact": "2025-07-07",
+      "source": "hospital",
+      "expiry_date": "2026-05-21",
+      "box_quantity": 5,
+      "total_quantity": 5,
+      "notes": "",
+      "assigned_count": 5,
+      "created_at": "2025-11-04T08:15:25.704Z",
+      "updated_at": "2025-11-04T08:17:00.161Z"
+    }
+  ],
+  "assignments": [
+    {
+      "assignment_id": "ASSIGN-1762243904521",
+      "sensor_id": 10,
+      "batch_id": "BATCH-1762243827020",
+      "assigned_at": "2025-11-04T08:11:44.521Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762243906831",
+      "sensor_id": 9,
+      "batch_id": "BATCH-1762243827020",
+      "assigned_at": "2025-11-04T08:11:46.831Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762243909142",
+      "sensor_id": 8,
+      "batch_id": "BATCH-1762243827020",
+      "assigned_at": "2025-11-04T08:11:49.142Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762243912114",
+      "sensor_id": 7,
+      "batch_id": "BATCH-1762243827020",
+      "assigned_at": "2025-11-04T08:11:52.114Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762243915740",
+      "sensor_id": 6,
+      "batch_id": "BATCH-1762243827020",
+      "assigned_at": "2025-11-04T08:11:55.740Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762244207245",
+      "sensor_id": 5,
+      "batch_id": "BATCH-1762244125704",
+      "assigned_at": "2025-11-04T08:16:47.245Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762244210787",
+      "sensor_id": 4,
+      "batch_id": "BATCH-1762244125704",
+      "assigned_at": "2025-11-04T08:16:50.787Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762244213587",
+      "sensor_id": 3,
+      "batch_id": "BATCH-1762244125704",
+      "assigned_at": "2025-11-04T08:16:53.587Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762244216718",
+      "sensor_id": 2,
+      "batch_id": "BATCH-1762244125704",
+      "assigned_at": "2025-11-04T08:16:56.718Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762244220160",
+      "sensor_id": 1,
+      "batch_id": "BATCH-1762244125704",
+      "assigned_at": "2025-11-04T08:17:00.160Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762244227447",
+      "sensor_id": 14,
+      "batch_id": "BATCH-1762243700856",
+      "assigned_at": "2025-11-04T08:17:07.447Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762244370471",
+      "sensor_id": "sensor_1762231226000",
+      "batch_id": "BATCH-1762243827020",
+      "assigned_at": "2025-11-04T08:19:30.471Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762244397171",
+      "sensor_id": "sensor_1761372687000",
+      "batch_id": "BATCH-1762243827020",
+      "assigned_at": "2025-11-04T08:19:57.171Z",
+      "assigned_by": "manual"
+    },
+    {
+      "assignment_id": "ASSIGN-1762244415591",
+      "sensor_id": "sensor_1761828098000",
+      "batch_id": "BATCH-1762243777141",
+      "assigned_at": "2025-11-04T08:20:15.591Z",
+      "assigned_by": "manual"
+    }
+  ],
+  "metadata": {
+    "totalSensors": 6,
+    "deletedCount": 0,
+    "batchesCount": 6,
+    "assignmentsCount": 14
+  }
+}

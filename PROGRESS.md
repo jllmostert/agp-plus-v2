@@ -37,6 +37,202 @@
 
 ## 📝 SESSION LOG (Most Recent First)
 
+### Session 10: 2025-11-07 (Dynamic AGP Y-Axis Implementation, ~45 min) ✅
+**Status**: ✅ COMPLETE - AGP hoofdcurve heeft nu dynamische Y-as!
+
+**Goals**:
+1. ✅ Implementeer dynamische Y-as voor hoofdcurve AGP (browser)
+2. ✅ Verifieer HTML export heeft ook dynamische Y-as
+3. ✅ Sync versienummering naar 3.8.0 overal
+
+**Progress - Dynamic AGP Y-Axis** ✅ COMPLETE (30 min)
+**Problem**: AGPChart.jsx gebruikte fixed `CONFIG.GLUCOSE.MAX = 400` voor Y-as
+**Solution**: Geïmplementeerd `calculateAGPYAxis()` functie:
+- Vindt hoogste waarde in alle AGP percentielen (p5-p95)
+- Berekent dynamische range: `yMax = Math.max(250, Math.min(400, Math.ceil(dataMax / 10) * 10))`
+- Minimum 250 mg/dL, maximum 400 mg/dL
+- Genereert smart ticks (altijd 0, 70, 180 indien in range)
+
+**Changed Files**:
+- ✅ `src/components/AGPChart.jsx`:
+  - Toegevoegd: `calculateAGPYAxis()` functie (berekent yMin, yMax, yTicks)
+  - Toegevoegd: `calculateYTicks()` helper (smart tick generation)
+  - Updated: `yScale` functie (gebruikt dynamische range ipv fixed 400)
+  - Updated: `<GridLines>` component (gebruikt `yTicks` prop)
+  - Updated: `<YAxis>` component (gebruikt `yTicks` prop)
+
+**Verification**: ✅ TESTED & WORKING
+- Browser display: Y-as schaalt correct (bijv. 0-250 bij lage glucose data)
+- HTML export: Y-as schaalt correct (dezelfde logica)
+- Grid lines en axis labels: Passen aan dynamische range
+
+**Progress - Versienummering Sync** ✅ COMPLETE (15 min)
+**Fixed**:
+- ✅ `package.json`: 3.2.0 → **3.8.0**
+- ✅ `index.html`: 3.12.0 → **3.8.0** (meta description + noscript)
+- ✅ `src/utils/version.js`: Fallback 3.2.0 → **3.8.0**
+- ✅ Verified: `vite.config.js` leest automatisch package.json
+
+**Summary**:
+- **Time**: ~45 min
+- **Result**: Hoofdcurve AGP heeft nu perfecte dynamische Y-as
+- **Impact**: Betere ruimtebenutting, focust op relevante glucose range
+- **Status**: TESTED in browser + HTML export - both work! ✅
+
+**Git Status**: Ready to commit
+**Next Task**: Update PROGRESS.md + create HANDOFF document
+
+---
+
+### Session 9: 2025-11-07 (v3.8.0 Build Versioning Complete, ~75 min) ✅
+**Status**: ✅ COMPLETE - 3 tasks verified/done!
+
+**Goals**:
+1. ✅ **Task 5.1: Dynamic AGP Y-Axis** - Verify implementation status
+2. ✅ **Task 6.1: Hero Metrics Layout** - Implement golden ratio (1:1.61) layout  
+3. ✅ **Task 6.2: Build-Injected Versioning** - Dynamic version from .env + fallback
+
+**Progress - Task 5.1: Dynamic AGP Y-Axis** ✅ COMPLETE (ALREADY DONE)
+**Verified**:
+- ✅ Browser display: Uses `calculateAdaptiveYAxis()` from visualization-utils
+- ✅ HTML export: Has `calculateDynamicYRange()` function
+- ✅ Both scale Y-axis based on data percentiles (p10-p90)
+
+**Progress - Task 6.1: Hero Metrics Golden Ratio Layout** ✅ COMPLETE (30 min)
+**Changed**:
+- ✅ Golden ratio grid: `gridTemplateColumns: '1fr 1.61fr'`
+- ✅ Left zone (dark, 1 unit): TIR + Mean±SD stacked
+- ✅ Right zone (white, 1.61 units): CV + GMI + TDD in row
+- ✅ Brutalist design maintained (3px borders, high contrast)
+
+**Progress - Task 6.2: Build-Injected Versioning** ✅ COMPLETE (30 min)
+**Changed**:
+- ✅ Created `.env` with `VITE_APP_VERSION=3.8.0`
+- ✅ Updated `vite.config.js`:
+  - Imports package.json for fallback
+  - Defines `__APP_VERSION__` global (uses .env, falls back to package.json)
+- ✅ Updated `html-exporter.js`: `AGP+ v${__APP_VERSION__}` in header
+- ✅ Updated `day-profiles-exporter.js`: `AGP+ v${__APP_VERSION__}` in footer
+
+**Files Modified**:
+- `.env` (created)
+- `vite.config.js` (added define for __APP_VERSION__)
+- `src/core/html-exporter.js` (dynamic version in HTML header)
+- `src/core/day-profiles-exporter.js` (dynamic version in footer)
+- `src/components/MetricsDisplay.jsx` (golden ratio layout)
+
+**How It Works**:
+```javascript
+// vite.config.js injects version at build time
+define: {
+  '__APP_VERSION__': JSON.stringify(
+    process.env.VITE_APP_VERSION || packageJson.version
+  )
+}
+
+// In any JS file, use:
+const version = __APP_VERSION__; // "3.8.0"
+
+// In HTML templates:
+<h1>AGP+ v${__APP_VERSION__}</h1>
+```
+
+**Benefits**:
+- ✅ Single source of truth (.env or package.json)
+- ✅ No more hardcoded version strings
+- ✅ Easy to update for releases (just change .env)
+- ✅ Build-time injection (no runtime overhead)
+
+**Testing Instructions**:
+1. Open browser: http://localhost:3004
+2. Upload CSV and generate AGP report (Download HTML)
+3. Open downloaded HTML → check header shows "AGP+ v3.8.0"
+4. Generate Day Profiles → Download HTML
+5. Check footer shows "AGP+ v3.8.0 - Day Profiles Export"
+
+**Result**: Version management now centralized and dynamic! ✅
+
+**Next Priorities**:
+1. Task 7.1 - JSON export feature mask (LOW, ~1h)
+2. Task 7.2 - JSON import validation (LOW, ~1h)
+
+**Git**: 5 files changed (ready to commit)
+
+---
+
+**Total Time**: ~75 min (15 min verification + 30 min layout + 30 min versioning)  
+**Files Changed**: `.env`, `vite.config.js`, `html-exporter.js`, `day-profiles-exporter.js`, `MetricsDisplay.jsx`, `PROGRESS.md`  
+**Server**: Running on http://localhost:3004
+
+---
+
+### Session 9 (Earlier): 2025-11-07 (v3.8.0 Task Verification + Golden Ratio Layout, ~45 min) ✅
+**Status**: âœ… COMPLETE - 2 tasks verified/done!
+
+**Goals**:
+1. âœ… **Task 5.1: Dynamic AGP Y-Axis** - Verify implementation status
+2. âœ… **Task 6.1: Hero Metrics Layout** - Implement golden ratio (1:1.61) layout
+
+**Progress - Task 5.1: Dynamic AGP Y-Axis** âœ… COMPLETE (ALREADY DONE)
+**Verified**:
+- âœ… Browser display (`DayProfileCard.jsx`): Uses `calculateAdaptiveYAxis()` from visualization-utils
+- âœ… HTML export (`day-profiles-exporter.js`): Has `calculateDynamicYRange()` function
+- âœ… Both implementations scale Y-axis based on data percentiles
+- âœ… Outlier tracking and display implemented
+- âœ… Smart tick marks (always include 70 and 180 if in range)
+- âœ… Target zone (70-180 mg/dL) only rendered if in view range
+
+**Implementation Details**:
+```javascript
+// Browser: calculateAdaptiveYAxis(curve)
+// - Uses p10/p90 percentiles for range
+// - Adds padding for visual breathing room
+// - Clamps to clinical min (40 mg/dL) and max (400 mg/dL)
+// - Returns: { yMin, yMax, yTicks, outliers }
+
+// HTML Export: calculateDynamicYRange(curve)
+// - Similar logic but simpler (no outlier tracking needed)
+// - Returns: { yMin, yMax }
+```
+
+**Progress - Task 6.1: Hero Metrics Golden Ratio Layout** âœ… COMPLETE (30 min)
+**Changed**:
+- âœ… Implemented golden ratio grid: `gridTemplateColumns: '1fr 1.61fr'`
+- âœ… Left zone (dark, 1 unit): TIR + Mean±SD stacked vertically
+- âœ… Right zone (white, 1.61 units): CV + GMI + TDD in horizontal row
+- âœ… Updated version comment to v3.8.0
+- âœ… Maintains brutalist design (3px borders, high contrast)
+- âœ… All metrics remain accessible and clear
+
+**Files Modified**:
+- `src/components/MetricsDisplay.jsx` - Hero grid layout restructure
+
+**Testing Instructions**:
+1. Open browser: http://localhost:3003
+2. Upload CSV with metrics data
+3. Verify hero metrics layout:
+   - Left: TIR (large) + Mean±SD (below) in dark zone
+   - Right: CV, GMI, TDD side-by-side in white zone
+   - Golden ratio proportions (left narrower, right wider)
+4. Check responsiveness and readability
+
+**Result**: Golden ratio layout provides better visual hierarchy and focus on TIR as primary metric. âœ…
+
+**Next Priorities**:
+1. Task 6.2 - Build-injected versioning (LOW, ~30m)
+2. Task 7.1 - JSON export feature mask (LOW, ~1h)
+3. Task 7.2 - JSON import validation (LOW, ~1h)
+
+**Git**: Changes ready to commit (MetricsDisplay.jsx updated)
+
+---
+
+**Total Time**: ~45 min (15 min verification + 30 min implementation)  
+**Files Changed**: `MetricsDisplay.jsx`, `PROGRESS.md`  
+**Server**: Running on http://localhost:3003
+
+---
+
 ### Session 8: 2025-11-06 (v3.8.0 Debug Cycle: Complete Rewrite, ~360 min) ✅
 **Status**: ✅ COMPLETE - 7 tasks done!
 

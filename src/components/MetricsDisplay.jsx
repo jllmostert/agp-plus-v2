@@ -6,9 +6,13 @@ import { getMetricTooltip } from '../utils/metricDefinitions';
 /**
  * MetricsDisplay - Clinical Dashboard Layout
  * 
- * Hero Grid: 4 primary metrics (TIR 2x wide, Mean±SD, CV, GMI)
+ * Hero Grid: Golden Ratio layout (1:1.61)
+ * - Left zone (dark): TIR + Mean±SD stacked
+ * - Right zone (white): CV + GMI + TDD in row
+ * 
  * Secondary Grid: All other metrics with reduced visual weight
  * 
+ * @version 3.8.0 - Golden ratio hero layout (Task 6.1)
  * @version 2.2.0 - Reorganized Overview section (Analysis Period + Data Quality)
  *                   Moved GRI to HypoglycemiaEvents component
  */
@@ -48,105 +52,21 @@ export default function MetricsDisplay({ metrics, tddData }) {
 
   return (
     <>
-      {/* HERO GRID - Primary Metrics (5 cards in single row) */}
+      {/* HERO GRID - Golden Ratio Layout (1:1.61) */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
-        gap: '1rem',
+        gridTemplateColumns: '1fr 1.61fr',
+        gap: '2rem',
         marginBottom: '2rem'
       }}>
         
-        {/* TIR */}
-        <div 
-          className="card-hero" 
-          style={{ 
-            padding: '2rem',
-            minHeight: '180px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}
-        >
-          <Tooltip text={getMetricTooltip('tir')}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <Activity style={{ width: '24px', height: '24px', color: 'var(--text-inverse)' }} />
-              <span style={{ 
-                fontSize: '0.875rem', 
-                fontWeight: 700, 
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase'
-              }}>
-                Time in Range
-              </span>
-            </div>
-          </Tooltip>
-          
-          <div style={{ 
-            fontSize: 'clamp(3rem, 8vw, 4.5rem)', 
-            fontWeight: 700, 
-            letterSpacing: '-0.02em',
-            marginBottom: '0.5rem',
-            lineHeight: 1
-          }}>
-            {safeFormat(metrics.tir, 1)}%
-          </div>
-          
-          <div style={{ 
-            fontSize: '0.75rem', 
-            fontWeight: 600,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            opacity: 0.8
-          }}>
-            Target ≥70% • 70-180 mg/dL
-          </div>
-        </div>
-
-        {/* Mean ± SD */}
-        <PrimaryMetricCard
-          icon={Activity}
-          label="Mean Glucose"
-          value={safeFormat(metrics.mean, 0)}
-          unit="mg/dL"
-          subtitle={`± ${safeFormat(metrics.sd, 0)} SD`}
-          status={getStatus('mean', metrics.mean)}
-          metricId="mean"
-        />
-
-        {/* CV */}
-        <PrimaryMetricCard
-          icon={Zap}
-          label="CV"
-          value={safeFormat(metrics.cv, 1)}
-          unit="%"
-          subtitle="Target ≤36%"
-          status={getStatus('cv', metrics.cv)}
-          metricId="cv"
-        />
-
-        {/* GMI */}
-        <PrimaryMetricCard
-          icon={Activity}
-          label="GMI"
-          value={safeFormat(metrics.gmi, 1)}
-          unit="%"
-          subtitle={`~${safeFormat(metrics.gmi, 1)}% HbA1c`}
-          status={getStatus('gmi', metrics.gmi)}
-          metricId="gmi"
-        />
-
-        {/* TDD - Total Daily Dose */}
-        {tddData ? (
-          <PrimaryMetricCard
-            icon={Activity}
-            label="TDD"
-            value={safeFormat(tddData.meanTDD, 1)}
-            unit="E"
-            subtitle={`± ${safeFormat(tddData.sdTDD, 1)} SD`}
-            status="neutral"
-            metricId="tdd"
-          />
-        ) : (
+        {/* LEFT ZONE - Dark background (TIR + Mean±SD) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          {/* TIR - Large card */}
           <div 
             className="card-hero" 
             style={{ 
@@ -155,23 +75,125 @@ export default function MetricsDisplay({ metrics, tddData }) {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              alignItems: 'center',
-              opacity: 0.5
+              flex: 1
             }}
           >
-            <span style={{ 
-              fontSize: '0.875rem', 
+            <Tooltip text={getMetricTooltip('tir')}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <Activity style={{ width: '24px', height: '24px', color: 'var(--text-inverse)' }} />
+                <span style={{ 
+                  fontSize: '0.875rem', 
+                  fontWeight: 700, 
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase'
+                }}>
+                  Time in Range
+                </span>
+              </div>
+            </Tooltip>
+            
+            <div style={{ 
+              fontSize: 'clamp(3rem, 8vw, 4.5rem)', 
               fontWeight: 700, 
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase'
+              letterSpacing: '-0.02em',
+              marginBottom: '0.5rem',
+              lineHeight: 1
             }}>
-              TDD
-            </span>
-            <div style={{ fontSize: '0.75rem', marginTop: '1rem' }}>
-              No insulin data
+              {safeFormat(metrics.tir, 1)}%
+            </div>
+            
+            <div style={{ 
+              fontSize: '0.75rem', 
+              fontWeight: 600,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              opacity: 0.8
+            }}>
+              Target ≥70% • 70-180 mg/dL
             </div>
           </div>
-        )}
+
+          {/* Mean ± SD */}
+          <PrimaryMetricCard
+            icon={Activity}
+            label="Mean Glucose"
+            value={safeFormat(metrics.mean, 0)}
+            unit="mg/dL"
+            subtitle={`± ${safeFormat(metrics.sd, 0)} SD`}
+            status={getStatus('mean', metrics.mean)}
+            metricId="mean"
+          />
+        </div>
+
+        {/* RIGHT ZONE - White background (CV, GMI, TDD in row) */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '1rem'
+        }}>
+          {/* CV */}
+          <PrimaryMetricCard
+            icon={Zap}
+            label="CV"
+            value={safeFormat(metrics.cv, 1)}
+            unit="%"
+            subtitle="Target ≤36%"
+            status={getStatus('cv', metrics.cv)}
+            metricId="cv"
+          />
+
+          {/* GMI */}
+          <PrimaryMetricCard
+            icon={Activity}
+            label="GMI"
+            value={safeFormat(metrics.gmi, 1)}
+            unit="%"
+            subtitle={`~${safeFormat(metrics.gmi, 1)}% HbA1c`}
+            status={getStatus('gmi', metrics.gmi)}
+            metricId="gmi"
+          />
+
+          {/* TDD - Total Daily Dose */}
+          {tddData ? (
+            <PrimaryMetricCard
+              icon={Activity}
+              label="TDD"
+              value={safeFormat(tddData.meanTDD, 1)}
+              unit="E"
+              subtitle={`± ${safeFormat(tddData.sdTDD, 1)} SD`}
+              status="neutral"
+              metricId="tdd"
+            />
+          ) : (
+            <div 
+              className="card" 
+              style={{ 
+                padding: '1.5rem',
+                minHeight: '180px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                opacity: 0.5
+              }}
+            >
+              <Tooltip text={getMetricTooltip('tdd')}>
+                <span style={{ 
+                  fontSize: '0.875rem', 
+                  fontWeight: 700, 
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-secondary)'
+                }}>
+                  TDD
+                </span>
+              </Tooltip>
+              <div style={{ fontSize: '0.75rem', marginTop: '1rem', color: 'var(--text-secondary)' }}>
+                No insulin data
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* SECONDARY GRID - Detail Metrics (aligned grid layout) */}

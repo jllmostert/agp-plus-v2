@@ -3,6 +3,78 @@ import { CONFIG } from '../core/metrics-engine.js';
 import TIRBar from './TIRBar.jsx';
 
 /**
+ * Calculate dynamic Y-axis range for AGP chart
+ * 
+ * Same logic as visualization-utils.js but adapted for AGP percentile data.
+ * Finds the highest value across ALL percentiles (p5-p95) to determine range.
+ * 
+ * @param {Array} agpData - Array[288] of AGP bins with percentiles
+ * @returns {Object} { yMin: 0, yMax: 250-400, yTicks: [...] }
+ */
+function calculateAGPYAxis(agpData) {
+  // Extract all percentile values from all bins
+  const allValues = agpData.flatMap(bin => [
+    bin.p5, bin.p25, bin.p50, bin.p75, bin.p95
+  ].filter(v => v != null && !isNaN(v)));
+  
+  // Fallback to 0-250 if no data
+  if (allValues.length === 0) {
+    return {
+      yMin: 0,
+      yMax: 250,
+      yTicks: [0, 50, 70, 100, 150, 180, 200, 250]
+    };
+  }
+  
+  // Find highest value across all percentiles
+  const dataMax = Math.max(...allValues);
+  
+  // Dynamic Y-axis calculation (same as DayProfileCard):
+  // - Always start at 0
+  // - Minimum ceiling of 250, maximum ceiling of 400
+  // - Round up to nearest 10
+  const yMin = 0;
+  const yMax = Math.max(250, Math.min(400, Math.ceil(dataMax / 10) * 10));
+  
+  // Generate smart ticks (always include 0, 70, 180 if in range)
+  const yTicks = calculateYTicks(yMin, yMax);
+  
+  return { yMin, yMax, yTicks };
+}
+
+/**
+ * Calculate smart Y-axis tick values
+ * Same logic as visualization-utils.js
+ */
+function calculateYTicks(yMin, yMax) {
+  const ticks = [0]; // Always start with 0
+  
+  // Add ticks in steps of 50 up to yMax
+  for (let tick = 50; tick <= yMax; tick += 50) {
+    ticks.push(tick);
+  }
+  
+  // Ensure clinical boundaries are included if in range
+  const CRITICAL_TICKS = [70, 180];
+  const MIN_SPACING = 15; // Minimum 15 mg/dL between ticks
+  
+  for (const critical of CRITICAL_TICKS) {
+    if (yMin <= critical && yMax >= critical) {
+      // Check if any existing tick is too close
+      const hasConflict = ticks.some(t => 
+        t !== critical && Math.abs(t - critical) < MIN_SPACING
+      );
+      
+      if (!hasConflict && !ticks.includes(critical)) {
+        ticks.push(critical);
+      }
+    }
+  }
+  
+  return ticks.sort((a, b) => a - b);
+}
+
+/**
  * AGPChart - Ambulatory Glucose Profile SVG Visualization
  * 
  * Renders AGP curve with percentile bands (5th, 25th, 50th, 75th, 95th),
@@ -46,9 +118,17 @@ export default function AGPChart({
   const chartWidth = width - margin.left - margin.right;
   const chartHeight = height - margin.top - margin.bottom;
 
-  // Scale functions
+  // ✨ NEW v3.8.0: Calculate dynamic Y-axis range (0 to 250-400 based on data)
+  const { yMin, yMax, yTicks } = useMemo(() => calculateAGPYAxis(agpData), [agpData]);
+
+  // Scale functions with DYNAMIC Y-axis
   const xScale = (minuteOfDay) => margin.left + (minuteOfDay / 1440) * chartWidth;
-  const yScale = (glucose) => margin.top + chartHeight - ((glucose / CONFIG.GLUCOSE.MAX) * chartHeight);
+  const yScale = (glucose) => {
+    // Clamp glucose to display range
+    const clampedGlucose = Math.max(yMin, Math.min(yMax, glucose));
+    // Map to SVG coordinates (inverted: high glucose = low Y)
+    return margin.top + chartHeight - ((clampedGlucose - yMin) / (yMax - yMin)) * chartHeight;
+  };
 
   // Generate SVG paths using memo for performance
   const paths = useMemo(() => generatePaths(agpData, xScale, yScale), [agpData]);
@@ -87,6 +167,7 @@ export default function AGPChart({
             chartWidth={chartWidth}
             chartHeight={chartHeight}
             yScale={yScale}
+            yTicks={yTicks}
           />
 
           {/* Night end marker - vertical dashed line at 06:00 */}
@@ -163,6 +244,7 @@ export default function AGPChart({
             margin={margin}
             chartHeight={chartHeight}
             yScale={yScale}
+            yTicks={yTicks}
           />
         </svg>
       </div>
@@ -219,13 +301,12 @@ function generateBand(agpData, topPercentile, bottomPercentile, xScale, yScale) 
 
 /**
  * GridLines - Horizontal grid (BRUTALIST: black 1px)
+ * ✨ v3.8.0: Now uses dynamic yTicks instead of hardcoded values
  */
-function GridLines({ margin, chartWidth, chartHeight, yScale }) {
-  const gridValues = [0, 54, 70, 100, 140, 180, 250, 300, 400];
-  
+function GridLines({ margin, chartWidth, chartHeight, yScale, yTicks }) {
   return (
     <g className="grid">
-      {gridValues.map((value) => (
+      {yTicks.map((value) => (
         <line
           key={value}
           x1={margin.left}
@@ -390,10 +471,9 @@ function XAxis({ margin, chartWidth, chartHeight }) {
 
 /**
  * YAxis - Glucose axis (mg/dL)
+ * ✨ v3.8.0: Now uses dynamic yTicks instead of hardcoded values
  */
-function YAxis({ margin, chartHeight, yScale }) {
-  const values = [0, 70, 140, 180, 250, 400];
-
+function YAxis({ margin, chartHeight, yScale, yTicks }) {
   return (
     <g className="y-axis">
       {/* Axis line */}
@@ -407,7 +487,7 @@ function YAxis({ margin, chartHeight, yScale }) {
       />
 
       {/* Value labels */}
-      {values.map((value) => (
+      {yTicks.map((value) => (
         <g key={value}>
           <line
             x1={margin.left - 5}
