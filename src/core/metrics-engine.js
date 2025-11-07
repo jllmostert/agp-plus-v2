@@ -306,7 +306,7 @@ function _computeMODD(dayBins, detectedStepMin = 5, coverageThreshold = 0.7) {
   }
   
   const diffs = [];
-  const MAX_INTERP_MIN = 3; // Allow 3-min tolerance for 5-min sampling (≈half interval)
+  const MAX_INTERP_MIN = 5; // Allow 5-min tolerance (full sampling interval)
   
   for (let i = 1; i < days.length; i++) {
     const d1 = days[i - 1];
