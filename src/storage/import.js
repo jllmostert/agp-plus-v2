@@ -15,9 +15,6 @@ import { addBatch, assignSensorToBatch } from './stockStorage';
  * @returns {Promise<Object>} Import result with stats and errors
  */
 export async function importMasterDataset(file) {
-  console.log('[importMasterDataset] ========== IMPORT STARTED ==========');
-  console.log('[importMasterDataset] File:', file);
-  
   const startTime = Date.now();
   const stats = {
     monthsImported: 0,
@@ -32,14 +29,10 @@ export async function importMasterDataset(file) {
   const errors = [];
   try {
     // Step 1: Parse JSON file
-    console.log('[importMasterDataset] Reading file...');
     const text = await file.text();
-    console.log('[importMasterDataset] File read, length:', text.length);
     const data = JSON.parse(text);
-    console.log('[importMasterDataset] JSON parsed successfully');
     
     // Step 2: Validate schema version
-    console.log('[importMasterDataset] Validating schema...');
     if (!data.version) {
       errors.push('Missing schema version - cannot validate compatibility');
       return {
@@ -66,54 +59,28 @@ export async function importMasterDataset(file) {
       };
     }
     
-    console.log('[importMasterDataset] Schema valid, starting import...');
-    console.log('[importMasterDataset] File contains:', {
-      months: data.months?.length || 0,
-      sensors: data.sensors?.length || 0,
-      cartridges: data.cartridges?.length || 0,
-      workdays: data.workdays?.length || 0,
-      hasPatientInfo: !!data.patientInfo,
-      stockBatches: data.stockBatches?.length || 0
-    });
-    
     // Step 4: Import month buckets to IndexedDB
-    console.log('[importMasterDataset] Importing glucose readings...');
     try {
       // Flatten all readings from all months
       const allReadings = [];
       for (const monthData of data.months) {
         if (monthData.readings && Array.isArray(monthData.readings)) {
           // Convert string timestamps to Date objects
-          const convertedReadings = monthData.readings.map(reading => {
-            const converted = {
-              ...reading,
-              timestamp: new Date(reading.timestamp),
-              glucose: reading.glucose ?? reading.value
-            };
-            console.log('[import] Converted reading:', {
-              original: reading.timestamp,
-              converted: converted.timestamp,
-              isDate: converted.timestamp instanceof Date,
-              glucose: converted.glucose
-            });
-            return converted;
-          });
+          const convertedReadings = monthData.readings.map(reading => ({
+            ...reading,
+            timestamp: new Date(reading.timestamp),
+            glucose: reading.glucose ?? reading.value
+          }));
           allReadings.push(...convertedReadings);
           stats.monthsImported++;
         }
       }
       
-      console.log(`[importMasterDataset] Total readings to import: ${allReadings.length}`);
-      console.log('[importMasterDataset] First reading:', allReadings[0]);
-      
       if (allReadings.length > 0) {
-        // Import all readings at once (will be bucketed automatically)
-        console.log('[importMasterDataset] Calling appendReadingsToMaster...');
         await appendReadingsToMaster(allReadings, 'imported-data.json');
         stats.readingsImported = allReadings.length;
       }
       
-      console.log(`[importMasterDataset] ✅ Imported ${stats.monthsImported} months, ${stats.readingsImported} readings`);
     } catch (err) {
       errors.push(`Failed to import glucose data: ${err.message}`);
       console.error('[importMasterDataset] Glucose import error:', err);
