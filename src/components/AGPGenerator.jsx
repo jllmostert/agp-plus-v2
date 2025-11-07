@@ -28,6 +28,7 @@ import PeriodSelector from './PeriodSelector';
 import SavedUploadsList from './SavedUploadsList';
 import { MigrationBanner } from './MigrationBanner';
 import DataImportModal from './DataImportModal';
+import HeaderBar from './HeaderBar';
 
 // Container Components
 import ModalManager from './containers/ModalManager';
@@ -149,6 +150,17 @@ export default function AGPGenerator() {
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
   const [tddByDay, setTddByDay] = useState(null); // TDD data by day (all days) from storage
   
+  // ============================================
+  // STATE: Panel Navigation (Phase B)
+  // ============================================
+  
+  const [activePanel, setActivePanel] = useState('import'); // Current active panel
+  const [showDevTools, setShowDevTools] = useState(() => {
+    // Check localStorage for persisted DevTools state
+    const saved = localStorage.getItem('agp-devtools-enabled');
+    return saved === 'true';
+  });
+  
   // Import modal state
   const [dataImportModalOpen, setDataImportModalOpen] = useState(false);
   const [importValidation, setImportValidation] = useState(null);
@@ -216,6 +228,25 @@ export default function AGPGenerator() {
     };
     loadLastImport();
   }, [dataImportModalOpen]); // Reload when modal opens/closes
+  
+  // Keyboard shortcut: Ctrl+Shift+D to toggle DevTools (Phase B)
+  useEffect(() => {
+    const handleKeyboard = (e) => {
+      // Ctrl+Shift+D (Windows/Linux) or Cmd+Shift+D (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        setShowDevTools(prev => {
+          const newValue = !prev;
+          localStorage.setItem('agp-devtools-enabled', newValue.toString());
+          console.log('[AGPGenerator] DevTools:', newValue ? 'enabled' : 'disabled');
+          return newValue;
+        });
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, []);
 
   /**
    * Auto-select last 14 days when data becomes ready (green light)
@@ -446,6 +477,13 @@ export default function AGPGenerator() {
     // Update period selector dates for consistency
     setStartDate(start);
     setEndDate(end);
+  };
+  
+  /**
+   * Handle panel navigation changes (Phase B)
+   */
+  const handlePanelChange = (panelId) => {
+    setActivePanel(panelId);
   };
 
   // ============================================
@@ -1152,6 +1190,71 @@ export default function AGPGenerator() {
       
       <div className="app-container">
         
+        {/* Phase B: Main Navigation */}
+        <HeaderBar 
+          activePanel={activePanel}
+          onPanelChange={handlePanelChange}
+        />
+        
+        {/* Phase B: Panel Routing */}
+        <div className="main-content" style={{ 
+          padding: '2rem'
+        }}>
+          
+          {activePanel === 'import' && (
+            <ImportPanel
+              csvData={csvData}
+              workdays={workdays}
+              csvError={csvError}
+              v3UploadError={v3UploadError}
+              onCSVLoad={handleCSVLoad}
+              onProTimeLoad={handleProTimeLoad}
+              onProTimeDelete={handleProTimeDelete}
+            />
+          )}
+          
+          {activePanel === 'dagprofielen' && (
+            <DayProfilesPanel
+              isOpen={true}
+              onClose={() => setActivePanel('import')}
+              dayProfiles={dayProfiles}
+              patientInfo={patientInfo}
+            />
+          )}
+          
+          {activePanel === 'sensoren' && (
+            <SensorHistoryPanel 
+              isOpen={true}
+              onClose={() => {}}
+              sensors={sensors}
+            />
+          )}
+          
+          {activePanel === 'export' && (
+            <ExportPanel
+              onExportHTML={handleExportHTML}
+              onExportDayProfiles={() => {
+                if (dayProfiles && dayProfiles.length > 0) {
+                  downloadDayProfilesHTML(dayProfiles, patientInfo);
+                } else {
+                  alert('No day profiles available');
+                }
+              }}
+              onExportDatabase={async () => {
+                const result = await exportAndDownload();
+                if (result.success) {
+                  alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
+                } else {
+                  alert(`❌ Export failed: ${result.error}`);
+                }
+              }}
+              onImportDatabase={handleDatabaseImport}
+              dayProfiles={dayProfiles}
+              patientInfo={patientInfo}
+            />
+          )}
+        </div>
+        
         {/* Migration Notice (if applicable) */}
         {migrationStatus && (
           <div style={{
@@ -1185,7 +1288,8 @@ export default function AGPGenerator() {
           </div>
         )}
         
-        {/* Header - Golden Ratio Sidebar Layout */}
+        {/* OLD HEADER - HIDDEN IN PHASE B */}
+        {false && (
         <header className="section">
           <div style={{
             display: 'grid',
@@ -1508,21 +1612,14 @@ export default function AGPGenerator() {
             </div>
           )}
         </header>
-
+        )}
+        {/* END OLD HEADER */}
+        
         {/* V3 Migration Banner - Auto-detects and triggers migration */}
         <MigrationBanner />
 
-        {/* V3 Date Range Filter - ENABLED in Phase 3.5
-            
-            Solution implemented: V3 readings are transformed to V2 CSV format in 
-            useMasterDataset hook before returning to AGPGenerator. This maintains 
-            backwards compatibility with all existing calculation engines.
-            
-            Transform happens in useMasterDataset.js:
-            - V3: { timestamp: Date, glucose: 120 }
-            - V2: { Date: "2025/07/01", Time: "00:05:00", "Sensor Glucose (mg/dL)": 120 }
-        */}
-        {useV3Mode && masterDataset.stats && (
+        {/* V3 Date Range Filter - HIDDEN IN PHASE B */}
+        {false && useV3Mode && masterDataset.stats && (
           <section className="section">
             <DateRangeFilter
               datasetRange={masterDataset.stats.dateRange}
@@ -1532,7 +1629,8 @@ export default function AGPGenerator() {
           </section>
         )}
 
-        {/* Control Buttons: IMPORT - DAGPROFIELEN - VOORRAAD - SENSOR HISTORY - EXPORT */}
+        {/* Control Buttons: HIDDEN IN PHASE B */}
+        {false && (
         <section className="section">
           {/* DataLoadingContainer with all 5 buttons */}
           <DataLoadingContainer 
@@ -1592,9 +1690,11 @@ export default function AGPGenerator() {
             />
           )}
         </section>
+        )}
+        {/* END OLD CONTROL BUTTONS */}
 
-        {/* Main Content - Show when data loaded (v2 or v3) and period selected */}
-        {((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
+        {/* Main Content - HIDDEN IN PHASE B */}
+        {false && ((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
           <VisualizationContainer
             metricsResult={metricsResult}
             comparisonData={comparisonData}
@@ -1605,6 +1705,24 @@ export default function AGPGenerator() {
             dayNightEnabled={dayNightEnabled}
             onDayNightToggle={handleDayNightToggle}
           />
+        )}
+
+        {/* Phase B: DevTools Overlay (if enabled) */}
+        {showDevTools && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: '400px',
+            height: '100vh',
+            background: 'var(--bg-primary)',
+            border: '3px solid var(--border-primary)',
+            borderRight: 'none',
+            zIndex: 99999,
+            overflow: 'auto'
+          }}>
+            <DevToolsPanel onClose={() => setShowDevTools(false)} />
+          </div>
         )}
 
         {/* Modal Manager - All modals rendered via portals */}
@@ -1766,6 +1884,23 @@ export default function AGPGenerator() {
               ADA Standards of Care in Diabetes—2025
             </a>
           </p>
+          
+          {/* Phase B: DevTools Hint (only in development) */}
+          {process.env.NODE_ENV !== 'production' && (
+            <p className="mt-3 text-xs" style={{ 
+              color: 'var(--text-secondary)',
+              fontFamily: 'Courier New, monospace',
+              letterSpacing: '0.05em'
+            }}>
+              💡 Developer Tools: Press <kbd style={{
+                padding: '0.125rem 0.375rem',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)',
+                borderRadius: '3px',
+                fontWeight: 'bold'
+              }}>Cmd+Shift+D</kbd>
+            </p>
+          )}
         </footer>
       </div>
     </div>

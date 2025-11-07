@@ -513,3 +513,54 @@ reportProgress(1, 'sensors');
 
 ---
 
+## SESSION 15 - UI Refactor Phase B (2025-11-08)
+
+**Goal**: Main navigation system with 4-button HeaderBar  
+**Status**: ✅ COMPLETE  
+**Branch**: develop  
+**Time**: ~2 hours  
+
+### Phase B: Main Navigation ✅
+
+**Components Created**:
+- ✅ HeaderBar.jsx (4-button navigation: IMPORT, DAGPROFIELEN, SENSOREN, EXPORT)
+
+**AGPGenerator.jsx Changes**:
+- ✅ Added activePanel state (manages which panel is visible)
+- ✅ Added showDevTools state (with localStorage persistence)
+- ✅ Added Cmd+Shift+D keyboard shortcut for DevTools toggle
+- ✅ Added panel routing logic (conditional rendering based on activePanel)
+- ✅ Wired up all panel props (ImportPanel, ExportPanel, SensorHistoryPanel, DayProfilesPanel)
+- ✅ Hidden old navigation/UI (wrapped in `{false && ...}` conditionals)
+- ✅ Added DevTools hint in footer (development mode only)
+
+**Panel Props Wired**:
+- ImportPanel: csvData, workdays, errors, handlers
+- ExportPanel: all export handlers, dayProfiles, patientInfo
+- SensorHistoryPanel: isOpen, onClose, sensors
+- DayProfilesPanel: isOpen, onClose, dayProfiles, patientInfo
+
+**Testing Results**:
+- ✅ All 4 panels accessible and rendering correctly
+- ✅ Active button highlighting works (bright green #00ff00)
+- ✅ Panel switching smooth and responsive
+- ✅ DevTools toggle works (Cmd+Shift+D)
+- ✅ DayProfilesPanel close button returns to Import panel
+- ✅ No console errors, zero regressions
+
+**Styling**:
+- HeaderBar: Brutalist design with 3px borders, monospace typography
+- Active button: Bright green background (#00ff00) with black text
+- Non-active buttons: Transparent with hover effect (bg-secondary)
+- Clean, minimal interface - old golden ratio header removed
+
+**Files Modified**:
+- `src/components/AGPGenerator.jsx` (~100 lines changed)
+- `src/components/HeaderBar.jsx` (created, 103 lines)
+- `PROGRESS.md` (this entry)
+
+**Next Steps**: Session 16 - Panel Components (populate stub panels with real functionality)
+
+---
+
+
