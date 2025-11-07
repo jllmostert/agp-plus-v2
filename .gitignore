@@ -36,3 +36,6 @@ coverage/
 
 # Misc
 .cache/*.pdf
+
+# Test data exports (can be large)
+test-data/agp-master-*.json
