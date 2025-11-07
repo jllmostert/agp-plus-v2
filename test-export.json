@@ -44,9 +44,11 @@
   ],
   "cartridges": [
     {
-      "cartridge_id": "TEST_CART_1",
-      "change_date": "2025-10-01T08:00:00Z",
-      "units_remaining": 100
+      "date": "2025/10/01",
+      "time": "08:00:00",
+      "timestamp": "2025-10-01T08:00:00Z",
+      "alarmText": "Rewind",
+      "sourceFile": "test-data.csv"
     }
   ],
   "workdays": [

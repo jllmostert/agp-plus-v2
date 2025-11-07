@@ -6,7 +6,7 @@
 
 import { appendReadingsToMaster } from './masterDatasetStorage';
 import { addSensor } from './sensorStorage';
-import { addCartridgeChange } from './eventStorage';
+import { storeCartridgeChange } from './eventStorage';
 import { addBatch, assignSensorToBatch } from './stockStorage';
 
 /**
@@ -115,11 +115,20 @@ export async function importMasterDataset(file) {
     if (data.cartridges && Array.isArray(data.cartridges)) {
       for (const cartridge of data.cartridges) {
         try {
-          await addCartridgeChange(cartridge);
+          // Convert back to function parameters
+          const timestamp = new Date(cartridge.timestamp);
+          await storeCartridgeChange(
+            timestamp, 
+            cartridge.alarmText || 'Rewind',
+            cartridge.sourceFile || 'imported-data.json'
+          );
           stats.cartridgesImported++;
         } catch (err) {
-          errors.push(`Failed to import cartridge ${cartridge.cartridge_id}: ${err.message}`);
-          console.error('[importMasterDataset] Cartridge import error:', err);
+          // Skip duplicates silently
+          if (!err.message.includes('Duplicate')) {
+            errors.push(`Failed to import cartridge: ${err.message}`);
+            console.error('[importMasterDataset] Cartridge import error:', err);
+          }
         }
       }
       console.log(`[importMasterDataset] Imported ${stats.cartridgesImported} cartridges`);
