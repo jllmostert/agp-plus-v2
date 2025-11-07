@@ -72,6 +72,20 @@ export async function importMasterDataset(file) {
     });
     
     // TODO: Import months
+    // Step 4: Import month buckets to IndexedDB
+    console.log('[importMasterDataset] Importing months to IndexedDB...');
+    for (const monthData of data.months) {
+      try {
+        await storeMonthBucket(monthData.month, monthData.readings);
+        stats.monthsImported++;
+        stats.readingsImported += monthData.readings?.length || 0;
+      } catch (err) {
+        errors.push(`Failed to import month ${monthData.month}: ${err.message}`);
+        console.error('[importMasterDataset] Month import error:', err);
+      }
+    }
+    console.log(`[importMasterDataset] Imported ${stats.monthsImported} months, ${stats.readingsImported} readings`);
+    
     // TODO: Import sensors
     // TODO: Import cartridges
     // TODO: Import workdays
