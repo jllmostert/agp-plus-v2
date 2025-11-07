@@ -2,8 +2,8 @@
 
 **Professional diabetes data analysis tool following ADA/ATTD clinical guidelines**
 
-**Current Version:** v3.8.0 (Advanced Day Analytics)  
-**Status:** ✅ Production-ready with MAGE metrics and workday tracking
+**Current Version:** v3.8.0 (Complete Backup/Restore)  
+**Status:** ✅ Production-ready with full database import/export
 
 ---
 
@@ -22,6 +22,7 @@ Built by a type 1 diabetic who got tired of waiting for healthcare software to c
 - **Master dataset**: Keep years of data, upload whenever, never lose history
 - **Sensor intelligence**: Automatic detection of sensor and cartridge changes from device logs
 - **Export everything**: HTML reports that look like they came from a diabetes clinic, not a spreadsheet
+- **Backup & restore**: Complete JSON export/import system—backup your entire database, restore on any device
 
 **Clinical standards baked in:**
 - ADA/ATTD 2025 consensus guidelines (we read the boring PDFs so you don't have to)
@@ -150,6 +151,39 @@ Run comprehensive tests:
 - AGP chart (5th, 25th, 50th, 75th, 95th percentiles)
 - Day profiles (24h glucose curves with event markers)
 - Comparison views (period/day-night/workday)
+
+---
+
+## Database Backup & Restore
+
+**New in v3.8.0:** Complete symmetric import/export system for your entire database.
+
+### Export Your Database
+
+Click **EXPORT** → **💾 Export Database (JSON)** to download a complete backup including:
+- All glucose readings (month-bucketed)
+- Sensor history and lock states
+- Cartridge changes and events
+- Workday definitions
+- Patient information
+- Stock batches and sensor assignments
+
+**File format:** JSON (schema version 3.8.0)  
+**Size:** ~1-2MB per 90 days of data  
+**Compatible:** Works across devices/browsers
+
+### Import Database
+
+Click **EXPORT** → **📥 Import Database (JSON)** to restore a backup:
+
+1. **Validation**: File is validated before import (schema, structure, data types)
+2. **Preview**: Review data counts (months, readings, sensors, etc.)
+3. **Confirmation**: Approve import with merge warning
+4. **Import**: Data imported in <5 seconds
+5. **Refresh**: UI auto-updates with restored data
+
+**Merge behavior:** Import adds to existing data (no deletion)  
+**Use case:** Backup before testing, migrate between devices, restore after data loss
 
 ---
 
