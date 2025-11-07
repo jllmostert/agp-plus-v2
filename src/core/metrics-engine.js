@@ -236,19 +236,40 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   const modd = moddCount > 0 ? moddSum / moddCount : 0;
   const uniqueDays = new Set(glucoseRows.map(r => r.date)).size;
 
-  // Calculate data quality metrics
-  const expectedReadings = uniqueDays * 288; // 288 readings per day (5-min intervals)
-  const actualReadings = glucoseRows.length;
-  const missingReadings = expectedReadings - actualReadings;
-  const missingPercent = ((missingReadings / expectedReadings) * 100).toFixed(1);
-  const uptimePercent = (100 - parseFloat(missingPercent)).toFixed(1);
+  // Calculate data quality metrics - TIME-BASED (not day-based)
+  // This prevents artificial deflation from incomplete trailing days
+  const SAMPLING_INTERVAL_MIN = 5;
   
-  // Count complete days (days with 288 readings)
+  // Get actual time boundaries from the data
+  const timestamps = glucoseRows.map(r => utils.parseDate(r.date, r.time));
+  const periodStart = new Date(Math.min(...timestamps));
+  const periodEnd = new Date(Math.max(...timestamps));
+  
+  // Calculate elapsed minutes in the actual data period
+  const elapsedMinutes = Math.floor((periodEnd - periodStart) / (1000 * 60));
+  
+  // Expected readings based on elapsed time only (not full days)
+  const expectedReadings = Math.floor(elapsedMinutes / SAMPLING_INTERVAL_MIN) + 1; // +1 for inclusive start
+  
+  const actualReadings = glucoseRows.length;
+  const missingReadings = Math.max(0, expectedReadings - actualReadings);
+  const missingPercent = expectedReadings > 0 
+    ? ((missingReadings / expectedReadings) * 100).toFixed(1) 
+    : '0.0';
+  const uptimePercent = expectedReadings > 0 
+    ? (100 - parseFloat(missingPercent)).toFixed(1) 
+    : '0.0';
+  
+  // Count complete days (days with ≥95% of expected readings)
   const readingsPerDay = {};
   glucoseRows.forEach(r => {
     readingsPerDay[r.date] = (readingsPerDay[r.date] || 0) + 1;
   });
-  const completeDays = Object.values(readingsPerDay).filter(count => count === 288).length;
+  
+  // A day is "complete" if it has ≥95% of 288 readings (274)
+  const completeDays = Object.keys(readingsPerDay).filter(date => {
+    return readingsPerDay[date] >= 274; // 95% of 288 = 273.6
+  }).length;
 
   // Performance timing - end
   const perfEnd = performance.now();

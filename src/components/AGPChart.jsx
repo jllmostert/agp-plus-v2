@@ -353,22 +353,28 @@ function TargetLines({ margin, chartWidth, yScale }) {
 
 /**
  * EventMarkers - BRUTALIST event indicators
+ * 
+ * v3.8.1: Updated to use unified hypoEpisodes structure with severity classification
+ * - hypoEpisodes.events contains ALL hypoglycemia episodes
+ * - severity field determines visual representation: 'severe' (<54) vs 'low' (54-70)
  */
 function EventMarkers({ events, xScale, yScale, chartHeight, margin }) {
   if (!events) return null;
   
-  const hypoL2 = Array.isArray(events.hypoL2?.events) ? events.hypoL2.events : (Array.isArray(events.hypoL2) ? events.hypoL2 : []);
-  const hypoL1 = Array.isArray(events.hypoL1?.events) ? events.hypoL1.events : (Array.isArray(events.hypoL1) ? events.hypoL1 : []);
-  const hyper = Array.isArray(events.hyper?.events) ? events.hyper.events : (Array.isArray(events.hyper) ? events.hyper : []);
+  // Extract events from new unified structure
+  const allHypoEpisodes = events.hypoEpisodes?.events || [];
+  const hypoSevere = allHypoEpisodes.filter(e => e.severity === 'severe'); // nadir <54
+  const hypoLow = allHypoEpisodes.filter(e => e.severity === 'low');       // nadir 54-70
+  const hyperEvents = events.hyper?.events || [];
   
   return (
     <g className="event-markers">
-      {/* Hypo L2 (critical <54) - RED X */}
-      {hypoL2.map((event, i) => {
+      {/* Severe Hypoglycemia (<54) - RED X */}
+      {hypoSevere.map((event, i) => {
         const cx = xScale(event.minuteOfDay);
-        const cy = yScale(event.startGlucose || 50);
+        const cy = yScale(event.startGlucose);
         return (
-          <g key={`hypoL2-${i}`}>
+          <g key={`hypo-severe-${i}`}>
             <circle cx={cx} cy={cy} r="6" fill="var(--color-hypo-l2)" />
             <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} stroke="var(--color-white)" strokeWidth="2" />
             <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} stroke="var(--color-white)" strokeWidth="2" />
@@ -376,13 +382,13 @@ function EventMarkers({ events, xScale, yScale, chartHeight, margin }) {
         );
       })}
 
-      {/* Hypo L1 (54-69) - ORANGE Circle */}
-      {hypoL1.map((event, i) => {
+      {/* Low Hypoglycemia (54-70) - ORANGE Circle */}
+      {hypoLow.map((event, i) => {
         const cx = xScale(event.minuteOfDay);
-        const cy = yScale(event.startGlucose || 62);
+        const cy = yScale(event.startGlucose);
         return (
           <circle
-            key={`hypoL1-${i}`}
+            key={`hypo-low-${i}`}
             cx={cx}
             cy={cy}
             r="5"
@@ -394,7 +400,7 @@ function EventMarkers({ events, xScale, yScale, chartHeight, margin }) {
       })}
 
       {/* Hyperglycemia (>250) - ORANGE Triangle */}
-      {hyper.map((event, i) => {
+      {hyperEvents.map((event, i) => {
         const cx = xScale(event.minuteOfDay);
         const cy = yScale(event.startGlucose || 280);
         const size = 7;

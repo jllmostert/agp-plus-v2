@@ -14,6 +14,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### ✅ Changes
 
+#### Data Quality Calculation Fix
+**File**: `src/core/metrics-engine.js`
+
+- ✅ Fixed time-based data quality calculation:
+  - Changed from day-based (uniqueDays × 288) to elapsed-time-based
+  - Expected readings now = floor(elapsedMinutes / 5) + 1
+  - Prevents artificial dataQualityPct deflation from incomplete trailing days
+  - Complete days threshold: ≥95% of 288 readings (274+)
+
 #### Session 10: Dynamic AGP Y-Axis Implementation
 **File**: `src/components/AGPChart.jsx`
 

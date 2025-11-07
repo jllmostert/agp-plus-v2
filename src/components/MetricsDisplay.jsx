@@ -204,24 +204,6 @@ export default function MetricsDisplay({ metrics, tddData }) {
         alignItems: 'stretch'
       }}>
         
-        {/* Range Distribution */}
-        <div style={{ 
-          display: 'flex',
-          alignItems: 'center',
-          fontSize: '0.875rem', 
-          fontWeight: 700, 
-          letterSpacing: '0.2em', 
-          textTransform: 'uppercase',
-          color: 'var(--color-black)',
-          backgroundColor: 'var(--color-orange)',
-          padding: '1rem',
-          border: '3px solid var(--color-black)'
-        }}>
-          Range Distribution
-        </div>
-        <SecondaryMetricCard label="TAR >180" value={safeFormat(metrics.tar, 1)} unit="%" status={getStatus('tar', metrics.tar)} metricId="tar" />
-        <SecondaryMetricCard label="TBR <70" value={safeFormat(metrics.tbr, 1)} unit="%" status={getStatus('tbr', metrics.tbr)} metricId="tbr" />
-
         {/* Variability Metrics */}
         <div style={{ 
           display: 'flex',
