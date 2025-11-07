@@ -297,13 +297,7 @@ function _computeMODD(dayBins, detectedStepMin = 5, coverageThreshold = 0.7) {
     return _parseDateLoose(a) - _parseDateLoose(b);
   });
   
-  console.log(`[MODD DEBUG] Total days: ${days.length}`);
-  console.log(`[MODD DEBUG] First day: ${days[0]}, Last day: ${days[days.length-1]}`);
-  
-  if (days.length < 2) {
-    console.log('[MODD DEBUG] Not enough days (need ≥2)');
-    return NaN;
-  }
+  if (days.length < 2) return NaN;
   
   const diffs = [];
   const MAX_INTERP_MIN = 5; // Allow 5-min tolerance (full sampling interval)
@@ -315,12 +309,7 @@ function _computeMODD(dayBins, detectedStepMin = 5, coverageThreshold = 0.7) {
     const r1 = dayBins.get(d1);
     const r2 = dayBins.get(d2);
     
-    console.log(`[MODD DEBUG] Pair ${d1}/${d2}: r1=${r1?.length || 0} records, r2=${r2?.length || 0} records`);
-    
-    if (!r1 || !r1.length || !r2 || !r2.length) {
-      console.log(`[MODD DEBUG] Skipping pair ${d1}/${d2}: missing data`);
-      continue;
-    }
+    if (!r1 || !r1.length || !r2 || !r2.length) continue;
     
     // Sort records by time
     const sorted1 = r1.slice().sort((a, b) => a.t - b.t);
@@ -334,37 +323,22 @@ function _computeMODD(dayBins, detectedStepMin = 5, coverageThreshold = 0.7) {
     const cov1 = s1.filter(x => Number.isFinite(x)).length / s1.length;
     const cov2 = s2.filter(x => Number.isFinite(x)).length / s2.length;
     
-    console.log(`[MODD DEBUG] Coverage ${d1}=${(cov1*100).toFixed(1)}%, ${d2}=${(cov2*100).toFixed(1)}%`);
-    
-    if (cov1 < coverageThreshold || cov2 < coverageThreshold) {
-      console.log(`[MODD] Skipping day pair ${d1}/${d2}: coverage ${(cov1*100).toFixed(1)}%/${(cov2*100).toFixed(1)}%`);
-      continue;
-    }
+    if (cov1 < coverageThreshold || cov2 < coverageThreshold) continue;
     
     // Calculate point-wise differences (same time slots)
-    let pairDiffs = 0;
     for (let k = 0; k < s1.length; k++) {
       const a = s1[k];
       const b = s2[k];
       if (Number.isFinite(a) && Number.isFinite(b)) {
         diffs.push(Math.abs(a - b));
-        pairDiffs++;
       }
     }
-    console.log(`[MODD DEBUG] Pair ${d1}/${d2}: ${pairDiffs} valid comparisons`);
   }
   
-  console.log(`[MODD DEBUG] Total differences collected: ${diffs.length}`);
-  
-  if (diffs.length === 0) {
-    console.log('[MODD DEBUG] No valid differences - returning NaN');
-    return NaN;
-  }
+  if (diffs.length === 0) return NaN;
   
   // Mean of all differences
-  const result = diffs.reduce((s, v) => s + v, 0) / diffs.length;
-  console.log(`[MODD DEBUG] Final MODD: ${result.toFixed(2)} mg/dL`);
-  return result;
+  return diffs.reduce((s, v) => s + v, 0) / diffs.length;
 }
 
 /**
@@ -468,12 +442,6 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   const mage = dailyMAGE.length > 0 
     ? dailyMAGE.reduce((sum, m) => sum + m, 0) / dailyMAGE.length 
     : 0;
-  
-  // Debug logging (v3.9.0)
-  if (dailyMAGE.length < Object.keys(byDay).length) {
-    console.log(`[MAGE] Filtered incomplete days: ${Object.keys(byDay).length - dailyMAGE.length}/${Object.keys(byDay).length} (${((dailyMAGE.length/Object.keys(byDay).length)*100).toFixed(0)}% complete)`);
-  }
-  console.log(`[MAGE] Calculated from ${dailyMAGE.length} complete days: ${mage.toFixed(1)} mg/dL`);
 
   // MODD - Mean Of Daily Differences
   // Reference: Molnar GD et al., Diabetologia 1972;8:342-348
@@ -487,9 +455,6 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   
   // Handle NaN result
   const moddValue = Number.isFinite(modd) ? modd : 0;
-  
-  // Debug logging
-  console.log(`[MODD] Calculated from ${dayBinsForMODD.size} days: ${moddValue.toFixed(1)} mg/dL`);
   
   const uniqueDays = new Set(glucoseRows.map(r => r.date)).size;
 
