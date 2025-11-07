@@ -7,6 +7,7 @@
 import { getAllMonthBuckets } from './masterDatasetStorage';
 import { getSensorHistory } from './sensorStorage';
 import { getCartridgeHistory } from './eventStorage';
+import { getAllBatches, getAllAssignments } from './stockStorage';
 
 /**
  * Export complete master dataset to JSON
@@ -28,6 +29,10 @@ export async function exportMasterDataset() {
     const patientInfoRaw = localStorage.getItem('patient-info');
     const patientInfo = patientInfoRaw ? JSON.parse(patientInfoRaw) : null;
     
+    // Fetch stock batches and assignments
+    const stockBatches = getAllBatches();
+    const stockAssignments = getAllAssignments();
+    
     // Calculate total readings
     const totalReadings = months.reduce((sum, month) => {
       return sum + (month.readings?.length || 0);
@@ -43,12 +48,16 @@ export async function exportMasterDataset() {
       totalSensors: sensors.length,
       totalCartridges: cartridges.length,
       totalWorkdays: workdays.length,
+      totalStockBatches: stockBatches.length,
+      totalStockAssignments: stockAssignments.length,
       hasPatientInfo: !!patientInfo,
       months,
       sensors,
       cartridges,
       workdays,
-      patientInfo
+      patientInfo,
+      stockBatches,
+      stockAssignments
     };
     
     
