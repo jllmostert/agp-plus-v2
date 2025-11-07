@@ -21,7 +21,7 @@ export const CONFIG = {
   AGP_BINS: 288,
   HYPO_MIN_DURATION: 15,
   HYPER_MIN_DURATION: 120,
-  MODD_COVERAGE_THRESHOLD: 0.6,  // Lowered from 0.7 for more day pairs
+  MODD_COVERAGE_THRESHOLD: 0.7,  // Optimal value (tested 0.6, was worse)
   COMPARISON_DAYS: 14,
   CSV_SKIP_LINES: 6,
   TIME_SPLIT: {
