@@ -58,10 +58,11 @@ export default function TIRBar({ metrics }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--color-white)',
-              fontSize: '11px',
-              fontWeight: 700,
+              color: '#ffffff',  // ✨ WHITE TEXT for max contrast
+              fontSize: '13px',  // ✨ Consistent with TAR
+              fontWeight: 900,   // ✨ Extra bold
               letterSpacing: '0.05em',
+              textShadow: '0 1px 2px rgba(0,0,0,0.4)',  // ✨ Shadow for readability
               flexShrink: 0,
               minWidth: '2px'
             }}
@@ -78,10 +79,11 @@ export default function TIRBar({ metrics }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--text-primary)',
-            fontSize: '12px',
-            fontWeight: 700,
+            color: '#ffffff',  // ✨ WHITE TEXT for max contrast on dark green
+            fontSize: '14px',  // ✨ Slightly bigger for better readability
+            fontWeight: 900,   // ✨ Extra bold for punch
             letterSpacing: '0.05em',
+            textShadow: '0 1px 2px rgba(0,0,0,0.5)',  // ✨ Subtle shadow for depth
             flexShrink: 0,
             minWidth: '2px'
           }}
@@ -98,10 +100,11 @@ export default function TIRBar({ metrics }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--color-black)',
-              fontSize: '11px',
-              fontWeight: 700,
+              color: '#ffffff',  // ✨ WHITE TEXT for max contrast
+              fontSize: '13px',  // ✨ Slightly bigger
+              fontWeight: 900,   // ✨ Extra bold
               letterSpacing: '0.05em',
+              textShadow: '0 1px 2px rgba(0,0,0,0.4)',  // ✨ Shadow for readability
               flexShrink: 0,
               minWidth: '2px'
             }}

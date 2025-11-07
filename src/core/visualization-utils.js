@@ -11,23 +11,22 @@
 /**
  * Calculate adaptive Y-axis range for glucose visualization
  * 
- * ALGORITHM:
- * 1. Start with clinical baseline: 54-250 mg/dL (target range with buffer)
- * 2. If data exceeds range, expand in steps to accommodate
- * 3. Never go below 40 mg/dL or above 400 mg/dL (physiological limits)
- * 4. Apply smart padding based on data variability
+ * ALGORITHM (Simplified v3.2):
+ * 1. Y-axis always starts at 0 mg/dL
+ * 2. Maximum is based on highest glucose value
+ * 3. Minimum ceiling of 250 mg/dL (always show at least 0-250 range)
+ * 4. Maximum ceiling of 400 mg/dL (physiological limit)
+ * 5. Round maximum up to nearest 10 for clean appearance
  * 
- * PADDING STRATEGY:
- * - Tight glycemic control (range <100 mg/dL): +30 mg/dL padding = more zoom
- * - Moderate variability (range 100-150): +20 mg/dL padding
- * - Wide variability (range >150): +15 mg/dL padding = less zoom
- * 
- * This maximizes chart space usage while maintaining clinical context.
+ * This ensures:
+ * - Full clinical range (70-180 TIR boundaries) always visible
+ * - Outliers above 250 are accommodated up to 400
+ * - Consistent zero baseline for all charts
  * 
  * @param {Array} curve - Array of data points with shape: { glucose, hasData }
  * @returns {Object} Y-axis configuration
- * @returns {number} yMin - Minimum Y value (mg/dL)
- * @returns {number} yMax - Maximum Y value (mg/dL)
+ * @returns {number} yMin - Minimum Y value (always 0)
+ * @returns {number} yMax - Maximum Y value (250-400 mg/dL)
  * @returns {Array<number>} yTicks - Array of Y-axis tick values
  * @returns {Object|null} outliers - { low: min, high: max } for values outside range
  */
@@ -37,36 +36,28 @@ export function calculateAdaptiveYAxis(curve) {
     .filter(d => d.hasData && d.glucose !== null)
     .map(d => d.glucose);
   
-  // Fallback to clinical range if no valid data
+  // Fallback to 0-250 range if no valid data
   if (validGlucose.length === 0) {
     return {
-      yMin: 54,
+      yMin: 0,
       yMax: 250,
-      yTicks: [54, 100, 150, 200, 250],
+      yTicks: [0, 50, 100, 150, 200, 250],
       outliers: null
     };
   }
   
-  // Find actual data range
-  const dataMin = Math.min(...validGlucose);
+  // Find actual data maximum
   const dataMax = Math.max(...validGlucose);
-  const dataRange = dataMax - dataMin;
   
-  // Calculate smart padding based on variability
-  // Tight glycemic control (range <100): +30 padding = more zoom
-  // Moderate (range 100-150): +20 padding
-  // Wide variability (range >150): +15 padding = less zoom
-  const padding_buffer = 
-    dataRange < 100 ? 30 : 
-    dataRange < 150 ? 20 : 
-    15;
-  
-  // Set adaptive range: start with clinical range (54-250), expand if needed
-  // Floor at 40 mg/dL, ceiling at 400 mg/dL (physiological limits)
-  const yMin = Math.max(40, Math.min(54, dataMin - padding_buffer));
-  const yMax = Math.min(400, Math.max(250, dataMax + padding_buffer));
+  // Y-axis configuration (v3.2 simplified logic):
+  // - Always start at 0
+  // - Minimum ceiling of 250, maximum ceiling of 400
+  // - Round up to nearest 10 for clean appearance
+  const yMin = 0;
+  const yMax = Math.max(250, Math.min(400, Math.ceil(dataMax / 10) * 10));
   
   // Detect outliers beyond display range (for warning labels)
+  // Note: Since yMin is always 0, low outliers are rare but possible (sensor errors)
   const outlierLow = validGlucose.filter(g => g < yMin);
   const outlierHigh = validGlucose.filter(g => g > yMax);
   const outliers = (outlierLow.length > 0 || outlierHigh.length > 0) ? {
@@ -83,45 +74,33 @@ export function calculateAdaptiveYAxis(curve) {
 /**
  * Calculate smart Y-axis tick values
  * 
- * TICK GENERATION STRATEGY:
- * 1. Aim for ~5 ticks with nice round numbers (20, 25, 40, 50 step sizes)
- * 2. ALWAYS include 70 and 180 mg/dL if in range (clinical boundaries)
- * 3. Resolve conflicts: keep critical ticks, remove nearby regular ticks
+ * TICK GENERATION STRATEGY (v3.2 - optimized for 0-250/400 range):
+ * 1. Aim for ~5-6 ticks with nice round numbers (50 step sizes)
+ * 2. ALWAYS include 0, 70, 180 mg/dL if in range (clinical boundaries)
+ * 3. Add additional ticks at 50, 100, 150, 200, 250, etc. as needed
  * 
  * WHY 70 and 180?
  * - 70 mg/dL = lower bound of target range (TIR starts here)
  * - 180 mg/dL = upper bound of target range (TIR ends here)
  * - These are ALWAYS critical thresholds in diabetes management
  * 
- * @param {number} yMin - Minimum Y value
- * @param {number} yMax - Maximum Y value
+ * @param {number} yMin - Minimum Y value (always 0)
+ * @param {number} yMax - Maximum Y value (250-400)
  * @returns {Array<number>} Sorted array of tick values
  * 
  * @private
  */
 function calculateYTicks(yMin, yMax) {
-  const range = yMax - yMin;
-  const idealTickCount = 5;
-  const roughStep = range / idealTickCount;
+  const ticks = [0]; // Always start with 0
   
-  // Round to nice numbers (20, 25, 40, 50)
-  let step;
-  if (roughStep <= 25) step = 20;
-  else if (roughStep <= 40) step = 25;
-  else if (roughStep <= 60) step = 40;
-  else step = 50;
-  
-  const ticks = [];
-  const startTick = Math.ceil(yMin / step) * step;
-  
-  // Generate regular ticks
-  for (let tick = startTick; tick <= yMax; tick += step) {
+  // Add ticks in steps of 50 up to yMax
+  for (let tick = 50; tick <= yMax; tick += 50) {
     ticks.push(tick);
   }
   
-  // ALWAYS include clinical boundaries 70 and 180 if in range
+  // Ensure clinical boundaries are included if in range
   const CRITICAL_TICKS = [70, 180];
-  const MIN_SPACING = 15; // Minimum 15 mg/dL between ticks to avoid crowding
+  const MIN_SPACING = 15; // Minimum 15 mg/dL between ticks
   
   for (const critical of CRITICAL_TICKS) {
     if (yMin <= critical && yMax >= critical) {
@@ -130,15 +109,7 @@ function calculateYTicks(yMin, yMax) {
         t !== critical && Math.abs(t - critical) < MIN_SPACING
       );
       
-      if (hasConflict) {
-        // Remove conflicting ticks, keep critical ones
-        // Critical thresholds take priority over regular ticks
-        const filtered = ticks.filter(t => 
-          Math.abs(t - critical) >= MIN_SPACING
-        );
-        ticks.length = 0;
-        ticks.push(...filtered, critical);
-      } else if (!ticks.includes(critical)) {
+      if (!hasConflict && !ticks.includes(critical)) {
         ticks.push(critical);
       }
     }

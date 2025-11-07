@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Activity, Download, ChevronDown, Save, User } from 'lucide-react';
 import { debug } from '../utils/debug.js';
+import { APP_VERSION, APP_FULL_NAME } from '../utils/version.js';
 
 // Custom hooks
 import { useCSVData } from '../hooks/useCSVData';
@@ -45,8 +46,6 @@ import DataExportPanel from './panels/DataExportPanel';
  * - Period selection and date management
  * - Metrics calculation coordination
  * - Component composition and data flow
- * 
- * @version 3.8.0
  */
 export default function AGPGenerator() {
   // ============================================
@@ -939,7 +938,7 @@ export default function AGPGenerator() {
                     fontWeight: 600,
                     opacity: 0.9
                   }}>
-                    V3.12.0
+                    v{APP_VERSION}
                   </div>
                 </div>
                 
@@ -1367,7 +1366,7 @@ export default function AGPGenerator() {
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
           <p>
-            AGP+ v3.1.1 | Built for Medtronic CareLink CSV exports
+            {APP_FULL_NAME} | Built for Medtronic CareLink CSV exports
           </p>
           <p className="mt-2">
             Following{' '}

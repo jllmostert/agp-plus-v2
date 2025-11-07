@@ -6,6 +6,66 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v3.8.0 - Session 10: Dynamic AGP Y-Axis + Housekeeping] - 2025-11-07
+
+### 🎨 Final Session: AGP Visualization + Project Organization
+**Session**: Session 10 + Housekeeping  
+**Goal**: Dynamic Y-axis for main AGP curve, project cleanup
+
+### ✅ Changes
+
+#### Session 10: Dynamic AGP Y-Axis Implementation
+**File**: `src/components/AGPChart.jsx`
+
+- ✅ Implemented `calculateAGPYAxis()` function:
+  - Finds highest percentile value across all AGP data (p5-p95)
+  - Dynamic range: yMax = Math.max(250, Math.min(400, ceil(dataMax/10)*10))
+  - Minimum ceiling: 250 mg/dL
+  - Maximum ceiling: 400 mg/dL
+  - Smart tick generation (always includes 0, 70, 180 when in range)
+
+- ✅ Updated AGPChart components:
+  - Dynamic `yScale` function (replaces fixed 0-400)
+  - Updated `<GridLines>` to use dynamic ticks
+  - Updated `<YAxis>` to use dynamic ticks
+
+- ✅ Verified working:
+  - Browser display: Y-axis scales correctly
+  - HTML export: Y-axis scales correctly
+  - Clinical thresholds (70, 180) visible when in range
+
+**Impact**: Better space utilization, focuses on relevant glucose range instead of wasting space on unused values
+
+#### Housekeeping: Project Organization
+**Files**: Multiple archives created, documentation updated
+
+- ✅ Archived 3 old handoffs → `docs/archive/2025-11/handoffs/`
+- ✅ Archived 2 obsolete planning docs → `docs/archive/2025-11/planning/`
+- ✅ Archived 4 old test exports → `test-data/archive/2025-11/`
+- ✅ Created `TASK_BREAKDOWN_v3.8.0.md` (11/14 tasks complete, 79%)
+- ✅ Created `HOUSEKEEPING_2025-11-07.md` (execution log)
+- ✅ Root directory cleaned: 4 handoffs → 1 current
+
+**Impact**: Clean, organized project structure ready for v3.8.0 release
+
+#### Version Synchronization
+**Files**: `package.json`, `index.html`, `src/utils/version.js`
+
+- ✅ Synchronized all version numbers to **3.8.0**
+- ✅ package.json: 3.2.0 → 3.8.0
+- ✅ index.html: 3.12.0 → 3.8.0 (meta + title)
+- ✅ version.js: Fallback 3.2.0 → 3.8.0
+
+**Impact**: Consistent version display across all outputs
+
+### 📊 Session 10 Summary
+**Time**: ~45 min development + 15 min housekeeping  
+**Files Modified**: 11 (AGPChart.jsx, version files, archives, docs)  
+**Status**: ✅ Core v3.8.0 goals 100% complete!  
+**Progress**: 11/14 tasks (79%), optional Tasks 7.1 & 7.2 remaining
+
+---
+
 ## [v3.8.0 - UI Polish + Build Infrastructure] - 2025-11-07
 
 ### 🎨 UI Polish & Build Infrastructure
@@ -14,16 +74,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### ✅ Changes
 
-#### Task 5.1: Dynamic AGP Y-Axis - VERIFIED
-**Status**: Already implemented in previous versions
+#### Task 6.1: Golden Ratio Hero Layout
+**File**: `MetricsDisplay.jsx`
 
-- ✅ Browser uses `calculateAdaptiveYAxis()` (scales based on p10-p90 percentiles)
-- ✅ HTML export uses `calculateDynamicYRange()` (similar adaptive logic)
-- ✅ Smart outlier tracking and display
-- ✅ Smart tick marks (always include 70 and 180 mg/dL when in range)
-- ✅ Clinical bounds: min 40 mg/dL, max 400 mg/dL
+- ✅ Implemented golden ratio grid: `gridTemplateColumns: '1fr 1.61fr'`
+- ✅ Left zone (dark, 1 unit): TIR + Mean±SD stacked
+- ✅ Right zone (white, 1.61 units): CV + GMI + TDD in row
+- ✅ Brutalist design maintained (3px borders, high contrast, monospace)
 
-**Impact**: AGP charts optimize vertical space based on actual data range (not fixed 0-400)
+**Impact**: Better visual hierarchy, TIR emphasized as primary quality metric
+
+#### Task 6.2: Build-Injected Versioning
+**Files**: `.env`, `vite.config.js`, `html-exporter.js`, `day-profiles-exporter.js`
+
+- ✅ Created `.env` with `VITE_APP_VERSION=3.8.0`
+- ✅ Updated vite.config.js: defines `__APP_VERSION__` global at build time
+- ✅ Updated HTML exporters to use dynamic version
+- ✅ Single source of truth (no hardcoded version strings)
+
+**Impact**: Professional version management with centralized control
 
 #### Task 6.1: Golden Ratio Hero Layout
 **File**: `MetricsDisplay.jsx`

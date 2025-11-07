@@ -11,7 +11,13 @@
 
 /**
  * Calculate dynamic Y-axis range for a single day curve
- * Same logic as DayProfileCard for consistency
+ * 
+ * ALGORITHM (v3.2 - consistent with visualization-utils):
+ * 1. Y-axis always starts at 0 mg/dL
+ * 2. Maximum is based on highest glucose value
+ * 3. Minimum ceiling of 250 mg/dL
+ * 4. Maximum ceiling of 400 mg/dL
+ * 5. Round maximum up to nearest 10
  */
 const calculateDynamicYRange = (curve) => {
   const validGlucose = curve
@@ -19,19 +25,17 @@ const calculateDynamicYRange = (curve) => {
     .map(d => d.glucose);
 
   if (validGlucose.length === 0) {
-    return { yMin: 54, yMax: 250 }; // Fallback to clinical range
+    return { yMin: 0, yMax: 250 }; // Fallback to 0-250 range
   }
 
-  const dataMin = Math.min(...validGlucose);
   const dataMax = Math.max(...validGlucose);
-  const dataRange = dataMax - dataMin;
 
-  // Dynamic padding: more zoom for tight ranges, less for wide ranges
-  const padding_buffer = dataRange < 100 ? 30 : dataRange < 150 ? 20 : 15;
-
-  // Adaptive range: start with clinical range (54-250), expand if needed
-  const yMin = Math.max(40, Math.min(54, dataMin - padding_buffer));
-  const yMax = Math.min(400, Math.max(250, dataMax + padding_buffer));
+  // Y-axis configuration (v3.2):
+  // - Always start at 0
+  // - Minimum ceiling of 250, maximum ceiling of 400
+  // - Round up to nearest 10
+  const yMin = 0;
+  const yMax = Math.max(250, Math.min(400, Math.ceil(dataMax / 10) * 10));
 
   return { yMin, yMax };
 };
@@ -55,26 +59,16 @@ const generateDayCurveSVG = (curve, events, sensorChanges, cartridgeChanges, agp
   // X-axis scale (288 bins = 24 hours)
   const xScale = (bin) => (bin / 288) * chartWidth;
   
-  // Calculate smart Y-axis ticks
+  // Calculate smart Y-axis ticks (v3.2 - optimized for 0-250/400 range)
   const calculateYTicks = () => {
-    const range = yMax - yMin;
-    const idealTickCount = 4; // Fewer ticks for compact display
-    const roughStep = range / idealTickCount;
+    const ticks = [0]; // Always start with 0
     
-    let step;
-    if (roughStep <= 25) step = 20;
-    else if (roughStep <= 40) step = 25;
-    else if (roughStep <= 60) step = 40;
-    else step = 50;
-
-    const ticks = [];
-    const startTick = Math.ceil(yMin / step) * step;
-    
-    for (let tick = startTick; tick <= yMax; tick += step) {
+    // Add ticks in steps of 50 up to yMax
+    for (let tick = 50; tick <= yMax; tick += 50) {
       ticks.push(tick);
     }
-
-    // Always include 70 and 180 if in range
+    
+    // Ensure clinical boundaries are included if in range
     const CRITICAL_TICKS = [70, 180];
     const MIN_SPACING = 15;
     
@@ -82,11 +76,7 @@ const generateDayCurveSVG = (curve, events, sensorChanges, cartridgeChanges, agp
       if (yMin <= critical && yMax >= critical) {
         const hasConflict = ticks.some(t => t !== critical && Math.abs(t - critical) < MIN_SPACING);
         
-        if (hasConflict) {
-          const filtered = ticks.filter(t => Math.abs(t - critical) >= MIN_SPACING);
-          ticks.length = 0;
-          ticks.push(...filtered, critical);
-        } else if (!ticks.includes(critical)) {
+        if (!hasConflict && !ticks.includes(critical)) {
           ticks.push(critical);
         }
       }

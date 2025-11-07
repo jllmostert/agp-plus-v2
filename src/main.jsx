@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import AGPGenerator from './components/AGPGenerator.jsx';
 // import { MigrationBanner } from './components/MigrationBanner.jsx'; // Disabled: v3.0 migration not ready yet
 import './styles/globals.css';
+import { APP_VERSION, APP_FULL_NAME } from './utils/version.js';
 
 // Import tombstone store initialization
 import { 
@@ -13,13 +14,11 @@ import {
 } from './storage/deletedSensorsDB.js';
 
 /**
- * AGP+ v3.1.1 - Main Application Entry Point
+ * AGP+ Main Application Entry Point
  * 
  * Initializes React 18 root and renders the main AGPGenerator component.
  * Uses the new createRoot API for concurrent features support.
  * Includes IndexedDB tombstone store initialization for deleted sensors tracking.
- * 
- * Latest: v3.1.1 - Storage resilience & maintenance (batch validation, collision detection)
  */
 
 // Initialize IndexedDB tombstone store
