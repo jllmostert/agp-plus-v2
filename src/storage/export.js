@@ -20,6 +20,10 @@ export async function exportMasterDataset() {
     const sensors = await getSensorHistory();
     const cartridges = await getCartridgeHistory();
     
+    // Fetch ProTime workday data from localStorage
+    const workdaysRaw = localStorage.getItem('workday-dates');
+    const workdays = workdaysRaw ? JSON.parse(workdaysRaw) : [];
+    
     // Calculate total readings
     const totalReadings = months.reduce((sum, month) => {
       return sum + (month.readings?.length || 0);
@@ -27,16 +31,18 @@ export async function exportMasterDataset() {
     
     // Build export object
     const exportData = {
-      version: "3.0",
+      version: "3.8.0",
       exportDate: new Date().toISOString(),
       generator: "AGP+ v3.8.0",
       totalReadings,
       totalMonths: months.length,
       totalSensors: sensors.length,
       totalCartridges: cartridges.length,
+      totalWorkdays: workdays.length,
       months,
       sensors,
-      cartridges
+      cartridges,
+      workdays
     };
     
     
