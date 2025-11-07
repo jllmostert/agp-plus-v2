@@ -149,6 +149,7 @@ export default function AGPGenerator() {
   const [dataImportModalOpen, setDataImportModalOpen] = useState(false);
   const [importValidation, setImportValidation] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState(null);
 
   // Load patient info from storage
@@ -914,13 +915,14 @@ export default function AGPGenerator() {
     if (!pendingImportFile) return;
     
     try {
+      console.log('[AGPGenerator] Starting import...');
       setDataImportModalOpen(false);
-      
-      // Show loading state
-      alert('⏳ Importing data... This may take a moment.');
+      setIsImporting(true);
       
       // Execute import
+      console.log('[AGPGenerator] Calling importMasterDataset...');
       const result = await importMasterDataset(pendingImportFile);
+      console.log('[AGPGenerator] Import result:', result);
       
       if (result.success) {
         // Show success message with stats
@@ -966,6 +968,7 @@ export default function AGPGenerator() {
       alert(`❌ Import Failed:\n\n${err.message}`);
     } finally {
       // Clean up
+      setIsImporting(false);
       setPendingImportFile(null);
       setImportValidation(null);
     }
@@ -1486,6 +1489,51 @@ export default function AGPGenerator() {
           validationResult={importValidation}
           isValidating={isValidating}
         />
+
+        {/* Import Loading Overlay */}
+        {isImporting && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <div style={{
+              background: 'var(--bg-primary)',
+              border: '3px solid var(--border-primary)',
+              padding: '3rem',
+              textAlign: 'center',
+              maxWidth: '400px'
+            }}>
+              <div style={{
+                fontFamily: 'Courier New, monospace',
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                marginBottom: '1rem'
+              }}>
+                ⏳ Importing Data...
+              </div>
+              <div style={{
+                fontFamily: 'Courier New, monospace',
+                fontSize: '0.875rem',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.6
+              }}>
+                Please wait while your data is being imported.
+                <br />
+                Check the browser console for progress.
+              </div>
+            </div>
+          </div>
+        )}
 
 
         {/* Footer */}

@@ -15,6 +15,9 @@ import { addBatch, assignSensorToBatch } from './stockStorage';
  * @returns {Promise<Object>} Import result with stats and errors
  */
 export async function importMasterDataset(file) {
+  console.log('[importMasterDataset] ========== IMPORT STARTED ==========');
+  console.log('[importMasterDataset] File:', file);
+  
   const startTime = Date.now();
   const stats = {
     monthsImported: 0,
@@ -31,7 +34,9 @@ export async function importMasterDataset(file) {
     // Step 1: Parse JSON file
     console.log('[importMasterDataset] Reading file...');
     const text = await file.text();
+    console.log('[importMasterDataset] File read, length:', text.length);
     const data = JSON.parse(text);
+    console.log('[importMasterDataset] JSON parsed successfully');
     
     // Step 2: Validate schema version
     console.log('[importMasterDataset] Validating schema...');
