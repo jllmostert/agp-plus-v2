@@ -79,21 +79,31 @@ export async function importMasterDataset(file) {
       for (const monthData of data.months) {
         if (monthData.readings && Array.isArray(monthData.readings)) {
           // Convert string timestamps to Date objects
-          const convertedReadings = monthData.readings.map(reading => ({
-            ...reading,
-            timestamp: new Date(reading.timestamp),
-            // Ensure 'glucose' field exists (might be 'value' in test data)
-            glucose: reading.glucose ?? reading.value
-          }));
+          const convertedReadings = monthData.readings.map(reading => {
+            const converted = {
+              ...reading,
+              timestamp: new Date(reading.timestamp),
+              glucose: reading.glucose ?? reading.value
+            };
+            console.log('[import] Converted reading:', {
+              original: reading.timestamp,
+              converted: converted.timestamp,
+              isDate: converted.timestamp instanceof Date,
+              glucose: converted.glucose
+            });
+            return converted;
+          });
           allReadings.push(...convertedReadings);
           stats.monthsImported++;
         }
       }
       
-      console.log(`[importMasterDataset] Converting ${allReadings.length} readings...`);
+      console.log(`[importMasterDataset] Total readings to import: ${allReadings.length}`);
+      console.log('[importMasterDataset] First reading:', allReadings[0]);
       
       if (allReadings.length > 0) {
         // Import all readings at once (will be bucketed automatically)
+        console.log('[importMasterDataset] Calling appendReadingsToMaster...');
         await appendReadingsToMaster(allReadings, 'imported-data.json');
         stats.readingsImported = allReadings.length;
       }
