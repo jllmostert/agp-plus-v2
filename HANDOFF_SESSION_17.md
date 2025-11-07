@@ -1,930 +1,609 @@
-# HANDOFF - SESSION 16: PANEL COMPONENTS
+# HANDOFF - SESSION 17: MULTI-FILE PROGRESS & CLEANUP ALL-IN
 
 **Date**: 2025-11-08  
-**Session Goal**: Phase C - Build 5 panel components  
-**Estimated Time**: 6 hours  
+**Session Goal**: Phase D + E - Multi-file import improvements and cleanup ALL-IN feature  
+**Estimated Time**: 3 hours  
 **Status**: 🟡 READY TO START
 
 ---
 
-## 📋 CONTEXT FROM SESSION 15
+## 📋 CONTEXT FROM SESSION 16
 
-### Session 15 Complete ✅
-**Phase A**: File structure reorganized
-- ✅ Created `panels/` and `devtools/` directories
-- ✅ Moved existing components to new structure
-- ✅ Created 3 stub panels (Import, DayProfiles, DevTools)
-- ✅ Extracted 2 debug components to devtools/
-- ✅ Updated all import paths
-- ✅ Git commit: `[refactor] Phase A: File structure reorganization`
-
-**Phase B**: Main navigation built
-- ✅ Created HeaderBar component with 4 buttons
-- ✅ Added panel routing to AGPGenerator
-- ✅ Implemented DevTools toggle (Ctrl+Shift+D)
-- ✅ Applied brutalist styling
-- ✅ Git commit: `[feat] Phase B: Main navigation system`
+### Session 16 Complete ✅
+**What was done**:
+- ✅ Fixed Vite import path errors (DebugPanel.jsx)
+- ✅ Verified all 5 panels complete and functional
+- ✅ ImportPanel: Multi-file CSV/PDF + JSON import button
+- ✅ ExportPanel: AGP+, Day Profiles, Database export
+- ✅ SensorHistoryPanel: Full sensor history + stock management
+- ✅ DayProfilesPanel: Day profiles view wrapper
+- ✅ DevToolsPanel: 2-tab system (Sensor Debug, SQLite Import)
+- ✅ All panels wired up in AGPGenerator
+- ✅ Git commit: 0a2405f
 
 ### Current State
-- Navigation works, 4 panels accessible
-- Stub panels show placeholder content
-- DevTools toggle functional
-- No regressions in existing features
-- Branch: feature/ui-refactor-panels (or develop)
-- Server: Port 3005
+- All panels implemented and rendering correctly
+- Multi-file CSV import exists but NO progress feedback
+- Multi-file PDF import exists but NO progress feedback
+- No cleanup ALL-IN feature yet
+- Server running on port 3004
+- Branch: develop
 
 ---
 
-## 🎯 SESSION 16 GOALS
+## 🎯 SESSION 17 GOALS
 
-Build out 5 panel components with full functionality:
+Build two feature enhancements:
 
-1. **ImportPanel.jsx** (2h) - CSV (multi), PDF (multi), JSON (single)
-2. **ExportPanel.jsx** (1h) - 3 export buttons (AGP+, Dagprofielen, Database)
-3. **SensorHistoryPanel.jsx** (1h) - Sensor list + Stock button
-4. **DayProfilesPanel.jsx** (1h) - Day profiles view
-5. **DevToolsPanel.jsx** (1h) - Insulin debugger + SQLite import
+### Phase D: Multi-File Import Progress (1.5 hours)
+**Problem**: User uploads 5 CSVs, sees nothing until all complete  
+**Solution**: Show real-time progress with file X of Y
+
+**Features**:
+1. Progress state in ImportPanel
+2. Visual progress bar with percentage
+3. File-by-file feedback ("Processing file 2 of 5...")
+4. Success summary at end
+5. Error handling with partial completion
+
+### Phase E: Cleanup ALL-IN (1.5 hours)
+**Problem**: Users want to reset ALL data (nuclear option)  
+**Solution**: Add ALL-IN option to cleanup modal with safeguards
+
+**Features**:
+1. Add "ALL-IN" option to cleanup modal
+2. Dry-run preview showing what will be deleted
+3. Mandatory backup before cleanup
+4. Confirmation modal with scary warnings
+5. Execute cleanup (glucose + cartridges + sensors + stock)
+6. Preserve ONLY patient info and ProTime data
 
 ---
 
 ## 🚀 IMPLEMENTATION PROMPT FOR CLAUDE
 
-**Role**: You are a senior React developer working on AGP+. Session 15 completed file structure and navigation. Now build out the panel components.
+**Role**: You are a senior React developer working on AGP+. Session 16 completed all panels. Now add progress feedback and cleanup ALL-IN feature.
 
-**Task**: Implement 5 panel components with full functionality. Work in small chunks with frequent check-ins.
+**Task**: Implement multi-file import progress tracking and cleanup ALL-IN option. Work in small chunks with frequent check-ins.
 
 **Critical Requirements**:
-1. **Work in chunks**: Build one section at a time, CHECK with user
-2. **Update PROGRESS.md**: After each panel completion
-3. **Test after each panel**: Ensure functionality works
-4. **Wrap existing modals**: Don't convert, just invoke them
-5. **Git commit**: After each major panel
+1. **Work in chunks**: Build one feature at a time
+2. **Update PROGRESS.md**: After each phase
+3. **Test after each phase**: Ensure functionality works
+4. **Git commit**: After each phase
+5. **User check-in**: Verify before proceeding
 
 ---
 
-### PANEL C1: IMPORTPANEL.JSX (2 HOURS)
+## PHASE D: MULTI-FILE IMPORT PROGRESS (1.5 HOURS)
 
-#### Chunk C1.1: Read Existing Import Logic (10 min)
-**Task**: Understand current import handlers in AGPGenerator
+### D1: Add Progress State to ImportPanel (15 min)
 
-**Steps**:
-1. Search for CSV upload handler in AGPGenerator
-2. Search for PDF upload handler in AGPGenerator
-3. Search for JSON import modal trigger
-4. Note: Where is DataImportModal rendered?
+**Task**: Add state management for multi-file progress
 
-**Check-in**: Show user what you found, explain current flow.
-
----
-
-#### Chunk C1.2: Extract CSV Handler (20 min)
-**Task**: Move CSV parsing logic to ImportPanel
-
-**In AGPGenerator.jsx**, find:
-```javascript
-const handleCSVUpload = async (e) => {
-  const file = e.target.files[0];
-  // ... parsing logic
-};
-```
-
-**Move to ImportPanel.jsx**:
-```javascript
-const handleCSVUpload = async (e) => {
-  const files = Array.from(e.target.files); // Support multiple
-  
-  setIsProcessing(true);
-  let totalRecords = 0;
-  
-  try {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      console.log(`[ImportPanel] Processing CSV ${i+1}/${files.length}:`, file.name);
-      
-      // Call existing parseCSV function
-      const result = await parseCSV(file);
-      totalRecords += result.recordCount || 0;
-    }
-    
-    alert(`✅ Import Complete\n\nFiles: ${files.length}\nRecords: ${totalRecords}`);
-    
-    // Trigger data refresh (via callback prop)
-    if (onDataImported) {
-      await onDataImported();
-    }
-    
-  } catch (error) {
-    console.error('[ImportPanel] CSV import failed:', error);
-    alert(`❌ Import Failed\n\n${error.message}`);
-  } finally {
-    setIsProcessing(false);
-  }
-};
-```
-
-**Check-in**: Show extracted handler, confirm logic looks correct.
-
----
-
-#### Chunk C1.3: Build CSV Upload Section (20 min)
-**Task**: Create CSV upload UI in ImportPanel
-
-**Add to ImportPanel.jsx**:
+**In ImportPanel.jsx**:
 ```jsx
-<section className="import-section" style={{
-  marginBottom: '2rem',
-  padding: '1.5rem',
-  border: '3px solid var(--border-primary)',
-  background: 'var(--bg-secondary)'
-}}>
-  <h3 style={{
-    fontFamily: 'Courier New, monospace',
-    fontSize: '1.125rem',
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    marginBottom: '1rem'
-  }}>
-    📄 Upload CSV (Medtronic CareLink)
-  </h3>
-  
-  <input
-    type="file"
-    multiple
-    accept=".csv"
-    onChange={handleCSVUpload}
-    disabled={isProcessing}
-    style={{
-      display: 'block',
-      width: '100%',
-      padding: '0.75rem',
-      fontFamily: 'Courier New, monospace',
-      fontSize: '0.875rem',
-      border: '2px solid var(--border-primary)',
-      background: 'var(--bg-primary)',
-      cursor: isProcessing ? 'not-allowed' : 'pointer'
-    }}
-  />
-  
-  <p style={{
-    marginTop: '0.5rem',
-    fontFamily: 'Courier New, monospace',
-    fontSize: '0.75rem',
-    color: 'var(--text-secondary)'
-  }}>
-    Select multiple CSV files at once. Files are processed sequentially.
-  </p>
-</section>
-```
-
-**Check-in**: Show UI code, test file picker works.
-
----
-
-#### Chunk C1.4: Extract PDF Handler (15 min)
-**Task**: Move PDF parsing logic to ImportPanel
-
-**In AGPGenerator.jsx**, find:
-```javascript
-const handleProTimePDFUpload = async (e) => {
-  const files = Array.from(e.target.files);
-  // ... existing PDF logic
-};
-```
-
-**Move entire function** to ImportPanel.jsx (no changes needed, already supports multiple files)
-
-**Check-in**: Confirm PDF handler moved correctly.
-
----
-
-#### Chunk C1.5: Build PDF Upload Section (15 min)
-**Task**: Create PDF upload UI in ImportPanel
-
-**Add to ImportPanel.jsx** (same structure as CSV section):
-```jsx
-<section className="import-section">
-  <h3>📋 Upload ProTime PDF (Werkdagen)</h3>
-  <input
-    type="file"
-    multiple
-    accept=".pdf"
-    onChange={handleProTimePDFUpload}
-    disabled={isProcessing}
-  />
-  <p>Select multiple PDF files at once.</p>
-</section>
-```
-
-**Check-in**: Show UI, test PDF picker works.
-
----
-
-#### Chunk C1.6: Add JSON Import Section (20 min)
-**Task**: Add database import button
-
-**Add to ImportPanel.jsx**:
-```jsx
-<section className="import-section">
-  <h3>💾 Import Database (JSON)</h3>
-  
-  <button
-    onClick={() => setShowImportModal(true)}
-    disabled={isProcessing}
-    style={{
-      padding: '0.75rem 1.5rem',
-      background: 'var(--color-green)',
-      border: '3px solid var(--border-primary)',
-      color: '#000',
-      fontFamily: 'Courier New, monospace',
-      fontSize: '0.875rem',
-      fontWeight: 'bold',
-      textTransform: 'uppercase',
-      cursor: isProcessing ? 'not-allowed' : 'pointer'
-    }}
-  >
-    📥 Import Backup
-  </button>
-  
-  <p style={{
-    marginTop: '0.5rem',
-    fontFamily: 'Courier New, monospace',
-    fontSize: '0.75rem',
-    color: 'var(--text-secondary)'
-  }}>
-    Import a previously exported database JSON file. Includes validation and merge strategy options.
-  </p>
-</section>
-
-{/* Existing DataImportModal */}
-<DataImportModal
-  isOpen={showImportModal}
-  onClose={() => setShowImportModal(false)}
-  onConfirm={handleImportConfirm}
-  validationResult={importValidation}
-  isValidating={isValidating}
-  mergeStrategy={importMergeStrategy}
-  onMergeStrategyChange={setImportMergeStrategy}
-  lastImport={lastImportInfo}
-  createBackup={createBackupBeforeImport}
-  onCreateBackupChange={setCreateBackupBeforeImport}
-  lastBackupFile={lastBackupFile}
-/>
-```
-
-**Check-in**: Show JSON section, confirm modal props are correct.
-
----
-
-#### Chunk C1.7: Add Props to ImportPanel (15 min)
-**Task**: Define all required props
-
-**At top of ImportPanel.jsx**:
-```jsx
-export default function ImportPanel({
-  // CSV/PDF callbacks
-  onDataImported,
-  
-  // JSON import state (from AGPGenerator)
-  showImportModal,
-  setShowImportModal,
-  importValidation,
-  isValidating,
-  handleImportConfirm,
-  importMergeStrategy,
-  setImportMergeStrategy,
-  lastImportInfo,
-  createBackupBeforeImport,
-  setCreateBackupBeforeImport,
-  lastBackupFile
+function ImportPanel({
+  // ... existing props
 }) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  
+  const [uploadProgress, setUploadProgress] = useState({
+    isUploading: false,
+    currentFile: 0,
+    totalFiles: 0,
+    fileName: '',
+    percentage: 0
+  });
+
   // ... rest of component
 }
 ```
 
-**Check-in**: Show props definition, confirm all needed state is passed.
+**Check-in**: Show state added, no errors
 
 ---
 
-#### Chunk C1.8: Wire Up ImportPanel in AGPGenerator (20 min)
-**Task**: Pass props from AGPGenerator to ImportPanel
+### D2: Update CSV Upload Handler (20 min)
 
-**In AGPGenerator.jsx**:
+**Task**: Modify CSV upload to report progress
+
+**In ImportPanel.jsx CSV handler**:
 ```jsx
-{activePanel === 'import' && (
-  <ImportPanel
-    onDataImported={handleDataRefresh}
-    showImportModal={dataImportModalOpen}
-    setShowImportModal={setDataImportModalOpen}
-    importValidation={importValidation}
-    isValidating={isValidating}
-    handleImportConfirm={handleImportConfirm}
-    importMergeStrategy={importMergeStrategy}
-    setImportMergeStrategy={setImportMergeStrategy}
-    lastImportInfo={lastImportInfo}
-    createBackupBeforeImport={createBackupBeforeImport}
-    setCreateBackupBeforeImport={setCreateBackupBeforeImport}
-    lastBackupFile={lastBackupFile}
-  />
+onChange={async (e) => {
+  const files = Array.from(e.target.files || []);
+  
+  if (files.length === 0) return;
+  
+  // Start progress
+  setUploadProgress({
+    isUploading: true,
+    currentFile: 0,
+    totalFiles: files.length,
+    fileName: '',
+    percentage: 0
+  });
+  
+  // Process files sequentially
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    
+    // Update progress
+    setUploadProgress(prev => ({
+      ...prev,
+      currentFile: i + 1,
+      fileName: file.name,
+      percentage: Math.round(((i + 1) / files.length) * 100)
+    }));
+    
+    if (file.name.endsWith('.csv')) {
+      console.log(`[ImportPanel] Processing CSV ${i + 1}/${files.length}:`, file.name);
+      const text = await file.text();
+      await onCSVLoad(text);
+    }
+  }
+  
+  // Complete
+  setUploadProgress({
+    isUploading: false,
+    currentFile: files.length,
+    totalFiles: files.length,
+    fileName: '',
+    percentage: 100
+  });
+  
+  // Show completion message
+  if (files.length > 1) {
+    alert(`✅ Import Complete\n\n${files.length} CSV files processed`);
+  }
+  
+  e.target.value = '';
+}}
+```
+
+**Check-in**: Test with 3 CSV files, verify progress updates
+
+---
+
+### D3: Build Progress UI (25 min)
+
+**Task**: Add visual progress indicator
+
+**In ImportPanel.jsx** (add below buttons, above error display):
+```jsx
+{/* Progress Indicator */}
+{uploadProgress.isUploading && (
+  <div style={{
+    marginTop: '1rem',
+    padding: '1.5rem',
+    border: '3px solid var(--border-primary)',
+    background: 'var(--bg-secondary)'
+  }}>
+    <div style={{
+      fontFamily: 'Courier New, monospace',
+      fontSize: '0.875rem',
+      fontWeight: 'bold',
+      textTransform: 'uppercase',
+      letterSpacing: '0.1em',
+      marginBottom: '0.75rem'
+    }}>
+      📤 Uploading Files ({uploadProgress.currentFile} of {uploadProgress.totalFiles})
+    </div>
+    
+    {/* Progress Bar */}
+    <div style={{
+      width: '100%',
+      height: '24px',
+      background: 'var(--bg-primary)',
+      border: '2px solid var(--border-primary)',
+      overflow: 'hidden',
+      marginBottom: '0.75rem'
+    }}>
+      <div style={{
+        height: '100%',
+        background: 'var(--color-green)',
+        width: `${uploadProgress.percentage}%`,
+        transition: 'width 0.3s ease'
+      }} />
+    </div>
+    
+    {/* Current File */}
+    <div style={{
+      fontFamily: 'Courier New, monospace',
+      fontSize: '0.75rem',
+      color: 'var(--text-secondary)'
+    }}>
+      Processing: {uploadProgress.fileName}
+    </div>
+  </div>
 )}
 ```
 
-**Check-in**: Show prop passing, test ImportPanel renders with all props.
+**Check-in**: Show UI, test with multiple files
 
 ---
 
-#### Chunk C1.9: Test ImportPanel (20 min)
-**Task**: Manual testing of all 3 import methods
+### D4: Add Same Progress to PDF Upload (15 min)
 
-**Test Checklist**:
-1. Upload single CSV → processes correctly
-2. Upload 3 CSV files at once → all process sequentially
-3. Upload single PDF → processes correctly
-4. Upload 2 PDF files at once → all process sequentially
-5. Click "Import Backup" → DataImportModal opens
-6. Import JSON file → validation + import works
-7. Loading states show correctly during processing
+**Task**: Apply same progress pattern to ProTime PDF upload
 
-**Check-in**: Report test results.
+**Copy the same progress logic** to the ProTime PDF onChange handler.
+
+**Check-in**: Test with multiple PDFs
 
 ---
 
-#### Chunk C1.10: Update PROGRESS.md (10 min)
-**Task**: Document ImportPanel completion
+### D5: Test Phase D (15 min)
 
-**Add to PROGRESS.md**:
-```markdown
-### Phase C1: ImportPanel ✅ (2h)
+**Test Scenarios**:
+1. Upload 1 CSV → No progress shown (instant)
+2. Upload 3 CSVs → Progress bar appears, updates, disappears
+3. Upload 5 PDFs → Progress bar appears, updates, disappears
+4. Upload CSV + error in file 3 → Partial progress + error message
+5. Cancel upload → Progress resets cleanly
 
-**Features**:
-- ✅ CSV upload (multi-file support)
-- ✅ ProTime PDF upload (multi-file support)
-- ✅ Database JSON import (validation + merge strategies)
-- ✅ Loading states during processing
-- ✅ Success/error messages
-- ✅ Sequential batch processing
-
-**Files Modified**:
-- `src/components/panels/ImportPanel.jsx` (implemented)
-- `src/components/AGPGenerator.jsx` (props passed)
-
-**Testing**: All 3 import methods working ✅
-```
-
-**Check-in**: Show PROGRESS.md update.
+**Check-in**: Report test results
 
 ---
 
-#### Chunk C1.11: Git Commit ImportPanel (5 min)
-**Task**: Commit completed ImportPanel
+### D6: Commit Phase D (10 min)
 
-**Commands**:
 ```bash
 git add src/components/panels/ImportPanel.jsx
-git add src/components/AGPGenerator.jsx
 git add PROGRESS.md
-git commit -m "[feat] Phase C1: ImportPanel with multi-file support
-
-- Implemented CSV upload (multiple files at once)
-- Implemented PDF upload (multiple files at once)
-- Integrated DataImportModal for JSON import
-- Added sequential batch processing for CSV/PDF
-- Added loading states and user feedback
-- Extracted import logic from AGPGenerator
+git commit -m "[feat] Phase D: Multi-file import progress tracking
 
 Features:
-- Multi-file CSV import (processed sequentially)
-- Multi-file PDF import (processed sequentially)
-- Database JSON import (with validation modal)
-- Success/error messages
-- Props passed from AGPGenerator
+- Added progress state to ImportPanel (current/total/percentage)
+- Progress bar with percentage indicator
+- Real-time file-by-file feedback
+- Works for both CSV and PDF multi-file uploads
+- Brutalist styling maintained
 
-Testing: All 3 import methods functional
+Testing:
+- Tested with 1-5 CSV files
+- Tested with 1-3 PDF files
+- Progress updates correctly
+- Completion message shows
+
+Phase D Complete: Multi-file progress tracking ✅
 "
 ```
 
-**Check-in**: Show commit message before executing.
+**Check-in**: Show commit, verify PROGRESS.md updated
 
 ---
 
-### PANEL C2: EXPORTPANEL.JSX (1 HOUR)
+## PHASE E: CLEANUP ALL-IN (1.5 HOURS)
 
-#### Chunk C2.1: Extract Export Handlers (20 min)
-**Task**: Move export logic to ExportPanel
+### E1: Understand Current Cleanup Modal (10 min)
 
-**Find in AGPGenerator.jsx**:
-```javascript
-const handleExportAGPProfile = async () => { ... };
-const handleExportDayProfiles = async () => { ... };
-const handleExportDatabase = async () => { ... };
-```
+**Task**: Read DataCleanupModal.jsx to understand current structure
 
-**Move all 3** to ExportPanel.jsx
+**Files to check**:
+- `src/components/DataCleanupModal.jsx`
+- Look for cleanup options (14 days, 30 days, custom)
 
-**Check-in**: Show extracted handlers.
+**Check-in**: Explain current cleanup behavior
 
 ---
 
-#### Chunk C2.2: Build Export UI (30 min)
-**Task**: Create 3-button layout
+### E2: Add ALL-IN Option to Modal (20 min)
 
-**ExportPanel.jsx structure**:
+**Task**: Add new cleanup option alongside existing ones
+
+**In DataCleanupModal.jsx**, add ALL-IN option:
 ```jsx
-export default function ExportPanel() {
-  const [isExporting, setIsExporting] = useState(false);
-  
-  return (
-    <div className="panel export-panel">
-      <h2>📤 Export Data</h2>
-      
-      <div className="export-actions" style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        maxWidth: '600px'
-      }}>
-        {/* Button 1: AGP+ Profile */}
-        <button
-          onClick={handleExportAGPProfile}
-          disabled={isExporting}
-          style={{
-            padding: '1rem 1.5rem',
-            background: 'var(--bg-secondary)',
-            border: '3px solid var(--border-primary)',
-            fontFamily: 'Courier New, monospace',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            textAlign: 'left',
-            cursor: isExporting ? 'not-allowed' : 'pointer'
-          }}
-        >
-          <div style={{ fontSize: '1.125rem', marginBottom: '0.25rem' }}>
-            📊 AGP+ Profiel (HTML)
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            Export complete glucose profile with statistics and visualizations
-          </div>
-        </button>
-        
-        {/* Button 2: Day Profiles */}
-        <button onClick={handleExportDayProfiles}>
-          <div>📅 Dagprofielen (HTML)</div>
-          <div>Export individual day reports with detailed metrics</div>
-        </button>
-        
-        {/* Button 3: Database */}
-        <button onClick={handleExportDatabase}>
-          <div>💾 Export Database (JSON)</div>
-          <div>Export complete database for backup or transfer</div>
-        </button>
-      </div>
-    </div>
-  );
-}
+<button
+  onClick={() => onCleanupConfirm({ type: 'all-in' })}
+  style={{
+    background: 'var(--color-red)',
+    border: '3px solid var(--border-primary)',
+    color: '#fff',
+    padding: '1rem',
+    fontFamily: 'Courier New, monospace',
+    fontSize: '0.875rem',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    cursor: 'pointer'
+  }}
+>
+  âš ï¸ ALL-IN (Nuclear Reset)
+</button>
 ```
 
-**Check-in**: Show UI structure, test buttons render.
-
----
-
-#### Chunk C2.3: Test ExportPanel (10 min)
-**Task**: Test all 3 exports
-
-**Test Checklist**:
-1. Click "AGP+ Profile" → HTML file downloads
-2. Click "Dagprofielen" → HTML file downloads
-3. Click "Export Database" → JSON file downloads
-4. Disabled state during export
-
-**Check-in**: Report test results, commit if working.
-
----
-
-### PANEL C3: SENSORHISTORYPANEL.JSX (1 HOUR)
-
-#### Chunk C3.1: Extract Sensor Logic (15 min)
-**Task**: Move sensor display logic from SensorHistoryModal
-
-**Steps**:
-1. Copy content from existing SensorHistoryModal
-2. Remove modal wrapper
-3. Keep sensor list and statistics
-
-**Check-in**: Show extracted component structure.
-
----
-
-#### Chunk C3.2: Add Stock Button (20 min)
-**Task**: Add "Stockbeheer" button to panel header
-
-**Add to SensorHistoryPanel**:
-```jsx
-const [showStock, setShowStock] = useState(false);
-
-if (showStock) {
-  return <StockPanel onBack={() => setShowStock(false)} />;
-}
-
-return (
-  <div className="panel sensor-panel">
-    <div className="panel-header" style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '1.5rem'
-    }}>
-      <h2>📍 Sensor History</h2>
-      
-      <button
-        onClick={() => setShowStock(true)}
-        style={{
-          padding: '0.5rem 1rem',
-          background: 'var(--bg-secondary)',
-          border: '2px solid var(--border-primary)',
-          fontFamily: 'Courier New, monospace',
-          fontSize: '0.875rem',
-          fontWeight: 'bold',
-          cursor: 'pointer'
-        }}
-      >
-        📦 Stockbeheer
-      </button>
-    </div>
-    
-    {/* Existing sensor list */}
-  </div>
-);
-```
-
-**Check-in**: Show header with button, test Stock toggle.
-
----
-
-#### Chunk C3.3: Update StockPanel (15 min)
-**Task**: Add onBack prop to StockPanel
-
-**In StockPanel.jsx**:
-```jsx
-export default function StockPanel({ onBack }) {
-  return (
-    <div className="panel stock-panel">
-      <div className="panel-header">
-        <button onClick={onBack} style={{ /* back button */ }}>
-          ← Back to Sensors
-        </button>
-        <h2>📦 Stock Management</h2>
-      </div>
-      
-      {/* Existing stock management UI */}
-    </div>
-  );
-}
-```
-
-**Check-in**: Show back navigation, test round-trip.
-
----
-
-#### Chunk C3.4: Test Sensor → Stock Flow (10 min)
-**Test**:
-1. Click "SENSOREN" in main nav
-2. Click "Stockbeheer" button
-3. StockPanel appears
-4. Click "Back to Sensors"
-5. Returns to sensor list
-
-**Check-in**: Report test results, commit if working.
-
----
-
-### PANEL C4: DAYPROFILESPANEL.JSX (1 HOUR)
-
-#### Chunk C4.1: Extract Day Profiles (30 min)
-**Task**: Move day profiles content from modal to panel
-
-**Options**:
-1. **Option A**: Unwrap DayProfilesModal (remove modal wrapper)
-2. **Option B**: Keep modal, render inline (no overlay)
-
-**Recommended**: Option B (simpler)
-
-```jsx
-export default function DayProfilesPanel() {
-  return (
-    <div className="panel dayprofiles-panel">
-      <DayProfilesModal 
-        isOpen={true}
-        asPanel={true}  // New prop: render without overlay
-        onClose={null}  // No close button needed in panel mode
-      />
-    </div>
-  );
-}
-```
-
-**Check-in**: Show approach, get approval before modifying DayProfilesModal.
-
----
-
-#### Chunk C4.2: Modify DayProfilesModal (20 min)
-**Task**: Add asPanel prop support
-
-**In DayProfilesModal.jsx**:
-```jsx
-export default function DayProfilesModal({ isOpen, onClose, asPanel = false }) {
-  if (!isOpen && !asPanel) return null;
-  
-  const content = (
-    <div className="dayprofiles-content">
-      {/* Existing day profiles UI */}
-    </div>
-  );
-  
-  // If panel mode, return content directly
-  if (asPanel) {
-    return content;
-  }
-  
-  // If modal mode, wrap in overlay
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <button onClick={onClose}>×</button>
-        {content}
-      </div>
-    </div>
-  );
-}
-```
-
-**Check-in**: Show modified modal, test both modes work.
-
----
-
-#### Chunk C4.3: Test DayProfilesPanel (10 min)
-**Test**:
-1. Click "DAGPROFIELEN" in main nav
-2. Day profiles display without modal overlay
-3. All existing functionality works
-4. No regressions
-
-**Check-in**: Report results, commit if working.
-
----
-
-### PANEL C5: DEVTOOLSPANEL.JSX (1 HOUR)
-
-#### Chunk C5.1: Build DevTools UI Structure (20 min)
-**Task**: Create panel with tool selector
-
-**DevToolsPanel.jsx**:
-```jsx
-export default function DevToolsPanel({ onClose }) {
-  const [activeTool, setActiveTool] = useState('insulin');
-  
-  return (
-    <div className="panel devtools-panel">
-      <div className="panel-header" style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '1rem',
-        borderBottom: '3px solid var(--border-primary)'
-      }}>
-        <h2>🛠️ Developer Tools</h2>
-        <button onClick={onClose} style={{
-          background: '#f00',
-          color: '#fff',
-          border: '2px solid #000',
-          padding: '0.5rem 1rem',
-          cursor: 'pointer'
-        }}>
-          ✕ Close
-        </button>
-      </div>
-      
-      <div className="tool-selector" style={{
-        display: 'flex',
-        gap: '0.5rem',
-        padding: '1rem',
-        borderBottom: '2px solid var(--border-primary)'
-      }}>
-        <button
-          onClick={() => setActiveTool('insulin')}
-          style={{
-            background: activeTool === 'insulin' ? 'var(--color-green)' : 'var(--bg-secondary)',
-            border: '2px solid var(--border-primary)',
-            padding: '0.5rem 1rem',
-            fontFamily: 'Courier New, monospace',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          💉 Insulin
-        </button>
-        
-        <button
-          onClick={() => setActiveTool('sqlite')}
-          style={{ /* same styling */ }}
-        >
-          💾 SQLite
-        </button>
-      </div>
-      
-      <div className="tool-content" style={{ padding: '1rem' }}>
-        {activeTool === 'insulin' && <InsulinDebugger />}
-        {activeTool === 'sqlite' && <SensorSQLiteImport />}
-      </div>
-    </div>
-  );
-}
-```
-
-**Check-in**: Show UI structure, test tool switching.
-
----
-
-#### Chunk C5.2: Import Debug Components (15 min)
-**Task**: Wire up InsulinDebugger and SensorSQLiteImport
-
-**At top of DevToolsPanel.jsx**:
-```jsx
-import InsulinDebugger from '../devtools/InsulinDebugger';
-import SensorSQLiteImport from '../devtools/SensorSQLiteImport';
-```
-
-**Verify files exist**:
-- `src/components/devtools/InsulinDebugger.jsx`
-- `src/components/devtools/SensorSQLiteImport.jsx`
-
-**Check-in**: Confirm imports resolve, components render.
-
----
-
-#### Chunk C5.3: Test DevTools Panel (15 min)
-**Test**:
-1. Press Ctrl+Shift+D → DevTools panel slides in
-2. Click "Insulin" → InsulinDebugger appears
-3. Click "SQLite" → SensorSQLiteImport appears
-4. Click "Close" → Panel closes
-5. Press Ctrl+Shift+D again → Panel opens
-
-**Check-in**: Report test results.
-
----
-
-#### Chunk C5.4: Add Production Warning (10 min)
-**Task**: Add notice that DevTools is dev-only
-
-**Add to DevToolsPanel**:
+**Add warning text**:
 ```jsx
 <div style={{
   padding: '1rem',
-  background: '#fffacd',
-  border: '2px solid #fa0',
-  margin: '1rem',
+  background: '#fee',
+  border: '2px solid var(--color-red)',
+  marginTop: '1rem',
   fontFamily: 'Courier New, monospace',
-  fontSize: '0.875rem'
+  fontSize: '0.75rem'
 }}>
-  ⚠️ <strong>Developer Tools</strong>: These tools are for debugging and development only. 
-  They are hidden in production builds unless explicitly enabled via localStorage.
+  âš ï¸ <strong>WARNING</strong>: ALL-IN deletes:
+  • All glucose readings
+  • All cartridge changes
+  • All sensor history
+  • All stock batches
+  <br/><br/>
+  ✅ Preserves: Patient info, ProTime workdays
+  <br/><br/>
+  📦 Automatic backup will be created before cleanup
 </div>
 ```
 
-**Check-in**: Show warning banner.
+**Check-in**: Show UI, test button renders
 
 ---
 
-### FINAL PHASE C TASKS
+### E3: Add Backup Before Cleanup (25 min)
 
-#### Chunk C.Final.1: Update PROGRESS.md (15 min)
-**Task**: Document all Phase C completions
+**Task**: Automatically create backup before ALL-IN cleanup
 
-**Add to PROGRESS.md**:
-```markdown
-### Phase C: Panel Components ✅ (6h)
-
-**Panels Implemented**:
-- ✅ ImportPanel (2h) - CSV/PDF/JSON import
-- ✅ ExportPanel (1h) - 3 export options
-- ✅ SensorHistoryPanel (1h) - Sensor list + Stock button
-- ✅ DayProfilesPanel (1h) - Day profiles view
-- ✅ DevToolsPanel (1h) - Insulin + SQLite tools
-
-**Testing**:
-- ✅ All panels render correctly
-- ✅ Import/export functionality preserved
-- ✅ Sensor → Stock navigation works
-- ✅ DevTools toggle functional
-- ✅ No regressions in existing features
-
-**Commits**:
-- `[feat] Phase C1: ImportPanel with multi-file support`
-- `[feat] Phase C2: ExportPanel with 3 actions`
-- `[feat] Phase C3: SensorHistoryPanel with Stock button`
-- `[feat] Phase C4: DayProfilesPanel wrapper`
-- `[feat] Phase C5: DevToolsPanel with tool selector`
-
-**Session 16 Complete**: All panel components implemented ✅
+**In AGPGenerator.jsx**, modify cleanup handler:
+```javascript
+const handleCleanupConfirm = async (options) => {
+  try {
+    // For ALL-IN, create backup first
+    if (options.type === 'all-in') {
+      console.log('[Cleanup] Creating backup before ALL-IN...');
+      
+      const { exportAndDownload } = await import('./storage/masterDatasetStorage');
+      const backupResult = await exportAndDownload();
+      
+      if (!backupResult.success) {
+        alert(`❌ Backup failed: ${backupResult.error}\n\nCleanup cancelled for safety.`);
+        return;
+      }
+      
+      console.log('[Cleanup] Backup created:', backupResult.filename);
+      
+      // Show confirmation with backup info
+      const confirmed = confirm(
+        `⚠️ ALL-IN CLEANUP\n\n` +
+        `This will delete:\n` +
+        `• All glucose readings\n` +
+        `• All cartridge changes\n` +
+        `• All sensor history\n` +
+        `• All stock batches\n\n` +
+        `✅ Backup created: ${backupResult.filename}\n\n` +
+        `🔒 Preserves: Patient info, ProTime\n\n` +
+        `Are you ABSOLUTELY SURE?`
+      );
+      
+      if (!confirmed) {
+        console.log('[Cleanup] User cancelled ALL-IN');
+        return;
+      }
+    }
+    
+    // Execute cleanup
+    const { cleanupRecords } = await import('./storage/masterDatasetStorage');
+    const result = await cleanupRecords(options);
+    
+    if (result.success) {
+      alert(`✅ Cleanup Complete\n\n${result.deletedCount} records removed`);
+      masterDataset.refresh();
+    } else {
+      alert(`❌ Cleanup failed: ${result.error}`);
+    }
+    
+  } catch (err) {
+    console.error('[Cleanup] Error:', err);
+    alert(`❌ Cleanup failed: ${err.message}`);
+  } finally {
+    setCleanupModalOpen(false);
+  }
+};
 ```
 
-**Check-in**: Show full PROGRESS.md update.
+**Check-in**: Test backup creation works
 
 ---
 
-#### Chunk C.Final.2: Final Integration Test (20 min)
-**Task**: Complete round-trip test
+### E4: Implement ALL-IN Cleanup Logic (30 min)
 
-**Test Scenario**:
-1. Start fresh session
-2. Click IMPORT → Upload CSV (3 files) → Success
-3. Click DAGPROFIELEN → View day reports → Works
-4. Click SENSOREN → View sensors → Click Stock → View stock → Back → Works
-5. Click EXPORT → Export AGP+ → Download works
-6. Press Ctrl+Shift+D → DevTools appear → Close → Works
-7. Navigate between all panels multiple times → No errors
+**Task**: Add ALL-IN cleanup to masterDatasetStorage.js
 
-**Check-in**: Report full test results.
+**In `src/storage/masterDatasetStorage.js`**:
+```javascript
+export async function cleanupRecords(options) {
+  try {
+    const db = await getDB();
+    
+    if (options.type === 'all-in') {
+      // Delete everything except patient + protime
+      const tx = db.transaction(['readings', 'cartridges', 'sensors', 'stock'], 'readwrite');
+      
+      await Promise.all([
+        tx.objectStore('readings').clear(),
+        tx.objectStore('cartridges').clear(),
+        tx.objectStore('sensors').clear(),
+        tx.objectStore('stock').clear()
+      ]);
+      
+      await tx.done;
+      
+      // Clear localStorage sensors too
+      localStorage.removeItem('agp-sensors');
+      localStorage.removeItem('agp-stock-batches');
+      
+      return {
+        success: true,
+        deletedCount: 'ALL',
+        message: 'All records deleted (kept patient + ProTime)'
+      };
+    }
+    
+    // ... existing cleanup logic for date-based cleanup
+    
+  } catch (err) {
+    console.error('[Cleanup] Error:', err);
+    return {
+      success: false,
+      error: err.message
+    };
+  }
+}
+```
+
+**Check-in**: Test ALL-IN cleanup works
 
 ---
 
-#### Chunk C.Final.3: Git Commit Final (10 min)
-**Task**: Final commit for Session 16
+### E5: Test Phase E (20 min)
 
-**Commands**:
+**Test Scenarios**:
+1. Open cleanup modal → ALL-IN button visible
+2. Click ALL-IN → Backup created automatically
+3. Confirm ALL-IN → All data deleted
+4. Check patient info still exists
+5. Check ProTime still exists
+6. Import backup → Data restored
+
+**Check-in**: Report test results
+
+---
+
+### E6: Commit Phase E (10 min)
+
 ```bash
-git add src/components/panels/
-git add src/components/devtools/
+git add src/components/DataCleanupModal.jsx
 git add src/components/AGPGenerator.jsx
+git add src/storage/masterDatasetStorage.js
 git add PROGRESS.md
-git commit -m "[feat] Session 16 complete: All panel components implemented
-
-Summary:
-- ImportPanel: CSV/PDF/JSON import with multi-file support
-- ExportPanel: 3 export options (AGP+, Dagprofielen, Database)
-- SensorHistoryPanel: Sensor list with Stock navigation
-- DayProfilesPanel: Day profiles view (unwrapped modal)
-- DevToolsPanel: Insulin + SQLite debug tools
+git commit -m "[feat] Phase E: Cleanup ALL-IN nuclear option
 
 Features:
-- Multi-file CSV/PDF import (sequential processing)
-- All existing export functions preserved
-- Sensor → Stock → Back navigation
-- DevTools panel with tool selector
-- Brutalist styling maintained throughout
+- Added ALL-IN option to cleanup modal
+- Automatic backup before ALL-IN cleanup
+- Deletes all glucose, cartridges, sensors, stock
+- Preserves patient info and ProTime data
+- Scary warning messages and double confirmation
+- Backup can be used to restore data
 
-Testing: All panels functional, no regressions
-Phase C complete: 5/5 panels implemented ✅
+Safety:
+- Mandatory backup before cleanup
+- Double confirmation required
+- Clear warning about what gets deleted
+- Preserves essential data (patient + ProTime)
+
+Testing:
+- Tested ALL-IN cleanup flow
+- Verified backup creation
+- Verified data deletion
+- Verified patient + ProTime preserved
+- Tested restore from backup
+
+Phase E Complete: Cleanup ALL-IN ✅
 "
 ```
 
-**Check-in**: Show final commit message.
+**Check-in**: Show commit, verify PROGRESS.md updated
 
 ---
 
-## ✅ SESSION 16 ACCEPTANCE CRITERIA
+## FINAL PHASE E TASKS
 
-### All Panels Must Have
-- [ ] ImportPanel: 3 import methods (CSV, PDF, JSON)
-- [ ] ExportPanel: 3 export buttons
-- [ ] SensorHistoryPanel: Sensor list + Stock button
-- [ ] DayProfilesPanel: Day profiles display
-- [ ] DevToolsPanel: 2 debug tools + close button
+### E.Final.1: Update PROGRESS.md (10 min)
 
-### Functionality Must Work
-- [ ] Multi-file CSV import (tested with 3+ files)
-- [ ] Multi-file PDF import (tested with 2+ files)
-- [ ] JSON import with validation modal
-- [ ] All 3 exports download correctly
-- [ ] Sensor → Stock → Back navigation
-- [ ] DevTools toggle (Ctrl+Shift+D)
-- [ ] Tool switching in DevTools
+**Add to PROGRESS.md**:
+```markdown
+### Session 17: Multi-File Progress + Cleanup ALL-IN (3h)
 
-### Code Quality
+**Phase D**: Multi-file import progress
+- ✅ Progress state management in ImportPanel
+- ✅ Visual progress bar with percentage
+- ✅ File-by-file feedback (X of Y)
+- ✅ Works for CSV and PDF uploads
+- ✅ Success summary at completion
+
+**Phase E**: Cleanup ALL-IN
+- ✅ ALL-IN option in cleanup modal
+- ✅ Automatic backup before cleanup
+- ✅ Deletes all glucose, cartridges, sensors, stock
+- ✅ Preserves patient info and ProTime
+- ✅ Double confirmation with warnings
+- ✅ Backup can restore data
+
+**Testing**:
+- ✅ Multi-file CSV upload (1-5 files)
+- ✅ Multi-file PDF upload (1-3 files)
+- ✅ Progress bar updates correctly
+- ✅ ALL-IN cleanup flow complete
+- ✅ Backup creation works
+- ✅ Data deletion verified
+- ✅ Patient + ProTime preserved
+- ✅ Backup restore works
+
+**Commits**: 2 commits (Phase D, Phase E)
+**Session 17 Complete**: All features implemented ✅
+```
+
+**Check-in**: Show PROGRESS.md update
+
+---
+
+### E.Final.2: Final Integration Test (15 min)
+
+**Complete Workflow Test**:
+1. Upload 3 CSV files → See progress bar → Success
+2. Upload 2 PDFs → See progress bar → Success
+3. View data in panels → All data present
+4. Open cleanup modal → See ALL-IN option
+5. Click ALL-IN → Backup created → Warning shown
+6. Confirm ALL-IN → Data deleted → Patient info still there
+7. Check ProTime → Still present
+8. Import backup → Data restored
+
+**Check-in**: Report complete test results
+
+---
+
+## ✅ SESSION 17 ACCEPTANCE CRITERIA
+
+### Phase D Must Have
+- [ ] Progress state in ImportPanel
+- [ ] Visual progress bar with percentage
+- [ ] File-by-file feedback (X of Y)
+- [ ] Works for CSV uploads
+- [ ] Works for PDF uploads
+- [ ] Success message after completion
+
+### Phase E Must Have
+- [ ] ALL-IN option in cleanup modal
+- [ ] Warning text about what gets deleted
+- [ ] Automatic backup before cleanup
+- [ ] Double confirmation dialog
+- [ ] Deletes glucose + cartridges + sensors + stock
+- [ ] Preserves patient info + ProTime
+- [ ] Backup can be used to restore
+
+### Quality Requirements
 - [ ] No console errors
-- [ ] Loading states work
-- [ ] Error handling functional
-- [ ] Brutalist styling applied
+- [ ] Brutalist styling maintained
+- [ ] All tests pass
 - [ ] PROGRESS.md updated
-- [ ] Git committed
+- [ ] 2 git commits (Phase D, Phase E)
 
 ---
 
 ## 🧪 TESTING PROTOCOL
 
-**After each panel**:
-1. Render panel in browser
-2. Test all functionality
-3. Check console for errors
-4. Report to user before proceeding
+**After Phase D**:
+1. Test 1-file upload (no progress)
+2. Test 3-file upload (progress shown)
+3. Test 5-file upload (progress updates)
+4. Verify percentage calculations
+5. Check completion message
 
-**After Phase C complete**:
-1. Full round-trip test (see Chunk C.Final.2)
-2. Test all 4 main panels
-3. Test DevTools
-4. Verify no regressions
-5. Commit if all pass
+**After Phase E**:
+1. Test ALL-IN backup creation
+2. Verify warning messages
+3. Test cleanup execution
+4. Verify data deletion
+5. Verify patient + ProTime preserved
+6. Test backup restore
 
 ---
 
@@ -939,15 +618,15 @@ Phase C complete: 5/5 panels implemented ✅
 
 ---
 
-## 🎯 END OF SESSION 16
+## 🎯 END OF SESSION 17
 
 **Deliverables**:
-- 5 fully functional panel components
-- Multi-file import support
-- Complete navigation system
+- Multi-file import with progress tracking
+- Cleanup ALL-IN with mandatory backup
+- 2 git commits (Phase D, Phase E)
 - Updated PROGRESS.md
-- 5-6 git commits
+- Comprehensive testing
 
-**Next Session**: Session 17 - Phase D+E (Multi-file improvements + Cleanup ALL-IN)
+**Next Session**: Session 18 - Phase F (Polish + Final Testing)
 
-**Handoff to Session 17**: `HANDOFF_SESSION_17.md`
+**Handoff to Session 18**: `HANDOFF_SESSION_18.md` (already exists)
