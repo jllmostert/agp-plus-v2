@@ -50,6 +50,74 @@ See: `HANDOFF_2025-11-08_PROTIME-BUG.md` (complete debug guide)
 
 ---
 
+## SESSION 15 - UI Refactor Phase A (File Structure) (2025-11-08)
+
+**Goal**: Reorganize components into panels/ and devtools/ architecture  
+**Status**: ✅ PHASE A COMPLETE  
+**Branch**: develop  
+**Time**: 1 hour actual (2 hours estimated)
+
+### Phase A: File Structure Reorganization ✅
+
+**New Directory Structure**:
+- ✅ Created `src/components/devtools/` directory
+- ✅ `src/components/panels/` already existed with some files
+
+**Component Migration**:
+- ✅ Moved `SensorHistoryModal.jsx` → `panels/SensorHistoryPanel.jsx`
+  - Renamed component: `SensorHistoryModal` → `SensorHistoryPanel`
+  - Fixed import paths (added `../../` for core/storage)
+  - Updated all logging references
+- ✅ Moved `StockManagementModal.jsx` → `panels/StockPanel.jsx`
+  - Renamed component: `StockManagementModal` → `StockPanel`
+  - Fixed import paths (added `../../` for core/storage)
+  - Updated all logging references
+
+**Existing Panels** (already in place from previous session):
+- ✅ `panels/ImportPanel.jsx` (was DataImportPanel)
+- ✅ `panels/ExportPanel.jsx` (was DataExportPanel)
+- ✅ `panels/DayProfilesPanel.jsx`
+- ✅ `panels/DevToolsPanel.jsx`
+- ✅ `panels/HeroMetricsPanel.jsx`
+
+**Import Path Updates**:
+- ✅ Updated `AGPGenerator.jsx` imports:
+  - `DataImportPanel` → `ImportPanel`
+  - `DataExportPanel` → `ExportPanel`
+  - Added imports for `SensorHistoryPanel`, `StockPanel`, `DayProfilesPanel`, `DevToolsPanel`
+- ✅ Updated `AGPGenerator.jsx` JSX references (lines 1559, 1572)
+- ✅ Updated `containers/ModalManager.jsx` imports:
+  - `SensorHistoryModal` → `SensorHistoryPanel`
+  - `StockManagementModal` → `StockPanel`
+- ✅ Updated `containers/ModalManager.jsx` JSX references (lines 121, 150)
+
+**Cleanup**:
+- ✅ Deleted old files:
+  - `src/components/SensorHistoryModal.jsx`
+  - `src/components/StockManagementModal.jsx`
+
+**Testing**:
+- ✅ App compiles without errors
+- ✅ Server runs successfully on port 3007
+- ✅ Hot reload works (no errors after file deletion)
+- ✅ All imports resolved correctly
+
+**Commits**: 
+- `3e12c67` - [safety] Pre-Session 15 safety checkpoint
+- Pending: Phase A complete commit
+
+**Files Modified**: 7 files
+- `src/components/panels/SensorHistoryPanel.jsx` (created)
+- `src/components/panels/StockPanel.jsx` (created)
+- `src/components/AGPGenerator.jsx` (import updates)
+- `src/components/containers/ModalManager.jsx` (import updates)
+- `PROGRESS.md` (this file)
+- Deleted: `SensorHistoryModal.jsx`, `StockManagementModal.jsx`
+
+**Next Steps**: Phase B - Main Navigation (HeaderBar component)
+
+---
+
 ## SESSION 14 - Advanced Import Features (Phase 1) (2025-11-07 23:45-02:30)
 
 **Goal**: Complete Import/Export Symmetry (Tasks 1.1 + 1.2 + 1.3)  

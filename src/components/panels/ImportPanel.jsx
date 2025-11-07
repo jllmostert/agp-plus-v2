@@ -1,7 +1,7 @@
 /**
- * DataImportPanel.jsx
+ * ImportPanel.jsx
  * 
- * Collapsible panel for data import functionality.
+ * Panel for data import functionality.
  * Extracted from AGPGenerator.jsx (Sprint C1 Phase 4)
  * 
  * Handles:
@@ -19,7 +19,7 @@ import { AlertCircle } from 'lucide-react';
 import FileUpload from '../FileUpload';
 import SensorImport from '../SensorImport';
 
-function DataImportPanel({
+function ImportPanel({
   // Data state
   csvData,
   workdays,
@@ -175,4 +175,4 @@ function DataImportPanel({
   );
 }
 
-export default DataImportPanel;
+export default ImportPanel;

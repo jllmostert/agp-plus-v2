@@ -20,10 +20,10 @@ import ReactDOM from 'react-dom';
 // Modal Components
 import PatientInfo from '../PatientInfo';
 import DayProfilesModal from '../DayProfilesModal';
-import SensorHistoryModal from '../SensorHistoryModal';
+import SensorHistoryPanel from '../panels/SensorHistoryPanel';
 import SensorRegistration from '../SensorRegistration';
 import DataManagementModal from '../DataManagementModal';
-import StockManagementModal from '../StockManagementModal';
+import StockPanel from '../panels/StockPanel';
 import BatchAssignmentDialog from '../BatchAssignmentDialog';
 
 /**
@@ -118,7 +118,7 @@ export default function ModalManager({
 
       {/* Sensor History Modal */}
       {sensorHistoryOpen && ReactDOM.createPortal(
-        <SensorHistoryModal 
+        <SensorHistoryPanel 
           isOpen={sensorHistoryOpen}
           onClose={onCloseSensorHistory}
           sensors={sensors}
@@ -147,7 +147,7 @@ export default function ModalManager({
 
       {/* Stock Management Modal */}
       {showStockModal && ReactDOM.createPortal(
-        <StockManagementModal
+        <StockPanel
           isOpen={showStockModal}
           onClose={onCloseStockModal}
         />,

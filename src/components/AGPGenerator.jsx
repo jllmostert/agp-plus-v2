@@ -36,8 +36,12 @@ import VisualizationContainer from './containers/VisualizationContainer';
 import { DateRangeFilter } from './DateRangeFilter';
 
 // Panel Components
-import DataImportPanel from './panels/DataImportPanel';
-import DataExportPanel from './panels/DataExportPanel';
+import ImportPanel from './panels/ImportPanel';
+import ExportPanel from './panels/ExportPanel';
+import SensorHistoryPanel from './panels/SensorHistoryPanel';
+import StockPanel from './panels/StockPanel';
+import DayProfilesPanel from './panels/DayProfilesPanel';
+import DevToolsPanel from './panels/DevToolsPanel';
 
 /**
  * AGPGenerator - Main application container
@@ -1552,7 +1556,7 @@ export default function AGPGenerator() {
 
           {/* IMPORT Expanded Content */}
           {dataImportExpanded && (
-            <DataImportPanel
+            <ImportPanel
               csvData={csvData}
               workdays={workdays}
               csvError={csvError}
@@ -1565,7 +1569,7 @@ export default function AGPGenerator() {
 
           {/* EXPORT Expanded Content */}
           {dataExportExpanded && metricsResult && startDate && endDate && (
-            <DataExportPanel
+            <ExportPanel
               onExportHTML={handleExportHTML}
               onExportDayProfiles={() => {
                 if (dayProfiles && dayProfiles.length > 0) {

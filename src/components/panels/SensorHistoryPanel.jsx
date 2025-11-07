@@ -1,6 +1,6 @@
 /**
- * SensorHistoryModal.jsx
- * Full-screen modal showing Guardian 4 sensor usage history
+ * SensorHistoryPanel.jsx
+ * Full-screen panel showing Guardian 4 sensor usage history
  * 
  * Features:
  * - Overall statistics (total, success rate, avg duration)
@@ -13,15 +13,15 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { debug } from '../utils/debug.js';
-import SensorRow from './SensorRow.jsx';
+import { debug } from '../../utils/debug.js';
+import SensorRow from '../SensorRow.jsx';
 import { 
   calculateOverallStats, 
   calculateHWVersionStats,
   calculateLotPerformance,
   filterSensors,
   sortSensors
-} from '../core/sensor-history-engine';
+} from '../../core/sensor-history-engine';
 import { 
   isSensorLocked, 
   getSensorLockStatus,
@@ -33,24 +33,24 @@ import {
   validateImportData,
   importSensorsFromJSON,
   getSensorDatabase
-} from '../storage/sensorStorage.js';
+} from '../../storage/sensorStorage.js';
 import { 
   countDeletedSensors, 
   cleanupOldDeletedSensorsDB 
-} from '../storage/deletedSensorsDB.js';
+} from '../../storage/deletedSensorsDB.js';
 import {
   getAllBatches,
   getAssignmentForSensor,
   assignSensorToBatch,
   unassignSensor
-} from '../storage/stockStorage.js';
+} from '../../storage/stockStorage.js';
 
-export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
+export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
   // Initialize manual locks on first render
   useEffect(() => {
     if (isOpen) {
       const result = initializeManualLocks();
-      debug.log('[SensorHistoryModal] Manual locks initialized:', result);
+      debug.log('[SensorHistoryPanel] Manual locks initialized:', result);
     }
   }, [isOpen]);
 
@@ -66,9 +66,9 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
     try {
       const counts = await countDeletedSensors();
       setDeletedCount(counts);
-      debug.log('[SensorHistoryModal] Deleted sensors count:', counts);
+      debug.log('[SensorHistoryPanel] Deleted sensors count:', counts);
     } catch (err) {
-      console.error('[SensorHistoryModal] Error loading deleted count:', err);
+      console.error('[SensorHistoryPanel] Error loading deleted count:', err);
       setDeletedCount({ totalCount: 0, oldCount: 0, recentCount: 0 });
     }
   };
@@ -96,7 +96,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
         // Reload count
         await loadDeletedCount();
       } catch (err) {
-        console.error('[SensorHistoryModal] Error during cleanup:', err);
+        console.error('[SensorHistoryPanel] Error during cleanup:', err);
         alert(`âŒ Fout tijdens opruimen: ${err.message}`);
       }
     }
@@ -125,9 +125,9 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      console.log('[SensorHistoryModal] Export successful:', result.filename);
+      console.log('[SensorHistoryPanel] Export successful:', result.filename);
     } catch (err) {
-      console.error('[SensorHistoryModal] Export failed:', err);
+      console.error('[SensorHistoryPanel] Export failed:', err);
       alert(`âŒ Export mislukt: ${err.message}`);
     }
   };
@@ -155,13 +155,13 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
       setImportFile(file);
       setImportPreview(data);
 
-      console.log('[SensorHistoryModal] Import file loaded:', {
+      console.log('[SensorHistoryPanel] Import file loaded:', {
         filename: file.name,
         sensors: data.sensors.length,
         deleted: data.deletedSensors.length
       });
     } catch (err) {
-      console.error('[SensorHistoryModal] File read error:', err);
+      console.error('[SensorHistoryPanel] File read error:', err);
       alert(`âŒ Kan bestand niet lezen:\n\n${err.message}`);
       setImportFile(null);
       setImportPreview(null);
@@ -200,7 +200,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
       // Verify import actually wrote data
       const db = getSensorDatabase();
       if (!db || !db.sensors || db.sensors.length === 0) {
-        console.error('[SensorHistoryModal] Import reported success but no data found!');
+        console.error('[SensorHistoryPanel] Import reported success but no data found!');
         alert(
           `⚠️ Import anomalie!\n\n` +
           `Import gerapporteerd als succesvol, maar geen data gevonden in database.\n\n` +
@@ -222,13 +222,13 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
       // Reload page to show new data
       window.location.reload();
     } catch (err) {
-      console.error('[SensorHistoryModal] Import failed:', err);
+      console.error('[SensorHistoryPanel] Import failed:', err);
       alert(`âŒ Import mislukt:\n\n${err.message}`);
     }
   };
 
   // Debug: Check what we receive
-  debug.log('[SensorHistoryModal] Received sensors:', {
+  debug.log('[SensorHistoryPanel] Received sensors:', {
     count: sensors?.length || 0,
     firstSensor: sensors?.[0],
     lastSensor: sensors?.[sensors?.length - 1]
@@ -298,7 +298,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
       };
     });
     
-    debug.log('[SensorHistoryModal] Chronological indexing + lock merge:', {
+    debug.log('[SensorHistoryPanel] Chronological indexing + lock merge:', {
       total: withIndex.length,
       locked: withIndex.filter(s => s.is_manually_locked).length,
       unlocked: withIndex.filter(s => !s.is_manually_locked).length,
@@ -322,7 +322,7 @@ export default function SensorHistoryModal({ isOpen, onClose, sensors }) {
   // Sorted sensors
   const sortedSensors = useMemo(() => {
     const sorted = sortSensors(filteredSensors, sortColumn, sortDirection);
-    debug.log('[SensorHistoryModal] Sorted sensors:', sorted.length);
+    debug.log('[SensorHistoryPanel] Sorted sensors:', sorted.length);
     return sorted;
   }, [filteredSensors, sortColumn, sortDirection]);
 
