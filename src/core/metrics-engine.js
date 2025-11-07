@@ -68,6 +68,282 @@ export const utils = {
   }
 };
 
+// ====================================================================
+// MAGE/MODD IMPROVEMENTS (v3.9.0)
+// ====================================================================
+// References:
+// - Service FJ et al., Diabetes 1970;19(9):644-655 (MAGE definition)
+// - Molnar GD et al., Diabetologia 1972;8:342-348 (MODD definition)
+// - Battelino T et al., Diabetes Care 2019;42:1593-1603 (ATTD consensus)
+//
+// Key improvements:
+// 1. MAGE: Per-day SD + mean-crossing requirement (reduces false excursions)
+// 2. MODD: Chronological date sorting + uniform time grid (eliminates pairing errors)
+// 3. Coverage filtering: Exclude incomplete days (<70% data)
+// 4. Error handling: Robust NaN/null checks throughout
+// ====================================================================
+
+/**
+ * Find local extrema (peaks and valleys) in a glucose series
+ * 
+ * @param {Array<number>} values - Glucose values (sorted by time)
+ * @returns {Array<{i: number, v: number, isPeak: boolean}>} Extrema with metadata
+ * 
+ * Example:
+ *   values = [100, 120, 110, 130, 105]
+ *   returns = [
+ *     {i: 1, v: 120, isPeak: true},   // peak at index 1
+ *     {i: 2, v: 110, isPeak: false},  // valley at index 2
+ *     {i: 3, v: 130, isPeak: true}    // peak at index 3
+ *   ]
+ */
+function _localExtrema(values) {
+  if (!Array.isArray(values) || values.length < 3) return [];
+  
+  const out = [];
+  for (let i = 1; i < values.length - 1; i++) {
+    const prev = values[i - 1];
+    const curr = values[i];
+    const next = values[i + 1];
+    
+    // Skip if any value is invalid
+    if (!Number.isFinite(prev) || !Number.isFinite(curr) || !Number.isFinite(next)) {
+      continue;
+    }
+    
+    // Peak: curr > both neighbors
+    // Valley: curr < both neighbors
+    if ((curr > prev && curr > next) || (curr < prev && curr < next)) {
+      out.push({ i, v: curr, isPeak: curr > prev });
+    }
+  }
+  
+  return out;
+}
+
+/**
+ * Calculate MAGE per day with mean-crossing requirement
+ * 
+ * Per Service et al. (1970): Excursions must satisfy TWO criteria:
+ * 1. Amplitude ≥ 1×SD (from daily mean)
+ * 2. Cross the daily mean (sign change between extrema)
+ * 
+ * This eliminates small oscillations and ensures clinical significance.
+ * 
+ * @param {Array<number>} values - Glucose values for ONE day (sorted by time)
+ * @returns {number} MAGE for this day, or NaN if insufficient data
+ * 
+ * Implementation notes:
+ * - Minimum 12 readings (~1 hour) required
+ * - Uses sample SD (ddof=1) per ATTD consensus
+ * - Alternating peaks/valleys only (no consecutive same-type extrema)
+ */
+function _magePerDayMeanCross(values) {
+  if (!Array.isArray(values) || values.length < 12) return NaN; // ~1h minimum
+  
+  // Filter out invalid values
+  const valid = values.filter(v => Number.isFinite(v));
+  if (valid.length < 12) return NaN;
+  
+  // Calculate day mean and SD with ddof=1 (sample SD)
+  const mean = valid.reduce((s, v) => s + v, 0) / valid.length;
+  const variance = valid.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / Math.max(1, valid.length - 1);
+  const sd = Math.sqrt(variance);
+  
+  if (!isFinite(sd) || sd === 0) return NaN;
+
+  // Find extrema (peaks and valleys)
+  const ex = _localExtrema(valid);
+  if (ex.length < 2) return NaN;
+
+  // Calculate amplitudes with TWO criteria (Service 1970)
+  const amps = [];
+  for (let k = 1; k < ex.length; k++) {
+    const a = ex[k - 1];
+    const b = ex[k];
+    
+    // Must alternate peak ↔ valley
+    if (a.isPeak === b.isPeak) continue;
+    
+    const amp = Math.abs(b.v - a.v);
+    
+    // Criterion 1: Amplitude ≥ SD
+    if (amp < sd) continue;
+    
+    // Criterion 2: Crosses daily mean (sign change)
+    // (a.v - mean) and (b.v - mean) must have opposite signs
+    const crossesMean = ((a.v - mean) * (b.v - mean)) < 0;
+    if (!crossesMean) continue;
+    
+    // Both criteria met → significant excursion
+    amps.push(amp);
+  }
+  
+  if (amps.length === 0) return NaN;
+  
+  // Mean of significant amplitudes
+  return amps.reduce((s, v) => s + v, 0) / amps.length;
+}
+
+/**
+ * Parse date string robustly (handles multiple formats)
+ * 
+ * Supports:
+ * - YYYY-MM-DD or YYYY/MM/DD (ISO-ish)
+ * - DD/MM/YYYY or DD-MM-YYYY (European)
+ * 
+ * @param {string} d - Date string
+ * @returns {Date} Parsed date, or Invalid Date if parsing fails
+ */
+function _parseDateLoose(d) {
+  if (!d || typeof d !== 'string') return new Date(NaN);
+  
+  // YYYY-MM-DD or YYYY/MM/DD
+  if (/^\d{4}[-\/]/.test(d)) {
+    return new Date(d);
+  }
+  
+  // DD/MM/YYYY or DD-MM-YYYY
+  const m = d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const [_, day, month, year] = m;
+    return new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+  }
+  
+  // Fallback: let Date constructor try
+  return new Date(d);
+}
+
+/**
+ * Build uniform time grid for a day (e.g., 288 5-minute slots)
+ * 
+ * Maps irregular glucose readings onto a regular time grid:
+ * - Day starts at midnight (00:00:00)
+ * - Slots every `stepMin` minutes (default 5)
+ * - Each slot gets closest reading within `maxInterpMin` tolerance
+ * 
+ * @param {Array<{t: Date, g: number}>} dayRecords - Sorted records for one day
+ * @param {number} stepMin - Sampling interval (default 5 min)
+ * @param {number} maxInterpMin - Max gap to bridge (default 0 = no interpolation)
+ * @returns {Array<number>} Array of glucose values (NaN for missing slots)
+ * 
+ * Example:
+ *   stepMin=5 → 288 slots (24h × 60min / 5min)
+ *   maxInterpMin=0 → Only exact matches
+ *   maxInterpMin=10 → Bridge gaps up to 10 minutes
+ */
+function _buildUniformGrid(dayRecords, stepMin = 5, maxInterpMin = 0) {
+  if (!Array.isArray(dayRecords) || dayRecords.length === 0) {
+    // Return empty grid (all NaN)
+    return new Array(Math.round(24 * 60 / stepMin)).fill(NaN);
+  }
+  
+  // Get day start (midnight)
+  const day = new Date(dayRecords[0].t);
+  day.setHours(0, 0, 0, 0);
+  
+  // Build time slots (288 for 5-min sampling)
+  const slots = [];
+  for (let min = 0; min < 24 * 60; min += stepMin) {
+    slots.push(day.getTime() + min * 60 * 1000);
+  }
+  
+  const series = new Array(slots.length).fill(NaN);
+  let recordIdx = 0;
+  
+  for (let i = 0; i < slots.length && recordIdx < dayRecords.length; i++) {
+    const slotTime = slots[i];
+    
+    // Find closest record to this slot
+    while (recordIdx < dayRecords.length - 1 && 
+           dayRecords[recordIdx + 1].t.getTime() <= slotTime) {
+      recordIdx++;
+    }
+    
+    const record = dayRecords[recordIdx];
+    const timeDiff = Math.abs(record.t.getTime() - slotTime);
+    
+    // Only assign if within maxInterpMin tolerance
+    if (timeDiff <= maxInterpMin * 60 * 1000) {
+      series[i] = record.g;
+    }
+  }
+  
+  return series;
+}
+
+/**
+ * Calculate MODD with proper date sorting and uniform grid
+ * 
+ * Reference: Molnar GD et al., Diabetologia 1972;8:342-348
+ * 
+ * MODD = Mean of Daily Differences
+ * Compares glucose at identical times on consecutive days.
+ * Measures day-to-day reproducibility (low MODD = consistent patterns).
+ * 
+ * @param {Map<string, Array<{t: Date, g: number}>>} dayBins - Map of date → records
+ * @param {number} detectedStepMin - Sampling interval (default 5)
+ * @param {number} coverageThreshold - Min coverage (0.7 = 70%)
+ * @returns {number} MODD value, or NaN if insufficient data
+ * 
+ * Implementation improvements:
+ * 1. Chronological sorting (NOT lexicographic) - fixes date ordering bugs
+ * 2. Uniform grid alignment - ensures same-time comparisons
+ * 3. Coverage filtering - excludes incomplete days
+ */
+function _computeMODD(dayBins, detectedStepMin = 5, coverageThreshold = 0.7) {
+  // Sort days CHRONOLOGICALLY (not lexicographically!)
+  const days = Array.from(dayBins.keys()).sort((a, b) => {
+    return _parseDateLoose(a) - _parseDateLoose(b);
+  });
+  
+  if (days.length < 2) return NaN;
+  
+  const diffs = [];
+  const MAX_INTERP_MIN = 0; // Set to 10 for light gap bridging
+  
+  for (let i = 1; i < days.length; i++) {
+    const d1 = days[i - 1];
+    const d2 = days[i];
+    
+    const r1 = dayBins.get(d1);
+    const r2 = dayBins.get(d2);
+    
+    if (!r1 || !r1.length || !r2 || !r2.length) continue;
+    
+    // Sort records by time
+    const sorted1 = r1.slice().sort((a, b) => a.t - b.t);
+    const sorted2 = r2.slice().sort((a, b) => a.t - b.t);
+    
+    // Build uniform grids (288 slots each)
+    const s1 = _buildUniformGrid(sorted1, detectedStepMin, MAX_INTERP_MIN);
+    const s2 = _buildUniformGrid(sorted2, detectedStepMin, MAX_INTERP_MIN);
+    
+    // Check coverage (min 70% complete per ATTD consensus)
+    const cov1 = s1.filter(x => Number.isFinite(x)).length / s1.length;
+    const cov2 = s2.filter(x => Number.isFinite(x)).length / s2.length;
+    
+    if (cov1 < coverageThreshold || cov2 < coverageThreshold) {
+      console.log(`[MODD] Skipping day pair ${d1}/${d2}: coverage ${(cov1*100).toFixed(1)}%/${(cov2*100).toFixed(1)}%`);
+      continue;
+    }
+    
+    // Calculate point-wise differences (same time slots)
+    for (let k = 0; k < s1.length; k++) {
+      const a = s1[k];
+      const b = s2[k];
+      if (Number.isFinite(a) && Number.isFinite(b)) {
+        diffs.push(Math.abs(a - b));
+      }
+    }
+  }
+  
+  if (diffs.length === 0) return NaN;
+  
+  // Mean of all differences
+  return diffs.reduce((s, v) => s + v, 0) / diffs.length;
+}
+
 /**
  * Calculate glucose metrics for a given period
  * @param {Array} data - Array of glucose data objects {date, time, glucose}
