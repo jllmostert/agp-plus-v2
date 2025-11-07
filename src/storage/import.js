@@ -4,7 +4,7 @@
  * V3.8.0 - Database Import Phase
  */
 
-import { storeMonthBucket } from './masterDatasetStorage';
+import { appendReadingsToMaster } from './masterDatasetStorage';
 import { addSensor } from './sensorStorage';
 import { addCartridgeChange } from './eventStorage';
 import { addBatch, assignSensorToBatch } from './stockStorage';
@@ -71,20 +71,29 @@ export async function importMasterDataset(file) {
       stockBatches: data.stockBatches?.length || 0
     });
     
-    // TODO: Import months
     // Step 4: Import month buckets to IndexedDB
-    console.log('[importMasterDataset] Importing months to IndexedDB...');
-    for (const monthData of data.months) {
-      try {
-        await storeMonthBucket(monthData.month, monthData.readings);
-        stats.monthsImported++;
-        stats.readingsImported += monthData.readings?.length || 0;
-      } catch (err) {
-        errors.push(`Failed to import month ${monthData.month}: ${err.message}`);
-        console.error('[importMasterDataset] Month import error:', err);
+    console.log('[importMasterDataset] Importing glucose readings...');
+    try {
+      // Flatten all readings from all months
+      const allReadings = [];
+      for (const monthData of data.months) {
+        if (monthData.readings && Array.isArray(monthData.readings)) {
+          allReadings.push(...monthData.readings);
+          stats.monthsImported++;
+        }
       }
+      
+      if (allReadings.length > 0) {
+        // Import all readings at once (will be bucketed automatically)
+        await appendReadingsToMaster(allReadings, 'imported-data.json');
+        stats.readingsImported = allReadings.length;
+      }
+      
+      console.log(`[importMasterDataset] Imported ${stats.monthsImported} months, ${stats.readingsImported} readings`);
+    } catch (err) {
+      errors.push(`Failed to import glucose data: ${err.message}`);
+      console.error('[importMasterDataset] Glucose import error:', err);
     }
-    console.log(`[importMasterDataset] Imported ${stats.monthsImported} months, ${stats.readingsImported} readings`);
     
     // Step 5: Import sensors to localStorage (recent) and IndexedDB (historical)
     console.log('[importMasterDataset] Importing sensors...');
