@@ -1,24 +1,27 @@
 /**
  * DevToolsPanel.jsx
  * 
- * Panel for developer tools (insulin debugger, SQLite import, etc.)
+ * Panel for developer tools (sensor debugging, SQLite import, etc.)
  * Hidden by default, accessible via Ctrl+Shift+D
  * 
  * @version 3.9.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import DebugPanel from '../devtools/DebugPanel';
+import SensorSQLiteImport from '../devtools/SensorSQLiteImport';
 
 export default function DevToolsPanel({ onClose }) {
+  const [activeTool, setActiveTool] = useState('debug');
+
   return (
     <div className="panel devtools-panel" style={{
       padding: '2rem',
       border: '3px solid var(--border-primary)',
       background: 'var(--bg-primary)',
-      height: '100%',
-      overflow: 'auto'
+      minHeight: '100vh'
     }}>
-      {/* Close button */}
+      {/* Header with close button */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -34,7 +37,7 @@ export default function DevToolsPanel({ onClose }) {
           textTransform: 'uppercase',
           margin: 0
         }}>
-          ⚙️ DevTools
+          🛠️ Developer Tools
         </h2>
         
         <button
@@ -45,7 +48,8 @@ export default function DevToolsPanel({ onClose }) {
             fontWeight: 'bold',
             padding: '0.5rem 1rem',
             border: '2px solid var(--border-primary)',
-            background: 'var(--bg-secondary)',
+            background: 'var(--color-red)',
+            color: '#fff',
             cursor: 'pointer',
             textTransform: 'uppercase'
           }}
@@ -53,25 +57,69 @@ export default function DevToolsPanel({ onClose }) {
           ✕ Close
         </button>
       </div>
-      
-      <p style={{
-        fontFamily: 'Courier New, monospace',
-        color: 'var(--text-secondary)',
-        marginBottom: '1rem'
+
+      {/* Tool selector tabs */}
+      <div style={{
+        display: 'flex',
+        gap: '0.5rem',
+        marginBottom: '2rem',
+        borderBottom: '2px solid var(--border-secondary)',
+        paddingBottom: '1rem'
       }}>
-        Developer tools panel - To be implemented
-      </p>
-      
+        <button
+          onClick={() => setActiveTool('debug')}
+          style={{
+            fontFamily: 'Courier New, monospace',
+            fontSize: '0.875rem',
+            fontWeight: 'bold',
+            padding: '0.75rem 1.5rem',
+            border: '2px solid var(--border-primary)',
+            background: activeTool === 'debug' ? 'var(--color-green)' : 'var(--bg-secondary)',
+            color: activeTool === 'debug' ? '#000' : 'var(--text-primary)',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}
+        >
+          🐛 Sensor Debug
+        </button>
+        
+        <button
+          onClick={() => setActiveTool('sqlite')}
+          style={{
+            fontFamily: 'Courier New, monospace',
+            fontSize: '0.875rem',
+            fontWeight: 'bold',
+            padding: '0.75rem 1.5rem',
+            border: '2px solid var(--border-primary)',
+            background: activeTool === 'sqlite' ? 'var(--color-green)' : 'var(--bg-secondary)',
+            color: activeTool === 'sqlite' ? '#000' : 'var(--text-primary)',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}
+        >
+          💾 SQLite Import
+        </button>
+      </div>
+
+      {/* Warning banner */}
       <div style={{
         padding: '1rem',
-        border: '2px solid var(--border-secondary)',
-        background: 'var(--bg-secondary)',
-        fontFamily: 'Monaco, monospace',
+        background: '#fffacd',
+        border: '2px solid #fa0',
+        marginBottom: '2rem',
+        fontFamily: 'Courier New, monospace',
         fontSize: '0.875rem'
       }}>
-        <p>🔧 Insulin Debugger - Coming soon</p>
-        <p>📊 SQLite Import - Coming soon</p>
-        <p>🐛 Debug Tools - Coming soon</p>
+        ⚠️ <strong>Developer Tools</strong>: These tools are for debugging and development only. 
+        They are hidden in production builds unless explicitly enabled.
+      </div>
+
+      {/* Tool content */}
+      <div className="tool-content">
+        {activeTool === 'debug' && <DebugPanel />}
+        {activeTool === 'sqlite' && <SensorSQLiteImport />}
       </div>
     </div>
   );

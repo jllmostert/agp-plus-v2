@@ -1210,6 +1210,7 @@ export default function AGPGenerator() {
               onCSVLoad={handleCSVLoad}
               onProTimeLoad={handleProTimeLoad}
               onProTimeDelete={handleProTimeDelete}
+              onImportDatabase={handleDatabaseImport}
             />
           )}
           
@@ -1225,7 +1226,7 @@ export default function AGPGenerator() {
           {activePanel === 'sensoren' && (
             <SensorHistoryPanel 
               isOpen={true}
-              onClose={() => {}}
+              onClose={() => setActivePanel('import')}
               sensors={sensors}
             />
           )}

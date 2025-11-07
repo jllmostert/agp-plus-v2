@@ -29,7 +29,8 @@ function ImportPanel({
   // Handlers
   onCSVLoad,
   onProTimeLoad,
-  onProTimeDelete
+  onProTimeDelete,
+  onImportDatabase
 }) {
   return (
     <div className="mb-4" style={{ 
@@ -42,7 +43,7 @@ function ImportPanel({
       {/* Sub-buttons for import options */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '0.75rem',
         marginBottom: '1rem'
       }}>
@@ -63,9 +64,9 @@ function ImportPanel({
             alignItems: 'center',
             gap: '0.5rem'
           }}
-          title="Upload CareLink CSV"
+          title="Upload multiple CareLink CSV files at once"
         >
-          📄 Upload CSV
+          📄 Upload CSV(s)
           {csvData && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
         </button>
 
@@ -95,6 +96,28 @@ function ImportPanel({
           📋 ProTime PDFs
           {workdays && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
         </button>
+
+        <button
+          onClick={onImportDatabase}
+          style={{
+            background: 'var(--bg-primary)',
+            border: '2px solid var(--border-primary)',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            padding: '1rem',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+          title="Import complete database from JSON backup"
+        >
+          💾 Import JSON
+        </button>
       </div>
 
       {/* Hidden file inputs */}
@@ -102,12 +125,27 @@ function ImportPanel({
         id="csv-upload-input"
         type="file"
         accept=".csv"
+        multiple
         onChange={async (e) => {
-          const file = e.target.files?.[0];
-          if (file && file.name.endsWith('.csv')) {
-            const text = await file.text();
-            onCSVLoad(text);
+          const files = Array.from(e.target.files || []);
+          
+          if (files.length === 0) return;
+          
+          // Process files sequentially
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.name.endsWith('.csv')) {
+              console.log(`[ImportPanel] Processing CSV ${i + 1}/${files.length}:`, file.name);
+              const text = await file.text();
+              await onCSVLoad(text);
+            }
           }
+          
+          // Show completion message if multiple files
+          if (files.length > 1) {
+            alert(`✅ Import Complete\n\n${files.length} CSV files processed`);
+          }
+          
           e.target.value = '';
         }}
         style={{ display: 'none' }}

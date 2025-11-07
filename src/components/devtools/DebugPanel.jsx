@@ -51,7 +51,7 @@ export default function DebugPanel() {
 
     // Filter for valid sensor alerts
     const { isValidSensorChangeAlert, deduplicateSensorEvents } = 
-      await import('../utils/eventClustering.js');
+      await import('../../utils/eventClustering.js');
     
     const validAlerts = allAlerts.filter(a => isValidSensorChangeAlert(a.alert));
 
@@ -84,7 +84,7 @@ export default function DebugPanel() {
     }
 
     try {
-      const { uploadCSVToV3 } = await import('../storage/masterDatasetStorage.js');
+      const { uploadCSVToV3 } = await import('../../storage/masterDatasetStorage.js');
       
       // Clear old events for clean test
       localStorage.removeItem('agp-device-events');
