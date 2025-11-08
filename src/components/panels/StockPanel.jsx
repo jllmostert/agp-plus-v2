@@ -1,5 +1,5 @@
 /**
- * StockManagementModal.jsx
+ * StockPanel.jsx
  * Stock batch registration and sensor assignment tracking
  * v3.15.0 - Complete traceability system
  * 
@@ -7,12 +7,12 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { getAllBatchesWithStats, sortBatches, filterBatches, calculateSummaryStats } from '../core/stock-engine.js';
-import { deleteBatch } from '../storage/stockStorage.js';
-import StockBatchCard from './StockBatchCard.jsx';
-import StockBatchForm from './StockBatchForm.jsx';
+import { getAllBatchesWithStats, sortBatches, filterBatches, calculateSummaryStats } from '../../core/stock-engine.js';
+import { deleteBatch } from '../../storage/stockStorage.js';
+import StockBatchCard from '../StockBatchCard.jsx';
+import StockBatchForm from '../StockBatchForm.jsx';
 
-export default function StockManagementModal({ isOpen, onClose }) {
+export default function StockPanel({ isOpen, onClose }) {
   const [batches, setBatches] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('received_date');

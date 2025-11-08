@@ -1,7 +1,7 @@
 /**
- * DataExportPanel.jsx
+ * ExportPanel.jsx
  * 
- * Collapsible panel for data export functionality.
+ * Panel for data export functionality.
  * Extracted from AGPGenerator.jsx (Sprint C1 Phase 4.2)
  * 
  * Handles:
@@ -16,7 +16,7 @@
 
 import React from 'react';
 
-function DataExportPanel({
+function ExportPanel({
   // Export handlers
   onExportHTML,
   onExportDayProfiles,
@@ -141,4 +141,4 @@ function DataExportPanel({
   );
 }
 
-export default DataExportPanel;
+export default ExportPanel;

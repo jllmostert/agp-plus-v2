@@ -15,7 +15,13 @@ export default function DataImportModal({
   onClose, 
   onConfirm, 
   validationResult,
-  isValidating 
+  isValidating,
+  mergeStrategy = 'append',
+  onMergeStrategyChange,
+  lastImport = null,
+  createBackup = true,
+  onCreateBackupChange,
+  lastBackupFile = null
 }) {
   if (!isOpen) return null;
 
@@ -72,6 +78,54 @@ export default function DataImportModal({
             {isValidating ? 'Validating file...' : 'Review import before confirming'}
           </p>
         </div>
+
+        {/* Last Import Info */}
+        {lastImport && !isValidating && (
+          <div style={{
+            padding: '0.75rem 1rem',
+            background: 'var(--bg-secondary)',
+            border: '2px solid var(--border-primary)',
+            marginBottom: '1.5rem',
+            fontFamily: 'Courier New, monospace',
+            fontSize: '0.75rem'
+          }}>
+            <div style={{ 
+              fontWeight: 'bold', 
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: '0.5rem',
+              color: 'var(--text-secondary)'
+            }}>
+              📜 Last Import
+            </div>
+            <div style={{ 
+              fontSize: '0.875rem',
+              lineHeight: 1.6,
+              color: 'var(--text-primary)'
+            }}>
+              <div>
+                📅 {(() => {
+                  const now = new Date();
+                  const then = new Date(lastImport.timestamp);
+                  const diffMs = now - then;
+                  const minutes = Math.floor(diffMs / (1000 * 60));
+                  const hours = Math.floor(minutes / 60);
+                  const days = Math.floor(hours / 24);
+                  
+                  if (days > 0) return `${days} day${days === 1 ? '' : 's'} ago`;
+                  if (hours > 0) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+                  if (minutes > 0) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+                  return 'just now';
+                })()}
+              </div>
+              <div>📊 {lastImport.recordCount} records</div>
+              <div>📁 {lastImport.filename}</div>
+              <div>
+                {lastImport.strategy === 'replace' ? '🔄 Replace' : '➕ Append'}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Validation State */}
         {isValidating && (
@@ -196,22 +250,177 @@ export default function DataImportModal({
               </div>
             )}
 
+            {/* Merge Strategy Selection */}
+            {canImport && (
+              <div style={{
+                padding: '1rem',
+                background: 'var(--bg-secondary)',
+                border: '2px solid var(--border-primary)',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '0.75rem',
+                  color: 'var(--text-primary)'
+                }}>
+                  📊 Import Strategy
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}>
+                  {/* Append Option */}
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    cursor: 'pointer',
+                    padding: '0.5rem',
+                    background: mergeStrategy === 'append' ? 'rgba(0, 255, 0, 0.1)' : 'transparent',
+                    border: `2px solid ${mergeStrategy === 'append' ? '#0f0' : 'transparent'}`,
+                    fontFamily: 'Courier New, monospace',
+                    fontSize: '0.875rem'
+                  }}>
+                    <input
+                      type="radio"
+                      name="mergeStrategy"
+                      value="append"
+                      checked={mergeStrategy === 'append'}
+                      onChange={(e) => onMergeStrategyChange(e.target.value)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                        ➕ Append (Add to existing data)
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                        Keeps your current data and adds imported data
+                      </div>
+                    </div>
+                  </label>
+
+                  {/* Replace Option */}
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    cursor: 'pointer',
+                    padding: '0.5rem',
+                    background: mergeStrategy === 'replace' ? 'rgba(255, 0, 0, 0.1)' : 'transparent',
+                    border: `2px solid ${mergeStrategy === 'replace' ? '#f00' : 'transparent'}`,
+                    fontFamily: 'Courier New, monospace',
+                    fontSize: '0.875rem'
+                  }}>
+                    <input
+                      type="radio"
+                      name="mergeStrategy"
+                      value="replace"
+                      checked={mergeStrategy === 'replace'}
+                      onChange={(e) => onMergeStrategyChange(e.target.value)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                        🔄 Replace (Clear existing data first)
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                        Deletes all current data before importing
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Backup Before Import */}
+            {canImport && (
+              <div style={{
+                padding: '1rem',
+                background: 'var(--bg-secondary)',
+                border: '2px solid var(--border-primary)',
+                marginBottom: '1rem'
+              }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.75rem',
+                  cursor: 'pointer',
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '0.875rem'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={createBackup}
+                    onChange={(e) => onCreateBackupChange(e.target.checked)}
+                    style={{ 
+                      cursor: 'pointer',
+                      marginTop: '0.25rem'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      fontWeight: 'bold', 
+                      color: 'var(--text-primary)',
+                      marginBottom: '0.25rem'
+                    }}>
+                      💾 Create backup before importing
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.75rem', 
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.5
+                    }}>
+                      Recommended for safety. A backup file will be downloaded automatically before importing.
+                    </div>
+                    
+                    {lastBackupFile && (
+                      <div style={{ 
+                        marginTop: '0.5rem',
+                        padding: '0.5rem',
+                        background: 'rgba(0, 255, 0, 0.1)',
+                        border: '1px solid #0f0',
+                        fontSize: '0.75rem',
+                        color: '#0f0'
+                      }}>
+                        ✅ Backup ready: {lastBackupFile.filename}
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
+            )}
+
             {/* Import Warning */}
             {canImport && (
               <div style={{
                 padding: '1rem',
-                background: '#fffacd',
-                border: '2px solid #fa0',
+                background: mergeStrategy === 'replace' ? '#fee' : '#fffacd',
+                border: `2px solid ${mergeStrategy === 'replace' ? '#f00' : '#fa0'}`,
                 marginBottom: '1.5rem'
               }}>
                 <div style={{
                   fontFamily: 'Courier New, monospace',
                   fontSize: '0.875rem',
                   lineHeight: 1.6,
-                  color: '#c60'
+                  color: mergeStrategy === 'replace' ? '#c00' : '#c60'
                 }}>
-                  ⚠️ <strong>Warning:</strong> This will add data to your existing database. 
-                  If you want to replace all data, clear your database first using the Data Management panel.
+                  {mergeStrategy === 'append' ? (
+                    <>
+                      ⚠️ <strong>Append Mode:</strong> Imported data will be added to your existing database. 
+                      Duplicate records will be skipped automatically.
+                    </>
+                  ) : (
+                    <>
+                      🔥 <strong>Replace Mode:</strong> All existing data will be permanently deleted before importing! 
+                      This action cannot be undone. Make sure you have a backup if needed.
+                    </>
+                  )}
                 </div>
               </div>
             )}

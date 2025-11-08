@@ -8,6 +8,7 @@ import { getAllMonthBuckets } from './masterDatasetStorage';
 import { getSensorHistory } from './sensorStorage';
 import { getCartridgeHistory } from './eventStorage';
 import { getAllBatches, getAllAssignments } from './stockStorage';
+import { APP_VERSION, APP_FULL_NAME } from '../utils/version';
 
 /**
  * Export complete master dataset to JSON
@@ -21,9 +22,18 @@ export async function exportMasterDataset() {
     const sensors = await getSensorHistory();
     const cartridges = await getCartridgeHistory();
     
-    // Fetch ProTime workday data from localStorage
-    const workdaysRaw = localStorage.getItem('workday-dates');
-    const workdays = workdaysRaw ? JSON.parse(workdaysRaw) : [];
+    // Fetch ProTime workday data from V3 storage (IndexedDB)
+    let workdays = [];
+    try {
+      const { loadProTimeData } = await import('./masterDatasetStorage');
+      const workdaySet = await loadProTimeData();
+      workdays = workdaySet ? Array.from(workdaySet) : [];
+    } catch (err) {
+      console.warn('[export] Failed to load ProTime from IndexedDB, trying localStorage fallback:', err);
+      // Fallback to localStorage for V2 compatibility
+      const workdaysRaw = localStorage.getItem('workday-dates');
+      workdays = workdaysRaw ? JSON.parse(workdaysRaw) : [];
+    }
     
     // Fetch patient info from localStorage
     const patientInfoRaw = localStorage.getItem('patient-info');
@@ -40,9 +50,9 @@ export async function exportMasterDataset() {
     
     // Build export object
     const exportData = {
-      version: "3.8.0",
+      version: APP_VERSION,
       exportDate: new Date().toISOString(),
-      generator: "AGP+ v3.8.0",
+      generator: APP_FULL_NAME,
       totalReadings,
       totalMonths: months.length,
       totalSensors: sensors.length,

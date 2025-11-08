@@ -28,6 +28,7 @@ import PeriodSelector from './PeriodSelector';
 import SavedUploadsList from './SavedUploadsList';
 import { MigrationBanner } from './MigrationBanner';
 import DataImportModal from './DataImportModal';
+import HeaderBar from './HeaderBar';
 
 // Container Components
 import ModalManager from './containers/ModalManager';
@@ -36,8 +37,12 @@ import VisualizationContainer from './containers/VisualizationContainer';
 import { DateRangeFilter } from './DateRangeFilter';
 
 // Panel Components
-import DataImportPanel from './panels/DataImportPanel';
-import DataExportPanel from './panels/DataExportPanel';
+import ImportPanel from './panels/ImportPanel';
+import ExportPanel from './panels/ExportPanel';
+import SensorHistoryPanel from './panels/SensorHistoryPanel';
+import StockPanel from './panels/StockPanel';
+import DayProfilesPanel from './panels/DayProfilesPanel';
+import DevToolsPanel from './panels/DevToolsPanel';
 
 /**
  * AGPGenerator - Main application container
@@ -97,6 +102,9 @@ export default function AGPGenerator() {
   // V3 Upload error state
   const [v3UploadError, setV3UploadError] = useState(null);
   
+  // Keyboard shortcuts legend state (Phase F1.2)
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  
   // Upload storage management
   const {
     savedUploads,
@@ -145,12 +153,33 @@ export default function AGPGenerator() {
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
   const [tddByDay, setTddByDay] = useState(null); // TDD data by day (all days) from storage
   
+  // ============================================
+  // STATE: Panel Navigation (Phase B)
+  // ============================================
+  
+  const [activePanel, setActivePanel] = useState('import'); // Current active panel
+  const [showDevTools, setShowDevTools] = useState(() => {
+    // Check localStorage for persisted DevTools state
+    const saved = localStorage.getItem('agp-devtools-enabled');
+    return saved === 'true';
+  });
+  
   // Import modal state
   const [dataImportModalOpen, setDataImportModalOpen] = useState(false);
   const [importValidation, setImportValidation] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState(null);
+  const [importMergeStrategy, setImportMergeStrategy] = useState('append'); // 'append' or 'replace'
+  const [lastImportInfo, setLastImportInfo] = useState(null);
+  const [createBackupBeforeImport, setCreateBackupBeforeImport] = useState(true);
+  const [lastBackupFile, setLastBackupFile] = useState(null);
+  const [importProgress, setImportProgress] = useState({
+    stage: '',
+    current: 0,
+    total: 7,
+    percentage: 0
+  });
 
   // Load patient info from storage
   useEffect(() => {
@@ -188,6 +217,73 @@ export default function AGPGenerator() {
     };
     loadTDD();
   }, [activeUploadId]); // Reload when upload changes
+
+  // Load last import info
+  useEffect(() => {
+    const loadLastImport = async () => {
+      try {
+        const { getLastImport } = await import('../storage/importHistory');
+        const lastImport = getLastImport();
+        setLastImportInfo(lastImport);
+      } catch (err) {
+        console.error('Failed to load import history:', err);
+      }
+    };
+    loadLastImport();
+  }, [dataImportModalOpen]); // Reload when modal opens/closes
+  
+  // Keyboard shortcuts (Phase B + Session 18)
+  useEffect(() => {
+    const handleKeyboard = (e) => {
+      // Panel switching: Ctrl+1/2/3/4
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        switch(e.key) {
+          case '1':
+            e.preventDefault();
+            setActivePanel('import');
+            console.log('[Keyboard] Switched to Import panel');
+            break;
+          case '2':
+            e.preventDefault();
+            setActivePanel('dagprofielen');
+            console.log('[Keyboard] Switched to Day Profiles panel');
+            break;
+          case '3':
+            e.preventDefault();
+            setActivePanel('sensoren');
+            console.log('[Keyboard] Switched to Sensors panel');
+            break;
+          case '4':
+            e.preventDefault();
+            setActivePanel('export');
+            console.log('[Keyboard] Switched to Export panel');
+            break;
+        }
+      }
+      
+      // Ctrl+Shift+D: Toggle DevTools
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        setShowDevTools(prev => {
+          const newValue = !prev;
+          localStorage.setItem('agp-devtools-enabled', newValue.toString());
+          console.log('[AGPGenerator] DevTools:', newValue ? 'enabled' : 'disabled');
+          return newValue;
+        });
+      }
+      
+      // Escape: Close DevTools
+      if (e.key === 'Escape' && showDevTools) {
+        e.preventDefault();
+        setShowDevTools(false);
+        localStorage.setItem('agp-devtools-enabled', 'false');
+        console.log('[AGPGenerator] DevTools closed via Escape');
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [showDevTools]);
 
   /**
    * Auto-select last 14 days when data becomes ready (green light)
@@ -418,6 +514,13 @@ export default function AGPGenerator() {
     // Update period selector dates for consistency
     setStartDate(start);
     setEndDate(end);
+  };
+  
+  /**
+   * Handle panel navigation changes (Phase B)
+   */
+  const handlePanelChange = (panelId) => {
+    setActivePanel(panelId);
   };
 
   // ============================================
@@ -916,18 +1019,120 @@ export default function AGPGenerator() {
     
     try {
       console.log('[AGPGenerator] Starting import...');
+      console.log('[AGPGenerator] Merge strategy:', importMergeStrategy);
+      console.log('[AGPGenerator] Create backup:', createBackupBeforeImport);
       setDataImportModalOpen(false);
       setIsImporting(true);
       
-      // Execute import
+      // Create backup before import if enabled
+      if (createBackupBeforeImport) {
+        console.log('[AGPGenerator] Creating backup before import...');
+        
+        try {
+          // Export current database
+          const { exportMasterDataset } = await import('../storage/export');
+          const backupData = await exportMasterDataset();
+          
+          // Generate backup filename
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+          const time = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+          const backupFilename = `backup-before-import-${timestamp}-${time}.json`;
+          
+          // Download backup automatically
+          const blob = new Blob([JSON.stringify(backupData, null, 2)], { 
+            type: 'application/json' 
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = backupFilename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          setLastBackupFile({ 
+            filename: backupFilename, 
+            timestamp: Date.now() 
+          });
+          
+          console.log('[AGPGenerator] Backup created:', backupFilename);
+          
+          // Small delay to ensure download starts
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+        } catch (backupError) {
+          console.error('[AGPGenerator] Backup creation failed:', backupError);
+          
+          // Ask user if they want to continue without backup
+          const continueWithoutBackup = confirm(
+            '⚠️ Backup Creation Failed\n\n' +
+            `Error: ${backupError.message}\n\n` +
+            'Do you want to continue importing without a backup?\n' +
+            '(Not recommended)'
+          );
+          
+          if (!continueWithoutBackup) {
+            throw new Error('Import cancelled: Backup creation failed');
+          }
+          
+          console.log('[AGPGenerator] User chose to continue without backup');
+        }
+      }
+      
+      // If replace mode, clear existing data first
+      if (importMergeStrategy === 'replace') {
+        console.log('[AGPGenerator] Replace mode: Clearing existing data...');
+        
+        // Clear glucose readings
+        await masterDataset.clearAllData();
+        console.log('[AGPGenerator] Cleared glucose readings');
+        
+        // Clear sensors
+        const { clearAllSensors } = await import('../storage/sensorStorage');
+        await clearAllSensors();
+        console.log('[AGPGenerator] Cleared sensors');
+        
+        // Clear events (cartridges and sensor changes)
+        localStorage.removeItem('agp-device-events');
+        console.log('[AGPGenerator] Cleared device events');
+        
+        // Clear workdays
+        const { clearProTimeData } = await import('../storage/masterDatasetStorage');
+        await clearProTimeData();
+        console.log('[AGPGenerator] Cleared workdays');
+        
+        // Clear patient info
+        const { patientStorage } = await import('../utils/patientStorage');
+        await patientStorage.clear();
+        console.log('[AGPGenerator] Cleared patient info');
+        
+        // Clear stock management (batches and assignments)
+        localStorage.removeItem('agp-stock-batches');
+        localStorage.removeItem('agp-stock-assignments');
+        console.log('[AGPGenerator] Cleared stock data');
+        
+        console.log('[AGPGenerator] All existing data cleared');
+      }
+      
+      // Execute import with progress tracking
       console.log('[AGPGenerator] Calling importMasterDataset...');
-      const result = await importMasterDataset(pendingImportFile);
+      const result = await importMasterDataset(
+        pendingImportFile,
+        (progress) => {
+          console.log('[AGPGenerator] Import progress:', progress);
+          setImportProgress(progress);
+        }
+      );
       console.log('[AGPGenerator] Import result:', result);
       
       if (result.success) {
         // Show success message with stats
         const stats = result.stats;
+        const strategyText = importMergeStrategy === 'replace' ? '🔄 Strategy: Replace (cleared existing data)' : '➕ Strategy: Append (added to existing data)';
+        const backupText = lastBackupFile ? `\n💾 Backup: ${lastBackupFile.filename}` : '';
         const message = `✅ Import Complete!\n\n` +
+          `${strategyText}${backupText}\n\n` +
           `📊 Months: ${stats.monthsImported}\n` +
           `📈 Readings: ${stats.readingsImported}\n` +
           `📍 Sensors: ${stats.sensorsImported}\n` +
@@ -939,6 +1144,21 @@ export default function AGPGenerator() {
           `\n⏱️ Duration: ${(result.duration / 1000).toFixed(1)}s`;
         
         alert(message);
+        
+        // Track import in history
+        const { addImportEvent } = await import('../storage/importHistory');
+        const totalRecords = stats.readingsImported + stats.sensorsImported + 
+                            stats.cartridgesImported + stats.workdaysImported +
+                            stats.stockBatchesImported + stats.stockAssignmentsImported;
+        
+        addImportEvent({
+          filename: pendingImportFile.name,
+          recordCount: totalRecords,
+          duration: result.duration,
+          strategy: importMergeStrategy,
+          stats: stats
+        });
+        console.log('[AGPGenerator] Import event tracked in history');
         
         // Refresh data
         masterDataset.refresh();
@@ -965,12 +1185,36 @@ export default function AGPGenerator() {
       
     } catch (err) {
       console.error('Import failed:', err);
-      alert(`❌ Import Failed:\n\n${err.message}`);
+      
+      // If we created a backup, offer to restore it
+      if (lastBackupFile) {
+        const errorMessage = 
+          `❌ Import Failed\n\n` +
+          `Error: ${err.message}\n\n` +
+          `🔄 A backup was created before import:\n` +
+          `${lastBackupFile.filename}\n\n` +
+          `The backup file should be in your Downloads folder.\n` +
+          `You can restore it by:\n` +
+          `1. Close this message\n` +
+          `2. Click EXPORT → Import Database\n` +
+          `3. Select the backup file`;
+        
+        alert(errorMessage);
+      } else {
+        alert(`❌ Import Failed:\n\n${err.message}`);
+      }
+      
     } finally {
       // Clean up
       setIsImporting(false);
       setPendingImportFile(null);
       setImportValidation(null);
+      setImportProgress({
+        stage: '',
+        current: 0,
+        total: 7,
+        percentage: 0
+      });
     }
   };
 
@@ -1016,7 +1260,8 @@ export default function AGPGenerator() {
           </div>
         )}
         
-        {/* Header - Golden Ratio Sidebar Layout */}
+        {/* OLD HEADER - Keep visible, has patient info + cleanup + stats */}
+        {(
         <header className="section">
           <div style={{
             display: 'grid',
@@ -1339,21 +1584,80 @@ export default function AGPGenerator() {
             </div>
           )}
         </header>
-
+        )}
+        {/* END OLD HEADER */}
+        
+        {/* Phase B: Main Navigation - After old header */}
+        <HeaderBar 
+          activePanel={activePanel}
+          onPanelChange={handlePanelChange}
+        />
+        
+        {/* Phase B: Panel Routing */}
+        <div className="main-content" style={{ 
+          padding: '2rem'
+        }}>
+          
+          {activePanel === 'import' && (
+            <ImportPanel
+              csvData={csvData}
+              workdays={workdays}
+              csvError={csvError}
+              v3UploadError={v3UploadError}
+              onCSVLoad={handleCSVLoad}
+              onProTimeLoad={handleProTimeLoad}
+              onProTimeDelete={handleProTimeDelete}
+              onImportDatabase={handleDatabaseImport}
+            />
+          )}
+          
+          {activePanel === 'dagprofielen' && (
+            <DayProfilesPanel
+              isOpen={true}
+              onClose={() => setActivePanel('import')}
+              dayProfiles={dayProfiles}
+              patientInfo={patientInfo}
+            />
+          )}
+          
+          {activePanel === 'sensoren' && (
+            <SensorHistoryPanel 
+              isOpen={true}
+              onClose={() => setActivePanel('import')}
+              sensors={sensors}
+            />
+          )}
+          
+          {activePanel === 'export' && (
+            <ExportPanel
+              onExportHTML={handleExportHTML}
+              onExportDayProfiles={() => {
+                if (dayProfiles && dayProfiles.length > 0) {
+                  downloadDayProfilesHTML(dayProfiles, patientInfo);
+                } else {
+                  alert('No day profiles available');
+                }
+              }}
+              onExportDatabase={async () => {
+                const result = await exportAndDownload();
+                if (result.success) {
+                  alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
+                } else {
+                  alert(`❌ Export failed: ${result.error}`);
+                }
+              }}
+              onImportDatabase={handleDatabaseImport}
+              dayProfiles={dayProfiles}
+              patientInfo={patientInfo}
+            />
+          )}
+        </div>
+        
         {/* V3 Migration Banner - Auto-detects and triggers migration */}
         <MigrationBanner />
 
-        {/* V3 Date Range Filter - ENABLED in Phase 3.5
-            
-            Solution implemented: V3 readings are transformed to V2 CSV format in 
-            useMasterDataset hook before returning to AGPGenerator. This maintains 
-            backwards compatibility with all existing calculation engines.
-            
-            Transform happens in useMasterDataset.js:
-            - V3: { timestamp: Date, glucose: 120 }
-            - V2: { Date: "2025/07/01", Time: "00:05:00", "Sensor Glucose (mg/dL)": 120 }
-        */}
-        {useV3Mode && masterDataset.stats && (
+        {/* V3 Date Range Filter - Show on import panel */}
+        {activePanel === 'import' && useV3Mode && masterDataset.stats && (
           <section className="section">
             <DateRangeFilter
               datasetRange={masterDataset.stats.dateRange}
@@ -1363,7 +1667,8 @@ export default function AGPGenerator() {
           </section>
         )}
 
-        {/* Control Buttons: IMPORT - DAGPROFIELEN - VOORRAAD - SENSOR HISTORY - EXPORT */}
+        {/* Control Buttons: HIDDEN IN PHASE B */}
+        {false && (
         <section className="section">
           {/* DataLoadingContainer with all 5 buttons */}
           <DataLoadingContainer 
@@ -1387,7 +1692,7 @@ export default function AGPGenerator() {
 
           {/* IMPORT Expanded Content */}
           {dataImportExpanded && (
-            <DataImportPanel
+            <ImportPanel
               csvData={csvData}
               workdays={workdays}
               csvError={csvError}
@@ -1400,7 +1705,7 @@ export default function AGPGenerator() {
 
           {/* EXPORT Expanded Content */}
           {dataExportExpanded && metricsResult && startDate && endDate && (
-            <DataExportPanel
+            <ExportPanel
               onExportHTML={handleExportHTML}
               onExportDayProfiles={() => {
                 if (dayProfiles && dayProfiles.length > 0) {
@@ -1423,9 +1728,11 @@ export default function AGPGenerator() {
             />
           )}
         </section>
+        )}
+        {/* END OLD CONTROL BUTTONS */}
 
-        {/* Main Content - Show when data loaded (v2 or v3) and period selected */}
-        {((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
+        {/* Main Content - Show when on import panel */}
+        {activePanel === 'import' && ((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
           <VisualizationContainer
             metricsResult={metricsResult}
             comparisonData={comparisonData}
@@ -1436,6 +1743,24 @@ export default function AGPGenerator() {
             dayNightEnabled={dayNightEnabled}
             onDayNightToggle={handleDayNightToggle}
           />
+        )}
+
+        {/* Phase B: DevTools Overlay (if enabled) */}
+        {showDevTools && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: '400px',
+            height: '100vh',
+            background: 'var(--bg-primary)',
+            border: '3px solid var(--border-primary)',
+            borderRight: 'none',
+            zIndex: 99999,
+            overflow: 'auto'
+          }}>
+            <DevToolsPanel onClose={() => setShowDevTools(false)} />
+          </div>
         )}
 
         {/* Modal Manager - All modals rendered via portals */}
@@ -1484,13 +1809,21 @@ export default function AGPGenerator() {
             setDataImportModalOpen(false);
             setImportValidation(null);
             setPendingImportFile(null);
+            setImportMergeStrategy('append'); // Reset to default on close
+            setLastBackupFile(null); // Clear backup info on close
           }}
           onConfirm={handleImportConfirm}
           validationResult={importValidation}
           isValidating={isValidating}
+          mergeStrategy={importMergeStrategy}
+          onMergeStrategyChange={setImportMergeStrategy}
+          lastImport={lastImportInfo}
+          createBackup={createBackupBeforeImport}
+          onCreateBackupChange={setCreateBackupBeforeImport}
+          lastBackupFile={lastBackupFile}
         />
 
-        {/* Import Loading Overlay */}
+        {/* Import Progress Overlay */}
         {isImporting && (
           <div style={{
             position: 'fixed',
@@ -1509,7 +1842,8 @@ export default function AGPGenerator() {
               border: '3px solid var(--border-primary)',
               padding: '3rem',
               textAlign: 'center',
-              maxWidth: '400px'
+              maxWidth: '500px',
+              width: '90%'
             }}>
               <div style={{
                 fontFamily: 'Courier New, monospace',
@@ -1517,19 +1851,55 @@ export default function AGPGenerator() {
                 fontWeight: 'bold',
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
-                marginBottom: '1rem'
+                marginBottom: '2rem'
               }}>
-                ⏳ Importing Data...
+                📥 Importing Database
               </div>
+              
+              {/* Progress Percentage */}
+              <div style={{
+                fontSize: '3rem',
+                fontWeight: 'bold',
+                fontFamily: 'Courier New, monospace',
+                color: 'var(--color-green)',
+                marginBottom: '1.5rem'
+              }}>
+                {importProgress.percentage}%
+              </div>
+              
+              {/* Progress Bar */}
+              <div style={{
+                width: '100%',
+                height: '24px',
+                background: 'var(--bg-secondary)',
+                border: '3px solid var(--border-primary)',
+                overflow: 'hidden',
+                marginBottom: '1.5rem'
+              }}>
+                <div style={{
+                  height: '100%',
+                  background: 'var(--color-green)',
+                  width: `${importProgress.percentage}%`,
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+              
+              {/* Current Stage */}
               <div style={{
                 fontFamily: 'Courier New, monospace',
                 fontSize: '0.875rem',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.6
               }}>
-                Please wait while your data is being imported.
-                <br />
-                Check the browser console for progress.
+                {importProgress.stage ? (
+                  <>
+                    Importing {importProgress.stage}...
+                    <br />
+                    ({importProgress.current} of {importProgress.total})
+                  </>
+                ) : (
+                  'Preparing import...'
+                )}
               </div>
             </div>
           </div>
@@ -1552,7 +1922,72 @@ export default function AGPGenerator() {
               ADA Standards of Care in Diabetes—2025
             </a>
           </p>
+          
+          {/* Phase B: DevTools Hint (only in development) */}
+          {process.env.NODE_ENV !== 'production' && (
+            <p className="mt-3 text-xs" style={{ 
+              color: 'var(--text-secondary)',
+              fontFamily: 'Courier New, monospace',
+              letterSpacing: '0.05em'
+            }}>
+              💡 Developer Tools: Press <kbd style={{
+                padding: '0.125rem 0.375rem',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)',
+                borderRadius: '3px',
+                fontWeight: 'bold'
+              }}>Cmd+Shift+D</kbd>
+            </p>
+          )}
         </footer>
+        
+        {/* Keyboard Shortcuts Legend (Phase F1.2) */}
+        <div style={{
+          position: 'fixed',
+          bottom: '1rem',
+          left: '1rem',
+          zIndex: 1000
+        }}>
+          <button
+            onClick={() => setShowShortcuts(!showShortcuts)}
+            style={{
+              padding: '0.5rem',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              border: '2px solid var(--border-primary)',
+              fontFamily: 'Courier New, monospace',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+            aria-label="Toggle keyboard shortcuts legend"
+          >
+            ⌨️ Shortcuts
+          </button>
+          
+          {showShortcuts && (
+            <div style={{
+              position: 'absolute',
+              bottom: '100%',
+              left: 0,
+              marginBottom: '0.5rem',
+              padding: '0.75rem 1rem',
+              background: 'var(--bg-secondary)',
+              border: '2px solid var(--border-primary)',
+              fontFamily: 'Courier New, monospace',
+              fontSize: '0.75rem',
+              color: 'var(--text-primary)',
+              minWidth: '200px',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>⌨️ Keyboard Shortcuts</div>
+              <div style={{ marginBottom: '0.25rem' }}>Ctrl+1/2/3/4: Switch panels</div>
+              <div style={{ marginBottom: '0.25rem' }}>Ctrl+Shift+D: Toggle DevTools</div>
+              <div style={{ marginBottom: '0.25rem' }}>Esc: Close DevTools</div>
+              <div>Tab: Navigate elements</div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

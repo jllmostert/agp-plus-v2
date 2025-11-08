@@ -1,7 +1,7 @@
 {
   "name": "agp-plus",
-  "version": "3.8.0",
-  "description": "AGP+ v3.8.0 - Ambulatory Glucose Profile with Advanced Day Analytics",
+  "version": "3.9.0",
+  "description": "AGP+ v3.9.0 - Ambulatory Glucose Profile with Advanced Day Analytics",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3001",
