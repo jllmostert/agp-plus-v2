@@ -963,3 +963,71 @@ export async function getSensorBatchSuggestions() {
     return [];
   }
 }
+
+/**
+ * CLEANUP RECORDS
+ * 
+ * Delete data based on cleanup type:
+ * - 'all-in': Delete readings, cartridges, ProTime. Keep patient, sensors, stock
+ * - Date-based: Delete data within specified date range
+ * 
+ * @param {Object} options - Cleanup options
+ * @param {string} options.type - 'all-in' or date-based
+ * @param {Date} options.startDate - Start date for date-based cleanup
+ * @param {Date} options.endDate - End date for date-based cleanup
+ * @param {boolean} options.includeCartridges - Include cartridge events
+ * @returns {Promise<Object>} Result object with success status
+ */
+export async function cleanupRecords(options) {
+  try {
+    const db = await openDB();
+    
+    if (options.type === 'all-in') {
+      debug.log('[cleanupRecords] ALL-IN: Deleting readings, cartridges, ProTime. Keeping patient, sensors, stock');
+      
+      // Delete readings, cartridges, ProTime only
+      // KEEP sensors and stock!
+      const tx = db.transaction(['readings', 'cartridges', 'protime'], 'readwrite');
+      
+      await Promise.all([
+        tx.objectStore('readings').clear(),
+        tx.objectStore('cartridges').clear(),
+        tx.objectStore('protime').clear()
+      ]);
+      
+      await tx.done;
+      
+      // DO NOT clear localStorage sensors/stock - we're keeping those!
+      
+      // Clear reading buckets
+      const bucketTx = db.transaction([STORES.READING_BUCKETS], 'readwrite');
+      await bucketTx.objectStore(STORES.READING_BUCKETS).clear();
+      await bucketTx.done;
+      
+      // Invalidate cache
+      await invalidateCache();
+      
+      debug.log('[cleanupRecords] ALL-IN complete - kept sensors & stock');
+      
+      return {
+        success: true,
+        deletedCount: 'ALL',
+        message: 'Readings, cartridges, ProTime deleted (kept patient, sensors, stock)'
+      };
+    }
+    
+    // Date-based cleanup (not implemented yet - placeholder)
+    debug.warn('[cleanupRecords] Date-based cleanup not yet implemented');
+    return {
+      success: false,
+      error: 'Date-based cleanup not yet implemented'
+    };
+    
+  } catch (err) {
+    console.error('[cleanupRecords] Error:', err);
+    return {
+      success: false,
+      error: err.message
+    };
+  }
+}

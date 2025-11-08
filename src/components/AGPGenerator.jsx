@@ -102,6 +102,9 @@ export default function AGPGenerator() {
   // V3 Upload error state
   const [v3UploadError, setV3UploadError] = useState(null);
   
+  // Keyboard shortcuts legend state (Phase F1.2)
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  
   // Upload storage management
   const {
     savedUploads,
@@ -229,10 +232,36 @@ export default function AGPGenerator() {
     loadLastImport();
   }, [dataImportModalOpen]); // Reload when modal opens/closes
   
-  // Keyboard shortcut: Ctrl+Shift+D to toggle DevTools (Phase B)
+  // Keyboard shortcuts (Phase B + Session 18)
   useEffect(() => {
     const handleKeyboard = (e) => {
-      // Ctrl+Shift+D (Windows/Linux) or Cmd+Shift+D (Mac)
+      // Panel switching: Ctrl+1/2/3/4
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        switch(e.key) {
+          case '1':
+            e.preventDefault();
+            setActivePanel('import');
+            console.log('[Keyboard] Switched to Import panel');
+            break;
+          case '2':
+            e.preventDefault();
+            setActivePanel('dagprofielen');
+            console.log('[Keyboard] Switched to Day Profiles panel');
+            break;
+          case '3':
+            e.preventDefault();
+            setActivePanel('sensoren');
+            console.log('[Keyboard] Switched to Sensors panel');
+            break;
+          case '4':
+            e.preventDefault();
+            setActivePanel('export');
+            console.log('[Keyboard] Switched to Export panel');
+            break;
+        }
+      }
+      
+      // Ctrl+Shift+D: Toggle DevTools
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
         e.preventDefault();
         setShowDevTools(prev => {
@@ -242,11 +271,19 @@ export default function AGPGenerator() {
           return newValue;
         });
       }
+      
+      // Escape: Close DevTools
+      if (e.key === 'Escape' && showDevTools) {
+        e.preventDefault();
+        setShowDevTools(false);
+        localStorage.setItem('agp-devtools-enabled', 'false');
+        console.log('[AGPGenerator] DevTools closed via Escape');
+      }
     };
     
     window.addEventListener('keydown', handleKeyboard);
     return () => window.removeEventListener('keydown', handleKeyboard);
-  }, []);
+  }, [showDevTools]);
 
   /**
    * Auto-select last 14 days when data becomes ready (green light)
@@ -1190,72 +1227,6 @@ export default function AGPGenerator() {
       
       <div className="app-container">
         
-        {/* Phase B: Main Navigation */}
-        <HeaderBar 
-          activePanel={activePanel}
-          onPanelChange={handlePanelChange}
-        />
-        
-        {/* Phase B: Panel Routing */}
-        <div className="main-content" style={{ 
-          padding: '2rem'
-        }}>
-          
-          {activePanel === 'import' && (
-            <ImportPanel
-              csvData={csvData}
-              workdays={workdays}
-              csvError={csvError}
-              v3UploadError={v3UploadError}
-              onCSVLoad={handleCSVLoad}
-              onProTimeLoad={handleProTimeLoad}
-              onProTimeDelete={handleProTimeDelete}
-              onImportDatabase={handleDatabaseImport}
-            />
-          )}
-          
-          {activePanel === 'dagprofielen' && (
-            <DayProfilesPanel
-              isOpen={true}
-              onClose={() => setActivePanel('import')}
-              dayProfiles={dayProfiles}
-              patientInfo={patientInfo}
-            />
-          )}
-          
-          {activePanel === 'sensoren' && (
-            <SensorHistoryPanel 
-              isOpen={true}
-              onClose={() => setActivePanel('import')}
-              sensors={sensors}
-            />
-          )}
-          
-          {activePanel === 'export' && (
-            <ExportPanel
-              onExportHTML={handleExportHTML}
-              onExportDayProfiles={() => {
-                if (dayProfiles && dayProfiles.length > 0) {
-                  downloadDayProfilesHTML(dayProfiles, patientInfo);
-                } else {
-                  alert('No day profiles available');
-                }
-              }}
-              onExportDatabase={async () => {
-                const result = await exportAndDownload();
-                if (result.success) {
-                  alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
-                } else {
-                  alert(`❌ Export failed: ${result.error}`);
-                }
-              }}
-              onImportDatabase={handleDatabaseImport}
-              dayProfiles={dayProfiles}
-              patientInfo={patientInfo}
-            />
-          )}
-        </div>
-        
         {/* Migration Notice (if applicable) */}
         {migrationStatus && (
           <div style={{
@@ -1289,8 +1260,8 @@ export default function AGPGenerator() {
           </div>
         )}
         
-        {/* OLD HEADER - HIDDEN IN PHASE B */}
-        {false && (
+        {/* OLD HEADER - Keep visible, has patient info + cleanup + stats */}
+        {(
         <header className="section">
           <div style={{
             display: 'grid',
@@ -1616,11 +1587,77 @@ export default function AGPGenerator() {
         )}
         {/* END OLD HEADER */}
         
+        {/* Phase B: Main Navigation - After old header */}
+        <HeaderBar 
+          activePanel={activePanel}
+          onPanelChange={handlePanelChange}
+        />
+        
+        {/* Phase B: Panel Routing */}
+        <div className="main-content" style={{ 
+          padding: '2rem'
+        }}>
+          
+          {activePanel === 'import' && (
+            <ImportPanel
+              csvData={csvData}
+              workdays={workdays}
+              csvError={csvError}
+              v3UploadError={v3UploadError}
+              onCSVLoad={handleCSVLoad}
+              onProTimeLoad={handleProTimeLoad}
+              onProTimeDelete={handleProTimeDelete}
+              onImportDatabase={handleDatabaseImport}
+            />
+          )}
+          
+          {activePanel === 'dagprofielen' && (
+            <DayProfilesPanel
+              isOpen={true}
+              onClose={() => setActivePanel('import')}
+              dayProfiles={dayProfiles}
+              patientInfo={patientInfo}
+            />
+          )}
+          
+          {activePanel === 'sensoren' && (
+            <SensorHistoryPanel 
+              isOpen={true}
+              onClose={() => setActivePanel('import')}
+              sensors={sensors}
+            />
+          )}
+          
+          {activePanel === 'export' && (
+            <ExportPanel
+              onExportHTML={handleExportHTML}
+              onExportDayProfiles={() => {
+                if (dayProfiles && dayProfiles.length > 0) {
+                  downloadDayProfilesHTML(dayProfiles, patientInfo);
+                } else {
+                  alert('No day profiles available');
+                }
+              }}
+              onExportDatabase={async () => {
+                const result = await exportAndDownload();
+                if (result.success) {
+                  alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
+                } else {
+                  alert(`❌ Export failed: ${result.error}`);
+                }
+              }}
+              onImportDatabase={handleDatabaseImport}
+              dayProfiles={dayProfiles}
+              patientInfo={patientInfo}
+            />
+          )}
+        </div>
+        
         {/* V3 Migration Banner - Auto-detects and triggers migration */}
         <MigrationBanner />
 
-        {/* V3 Date Range Filter - HIDDEN IN PHASE B */}
-        {false && useV3Mode && masterDataset.stats && (
+        {/* V3 Date Range Filter - Show on import panel */}
+        {activePanel === 'import' && useV3Mode && masterDataset.stats && (
           <section className="section">
             <DateRangeFilter
               datasetRange={masterDataset.stats.dateRange}
@@ -1694,8 +1731,8 @@ export default function AGPGenerator() {
         )}
         {/* END OLD CONTROL BUTTONS */}
 
-        {/* Main Content - HIDDEN IN PHASE B */}
-        {false && ((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
+        {/* Main Content - Show when on import panel */}
+        {activePanel === 'import' && ((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
           <VisualizationContainer
             metricsResult={metricsResult}
             comparisonData={comparisonData}
@@ -1903,6 +1940,54 @@ export default function AGPGenerator() {
             </p>
           )}
         </footer>
+        
+        {/* Keyboard Shortcuts Legend (Phase F1.2) */}
+        <div style={{
+          position: 'fixed',
+          bottom: '1rem',
+          left: '1rem',
+          zIndex: 1000
+        }}>
+          <button
+            onClick={() => setShowShortcuts(!showShortcuts)}
+            style={{
+              padding: '0.5rem',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              border: '2px solid var(--border-primary)',
+              fontFamily: 'Courier New, monospace',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+            aria-label="Toggle keyboard shortcuts legend"
+          >
+            ⌨️ Shortcuts
+          </button>
+          
+          {showShortcuts && (
+            <div style={{
+              position: 'absolute',
+              bottom: '100%',
+              left: 0,
+              marginBottom: '0.5rem',
+              padding: '0.75rem 1rem',
+              background: 'var(--bg-secondary)',
+              border: '2px solid var(--border-primary)',
+              fontFamily: 'Courier New, monospace',
+              fontSize: '0.75rem',
+              color: 'var(--text-primary)',
+              minWidth: '200px',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>⌨️ Keyboard Shortcuts</div>
+              <div style={{ marginBottom: '0.25rem' }}>Ctrl+1/2/3/4: Switch panels</div>
+              <div style={{ marginBottom: '0.25rem' }}>Ctrl+Shift+D: Toggle DevTools</div>
+              <div style={{ marginBottom: '0.25rem' }}>Esc: Close DevTools</div>
+              <div>Tab: Navigate elements</div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@
  */
 
 import { CONFIG } from './metrics-engine.js';
+import { APP_VERSION } from '../utils/version.js';
 
 /**
  * Calculate dynamic Y-axis range based on actual data
@@ -926,7 +927,7 @@ export const generateHTML = (options) => {
         }).toUpperCase()}
       </div>
       <div>
-        <strong>AGP+ VERSION:</strong> 2.1.3
+        <strong>AGP+ VERSION:</strong> ${APP_VERSION}
       </div>
     </div>
     <div style="display: flex; justify-content: space-between; color: #555;">

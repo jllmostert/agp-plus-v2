@@ -8,6 +8,7 @@ import { getAllMonthBuckets } from './masterDatasetStorage';
 import { getSensorHistory } from './sensorStorage';
 import { getCartridgeHistory } from './eventStorage';
 import { getAllBatches, getAllAssignments } from './stockStorage';
+import { APP_VERSION, APP_FULL_NAME } from '../utils/version';
 
 /**
  * Export complete master dataset to JSON
@@ -49,9 +50,9 @@ export async function exportMasterDataset() {
     
     // Build export object
     const exportData = {
-      version: "3.8.0",
+      version: APP_VERSION,
       exportDate: new Date().toISOString(),
-      generator: "AGP+ v3.8.0",
+      generator: APP_FULL_NAME,
       totalReadings,
       totalMonths: months.length,
       totalSensors: sensors.length,

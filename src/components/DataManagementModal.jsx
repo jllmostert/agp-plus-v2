@@ -145,16 +145,20 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
       bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.9)',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       justifyContent: 'center',
       zIndex: 9999,
-      padding: '1rem'
+      padding: '1rem',
+      paddingTop: '5vh'
     }}>
       <div style={{
         background: 'var(--paper)',
         border: '4px solid var(--ink)',
         maxWidth: '600px',
-        width: '100%'
+        width: '100%',
+        maxHeight: '85vh',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
         {/* Header */}
         <div style={{
@@ -164,7 +168,8 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
           padding: '1.5rem',
           borderBottom: '4px solid var(--ink)',
           background: 'var(--color-black)',
-          color: 'var(--color-white)'
+          color: 'var(--color-white)',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Database size={24} />
@@ -197,8 +202,141 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
           padding: '2rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '2rem'
+          gap: '2rem',
+          flex: '1 1 auto',
+          overflowY: 'auto',
+          minHeight: 0
         }}>
+          {/* ALL-IN Nuclear Option */}
+          <div style={{
+            background: 'rgba(220, 38, 38, 0.1)',
+            border: '3px solid var(--color-red)',
+            padding: '1.5rem'
+          }}>
+            <h3 style={{
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              marginBottom: '1rem',
+              color: 'var(--color-red)'
+            }}>
+              NUCLEAR OPTION
+            </h3>
+            <p style={{
+              fontSize: '0.875rem',
+              lineHeight: '1.6',
+              marginBottom: '1rem',
+              color: 'var(--ink)'
+            }}>
+              <strong>ALL-IN</strong> verwijdert ALLE data behalve patiënt info, sensoren en sensor stock:
+            </p>
+            <ul style={{
+              margin: '0 0 1rem 1.5rem',
+              fontSize: '0.75rem',
+              lineHeight: '1.8',
+              listStyle: 'disc'
+            }}>
+              <li>Alle glucose readings</li>
+              <li>Alle cartridge changes</li>
+              <li>Alle ProTime werkdagen</li>
+            </ul>
+            <p style={{
+              fontSize: '0.75rem',
+              marginBottom: '1rem',
+              color: 'var(--text-secondary)'
+            }}>
+              Behoudt: Patiënt info, sensoren, sensor stock<br/>
+              Automatische backup wordt gemaakt voor cleanup
+            </p>
+            <button
+              onClick={async () => {
+                const confirmed = confirm(
+                  'ALL-IN CLEANUP\n\n' +
+                  'This will delete:\n' +
+                  '- All glucose readings\n' +
+                  '- All cartridge changes\n' +
+                  '- All ProTime workdays\n\n' +
+                  'Automatic backup will be created\n' +
+                  'Preserves: Patient info, sensors, sensor stock\n\n' +
+                  'Are you ABSOLUTELY SURE?'
+                );
+                
+                if (!confirmed) {
+                  return;
+                }
+                
+                setIsDeleting(true);
+                
+                try {
+                  // Create backup first
+                  debug.log('[DataManagementModal] Creating backup before ALL-IN...');
+                  const { exportAndDownload } = await import('../storage/masterDatasetStorage');
+                  const backupResult = await exportAndDownload();
+                  
+                  if (!backupResult.success) {
+                    alert(`Backup failed: ${backupResult.error}\n\nCleanup cancelled for safety.`);
+                    setIsDeleting(false);
+                    return;
+                  }
+                  
+                  debug.log('[DataManagementModal] Backup created:', backupResult.filename);
+                  
+                  // Execute ALL-IN cleanup
+                  const { cleanupRecords } = await import('../storage/masterDatasetStorage');
+                  const result = await cleanupRecords({ type: 'all-in' });
+                  
+                  if (result.success) {
+                    alert(`ALL-IN Cleanup Complete\n\nBackup: ${backupResult.filename}\n\nDeleted: Readings, cartridges, ProTime\nKept: Patient, sensors, sensor stock`);
+                    onClose();
+                    window.location.reload(); // Force reload to clear all caches
+                  } else {
+                    alert(`Cleanup failed: ${result.error}`);
+                  }
+                  
+                } catch (err) {
+                  debug.error('[DataManagementModal] ALL-IN failed:', err);
+                  alert(`ALL-IN failed: ${err.message}`);
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+              disabled={isDeleting}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                border: '3px solid var(--border-primary)',
+                background: 'var(--color-red)',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: isDeleting ? 'not-allowed' : 'pointer',
+                opacity: isDeleting ? 0.5 : 1
+              }}
+            >
+              ALL-IN (Nuclear Reset)
+            </button>
+          </div>
+          
+          {/* Divider */}
+          <div style={{
+            borderTop: '2px solid var(--border-primary)',
+            paddingTop: '1rem'
+          }}>
+            <p style={{
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--text-secondary)',
+              marginBottom: '1rem'
+            }}>
+              OF: SELECTIEVE CLEANUP
+            </p>
+          </div>
+          
           {/* Date Range Selector */}
           <div>
             <h3 style={{
@@ -430,7 +568,8 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
           justifyContent: 'flex-end',
           gap: '1rem',
           padding: '1.5rem',
-          borderTop: '4px solid var(--ink)'
+          borderTop: '4px solid var(--ink)',
+          flexShrink: 0
         }}>
           <button 
             onClick={generatePreview}

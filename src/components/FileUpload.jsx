@@ -169,6 +169,7 @@ function CSVUploadButton({ onUpload, isLoaded }) {
         type="file"
         accept=".csv"
         onChange={onUpload}
+        aria-label="Upload CSV files for glucose data import from Medtronic CareLink"
         style={{ display: 'none' }}
       />
       
