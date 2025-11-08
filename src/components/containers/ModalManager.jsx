@@ -74,6 +74,7 @@ export default function ModalManager({
   // Sensor History Modal
   sensorHistoryOpen,
   onCloseSensorHistory,
+  onOpenStockFromHistory, // NEW: Callback to open stock from sensor history
   
   // Sensor Registration Modal
   sensorRegistrationOpen,
@@ -121,6 +122,7 @@ export default function ModalManager({
         <SensorHistoryPanel 
           isOpen={sensorHistoryOpen}
           onClose={onCloseSensorHistory}
+          onOpenStock={onOpenStockFromHistory}
           sensors={sensors}
         />,
         document.body

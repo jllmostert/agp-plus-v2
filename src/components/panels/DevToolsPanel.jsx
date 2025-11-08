@@ -11,7 +11,7 @@ import React, { useState } from 'react';
 import DebugPanel from '../devtools/DebugPanel';
 import SensorSQLiteImport from '../devtools/SensorSQLiteImport';
 
-export default function DevToolsPanel({ onClose }) {
+export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
   const [activeTool, setActiveTool] = useState('debug');
 
   return (
@@ -67,6 +67,42 @@ export default function DevToolsPanel({ onClose }) {
         paddingBottom: '1rem'
       }}>
         <button
+          onClick={() => setActiveTool('sensors')}
+          style={{
+            fontFamily: 'Courier New, monospace',
+            fontSize: '0.875rem',
+            fontWeight: 'bold',
+            padding: '0.75rem 1.5rem',
+            border: '2px solid var(--border-primary)',
+            background: activeTool === 'sensors' ? 'var(--color-green)' : 'var(--bg-secondary)',
+            color: activeTool === 'sensors' ? '#000' : 'var(--text-primary)',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}
+        >
+          🔬 Sensors
+        </button>
+        
+        <button
+          onClick={() => setActiveTool('insulin')}
+          style={{
+            fontFamily: 'Courier New, monospace',
+            fontSize: '0.875rem',
+            fontWeight: 'bold',
+            padding: '0.75rem 1.5rem',
+            border: '2px solid var(--border-primary)',
+            background: activeTool === 'insulin' ? 'var(--color-green)' : 'var(--bg-secondary)',
+            color: activeTool === 'insulin' ? '#000' : 'var(--text-primary)',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}
+        >
+          💉 Insulin
+        </button>
+        
+        <button
           onClick={() => setActiveTool('debug')}
           style={{
             fontFamily: 'Courier New, monospace',
@@ -118,6 +154,75 @@ export default function DevToolsPanel({ onClose }) {
 
       {/* Tool content */}
       <div className="tool-content">
+        {activeTool === 'sensors' && (
+          <div style={{
+            padding: '2rem',
+            background: 'var(--bg-secondary)',
+            border: '2px solid var(--border-primary)',
+            fontFamily: 'Courier New, monospace'
+          }}>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>🔬 Sensor Registration</h3>
+            <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>
+              Register new sensors from CareLink CSV exports. This tool extracts sensor information
+              and adds them to your sensor database.
+            </p>
+            <button
+              onClick={() => {
+                onSensorRegistrationOpen();
+                onClose(); // Close DevTools after opening sensor modal
+              }}
+              style={{
+                fontFamily: 'Courier New, monospace',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                padding: '1rem 2rem',
+                border: '3px solid var(--border-primary)',
+                background: 'var(--color-green)',
+                color: '#000',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                width: '100%'
+              }}
+            >
+              Open Sensor Registration
+            </button>
+          </div>
+        )}
+        
+        {activeTool === 'insulin' && (
+          <div style={{
+            padding: '2rem',
+            background: 'var(--bg-secondary)',
+            border: '2px solid var(--border-primary)',
+            fontFamily: 'Courier New, monospace'
+          }}>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>💉 Insulin TDD Debug</h3>
+            <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>
+              Debug tool for Total Daily Dose (TDD) calculations. Opens in a new window
+              for detailed insulin delivery analysis.
+            </p>
+            <button
+              onClick={() => {
+                window.open('/debug/insulin-tdd.html', '_blank');
+              }}
+              style={{
+                fontFamily: 'Courier New, monospace',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                padding: '1rem 2rem',
+                border: '3px solid var(--border-primary)',
+                background: 'var(--color-green)',
+                color: '#000',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                width: '100%'
+              }}
+            >
+              Open Insulin Debugger
+            </button>
+          </div>
+        )}
+        
         {activeTool === 'debug' && <DebugPanel />}
         {activeTool === 'sqlite' && <SensorSQLiteImport />}
       </div>

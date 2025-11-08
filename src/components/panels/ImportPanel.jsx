@@ -6,19 +6,16 @@
  * 
  * Handles:
  * - CSV file upload
- * - Sensor import
  * - ProTime PDF upload
  * - Error display
  * 
- * @version 1.0.0
- * @created 2025-11-02
+ * @version 1.1.0
+ * @updated 2025-11-08 - Moved sensor database to DevTools
  */
 
 import React, { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 import FileUpload from '../FileUpload';
-import { importSensorsFromFile } from '../../storage/sensorImport.js';
-import { getSensorHistory } from '../../storage/sensorStorage.js';
 
 function ImportPanel({
   // Data state
@@ -41,63 +38,50 @@ function ImportPanel({
     fileName: '',
     percentage: 0
   });
-
-  // Sensor database state
-  const [sensorStats, setSensorStats] = useState(null);
-  const [importingSensors, setImportingSensors] = useState(false);
-
-  // Load sensor stats on mount
-  useEffect(() => {
-    loadSensorStats();
-  }, []);
-
-  async function loadSensorStats() {
-    try {
-      const sensors = await getSensorHistory();
-      if (sensors && sensors.length > 0) {
-        setSensorStats({ total: sensors.length });
-      }
-    } catch (err) {
-      console.error('[ImportPanel] Failed to load sensor stats:', err);
-    }
-  }
-
-  async function handleSensorImport(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    setImportingSensors(true);
-    
-    try {
-      const result = await importSensorsFromFile(file);
-      
-      if (result.success) {
-        await loadSensorStats();
-        alert(`✅ Import succesvol!\n${result.count} sensors geïmporteerd`);
-      } else {
-        throw new Error(result.errors?.[0] || 'Unknown error');
-      }
-    } catch (err) {
-      console.error('[ImportPanel] Sensor import error:', err);
-      alert(`❌ Import mislukt: ${err.message}`);
-    } finally {
-      setImportingSensors(false);
-      event.target.value = '';
-    }
-  }
+  
+  // Collapsible state
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div className="mb-4" style={{ 
       background: 'var(--bg-secondary)',
       border: '2px solid var(--border-primary)',
       borderRadius: '4px',
-      padding: '1rem',
-      marginTop: '1rem'
+      padding: isCollapsed ? '0.5rem 1rem' : '1rem',
+      marginTop: '0'
     }}>
+      {/* Collapse Toggle Header */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'transparent',
+          border: 'none',
+          padding: isCollapsed ? '0' : '0 0 0.75rem 0',
+          marginBottom: isCollapsed ? '0' : '0.75rem',
+          borderBottom: isCollapsed ? 'none' : '2px solid var(--border-primary)',
+          cursor: 'pointer',
+          color: 'var(--text-primary)',
+          fontFamily: 'Courier New, monospace',
+          fontSize: '0.75rem',
+          fontWeight: 'bold',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase'
+        }}
+      >
+        <span>Import Options</span>
+        <span style={{ fontSize: '1rem' }}>{isCollapsed ? '▼' : '▲'}</span>
+      </button>
+      
+      {!isCollapsed && (
+        <>
       {/* Sub-buttons for import options */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '0.75rem',
         marginBottom: '1rem'
       }}>
@@ -120,33 +104,8 @@ function ImportPanel({
           }}
           title="Upload multiple CareLink CSV files at once"
         >
-          📄 Upload CSV(s)
+          Upload CSV(s)
           {csvData && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
-        </button>
-
-        <button
-          onClick={() => document.getElementById('sensor-db-input')?.click()}
-          disabled={importingSensors}
-          style={{
-            background: 'var(--bg-primary)',
-            border: '2px solid var(--border-primary)',
-            color: 'var(--text-primary)',
-            cursor: importingSensors ? 'wait' : 'pointer',
-            padding: '1rem',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '0.5rem',
-            opacity: importingSensors ? 0.5 : 1
-          }}
-          title="Import sensor database (master_sensors.db)"
-        >
-          🔬 Sensor Database
-          {sensorStats && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
         </button>
 
         <button
@@ -168,7 +127,7 @@ function ImportPanel({
           }}
           title="Upload ProTime PDF for workday analysis"
         >
-          📋 ProTime PDFs
+          ProTime PDFs
           {workdays && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
         </button>
 
@@ -191,7 +150,7 @@ function ImportPanel({
           }}
           title="Import complete database from JSON backup"
         >
-          💾 Import JSON
+          Import JSON
         </button>
       </div>
 
@@ -251,15 +210,6 @@ function ImportPanel({
           
           e.target.value = '';
         }}
-        style={{ display: 'none' }}
-      />
-      
-      <input
-        id="sensor-db-input"
-        type="file"
-        accept=".db"
-        aria-label="Upload sensor database file for import"
-        onChange={handleSensorImport}
         style={{ display: 'none' }}
       />
       
@@ -428,6 +378,8 @@ function ImportPanel({
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

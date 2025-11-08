@@ -19,6 +19,7 @@
  *   total: number,
  *   successful: number,
  *   failed: number,
+ *   running: number,
  *   successRate: number (0-100),
  *   avgDuration: number (days),
  *   totalDays: number
@@ -30,6 +31,7 @@ export function calculateOverallStats(sensors) {
       total: 0,
       successful: 0,
       failed: 0,
+      running: 0,
       successRate: 0,
       avgDuration: 0,
       totalDays: 0
@@ -37,17 +39,22 @@ export function calculateOverallStats(sensors) {
   }
 
   const total = sensors.length;
-  const successful = sensors.filter(s => s.success === 1).length;
-  const failed = total - successful;
-  const successRate = (successful / total) * 100;
+  const running = sensors.filter(s => s.status === 'running').length;
+  const completed = sensors.filter(s => s.status !== 'running');
+  const successful = completed.filter(s => s.success === 1).length;
+  const failed = completed.length - successful;
+  
+  // Success rate only includes completed sensors (exclude running)
+  const successRate = completed.length > 0 ? (successful / completed.length) * 100 : 0;
   
   const totalDuration = sensors.reduce((sum, s) => sum + (s.duration_days || 0), 0);
-  const avgDuration = totalDuration / total;
+  const avgDuration = total > 0 ? totalDuration / total : 0;
 
   return {
     total,
     successful,
     failed,
+    running,
     successRate: Math.round(successRate),
     avgDuration: Math.round(avgDuration * 10) / 10,
     totalDays: Math.round(totalDuration)
@@ -61,6 +68,7 @@ export function calculateOverallStats(sensors) {
  *   hwVersion: string,
  *   total: number,
  *   successful: number,
+ *   running: number,
  *   successRate: number,
  *   avgDuration: number
  * }]
@@ -81,15 +89,21 @@ export function calculateHWVersionStats(sensors) {
   // Calculate stats for each group
   return Object.entries(groups).map(([hwVersion, sensorList]) => {
     const total = sensorList.length;
-    const successful = sensorList.filter(s => s.success === 1).length;
-    const successRate = (successful / total) * 100;
+    const running = sensorList.filter(s => s.status === 'running').length;
+    const completed = sensorList.filter(s => s.status !== 'running');
+    const successful = completed.filter(s => s.success === 1).length;
+    
+    // Success rate only for completed sensors
+    const successRate = completed.length > 0 ? (successful / completed.length) * 100 : 0;
+    
     const totalDuration = sensorList.reduce((sum, s) => sum + (s.duration_days || 0), 0);
-    const avgDuration = totalDuration / total;
+    const avgDuration = total > 0 ? totalDuration / total : 0;
 
     return {
       hwVersion,
       total,
       successful,
+      running,
       successRate: Math.round(successRate),
       avgDuration: Math.round(avgDuration * 10) / 10
     };
@@ -102,6 +116,8 @@ export function calculateHWVersionStats(sensors) {
  *   lotNumber: string,
  *   total: number,
  *   successful: number,
+ *   failed: number,
+ *   running: number,
  *   successRate: number,
  *   avgDuration: number
  * }]
@@ -122,15 +138,23 @@ export function calculateLotPerformance(sensors) {
   // Calculate stats for each lot
   return Object.entries(groups).map(([lotNumber, sensorList]) => {
     const total = sensorList.length;
-    const successful = sensorList.filter(s => s.success === 1).length;
-    const successRate = (successful / total) * 100;
+    const running = sensorList.filter(s => s.status === 'running').length;
+    const completed = sensorList.filter(s => s.status !== 'running');
+    const successful = completed.filter(s => s.success === 1).length;
+    const failed = completed.length - successful;
+    
+    // Success rate only for completed sensors (exclude running)
+    const successRate = completed.length > 0 ? (successful / completed.length) * 100 : 0;
+    
     const totalDuration = sensorList.reduce((sum, s) => sum + (s.duration_days || 0), 0);
-    const avgDuration = totalDuration / total;
+    const avgDuration = total > 0 ? totalDuration / total : 0;
 
     return {
       lotNumber,
       total,
       successful,
+      failed,
+      running,
       successRate: Math.round(successRate),
       avgDuration: Math.round(avgDuration * 10) / 10
     };

@@ -1279,7 +1279,7 @@ export default function AGPGenerator() {
               flexDirection: 'column',
               gap: '1.5rem'
             }}>
-              {/* Version + Title + Debug Link */}
+              {/* Version + Title */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div>
                   <h1 style={{ 
@@ -1299,64 +1299,6 @@ export default function AGPGenerator() {
                   }}>
                     v{APP_VERSION}
                   </div>
-                </div>
-                
-                {/* Debug Tools Buttons */}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    onClick={() => setSensorRegistrationOpen(true)}
-                    style={{
-                      padding: '0.5rem 0.75rem',
-                      background: 'transparent',
-                      border: '2px solid var(--paper)',
-                      color: 'var(--paper)',
-                      cursor: 'pointer',
-                      fontSize: '0.625rem',
-                      fontWeight: 700,
-                      letterSpacing: '0.15em',
-                      textTransform: 'uppercase',
-                      transition: 'all 0.2s',
-                      whiteSpace: 'nowrap'
-                    }}
-                    title="Register New Sensors from CSV"
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = 'var(--paper)';
-                      e.currentTarget.style.color = 'var(--color-black)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = 'var(--paper)';
-                    }}
-                  >
-                    SENSORS
-                  </button>
-                  <button
-                    onClick={() => window.open('/debug/insulin-tdd.html', '_blank')}
-                    style={{
-                      padding: '0.5rem 0.75rem',
-                      background: 'transparent',
-                      border: '2px solid var(--paper)',
-                      color: 'var(--paper)',
-                      cursor: 'pointer',
-                      fontSize: '0.625rem',
-                      fontWeight: 700,
-                      letterSpacing: '0.15em',
-                      textTransform: 'uppercase',
-                      transition: 'all 0.2s',
-                      whiteSpace: 'nowrap'
-                    }}
-                    title="Insulin TDD Debug Tool"
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = 'var(--paper)';
-                      e.currentTarget.style.color = 'var(--color-black)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = 'var(--paper)';
-                    }}
-                  >
-                    INSULIN
-                  </button>
                 </div>
               </div>
 
@@ -1595,7 +1537,7 @@ export default function AGPGenerator() {
         
         {/* Phase B: Panel Routing */}
         <div className="main-content" style={{ 
-          padding: '2rem'
+          padding: '1rem 2rem'
         }}>
           
           {activePanel === 'import' && (
@@ -1624,6 +1566,7 @@ export default function AGPGenerator() {
             <SensorHistoryPanel 
               isOpen={true}
               onClose={() => setActivePanel('import')}
+              onOpenStock={() => setShowStockModal(true)}
               sensors={sensors}
             />
           )}
@@ -1759,7 +1702,10 @@ export default function AGPGenerator() {
             zIndex: 99999,
             overflow: 'auto'
           }}>
-            <DevToolsPanel onClose={() => setShowDevTools(false)} />
+            <DevToolsPanel 
+              onClose={() => setShowDevTools(false)} 
+              onSensorRegistrationOpen={() => setSensorRegistrationOpen(true)}
+            />
           </div>
         )}
 
@@ -1782,6 +1728,10 @@ export default function AGPGenerator() {
           // Sensor History Modal
           sensorHistoryOpen={sensorHistoryOpen}
           onCloseSensorHistory={() => setSensorHistoryOpen(false)}
+          onOpenStockFromHistory={() => {
+            setSensorHistoryOpen(false);
+            setShowStockModal(true);
+          }}
           
           // Sensor Registration Modal
           sensorRegistrationOpen={sensorRegistrationOpen}
@@ -1923,22 +1873,20 @@ export default function AGPGenerator() {
             </a>
           </p>
           
-          {/* Phase B: DevTools Hint (only in development) */}
-          {process.env.NODE_ENV !== 'production' && (
-            <p className="mt-3 text-xs" style={{ 
-              color: 'var(--text-secondary)',
-              fontFamily: 'Courier New, monospace',
-              letterSpacing: '0.05em'
-            }}>
-              💡 Developer Tools: Press <kbd style={{
-                padding: '0.125rem 0.375rem',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-primary)',
-                borderRadius: '3px',
-                fontWeight: 'bold'
-              }}>Cmd+Shift+D</kbd>
-            </p>
-          )}
+          {/* Scientific methodology note */}
+          <p className="mt-4 text-xs" style={{ 
+            maxWidth: '800px', 
+            margin: '1rem auto 0',
+            color: 'var(--text-tertiary)',
+            lineHeight: '1.6'
+          }}>
+            <strong>Methodologische verwijzing:</strong> Alle berekeningen volgen de ATTD Consensus on CGM Metrics 
+            (Battelino et al., <em>Diabetes Care</em> 2019;42(8):1593-1603), aangevuld met de GMI-formule 
+            (Beck et al., <em>Diabetes Care</em> 2019;42(4):659-666), MAGE-definitie 
+            (Service et al., <em>Diabetes</em> 1970;19(9):644-655) en MODD-definitie 
+            (Molnar et al., <em>Diabetologia</em> 1972;8:342-348). 
+            Drempelwaarden (70-180 mg/dL) conform ADA/ATTD richtlijnen 2023.
+          </p>
         </footer>
         
         {/* Keyboard Shortcuts Legend (Phase F1.2) */}
@@ -2005,7 +1953,7 @@ function EmptyCSVState() {
         </div>
         
         <h2 className="text-2xl font-semibold text-gray-300 mb-4">
-          Welcome to AGP+ v3.12.0
+          Welcome to AGP+ v3.9.1
         </h2>
         
         <p className="text-gray-400 mb-6">

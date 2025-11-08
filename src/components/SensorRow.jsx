@@ -217,13 +217,21 @@ const SensorRow = React.memo(function SensorRow({
       <td style={{
         padding: '10px 12px',
         borderRight: '1px solid var(--grid-line)',
-        color: sensor.success ? 'var(--color-green)' : 'var(--color-red)',
+        color: sensor.status === 'running' 
+          ? '#fbbf24'  // amber for running
+          : sensor.success 
+            ? 'var(--color-green)' 
+            : 'var(--color-red)',
         fontWeight: 'bold',
         textTransform: 'uppercase',
         fontSize: '11px',
         letterSpacing: '0.05em'
       }}>
-        {sensor.success ? 'SUCCESS' : 'FAILED'}
+        {sensor.status === 'running' 
+          ? '🔄 ACTIVE' 
+          : sensor.success 
+            ? '✓ OK' 
+            : 'X FAIL'}
       </td>
 
       {/* Delete Button */}

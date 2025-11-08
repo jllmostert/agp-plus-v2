@@ -45,7 +45,7 @@ import {
   unassignSensor
 } from '../../storage/stockStorage.js';
 
-export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
+export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock, sensors }) {
   // Initialize manual locks on first render
   useEffect(() => {
     if (isOpen) {
@@ -97,7 +97,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
         await loadDeletedCount();
       } catch (err) {
         console.error('[SensorHistoryPanel] Error during cleanup:', err);
-        alert(`âŒ Fout tijdens opruimen: ${err.message}`);
+        alert(`❌ Fout tijdens opruimen: ${err.message}`);
       }
     }
   };
@@ -108,7 +108,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
       const result = await exportSensorsToJSON();
       
       if (!result.success) {
-        alert(`âŒ Export mislukt: ${result.error}`);
+        alert(`❌ Export mislukt: ${result.error}`);
         return;
       }
 
@@ -128,7 +128,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
       console.log('[SensorHistoryPanel] Export successful:', result.filename);
     } catch (err) {
       console.error('[SensorHistoryPanel] Export failed:', err);
-      alert(`âŒ Export mislukt: ${err.message}`);
+      alert(`❌ Export mislukt: ${err.message}`);
     }
   };
 
@@ -145,7 +145,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
       // Validate
       const errors = validateImportData(data);
       if (errors) {
-        alert(`âŒ Invalid JSON:\n\n${errors.join('\n')}`);
+        alert(`❌ Invalid JSON:\n\n${errors.join('\n')}`);
         setImportFile(null);
         setImportPreview(null);
         return;
@@ -162,7 +162,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
       });
     } catch (err) {
       console.error('[SensorHistoryPanel] File read error:', err);
-      alert(`âŒ Kan bestand niet lezen:\n\n${err.message}`);
+      alert(`❌ Kan bestand niet lezen:\n\n${err.message}`);
       setImportFile(null);
       setImportPreview(null);
     }
@@ -193,7 +193,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
       const result = await importSensorsFromJSON(importPreview, importOptions);
 
       if (!result.success) {
-        alert(`âŒ Import mislukt:\n\n${result.error}`);
+        alert(`❌ Import mislukt:\n\n${result.error}`);
         return;
       }
 
@@ -223,7 +223,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
       window.location.reload();
     } catch (err) {
       console.error('[SensorHistoryPanel] Import failed:', err);
-      alert(`âŒ Import mislukt:\n\n${err.message}`);
+      alert(`❌ Import mislukt:\n\n${err.message}`);
     }
   };
 
@@ -368,39 +368,61 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
     <div 
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        inset: 0,
+        backgroundColor: '#FFFFFF',
         zIndex: 9999,
-        backgroundColor: 'rgba(0, 0, 0, 0.97)',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: '"SF Mono", "Monaco", "Courier New", monospace',
         overflow: 'hidden'
       }}
-      onClick={onClose}
     >
-      <div 
-        style={{
-          position: 'relative',
-          height: '100%',
-          overflowY: 'auto',
-          overflowX: 'hidden'
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Control buttons - sticky top */}
-        <div className="sticky top-0 z-10 flex justify-end gap-4 p-6 bg-black bg-opacity-90">
+      {/* HEADER */}
+      <div style={{
+        padding: '24px',
+        borderBottom: '3px solid #000000',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <h1 style={{
+          margin: 0,
+          fontSize: '24px',
+          fontWeight: 'bold',
+          textTransform: 'uppercase',
+          letterSpacing: '1px'
+        }}>
+          🔬 SENSOR HISTORIE
+        </h1>
+        
+        <div style={{ display: 'flex', gap: '12px' }}>
+          {onOpenStock && (
+            <button
+              onClick={onOpenStock}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#FFFFFF',
+                color: '#000000',
+                border: '3px solid #000000',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                textTransform: 'uppercase'
+              }}
+            >
+              📦 VOORRAAD
+            </button>
+          )}
           <label
             style={{
-              fontFamily: 'Courier New, monospace',
-              fontSize: '18px',
+              padding: '8px 16px',
+              backgroundColor: '#000000',
+              color: '#FFFFFF',
+              border: '3px solid #000000',
+              fontSize: '14px',
               fontWeight: 'bold',
-              padding: '12px 24px',
-              border: '3px solid var(--color-blue)',
-              backgroundColor: 'var(--ink)',
-              color: 'var(--color-blue)',
               cursor: 'pointer',
-              textTransform: 'uppercase',
-              letterSpacing: '2px'
+              textTransform: 'uppercase'
             }}
           >
             ↑ IMPORT
@@ -408,22 +430,19 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
               type="file"
               accept=".json"
               onChange={handleFileSelect}
-              style={{ display: 'none' }}
-            />
+              style={{ display: 'none' }} />
           </label>
           <button
             onClick={handleExport}
             style={{
-              fontFamily: 'Courier New, monospace',
-              fontSize: '18px',
+              padding: '8px 16px',
+              backgroundColor: '#000000',
+              color: '#FFFFFF',
+              border: '3px solid #000000',
+              fontSize: '14px',
               fontWeight: 'bold',
-              padding: '12px 24px',
-              border: '3px solid var(--color-green)',
-              backgroundColor: 'var(--ink)',
-              color: 'var(--color-green)',
               cursor: 'pointer',
-              textTransform: 'uppercase',
-              letterSpacing: '2px'
+              textTransform: 'uppercase'
             }}
           >
             ↓ EXPORT
@@ -431,56 +450,107 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
           <button
             onClick={onClose}
             style={{
-              fontFamily: 'Courier New, monospace',
-              fontSize: '18px',
+              padding: '8px 16px',
+              backgroundColor: '#000000',
+              color: '#FFFFFF',
+              border: '3px solid #000000',
+              fontSize: '14px',
               fontWeight: 'bold',
-              padding: '12px 24px',
-              border: '3px solid var(--paper)',
-              backgroundColor: 'var(--ink)',
-              color: 'var(--paper)',
               cursor: 'pointer',
-              textTransform: 'uppercase',
-              letterSpacing: '2px'
+              textTransform: 'uppercase'
             }}
           >
-            ← SLUITEN
+            × SLUITEN
           </button>
         </div>
+      </div>
 
-        {/* Content container */}
+      {/* SCROLLABLE CONTENT */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '24px'
+      }}>
+
+        {/* OVERALL STATS */}
         <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: '0 24px 48px'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '16px',
+          marginBottom: '24px',
+          paddingBottom: '24px',
+          borderBottom: '3px solid #000000'
         }}>
-          {/* Title */}
-          <div style={{
-            fontFamily: 'Courier New, monospace',
-            fontSize: '32px',
-            fontWeight: 'bold',
-            color: 'var(--paper)',
-            textTransform: 'uppercase',
-            letterSpacing: '3px',
-            marginBottom: '24px',
-            borderBottom: '3px solid var(--paper)',
-            paddingBottom: '16px'
-          }}>
-            GUARDIAN 4 SENSOR HISTORY
+          {/* Total */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#000000' }}>
+              {overallStats.total}
+            </div>
+            <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: '#000000' }}>
+              TOTAAL
+            </div>
+            <div style={{ fontSize: '10px', marginTop: '4px', color: '#666666' }}>
+              {overallStats.totalDays}d totaal
+            </div>
           </div>
 
-          {/* Import Preview - shown when file selected */}
+          {/* Success Rate */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              fontSize: '32px', 
+              fontWeight: 'bold',
+              color: overallStats.successRate >= 70 ? '#00AA00' : '#FF8800'
+            }}>
+              {overallStats.successRate}%
+            </div>
+            <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: '#000000' }}>
+              SUCCESS
+            </div>
+            <div style={{ fontSize: '10px', marginTop: '4px', color: '#666666' }}>
+              {overallStats.successful}/{overallStats.successful + overallStats.failed} voltooid
+            </div>
+          </div>
+
+          {/* Average Duration */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#000000' }}>
+              {overallStats.avgDuration}d
+            </div>
+            <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: '#000000' }}>
+              GEM. DUUR
+            </div>
+            <div style={{ fontSize: '10px', marginTop: '4px', color: '#666666' }}>
+              Doel: 7.0d
+            </div>
+          </div>
+
+          {/* Failed/Running */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: overallStats.failed > 0 ? '#CC0000' : '#000000' }}>
+              {overallStats.failed}
+            </div>
+            <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: '#000000' }}>
+              FAILED
+            </div>
+            {overallStats.running > 0 && (
+              <div style={{ fontSize: '10px', marginTop: '4px', color: '#FF8800' }}>
+                {overallStats.running} actief 🔄
+              </div>
+            )}
+          </div>
+        </div>
+          {/* IMPORT PREVIEW */}
           {importPreview && (
             <div style={{
-              border: '3px solid var(--color-blue)',
+              border: '3px solid #000000',
               padding: '24px',
               marginBottom: '24px',
-              backgroundColor: 'rgba(0, 123, 255, 0.1)'
+              backgroundColor: '#F5F5F5'
             }}>
               <div style={{
-                fontFamily: 'Courier New, monospace',
                 fontSize: '18px',
                 fontWeight: 'bold',
-                color: 'var(--color-blue)',
+                color: '#000000',
                 textTransform: 'uppercase',
                 letterSpacing: '2px',
                 marginBottom: '16px'
@@ -488,9 +558,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                 📋 IMPORT PREVIEW
               </div>
               <div style={{
-                fontFamily: 'Monaco, monospace',
                 fontSize: '14px',
-                color: 'var(--paper)',
+                color: '#000000',
                 lineHeight: '1.8',
                 marginBottom: '24px'
               }}>
@@ -502,15 +571,14 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
 
               {/* Import Options */}
               <div style={{
-                borderTop: '2px solid var(--color-blue)',
+                borderTop: '2px solid #000000',
                 paddingTop: '16px',
                 marginBottom: '16px'
               }}>
                 <div style={{
-                  fontFamily: 'Courier New, monospace',
                   fontSize: '14px',
                   fontWeight: 'bold',
-                  color: 'var(--color-blue)',
+                  color: '#000000',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
                   marginBottom: '12px'
@@ -523,9 +591,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                   <label style={{
                     display: 'flex',
                     alignItems: 'center',
-                    fontFamily: 'Monaco, monospace',
                     fontSize: '14px',
-                    color: 'var(--paper)',
+                    color: '#000000',
                     cursor: 'pointer',
                     marginBottom: '8px'
                   }}>
@@ -536,16 +603,14 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                         ...importOptions,
                         importDeleted: e.target.checked
                       })}
-                      style={{ marginRight: '8px' }}
-                    />
+                      style={{ marginRight: '8px' }} />
                     Import deleted sensors lijst
                   </label>
                   <label style={{
                     display: 'flex',
                     alignItems: 'center',
-                    fontFamily: 'Monaco, monospace',
                     fontSize: '14px',
-                    color: 'var(--paper)',
+                    color: '#000000',
                     cursor: 'pointer'
                   }}>
                     <input
@@ -555,8 +620,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                         ...importOptions,
                         importLocks: e.target.checked
                       })}
-                      style={{ marginRight: '8px' }}
-                    />
+                      style={{ marginRight: '8px' }} />
                     Import lock states
                   </label>
                 </div>
@@ -566,9 +630,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                   <label style={{
                     display: 'flex',
                     alignItems: 'center',
-                    fontFamily: 'Monaco, monospace',
                     fontSize: '14px',
-                    color: 'var(--paper)',
+                    color: '#000000',
                     cursor: 'pointer',
                     marginBottom: '8px'
                   }}>
@@ -579,16 +642,14 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                         ...importOptions,
                         mode: 'merge'
                       })}
-                      style={{ marginRight: '8px' }}
-                    />
+                      style={{ marginRight: '8px' }} />
                     MERGE (voeg nieuwe toe, behoud bestaande)
                   </label>
                   <label style={{
                     display: 'flex',
                     alignItems: 'center',
-                    fontFamily: 'Monaco, monospace',
                     fontSize: '14px',
-                    color: 'var(--color-red)',
+                    color: '#CC0000',
                     cursor: 'pointer'
                   }}>
                     <input
@@ -598,8 +659,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                         ...importOptions,
                         mode: 'replace'
                       })}
-                      style={{ marginRight: '8px' }}
-                    />
+                      style={{ marginRight: '8px' }} />
                     REPLACE (wis alles, herstel backup)
                   </label>
                 </div>
@@ -609,190 +669,37 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
               <button
                 onClick={handleImportConfirm}
                 style={{
-                  fontFamily: 'Courier New, monospace',
                   fontSize: '16px',
                   fontWeight: 'bold',
                   padding: '12px 24px',
-                  border: '3px solid var(--color-blue)',
-                  backgroundColor: 'var(--color-blue)',
-                  color: 'var(--ink)',
+                  border: '3px solid #000000',
+                  backgroundColor: '#000000',
+                  color: '#FFFFFF',
                   cursor: 'pointer',
                   textTransform: 'uppercase',
                   letterSpacing: '2px',
                   width: '100%'
                 }}
               >
-                âœ" BEVESTIG IMPORT
+                ✓ BEVESTIG IMPORT
               </button>
             </div>
           )}
 
-          {/* Overall Stats Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '16px',
-            marginBottom: '24px'
-          }}>
-            {/* Total Sensors */}
-            <div style={{
-              border: '3px solid var(--paper)',
-              padding: '16px',
-              backgroundColor: 'rgba(227, 224, 220, 0.05)'
-            }}>
-              <div style={{
-                fontSize: '11px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: 'var(--paper)',
-                marginBottom: '8px'
-              }}>
-                TOTAAL SENSORS
-              </div>
-              <div style={{
-                fontSize: '32px',
-                fontWeight: 'bold',
-                color: 'var(--paper)',
-                lineHeight: 1
-              }}>
-                {overallStats.total}
-              </div>
-              <div style={{
-                fontSize: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--paper)',
-                opacity: 0.7,
-                marginTop: '8px'
-              }}>
-                {overallStats.totalDays} dagen totaal
-              </div>
-            </div>
-
-            {/* Success Rate */}
-            <div style={{
-              border: '3px solid var(--paper)',
-              padding: '16px',
-              backgroundColor: 'rgba(227, 224, 220, 0.05)'
-            }}>
-              <div style={{
-                fontSize: '11px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: 'var(--paper)',
-                marginBottom: '8px'
-              }}>
-                SUCCESS RATE
-              </div>
-              <div style={{
-                fontSize: '32px',
-                fontWeight: 'bold',
-                color: overallStats.successRate >= 70 ? 'var(--color-green)' : 'var(--color-orange)',
-                lineHeight: 1
-              }}>
-                {overallStats.successRate}%
-              </div>
-              <div style={{
-                fontSize: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--paper)',
-                opacity: 0.7,
-                marginTop: '8px'
-              }}>
-                {overallStats.successful}/{overallStats.total} sensors
-              </div>
-            </div>
-
-            {/* Avg Duration */}
-            <div style={{
-              border: '3px solid var(--paper)',
-              padding: '16px',
-              backgroundColor: 'rgba(227, 224, 220, 0.05)'
-            }}>
-              <div style={{
-                fontSize: '11px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: 'var(--paper)',
-                marginBottom: '8px'
-              }}>
-                GEM. DUUR
-              </div>
-              <div style={{
-                fontSize: '32px',
-                fontWeight: 'bold',
-                color: 'var(--paper)',
-                lineHeight: 1
-              }}>
-                {overallStats.avgDuration}d
-              </div>
-              <div style={{
-                fontSize: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--paper)',
-                opacity: 0.7,
-                marginTop: '8px'
-              }}>
-                Streefwaarde: 7.0d
-              </div>
-            </div>
-
-            {/* Failed */}
-            <div style={{
-              border: '3px solid var(--paper)',
-              padding: '16px',
-              backgroundColor: 'rgba(227, 224, 220, 0.05)'
-            }}>
-              <div style={{
-                fontSize: '11px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: 'var(--paper)',
-                marginBottom: '8px'
-              }}>
-                FAILURES
-              </div>
-              <div style={{
-                fontSize: '32px',
-                fontWeight: 'bold',
-                color: overallStats.failed > 0 ? 'var(--color-red)' : 'var(--paper)',
-                lineHeight: 1
-              }}>
-                {overallStats.failed}
-              </div>
-              <div style={{
-                fontSize: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--paper)',
-                opacity: 0.7,
-                marginTop: '8px'
-              }}>
-                &lt;6 dagen = fail
-              </div>
-            </div>
-          </div>
-
           {/* HW Version Stats */}
           {hwStats.length > 0 && (
             <div style={{
-              border: '3px solid var(--paper)',
+              border: '3px solid #000000',
               padding: '16px',
-              backgroundColor: 'rgba(227, 224, 220, 0.05)',
+              backgroundColor: '#F5F5F5',
               marginBottom: '24px'
             }}>
               <h2 style={{
                 fontSize: '14px',
                 fontWeight: 'bold',
                 textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: 'var(--paper)',
+                letterSpacing: '1px',
+                color: '#000000',
                 marginBottom: '16px'
               }}>
                 HARDWARE VERSIE PERFORMANCE
@@ -804,16 +711,16 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
               }}>
                 {hwStats.map(hw => (
                   <div key={hw.hwVersion} style={{
-                    border: '2px solid var(--paper)',
+                    border: '2px solid #000000',
                     padding: '12px',
-                    backgroundColor: 'rgba(227, 224, 220, 0.03)'
+                    backgroundColor: '#FFFFFF'
                   }}>
                     <div style={{
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: 'var(--paper)',
+                      letterSpacing: '1px',
+                      color: '#000000',
                       marginBottom: '8px'
                     }}>
                       {hw.hwVersion}
@@ -821,19 +728,18 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                     <div style={{
                       fontSize: '20px',
                       fontWeight: 'bold',
-                      color: hw.successRate >= 70 ? 'var(--color-green)' : 'var(--color-orange)'
+                      color: hw.successRate >= 70 ? '#00AA00' : '#FF8800'
                     }}>
                       {hw.successRate}%
                     </div>
                     <div style={{
                       fontSize: '10px',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: 'var(--paper)',
-                      opacity: 0.7,
+                      color: '#666666',
                       marginTop: '4px'
                     }}>
-                      {hw.successful}/{hw.total} • {hw.avgDuration}d gem
+                      {hw.successful}/{hw.successful + hw.failed} • {hw.avgDuration}d gem
+                      {hw.running > 0 && ` • ${hw.running} 🔄`}
                     </div>
                   </div>
                 ))}
@@ -841,20 +747,20 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
             </div>
           )}
 
-          {/* Batch Performance (top 10) - was "Lot Number Performance" */}
+          {/* Batch Performance (top 10) */}
           {lotStats.length > 0 && (
             <div style={{
-              border: '3px solid var(--paper)',
+              border: '3px solid #000000',
               padding: '16px',
-              backgroundColor: 'rgba(227, 224, 220, 0.05)',
+              backgroundColor: '#F5F5F5',
               marginBottom: '24px'
             }}>
               <h2 style={{
                 fontSize: '14px',
                 fontWeight: 'bold',
                 textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: 'var(--paper)',
+                letterSpacing: '1px',
+                color: '#000000',
                 marginBottom: '16px'
               }}>
                 TOP 10 BATCHES
@@ -866,38 +772,37 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
               }}>
                 {lotStats.slice(0, 10).map(lot => (
                   <div key={lot.lotNumber} style={{
-                    border: '2px solid var(--paper)',
+                    border: '2px solid #000000',
                     padding: '10px',
-                    backgroundColor: 'rgba(227, 224, 220, 0.03)'
+                    backgroundColor: '#FFFFFF'
                   }}>
                     <div style={{
                       fontSize: '10px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: 'var(--paper)',
-                      marginBottom: '6px',
-                      fontFamily: 'Monaco, monospace'
+                      letterSpacing: '1px',
+                      color: '#000000',
+                      marginBottom: '6px'
                     }}>
                       {lot.lotNumber}
                     </div>
                     <div style={{
                       fontSize: '18px',
                       fontWeight: 'bold',
-                      color: lot.successRate >= 70 ? 'var(--color-green)' : 
-                             lot.successRate >= 50 ? 'var(--color-orange)' : 'var(--color-red)'
+                      color: lot.successRate >= 70 ? '#00AA00' : 
+                             lot.successRate >= 50 ? '#FF8800' : '#CC0000'
                     }}>
                       {lot.successRate}%
                     </div>
                     <div style={{
                       fontSize: '9px',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: 'var(--paper)',
-                      opacity: 0.7,
+                      color: '#666666',
                       marginTop: '4px'
                     }}>
-                      {lot.successful}/{lot.total} sensors
+                      {lot.total > (lot.successful + lot.failed) 
+                        ? `${lot.successful}/${lot.successful + lot.failed} • ${lot.running} 🔄`
+                        : `${lot.successful}/${lot.total} sensors`}
                     </div>
                   </div>
                 ))}
@@ -907,19 +812,18 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
 
           {/* Sensors Table */}
           <div style={{
-            border: '3px solid var(--paper)',
-            backgroundColor: 'rgba(227, 224, 220, 0.05)',
+            border: '3px solid #000000',
+            backgroundColor: '#F5F5F5',
             overflowX: 'auto'
           }}>
             <table style={{
               width: '100%',
               borderCollapse: 'collapse',
-              fontFamily: 'Courier New, monospace',
               fontSize: '12px'
             }}>
               <thead style={{
-                backgroundColor: 'var(--ink)',
-                color: 'var(--paper)'
+                backgroundColor: '#000000',
+                color: '#FFFFFF'
               }}>
                 <tr>
                   <th 
@@ -930,9 +834,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
+                      letterSpacing: '1px',
                       cursor: 'pointer',
-                      borderRight: '1px solid var(--paper)'
+                      borderRight: '1px solid #FFFFFF'
                     }}
                   >
                     #ID {sortColumn === 'chronological_index' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -944,8 +848,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      borderRight: '1px solid var(--paper)',
+                      letterSpacing: '1px',
+                      borderRight: '1px solid #FFFFFF',
                       width: '80px'
                     }}
                   >
@@ -959,9 +863,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
+                      letterSpacing: '1px',
                       cursor: 'pointer',
-                      borderRight: '1px solid var(--paper)'
+                      borderRight: '1px solid #FFFFFF'
                     }}
                   >
                     START {sortColumn === 'start_date' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -974,9 +878,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
+                      letterSpacing: '1px',
                       cursor: 'pointer',
-                      borderRight: '1px solid var(--paper)'
+                      borderRight: '1px solid #FFFFFF'
                     }}
                   >
                     EINDE {sortColumn === 'end_date' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -990,9 +894,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
+                      letterSpacing: '1px',
                       cursor: 'pointer',
-                      borderRight: '1px solid var(--paper)'
+                      borderRight: '1px solid #FFFFFF'
                     }}
                   >
                     DUUR {sortColumn === 'duration_days' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -1006,9 +910,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
+                      letterSpacing: '1px',
                       cursor: 'pointer',
-                      borderRight: '1px solid var(--paper)'
+                      borderRight: '1px solid #FFFFFF'
                     }}
                   >
                     HW {sortColumn === 'hw_version' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -1020,8 +924,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      borderRight: '1px solid var(--paper)'
+                      letterSpacing: '1px',
+                      borderRight: '1px solid #FFFFFF'
                     }}
                   >
                     BATCH
@@ -1034,9 +938,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
+                      letterSpacing: '1px',
                       cursor: 'pointer',
-                      borderRight: '1px solid var(--paper)'
+                      borderRight: '1px solid #FFFFFF'
                     }}
                   >
                     STATUS {sortColumn === 'success' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -1048,7 +952,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
+                      letterSpacing: '1px',
                       width: '80px'
                     }}
                   >
@@ -1060,12 +964,13 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
               <tbody>
                 {sortedSensors.map(sensor => (
                   <tr key={sensor.sensor_id} style={{
-                    borderBottom: '1px solid var(--grid-line)'
+                    borderBottom: '1px solid #CCCCCC',
+                    backgroundColor: '#FFFFFF'
                   }}>
                     <td style={{
                       padding: '10px 12px',
-                      borderRight: '1px solid var(--grid-line)',
-                      color: 'var(--paper)',
+                      borderRight: '1px solid #CCCCCC',
+                      color: '#000000',
                       fontWeight: 'bold'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1080,12 +985,11 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                                 style={{
                                   fontSize: '9px',
                                   padding: '2px 6px',
-                                  borderRadius: '2px',
                                   fontWeight: 'bold',
-                                  letterSpacing: '0.05em',
-                                  backgroundColor: '#2563eb',
+                                  letterSpacing: '0.5px',
+                                  backgroundColor: '#000000',
                                   color: '#FFFFFF',
-                                  border: '1px solid #1d4ed8'
+                                  border: '1px solid #000000'
                                 }}
                               >
                                 BATCH
@@ -1095,18 +999,14 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                           return null;
                         })()}
                         <span 
-                          className={`
-                            px-2 py-1 text-xs uppercase font-mono
-                            ${sensor.storageSource === 'localStorage'
-                              ? 'bg-green-900 text-green-100 border border-green-500'
-                              : 'bg-gray-800 text-gray-400 border border-gray-600'}
-                          `}
                           style={{
                             fontSize: '9px',
                             padding: '2px 6px',
-                            borderRadius: '2px',
                             fontWeight: 'bold',
-                            letterSpacing: '0.05em'
+                            letterSpacing: '0.5px',
+                            backgroundColor: sensor.storageSource === 'localStorage' ? '#00AA00' : '#666666',
+                            color: '#FFFFFF',
+                            border: '1px solid ' + (sensor.storageSource === 'localStorage' ? '#00AA00' : '#666666')
                           }}
                           title={sensor.storageSource === 'localStorage' 
                             ? 'Recent sensor - can be edited/deleted' 
@@ -1118,13 +1018,13 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                     </td>
                     <td style={{
                       padding: '10px 12px',
-                      borderRight: '1px solid var(--grid-line)',
+                      borderRight: '1px solid #CCCCCC',
                       textAlign: 'center',
                       fontSize: '18px',
                       cursor: sensor.isEditable ? 'pointer' : 'not-allowed',
                       backgroundColor: sensor.is_manually_locked 
-                        ? 'rgba(255, 0, 0, 0.1)' 
-                        : 'rgba(0, 255, 0, 0.05)',
+                        ? '#FFEEEE' 
+                        : '#EEFFEE',
                       opacity: sensor.isEditable ? 1 : 0.5
                     }}
                     onClick={sensor.isEditable ? () => {
@@ -1135,9 +1035,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                       } else {
                         // Show enhanced error message with detail if available
                         if (result.detail) {
-                          alert(`âŒ ${result.message}\n\n${result.detail}`);
+                          alert(`❌ ${result.message}\n\n${result.detail}`);
                         } else {
-                          alert(`âŒ Fout: ${result.message}`);
+                          alert(`❌ Fout: ${result.message}`);
                         }
                       }
                     } : undefined}
@@ -1153,8 +1053,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                     </td>
                     <td style={{
                       padding: '10px 12px',
-                      borderRight: '1px solid var(--grid-line)',
-                      color: 'var(--paper)'
+                      borderRight: '1px solid #CCCCCC',
+                      color: '#000000'
                     }}>
                       {sensor.start_date ? new Date(sensor.start_date).toLocaleString('nl-NL', {
                         day: '2-digit',
@@ -1166,8 +1066,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                     </td>
                     <td style={{
                       padding: '10px 12px',
-                      borderRight: '1px solid var(--grid-line)',
-                      color: 'var(--paper)'
+                      borderRight: '1px solid #CCCCCC',
+                      color: '#000000'
                     }}>
                       {sensor.end_date ? new Date(sensor.end_date).toLocaleString('nl-NL', {
                         day: '2-digit',
@@ -1179,17 +1079,17 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                     </td>
                     <td style={{
                       padding: '10px 12px',
-                      borderRight: '1px solid var(--grid-line)',
+                      borderRight: '1px solid #CCCCCC',
                       color: (() => {
                         // Recalculate duration from timestamps (don't trust DB)
-                        if (!sensor.start_date || !sensor.end_date) return 'var(--paper)';
+                        if (!sensor.start_date || !sensor.end_date) return '#000000';
                         const startMs = new Date(sensor.start_date).getTime();
                         const endMs = new Date(sensor.end_date).getTime();
                         const durationDays = (endMs - startMs) / (1000 * 60 * 60 * 24);
                         
-                        return durationDays >= 6.75 ? 'var(--color-green)' :
-                               durationDays >= 6 ? 'var(--color-orange)' :
-                               'var(--color-red)';
+                        return durationDays >= 6.75 ? '#00AA00' :
+                               durationDays >= 6 ? '#FF8800' :
+                               '#CC0000';
                       })(),
                       fontWeight: 'bold'
                     }}>
@@ -1205,21 +1105,20 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                     {/* LOT cell hidden - lot_number now shown in BATCH cell */}
                     <td style={{
                       padding: '10px 12px',
-                      borderRight: '1px solid var(--grid-line)',
-                      color: 'var(--paper)',
+                      borderRight: '1px solid #CCCCCC',
+                      color: '#000000',
                       fontWeight: 'bold'
                     }}>
                       {sensor.hw_version || '-'}
                     </td>
                     <td style={{
                       padding: '10px 12px',
-                      borderRight: '1px solid var(--grid-line)'
+                      borderRight: '1px solid #CCCCCC'
                     }}>
                       {/* Show lot_number as main value */}
                       <div style={{
-                        fontFamily: 'Monaco, monospace',
                         fontWeight: 'bold',
-                        color: 'var(--paper)',
+                        color: '#000000',
                         fontSize: '12px',
                         marginBottom: '4px'
                       }}>
@@ -1236,13 +1135,11 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                         style={{
                           width: '100%',
                           padding: '4px',
-                          border: '1px solid var(--paper)',
-                          backgroundColor: 'rgba(227, 224, 220, 0.05)',
-                          color: 'var(--paper)',
+                          border: '1px solid #000000',
+                          backgroundColor: '#FFFFFF',
+                          color: '#000000',
                           fontSize: '9px',
-                          fontFamily: 'Monaco, monospace',
-                          cursor: 'pointer',
-                          opacity: 0.6
+                          cursor: 'pointer'
                         }}
                         title="Optional: Assign to stock batch"
                       >
@@ -1256,8 +1153,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                     </td>
                     <td style={{
                       padding: '10px 12px',
-                      borderRight: '1px solid var(--grid-line)',
-                      color: 'var(--paper)'
+                      borderRight: '1px solid #CCCCCC',
+                      color: '#000000'
                     }}>
                       {(() => {
                         // Recalculate duration from timestamps (don't trust DB)
@@ -1271,16 +1168,16 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                         let statusColor, statusBg, statusText;
                         
                         if (days >= 6.75) {
-                          statusColor = 'var(--color-green)';
-                          statusBg = 'var(--color-green)';
+                          statusColor = '#00AA00';
+                          statusBg = '#00AA00';
                           statusText = '✓ OK';
                         } else if (days >= 6.0) {
-                          statusColor = 'var(--color-orange)';
-                          statusBg = 'var(--color-orange)';
+                          statusColor = '#FF8800';
+                          statusBg = '#FF8800';
                           statusText = '⚠ SHORT';
                         } else {
-                          statusColor = 'var(--color-red)';
-                          statusBg = 'var(--color-red)';
+                          statusColor = '#CC0000';
+                          statusBg = '#CC0000';
                           statusText = '✗ FAIL';
                         }
                         
@@ -1291,10 +1188,10 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                             fontSize: '10px',
                             fontWeight: 'bold',
                             textTransform: 'uppercase',
-                            letterSpacing: '0.1em',
+                            letterSpacing: '1px',
                             border: `2px solid ${statusColor}`,
                             backgroundColor: statusBg,
-                            color: 'var(--paper)'
+                            color: '#FFFFFF'
                           }}>
                             {statusText}
                           </span>
@@ -1343,9 +1240,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                             } else {
                               // Show enhanced error message with detail if available
                               if (result.detail) {
-                                alert(`âŒ ${result.message}\n\n${result.detail}`);
+                                alert(`❌ ${result.message}\n\n${result.detail}`);
                               } else {
-                                alert(`âŒ Fout: ${result.message}`);
+                                alert(`❌ Fout: ${result.message}`);
                               }
                             }
                           }
@@ -1356,12 +1253,11 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
                           fontSize: '10px',
                           fontWeight: 'bold',
                           textTransform: 'uppercase',
-                          letterSpacing: '0.1em',
-                          border: '2px solid var(--color-red)',
-                          backgroundColor: sensor.is_manually_locked ? 'rgba(150, 150, 150, 0.3)' : 'transparent',
-                          color: sensor.is_manually_locked ? 'rgba(227, 224, 220, 0.5)' : 'var(--color-red)',
-                          cursor: sensor.is_manually_locked ? 'not-allowed' : 'pointer',
-                          fontFamily: 'Monaco, monospace'
+                          letterSpacing: '1px',
+                          border: '2px solid #CC0000',
+                          backgroundColor: sensor.is_manually_locked ? '#CCCCCC' : 'transparent',
+                          color: sensor.is_manually_locked ? '#666666' : '#CC0000',
+                          cursor: sensor.is_manually_locked ? 'not-allowed' : 'pointer'
                         }}
                       >
                         {sensor.is_manually_locked ? '🔒 DEL' : '✗ DEL'}
@@ -1373,7 +1269,6 @@ export default function SensorHistoryPanel({ isOpen, onClose, sensors }) {
             </table>
           </div>
         </div>
-      </div>
     </div>
   );
 }

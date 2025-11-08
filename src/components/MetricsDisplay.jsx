@@ -2,6 +2,7 @@ import React from 'react';
 import { TrendingUp, TrendingDown, Activity, Zap } from 'lucide-react';
 import Tooltip from './Tooltip';
 import { getMetricTooltip } from '../utils/metricDefinitions';
+import TIRBar from './TIRBar';
 
 /**
  * MetricsDisplay - Clinical Dashboard Layout
@@ -60,7 +61,7 @@ export default function MetricsDisplay({ metrics, tddData }) {
         marginBottom: '2rem'
       }}>
         
-        {/* LEFT ZONE - Dark background (TIR + Mean±SD) */}
+        {/* LEFT ZONE - TIR + Mean (stacked) */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -71,7 +72,6 @@ export default function MetricsDisplay({ metrics, tddData }) {
             className="card-hero" 
             style={{ 
               padding: '2rem',
-              minHeight: '180px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -122,77 +122,91 @@ export default function MetricsDisplay({ metrics, tddData }) {
             subtitle={`± ${safeFormat(metrics.sd, 0)} SD`}
             status={getStatus('mean', metrics.mean)}
             metricId="mean"
+            compact={true}
           />
         </div>
 
-        {/* RIGHT ZONE - White background (CV, GMI, TDD in row) */}
+        {/* RIGHT ZONE - CV/GMI/TDD + TIR Bar (stacked) */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          display: 'flex',
+          flexDirection: 'column',
           gap: '1rem'
         }}>
-          {/* CV */}
-          <PrimaryMetricCard
-            icon={Zap}
-            label="CV"
-            value={safeFormat(metrics.cv, 1)}
-            unit="%"
-            subtitle="Target ≤36%"
-            status={getStatus('cv', metrics.cv)}
-            metricId="cv"
-          />
+          {/* Top row: CV, GMI, TDD */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '1rem'
+          }}>
+            {/* CV */}
+            <PrimaryMetricCard
+              icon={Zap}
+              label="CV"
+              value={safeFormat(metrics.cv, 1)}
+              unit="%"
+              subtitle="Target ≤36%"
+              status={getStatus('cv', metrics.cv)}
+              metricId="cv"
+              compact={true}
+            />
 
-          {/* GMI */}
-          <PrimaryMetricCard
-            icon={Activity}
-            label="GMI"
-            value={safeFormat(metrics.gmi, 1)}
-            unit="%"
-            subtitle={`~${safeFormat(metrics.gmi, 1)}% HbA1c`}
-            status={getStatus('gmi', metrics.gmi)}
-            metricId="gmi"
-          />
-
-          {/* TDD - Total Daily Dose */}
-          {tddData ? (
+            {/* GMI */}
             <PrimaryMetricCard
               icon={Activity}
-              label="TDD"
-              value={safeFormat(tddData.meanTDD, 1)}
-              unit="E"
-              subtitle={`± ${safeFormat(tddData.sdTDD, 1)} SD`}
-              status="neutral"
-              metricId="tdd"
+              label="GMI"
+              value={safeFormat(metrics.gmi, 1)}
+              unit="%"
+              subtitle={`~${safeFormat(metrics.gmi, 1)}% HbA1c`}
+              status={getStatus('gmi', metrics.gmi)}
+              metricId="gmi"
+              compact={true}
             />
-          ) : (
-            <div 
-              className="card" 
-              style={{ 
-                padding: '1.5rem',
-                minHeight: '180px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                opacity: 0.5
-              }}
-            >
-              <Tooltip text={getMetricTooltip('tdd')}>
-                <span style={{ 
-                  fontSize: '0.875rem', 
-                  fontWeight: 700, 
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: 'var(--text-secondary)'
-                }}>
-                  TDD
-                </span>
-              </Tooltip>
-              <div style={{ fontSize: '0.75rem', marginTop: '1rem', color: 'var(--text-secondary)' }}>
-                No insulin data
+
+            {/* TDD - Total Daily Dose */}
+            {tddData ? (
+              <PrimaryMetricCard
+                icon={Activity}
+                label="TDD"
+                value={safeFormat(tddData.meanTDD, 1)}
+                unit="E"
+                subtitle={`± ${safeFormat(tddData.sdTDD, 1)} SD`}
+                status="neutral"
+                metricId="tdd"
+                compact={true}
+              />
+            ) : (
+              <div 
+                className="card" 
+                style={{ 
+                  padding: '1rem',
+                  minHeight: '90px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  opacity: 0.5
+                }}
+              >
+                <Tooltip text={getMetricTooltip('tdd')}>
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    fontWeight: 700, 
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    TDD
+                  </span>
+                </Tooltip>
+                <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
+                  No insulin data
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Bottom row: TIR Bar */}
+          <TIRBar metrics={metrics} />
         </div>
       </div>
 
@@ -289,8 +303,9 @@ export default function MetricsDisplay({ metrics, tddData }) {
 /**
  * PrimaryMetricCard - Hero Grid Metrics (Mean, CV, GMI)
  * Large text, high contrast, prominent display
+ * @param {boolean} compact - If true, reduces height and font sizes for tighter layout
  */
-function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 'neutral', metricId }) {
+function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 'neutral', metricId, compact = false }) {
   const getStatusColor = () => {
     switch(status) {
       case 'good': return 'var(--text-primary)';
@@ -304,8 +319,8 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
     <div 
       className="card"
       style={{
-        padding: '1.5rem',
-        minHeight: '180px',
+        padding: compact ? '1rem' : '1.5rem',
+        minHeight: compact ? '90px' : '180px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between'
@@ -313,16 +328,16 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
     >
       {/* Icon + Label */}
       <Tooltip text={metricId ? getMetricTooltip(metricId) : ''}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: compact ? '0.5rem' : '1rem' }}>
           <Icon style={{ 
-            width: '20px', 
-            height: '20px',
+            width: compact ? '16px' : '20px', 
+            height: compact ? '16px' : '20px',
             color: status === 'danger' ? 'var(--color-red)' : 
                    status === 'warning' ? 'var(--color-yellow)' : 
                    'var(--text-primary)'
           }} />
           <span style={{ 
-            fontSize: '0.875rem',
+            fontSize: compact ? '0.75rem' : '0.875rem',
             fontWeight: 700,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
@@ -336,7 +351,7 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
       {/* Value */}
       <div>
         <div style={{ 
-          fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
+          fontSize: compact ? 'clamp(1.75rem, 4vw, 2.25rem)' : 'clamp(2.5rem, 5vw, 3.5rem)',
           fontWeight: 700,
           letterSpacing: '-0.02em',
           color: getStatusColor(),
@@ -345,13 +360,13 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
           fontVariantNumeric: 'tabular-nums'
         }}>
           {value}
-          <span style={{ fontSize: '1.5rem', marginLeft: '0.25rem', opacity: 0.7 }}>{unit}</span>
+          <span style={{ fontSize: compact ? '1rem' : '1.5rem', marginLeft: '0.25rem', opacity: 0.7 }}>{unit}</span>
         </div>
 
         {/* Subtitle */}
         {subtitle && (
           <div style={{ 
-            fontSize: '1rem',
+            fontSize: compact ? '0.65rem' : '1rem',
             fontWeight: 600,
             color: 'var(--border-tertiary)',
             marginTop: '0.25rem'

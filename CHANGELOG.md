@@ -6,6 +6,60 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v3.9.1 - UI Polish & Collapsible Panels] - 2025-11-08
+
+### 🎨 UI Refinements
+**Session**: 19  
+**Goal**: Compact spacing, collapsible import/export panels, consistent styling
+
+### ✅ Changes
+
+#### Bug Fixes
+**SensorHistoryPanel**:
+- ✅ Fixed unterminated regular expression error (extra `</div>` tag removed)
+- ✅ Fixed 5 standalone `/>` tags that triggered esbuild parser errors
+- ✅ Removed zombie Vite server processes (cleaned up ports 3001)
+
+#### UI Improvements
+**Spacing & Layout**:
+- ✅ Reduced main content padding: 2rem → 1rem vertical (more compact)
+- ✅ Removed top margin from ImportPanel and ExportPanel (0 gap with tab bar)
+
+**Collapsible Panels**:
+- ✅ ImportPanel now collapsible with toggle header "Import Options"
+- ✅ ExportPanel now collapsible with toggle header "Export Options"
+- ✅ Collapse indicators: ▼ (collapsed) / ▲ (expanded)
+- ✅ Compact padding when collapsed (0.5rem vs 1rem)
+
+**Consistent Styling**:
+- ✅ ExportPanel redesigned to match ImportPanel exactly:
+  - Changed from 2-column to 3-column grid
+  - Added flexDirection column layout for buttons
+  - Identical button dimensions and spacing
+- ✅ Removed ALL emoji's from both panels (cleaner brutalist aesthetic)
+- ✅ Kept success checkmarks (✓) for data loaded indicators
+
+#### Technical Details
+**Import Panel Buttons** (no emoji's):
+- "Upload CSV(s)" (was 📄)
+- "ProTime PDFs" (was 📋)
+- "Import JSON" (was 💾)
+
+**Export Panel Buttons** (no emoji's):
+- "AGP+ Profile (HTML)" (was 📊)
+- "Day Profiles (HTML)" (was 📅)
+- "Export Database (JSON)" (was 💾)
+- "Import Database (JSON)" (was 📥)
+- "View Sensor History" (was 🔍 with →)
+
+### 🎯 Impact
+- More compact UI with less wasted vertical space
+- Consistent panel behavior (both collapsible)
+- Cleaner brutalist aesthetic without emoji clutter
+- Identical styling across import/export panels
+
+---
+
 ## [v3.9.0 - UI Refactor Complete] - 2025-11-08
 
 ### 🎉 Panel-Based Architecture & Polish

@@ -11,7 +11,7 @@ import React from 'react';
  * Design: Massive borders, no gradients, printed feel
  * 
  * @param {Object} props.metrics - Calculated metrics
- * @version 2.1.1 BRUTALIST
+ * @version 2.2.0 BRUTALIST - Compact version for metrics grid
  */
 export default function TIRBar({ metrics }) {
   const tbr = parseFloat(metrics.tbr) || 0;
@@ -22,16 +22,16 @@ export default function TIRBar({ metrics }) {
     <div 
       className="card" 
       style={{ 
-        padding: '1.5rem',
-        marginBottom: 'clamp(16px, 3vh, 32px)'
+        padding: '1rem',
+        marginBottom: '0'
       }}
     >
       <h4 style={{
-        fontSize: '0.875rem',
+        fontSize: '0.75rem',
         fontWeight: 700,
         letterSpacing: '0.1em',
         textTransform: 'uppercase',
-        marginBottom: '1rem',
+        marginBottom: '0.75rem',
         color: 'var(--text-primary)'
       }}>
         Time in Range Distribution
@@ -41,7 +41,7 @@ export default function TIRBar({ metrics }) {
       <div 
         style={{
           display: 'flex',
-          height: '48px',
+          height: '36px',
           width: '100%',
           border: '3px solid var(--border-primary)',
           borderRadius: '0',
@@ -58,11 +58,11 @@ export default function TIRBar({ metrics }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',  // ✨ WHITE TEXT for max contrast
-              fontSize: '13px',  // ✨ Consistent with TAR
-              fontWeight: 900,   // ✨ Extra bold
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: 900,
               letterSpacing: '0.05em',
-              textShadow: '0 1px 2px rgba(0,0,0,0.4)',  // ✨ Shadow for readability
+              textShadow: '0 1px 2px rgba(0,0,0,0.4)',
               flexShrink: 0,
               minWidth: '2px'
             }}
@@ -79,11 +79,11 @@ export default function TIRBar({ metrics }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#ffffff',  // ✨ WHITE TEXT for max contrast on dark green
-            fontSize: '14px',  // ✨ Slightly bigger for better readability
-            fontWeight: 900,   // ✨ Extra bold for punch
+            color: '#ffffff',
+            fontSize: '12px',
+            fontWeight: 900,
             letterSpacing: '0.05em',
-            textShadow: '0 1px 2px rgba(0,0,0,0.5)',  // ✨ Subtle shadow for depth
+            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
             flexShrink: 0,
             minWidth: '2px'
           }}
@@ -100,11 +100,11 @@ export default function TIRBar({ metrics }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',  // ✨ WHITE TEXT for max contrast
-              fontSize: '13px',  // ✨ Slightly bigger
-              fontWeight: 900,   // ✨ Extra bold
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: 900,
               letterSpacing: '0.05em',
-              textShadow: '0 1px 2px rgba(0,0,0,0.4)',  // ✨ Shadow for readability
+              textShadow: '0 1px 2px rgba(0,0,0,0.4)',
               flexShrink: 0,
               minWidth: '2px'
             }}
@@ -119,17 +119,17 @@ export default function TIRBar({ metrics }) {
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          marginTop: '1rem',
-          fontSize: '0.75rem',
+          marginTop: '0.75rem',
+          fontSize: '0.65rem',
           fontWeight: 700,
           letterSpacing: '0.05em',
           textTransform: 'uppercase',
           color: 'var(--text-secondary)'
         }}
       >
-        <span>TBR &lt;70 mg/dL</span>
-        <span>TIR 70-180 mg/dL (Target ≥70%)</span>
-        <span>TAR &gt;180 mg/dL</span>
+        <span>TBR &lt;70</span>
+        <span>TIR 70-180 (Target ≥70%)</span>
+        <span>TAR &gt;180</span>
       </div>
     </div>
   );

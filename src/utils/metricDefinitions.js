@@ -5,6 +5,14 @@
  * Used in on-screen tooltips and HTML export annotations.
  * 
  * Format: { label, unit, description, target?, interpretation? }
+ * 
+ * SCIENTIFIC REFERENCES:
+ * - TIR/TAR/TBR: Battelino T et al., Diabetes Care 2019;42(8):1593-1603 (ATTD Consensus)
+ * - GMI: Beck RW et al., Diabetes Care 2019;42(4):659-666
+ * - CV: Monnier L et al., Diabetes Care 2008;31(11):2116-2119
+ * - MAGE: Service FJ et al., Diabetes 1970;19(9):644-655
+ * - MODD: Molnar GD et al., Diabetologia 1972;8:342-348
+ * - Mean/SD: ADA Standards of Care 2023
  */
 
 export const METRIC_DEFINITIONS = {

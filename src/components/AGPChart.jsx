@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { CONFIG } from '../core/metrics-engine.js';
-import TIRBar from './TIRBar.jsx';
 
 /**
  * Calculate dynamic Y-axis range for AGP chart
@@ -148,9 +147,6 @@ export default function AGPChart({
           24-hour glucose pattern
         </div>
       </div>
-
-      {/* TIR Bar - only if metrics provided */}
-      {metrics && <TIRBar metrics={metrics} />}
 
       {/* SVG Chart with Legend Overlay */}
       <div className="card bg-white border-gray-300 overflow-hidden" style={{ position: 'relative' }}>
