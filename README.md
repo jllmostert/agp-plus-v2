@@ -2,8 +2,9 @@
 
 **Professional diabetes data analysis tool following ADA/ATTD clinical guidelines**
 
-**Current Version:** v3.9.1 (Scientific References + UI Polish)  
-**Status:** ✅ Production-ready with validated MAGE/MODD algorithms
+**Current Version:** v4.0.1 (Color System Integration)  
+**Status:** ✅ Production-ready with validated MAGE/MODD algorithms  
+**Live URL:** 🌐 https://agp.jenana.eu (GitHub Pages deployment)
 
 ---
 
@@ -23,6 +24,7 @@ Built by a type 1 diabetic who got tired of waiting for healthcare software to c
 - **Sensor intelligence**: Automatic detection of sensor and cartridge changes from device logs
 - **Export everything**: HTML reports that look like they came from a diabetes clinic, not a spreadsheet
 - **Backup & restore**: Complete JSON export/import system—backup your entire database, restore on any device
+- **100% Client-Side**: All data stays in your browser (localStorage + IndexedDB), nothing sent to servers
 
 **Clinical standards baked in:**
 - ADA/ATTD 2025 consensus guidelines (we read the boring PDFs so you don't have to)
@@ -31,6 +33,19 @@ Built by a type 1 diabetic who got tired of waiting for healthcare software to c
 - MAGE and MODD variability metrics (for when CV alone doesn't tell the whole story)
 
 No cloud uploads, no subscriptions, no "premium features." Just your data, your browser, and metrics that would make a diabetes researcher nerd out.
+
+---
+
+## 🌐 Production Deployment
+
+**Live URL**: https://agp.jenana.eu
+
+**Automatic Deployment**:
+- Every push to `main` branch triggers GitHub Actions
+- Builds and deploys to GitHub Pages automatically
+- Live within 3-5 minutes after push
+
+**See**: `docs/DEPLOYMENT.md` for complete setup instructions
 
 ---
 

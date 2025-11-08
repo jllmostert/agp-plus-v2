@@ -11,11 +11,32 @@ const packageJson = JSON.parse(
 );
 
 export default {
+  // Base URL for custom domain
+  base: '/',
+  
+  // Build output
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    // Generate source maps for debugging
+    sourcemap: false,
+    // Optimize chunks
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'pdf-vendor': ['pdfjs-dist'],
+        }
+      }
+    }
+  },
+  
   server: {
     port: 3001,
     open: true,
     host: true,
   },
+  
   define: {
     // Inject version at build time (fallback to package.json if .env missing)
     '__APP_VERSION__': JSON.stringify(process.env.VITE_APP_VERSION || packageJson.version),
