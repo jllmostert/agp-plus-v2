@@ -2,8 +2,8 @@
 
 **Professional diabetes data analysis tool following ADA/ATTD clinical guidelines**
 
-**Current Version:** v3.8.0 (Complete Backup/Restore)  
-**Status:** ✅ Production-ready with full database import/export
+**Current Version:** v3.9.1 (Scientific References + UI Polish)  
+**Status:** ✅ Production-ready with validated MAGE/MODD algorithms
 
 ---
 
@@ -192,18 +192,37 @@ Click **EXPORT** → **📥 Import Database (JSON)** to restore a backup:
 ### Time in Range (TIR)
 - **Target:** 70-180 mg/dL
 - **Goal:** >70% of time
+- **Reference:** Battelino T et al., *Diabetes Care* 2019;42(8):1593-1603
 
 ### Time Above Range (TAR)
 - **Level 1:** >180 mg/dL  
 - **Level 2:** >250 mg/dL
+- **Reference:** ATTD Consensus on CGM Metrics 2019
 
 ### Time Below Range (TBR)
 - **Level 1:** <70 mg/dL
 - **Level 2:** <54 mg/dL
+- **Reference:** ATTD Consensus on CGM Metrics 2019
 
 ### Glucose Management Indicator (GMI)
 - **Formula:** 3.31 + 0.02392 × [mean glucose]
 - **Correlates with:** HbA1c
+- **Reference:** Beck RW et al., *Diabetes Care* 2019;42(4):659-666
+
+### Coefficient of Variation (CV)
+- **Formula:** (SD / Mean) × 100
+- **Target:** ≤36%
+- **Reference:** Monnier L et al., *Diabetes Care* 2008;31(11):2116-2119
+
+### MAGE (Mean Amplitude of Glycemic Excursions)
+- **Measures:** Intra-day glucose variability
+- **Target:** <60 mg/dL
+- **Reference:** Service FJ et al., *Diabetes* 1970;19(9):644-655
+
+### MODD (Mean Of Daily Differences)
+- **Measures:** Day-to-day consistency
+- **Target:** <40 mg/dL
+- **Reference:** Molnar GD et al., *Diabetologia* 1972;8:342-348
 
 ---
 
@@ -342,12 +361,13 @@ MIT License - See LICENSE file for details
 
 See `CHANGELOG.md` for complete version history.
 
-**Current:** v3.0.0 (October 2025)
+**Current:** v3.9.1 (November 2025)
+- Scientific methodology references in footer
+- MAGE/MODD algorithm improvements (validated against GlyCulator)
+- Metrics grid layout optimization
+- Panel-based navigation system
+- Complete import/export symmetry
 - Master dataset architecture
-- Multi-upload support
-- Event detection system
-- Comparison features
-- Day profiles with device events
 
 ---
 
