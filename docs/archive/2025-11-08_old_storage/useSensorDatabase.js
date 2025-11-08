@@ -110,6 +110,20 @@ export function useSensorDatabase() {
         columns.forEach((col, index) => {
           sensor[col] = row[index];
         });
+        
+        // Recalculate status for sensors without end_date (active sensors)
+        // Fix: SQLite sensors with no end_date should be 'running', not 'fail'
+        if (!sensor.end_date || sensor.end_date === '') {
+          const now = new Date();
+          const startDate = new Date(sensor.start_date);
+          const daysRunning = (now - startDate) / (1000 * 60 * 60 * 24);
+          
+          sensor.status = 'running';
+          sensor.success = null; // Not determined yet
+          sensor.duration_days = daysRunning;
+          sensor.duration_hours = daysRunning * 24;
+        }
+        
         // Add storage source indicators for SQLite sensors
         sensor.storageSource = 'sqlite';
         sensor.isEditable = false;

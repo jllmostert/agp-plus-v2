@@ -5,7 +5,7 @@
  */
 
 import { getAllMonthBuckets } from './masterDatasetStorage';
-import { getSensorHistory } from './sensorStorage';
+import { getAllSensors } from './sensorStorage';
 import { getCartridgeHistory } from './eventStorage';
 import { getAllBatches, getAllAssignments } from './stockStorage';
 import { APP_VERSION, APP_FULL_NAME } from '../utils/version';
@@ -19,7 +19,7 @@ export async function exportMasterDataset() {
   try {
     // Fetch all data from IndexedDB
     const months = await getAllMonthBuckets();
-    const sensors = await getSensorHistory();
+    const sensors = getAllSensors(); // V4: synchronous
     const cartridges = await getCartridgeHistory();
     
     // Fetch ProTime workday data from V3 storage (IndexedDB)

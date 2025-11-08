@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Sensor #222</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #000; color: #0f0; }
+    pre { background: #111; padding: 10px; overflow-x: auto; }
+    .error { color: #f00; }
+    .success { color: #0f0; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Debug Sensor #222</h1>
+  <button onclick="checkSensor()">Check Sensor Status</button>
+  <div id="output"></div>
+
+  <script>
+    function checkSensor() {
+      const output = document.getElementById('output');
+      
+      // Get V4 storage
+      const v4Raw = localStorage.getItem('agp-sensors-v4');
+      if (!v4Raw) {
+        output.innerHTML = '<p class="error">❌ V4 storage not found!</p>';
+        return;
+      }
+
+      const v4Data = JSON.parse(v4Raw);
+      const sensor222 = v4Data.sensors.find(s => s.id === 'sensor_1762231226000');
+
+      if (!sensor222) {
+        output.innerHTML = '<p class="error">❌ Sensor #222 not found in V4 storage!</p>';
+        return;
+      }
+
+      // Calculate status manually
+      const now = new Date();
+      const startDate = new Date(sensor222.start_date);
+      const endDate = sensor222.end_date ? new Date(sensor222.end_date) : null;
+      const isDeleted = v4Data.deleted.includes(sensor222.id);
+      
+      let status = 'unknown';
+      let reason = '';
+
+      if (isDeleted) {
+        status = 'deleted';
+        reason = 'Sensor is in deleted list';
+      } else if (!endDate) {
+        // Running sensor
+        const daysRunning = (now - startDate) / (1000 * 60 * 60 * 24);
+        if (daysRunning > 7.5) {
+          status = 'overdue';
+          reason = `Running ${daysRunning.toFixed(1)} days (>7.5 days)`;
+        } else {
+          status = 'active';
+          reason = `Running ${daysRunning.toFixed(1)} days`;
+        }
+      } else {
+        // Ended sensor
+        const duration = (endDate - startDate) / (1000 * 60 * 60 * 24);
+        if (duration >= 6.75) {
+          status = 'success';
+          reason = `Ended after ${duration.toFixed(2)} days (≥6.75 days)`;
+        } else {
+          status = 'failed';
+          reason = `Ended after ${duration.toFixed(2)} days (<6.75 days)`;
+        }
+      }
+
+      output.innerHTML = `
+        <h2 class="success">✅ Sensor #222 Found</h2>
+        <pre>${JSON.stringify(sensor222, null, 2)}</pre>
+        
+        <h2>📊 Status Calculation</h2>
+        <table border="1" cellpadding="5" style="color: #0f0;">
+          <tr><td>ID:</td><td>${sensor222.id}</td></tr>
+          <tr><td>Sequence:</td><td>${sensor222.sequence}</td></tr>
+          <tr><td>Start Date:</td><td>${sensor222.start_date}</td></tr>
+          <tr><td>End Date:</td><td>${sensor222.end_date || 'null (RUNNING)'}</td></tr>
+          <tr><td>In Deleted List:</td><td>${isDeleted ? 'YES' : 'NO'}</td></tr>
+          <tr><td><strong>Calculated Status:</strong></td><td><strong>${status.toUpperCase()}</strong></td></tr>
+          <tr><td>Reason:</td><td>${reason}</td></tr>
+        </table>
+
+        <h2>🗑️ Deleted Sensors List</h2>
+        <pre>${JSON.stringify(v4Data.deleted, null, 2)}</pre>
+      `;
+    }
+  </script>
+</body>
+</html>

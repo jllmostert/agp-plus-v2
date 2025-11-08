@@ -33,7 +33,6 @@ import BatchAssignmentDialog from '../BatchAssignmentDialog';
  * State management is handled by parent (AGPGenerator).
  * 
  * @param {Object} props
- * @param {Array} props.sensors - Sensor data for history modal
  * @param {Object} props.patientInfo - Patient metadata
  * @param {Array} props.dayProfiles - Day profile data
  * @param {Object} props.dataStatus - Current data statistics
@@ -58,7 +57,6 @@ import BatchAssignmentDialog from '../BatchAssignmentDialog';
  */
 export default function ModalManager({
   // Data props
-  sensors,
   patientInfo,
   dayProfiles,
   dataStatus,
@@ -123,7 +121,6 @@ export default function ModalManager({
           isOpen={sensorHistoryOpen}
           onClose={onCloseSensorHistory}
           onOpenStock={onOpenStockFromHistory}
-          sensors={sensors}
         />,
         document.body
       )}

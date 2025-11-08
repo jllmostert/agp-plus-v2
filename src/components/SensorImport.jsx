@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { importSensorsFromFile } from '../storage/sensorImport.js';
-import { getSensorHistory } from '../storage/sensorStorage.js';
+import { getAllSensors } from '../storage/sensorStorage.js';
 
 export default function SensorImport() {
   const [importing, setImporting] = useState(false);
@@ -23,11 +23,11 @@ export default function SensorImport() {
   
   async function loadStats() {
     try {
-      const sensors = await getSensorHistory();
+      const sensors = getAllSensors();
       if (sensors && sensors.length > 0) {
         // Extract valid timestamps
         const validTimestamps = sensors
-          .map(s => s.start_timestamp || s.startTimestamp)
+          .map(s => s.start_date)
           .filter(t => t && !isNaN(new Date(t).getTime()))
           .map(t => new Date(t))
           .sort((a,b) => a - b);

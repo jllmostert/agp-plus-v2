@@ -11,7 +11,6 @@ import { useUploadStorage } from '../hooks/useUploadStorage';
 import { useDayProfiles } from '../hooks/useDayProfiles';
 import { useMasterDataset } from '../hooks/useMasterDataset';
 import { useDataStatus } from '../hooks/useDataStatus';
-import { useSensorDatabase } from '../hooks/useSensorDatabase';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
@@ -23,7 +22,6 @@ import { calculateTDDStatistics } from '../core/insulin-engine';
 
 // UI Components
 import FileUpload from './FileUpload';
-import SensorImport from './SensorImport';
 import PeriodSelector from './PeriodSelector';
 import SavedUploadsList from './SavedUploadsList';
 import { MigrationBanner } from './MigrationBanner';
@@ -65,36 +63,7 @@ export default function AGPGenerator() {
   // Data status monitoring (green/yellow/red light)
   const dataStatus = useDataStatus(masterDataset.allReadings);
   
-  // Sensor database (for history modal)
-  const { sensors, isLoading: sensorsLoading, error: sensorsError } = useSensorDatabase();
-  
-  // DEBUG: Log what AGPGenerator receives from hook
-  useEffect(() => {
-    debug.log('[AGPGenerator] Sensors from hook:', {
-      count: sensors?.length || 0,
-      isArray: Array.isArray(sensors),
-      firstSensor: sensors?.[0],
-      lastSensor: sensors?.[sensors?.length - 1]
-    });
-  }, [sensors]);
-  
-  // Priority 3.2: localStorage Clear Warning
-  useEffect(() => {
-    const STORAGE_KEY = 'agp-sensor-database';
-    const DELETED_SENSORS_KEY = 'agp-deleted-sensors';
-    
-    const hasDatabase = localStorage.getItem(STORAGE_KEY);
-    const hasDeletedList = localStorage.getItem(DELETED_SENSORS_KEY);
-    
-    if (!hasDatabase && !hasDeletedList) {
-      // Both missing → likely fresh start OR manual clear
-      console.warn(
-        '[AGPGenerator] localStorage appears cleared - deleted sensor history may be lost. ' +
-        'If this was intentional, you can ignore this warning. ' +
-        'If not, deleted sensors from SQLite may reappear on next sync.'
-      );
-    }
-  }, []); // Run once on mount
+  // Note: Sensors are managed by SensorHistoryPanel directly via useSensors hook
   
   // V2: Legacy CSV uploads (fallback during transition)
   const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
@@ -1550,6 +1519,7 @@ export default function AGPGenerator() {
               onProTimeLoad={handleProTimeLoad}
               onProTimeDelete={handleProTimeDelete}
               onImportDatabase={handleDatabaseImport}
+              onSensorRegistrationOpen={() => setSensorRegistrationOpen(true)}
             />
           )}
           
@@ -1567,7 +1537,6 @@ export default function AGPGenerator() {
               isOpen={true}
               onClose={() => setActivePanel('import')}
               onOpenStock={() => setShowStockModal(true)}
-              sensors={sensors}
             />
           )}
           
@@ -1623,7 +1592,6 @@ export default function AGPGenerator() {
             activeReadings={activeReadings}
             handleDayProfilesOpen={handleDayProfilesOpen}
             setShowStockModal={setShowStockModal}
-            sensors={sensors}
             sensorsLoading={sensorsLoading}
             sensorsError={sensorsError}
             setSensorHistoryOpen={setSensorHistoryOpen}
@@ -1712,7 +1680,6 @@ export default function AGPGenerator() {
         {/* Modal Manager - All modals rendered via portals */}
         <ModalManager
           // Data props
-          sensors={sensors}
           patientInfo={patientInfo}
           dayProfiles={dayProfiles}
           dataStatus={dataStatus}

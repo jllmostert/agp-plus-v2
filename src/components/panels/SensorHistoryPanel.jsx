@@ -1,1274 +1,528 @@
 /**
- * SensorHistoryPanel.jsx
- * Full-screen panel showing Guardian 4 sensor usage history
+ * SensorHistoryPanel.jsx - V4 CLEAN REWRITE
  * 
- * Features:
- * - Overall statistics (total, success rate, avg duration)
- * - HW version breakdown
- * - Lot number performance grid
- * - Filterable + sortable table
- * - Export to HTML/CSV
+ * Complete rewrite for V4 storage architecture.
+ * Uses sensorStorage.js API directly (no compatibility layers).
  * 
- * Design: Brutalist paper/ink theme matching day profiles modal
+ * Date: 2025-11-08
+ * Replaces: 1237-line V3 implementation
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { debug } from '../../utils/debug.js';
-import SensorRow from '../SensorRow.jsx';
-import { 
-  calculateOverallStats, 
-  calculateHWVersionStats,
-  calculateLotPerformance,
-  filterSensors,
-  sortSensors
-} from '../../core/sensor-history-engine';
-import { 
-  isSensorLocked, 
-  getSensorLockStatus,
-  deleteSensorWithLockCheck,
-  toggleSensorLock,
-  getManualLockStatus,
-  initializeManualLocks,
-  exportSensorsToJSON,
-  validateImportData,
-  importSensorsFromJSON,
-  getSensorDatabase
-} from '../../storage/sensorStorage.js';
-import { 
-  countDeletedSensors, 
-  cleanupOldDeletedSensorsDB 
-} from '../../storage/deletedSensorsDB.js';
-import {
-  getAllBatches,
-  getAssignmentForSensor,
-  assignSensorToBatch,
-  unassignSensor
-} from '../../storage/stockStorage.js';
+import React, { useState, useEffect, useMemo } from 'react';
+import * as sensorStorage from '../../storage/sensorStorage.js';
 
-export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock, sensors }) {
-  // Initialize manual locks on first render
-  useEffect(() => {
-    if (isOpen) {
-      const result = initializeManualLocks();
-      debug.log('[SensorHistoryPanel] Manual locks initialized:', result);
-    }
-  }, [isOpen]);
-
-  // Load deleted sensors count when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      loadDeletedCount();
-    }
-  }, [isOpen]);
-
-  // Load deleted sensors count
-  const loadDeletedCount = async () => {
-    try {
-      const counts = await countDeletedSensors();
-      setDeletedCount(counts);
-      debug.log('[SensorHistoryPanel] Deleted sensors count:', counts);
-    } catch (err) {
-      console.error('[SensorHistoryPanel] Error loading deleted count:', err);
-      setDeletedCount({ totalCount: 0, oldCount: 0, recentCount: 0 });
-    }
-  };
-
-  // Handle cleanup of old deleted sensors
-  const handleCleanupDeleted = async () => {
-    if (!deletedCount || deletedCount.oldCount === 0) {
-      alert('Geen oude verwijderde sensors om op te ruimen.\n\nAlle sensors zijn jonger dan 90 dagen.');
-      return;
-    }
-
-    if (confirm(
-      `Oude verwijderde sensors opruimen?\n\n` +
-      `Dit verwijdert ${deletedCount.oldCount} sensor(s) ouder dan 90 dagen.\n` +
-      `${deletedCount.recentCount} recente sensor(s) blijven behouden.\n\n` +
-      `⚠️ Deze actie kan niet ongedaan worden gemaakt.`
-    )) {
-      try {
-        const result = await cleanupOldDeletedSensorsDB();
-        alert(
-          `✓ Opruimen voltooid!\n\n` +
-          `${result.removed} oude sensor(s) verwijderd\n` +
-          `${result.remaining} sensor(s) behouden`
-        );
-        // Reload count
-        await loadDeletedCount();
-      } catch (err) {
-        console.error('[SensorHistoryPanel] Error during cleanup:', err);
-        alert(`❌ Fout tijdens opruimen: ${err.message}`);
-      }
-    }
-  };
-
-  // Handle export of sensor database
-  const handleExport = async () => {
-    try {
-      const result = await exportSensorsToJSON();
-      
-      if (!result.success) {
-        alert(`❌ Export mislukt: ${result.error}`);
-        return;
-      }
-
-      // Create blob and trigger download
-      const blob = new Blob([JSON.stringify(result.data, null, 2)], { 
-        type: 'application/json' 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = result.filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      console.log('[SensorHistoryPanel] Export successful:', result.filename);
-    } catch (err) {
-      console.error('[SensorHistoryPanel] Export failed:', err);
-      alert(`❌ Export mislukt: ${err.message}`);
-    }
-  };
-
-  // Handle import file selection
-  const handleFileSelect = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-      // Read file
-      const text = await file.text();
-      const data = JSON.parse(text);
-
-      // Validate
-      const errors = validateImportData(data);
-      if (errors) {
-        alert(`❌ Invalid JSON:\n\n${errors.join('\n')}`);
-        setImportFile(null);
-        setImportPreview(null);
-        return;
-      }
-
-      // Set preview
-      setImportFile(file);
-      setImportPreview(data);
-
-      console.log('[SensorHistoryPanel] Import file loaded:', {
-        filename: file.name,
-        sensors: data.sensors.length,
-        deleted: data.deletedSensors.length
-      });
-    } catch (err) {
-      console.error('[SensorHistoryPanel] File read error:', err);
-      alert(`❌ Kan bestand niet lezen:\n\n${err.message}`);
-      setImportFile(null);
-      setImportPreview(null);
-    }
-  };
-
-  // Handle import confirmation
-  const handleImportConfirm = async () => {
-    if (!importPreview) return;
-
-    // Confirm REPLACE mode
-    if (importOptions.mode === 'replace') {
-      // Get actual database count (not filtered list)
-      const db = getSensorDatabase();
-      const actualCount = db?.sensors?.length || 0;
-      
-      if (!confirm(
-        `⚠️ REPLACE MODE\n\n` +
-        `Dit wist alle huidige sensors en vervangt ze met de import.\n\n` +
-        `Huidige sensors: ${actualCount}\n` +
-        `Import sensors: ${importPreview.sensors.length}\n\n` +
-        `Weet je het zeker? Deze actie kan niet ongedaan worden gemaakt.`
-      )) {
-        return;
-      }
-    }
-
-    try {
-      const result = await importSensorsFromJSON(importPreview, importOptions);
-
-      if (!result.success) {
-        alert(`❌ Import mislukt:\n\n${result.error}`);
-        return;
-      }
-
-      // Verify import actually wrote data
-      const db = getSensorDatabase();
-      if (!db || !db.sensors || db.sensors.length === 0) {
-        console.error('[SensorHistoryPanel] Import reported success but no data found!');
-        alert(
-          `⚠️ Import anomalie!\n\n` +
-          `Import gerapporteerd als succesvol, maar geen data gevonden in database.\n\n` +
-          `Dit zou niet moeten gebeuren. Probeer opnieuw of neem contact op.`
-        );
-        return;
-      }
-
-      // Show success
-      alert(
-        `✅ Import succesvol!\n\n` +
-        `Mode: ${result.summary.mode}\n` +
-        `Sensors toegevoegd: ${result.summary.sensorsAdded}\n` +
-        `Sensors overgeslagen: ${result.summary.sensorsSkipped}\n` +
-        `Deleted sensors: ${result.summary.deletedAdded}\n\n` +
-        `Pagina wordt ververst...`
-      );
-
-      // Reload page to show new data
-      window.location.reload();
-    } catch (err) {
-      console.error('[SensorHistoryPanel] Import failed:', err);
-      alert(`❌ Import mislukt:\n\n${err.message}`);
-    }
-  };
-
-  // Debug: Check what we receive
-  debug.log('[SensorHistoryPanel] Received sensors:', {
-    count: sensors?.length || 0,
-    firstSensor: sensors?.[0],
-    lastSensor: sensors?.[sensors?.length - 1]
-  });
-
-  // Filters state
+export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
+  // State
+  const [sensors, setSensors] = useState([]);
+  const [batches, setBatches] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Filters
   const [filters, setFilters] = useState({
     startDate: null,
     endDate: null,
     lotNumber: null,
-    hwVersion: null,
-    successOnly: false,
-    failedOnly: false
+    statusFilter: 'all' // all, active, success, failed
   });
-
-  // Sort state
-  const [sortColumn, setSortColumn] = useState('start_date');
+  
+  // Sort
+  const [sortColumn, setSortColumn] = useState('sequence');
   const [sortDirection, setSortDirection] = useState('desc');
-  
-  // Refresh trigger for lock/delete operations (avoids page reload)
-  const [refreshKey, setRefreshKey] = useState(0);
-  
-  // Deleted sensors count (for cleanup button)
-  const [deletedCount, setDeletedCount] = useState(null);
 
-  // Import state
-  const [importFile, setImportFile] = useState(null);
-  const [importPreview, setImportPreview] = useState(null);
-  const [importOptions, setImportOptions] = useState({
-    importDeleted: true,
-    importLocks: true,
-    mode: 'merge'
-  });
-
-  // Stock batches state
-  const [batches, setBatches] = useState([]);
-
-  // Load batches on mount
+  // Load data
   useEffect(() => {
     if (isOpen) {
-      const allBatches = getAllBatches();
-      setBatches(allBatches);
+      setSensors(sensorStorage.getAllSensors());
+      setBatches(sensorStorage.getAllBatches());
     }
   }, [isOpen, refreshKey]);
 
-  // Add chronological index (1 = oldest = March 2022, 219 = newest)
-  // Also merge lock states into sensor objects for consistent rendering
-  const sensorsWithIndex = useMemo(() => {
-    if (!sensors || sensors.length === 0) return [];
-    
-    // Sort by start_date ascending (oldest first)
-    const sorted = [...sensors].sort((a, b) => {
-      const dateA = new Date(a.start_date).getTime();
-      const dateB = new Date(b.start_date).getTime();
-      return dateA - dateB; // Ascending: oldest to newest
-    });
-    
-    // Assign index 1, 2, 3, ... chronologically
-    // AND merge lock status from localStorage
-    const withIndex = sorted.map((sensor, idx) => {
-      const lockStatus = getManualLockStatus(sensor.sensor_id, sensor.start_date);
-      return {
-        ...sensor,
-        chronological_index: idx + 1, // 1-based index
-        is_manually_locked: lockStatus.isLocked, // Merge lock state
-        lock_reason: lockStatus.reason // Include reason for debugging
-      };
-    });
-    
-    debug.log('[SensorHistoryPanel] Chronological indexing + lock merge:', {
-      total: withIndex.length,
-      locked: withIndex.filter(s => s.is_manually_locked).length,
-      unlocked: withIndex.filter(s => !s.is_manually_locked).length,
-      first: { id: withIndex[0]?.chronological_index, date: withIndex[0]?.start_date },
-      last: { id: withIndex[withIndex.length - 1]?.chronological_index, date: withIndex[withIndex.length - 1]?.start_date }
-    });
-    
-    return withIndex;
-  }, [sensors, refreshKey]); // Re-calculate when sensors or refreshKey changes
-
-  // Calculate stats (memoized for performance)
-  const overallStats = useMemo(() => calculateOverallStats(sensorsWithIndex), [sensorsWithIndex]);
-  const hwStats = useMemo(() => calculateHWVersionStats(sensorsWithIndex), [sensorsWithIndex]);
-  const lotStats = useMemo(() => calculateLotPerformance(sensorsWithIndex), [sensorsWithIndex]);
-
-  // Filtered sensors
+  // Filter sensors
   const filteredSensors = useMemo(() => {
-    return filterSensors(sensorsWithIndex, filters);
-  }, [sensorsWithIndex, filters]);
+    return sensors.filter(s => {
+      // Date range
+      if (filters.startDate && new Date(s.start_date) < new Date(filters.startDate)) return false;
+      if (filters.endDate && new Date(s.start_date) > new Date(filters.endDate)) return false;
+      
+      // Lot number
+      if (filters.lotNumber && s.lot_number !== filters.lotNumber) return false;
+      
+      // Status
+      if (filters.statusFilter !== 'all') {
+        if (filters.statusFilter !== s.statusInfo.status) return false;
+      }
+      
+      return true;
+    });
+  }, [sensors, filters]);
 
-  // Sorted sensors
+  // Sort sensors
   const sortedSensors = useMemo(() => {
-    const sorted = sortSensors(filteredSensors, sortColumn, sortDirection);
-    debug.log('[SensorHistoryPanel] Sorted sensors:', sorted.length);
+    const sorted = [...filteredSensors].sort((a, b) => {
+      let aVal, bVal;
+      
+      switch (sortColumn) {
+        case 'sequence':
+          aVal = a.sequence;
+          bVal = b.sequence;
+          break;
+        case 'start_date':
+          aVal = new Date(a.start_date).getTime();
+          bVal = new Date(b.start_date).getTime();
+          break;
+        case 'lot_number':
+          aVal = a.lot_number || '';
+          bVal = b.lot_number || '';
+          break;
+        case 'status':
+          aVal = a.statusInfo.status;
+          bVal = b.statusInfo.status;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
     return sorted;
   }, [filteredSensors, sortColumn, sortDirection]);
 
-  // Handle sort click
+  // HW Version Statistics (last 90 days only)
+  const hwStats = useMemo(() => {
+    const now = new Date();
+    const ninetyDaysAgo = new Date(now - 90 * 24 * 60 * 60 * 1000);
+    
+    // Filter: ended sensors from last 90 days
+    const recentEnded = sensors.filter(s => {
+      if (!s.end_date) return false;
+      const endDate = new Date(s.end_date);
+      return endDate >= ninetyDaysAgo;
+    });
+
+    // Group by HW version
+    const byHW = {};
+    recentEnded.forEach(s => {
+      const hw = s.hw_version || 'Unknown';
+      if (!byHW[hw]) {
+        byHW[hw] = { total: 0, success: 0, durations: [] };
+      }
+      byHW[hw].total++;
+      
+      // Calculate duration
+      const start = new Date(s.start_date);
+      const end = new Date(s.end_date);
+      const days = (end - start) / (1000 * 60 * 60 * 24);
+      byHW[hw].durations.push(days);
+      
+      // Success = >= 7 days
+      if (days >= 7) {
+        byHW[hw].success++;
+      }
+    });
+
+    // Calculate percentages and averages
+    return Object.entries(byHW).map(([hw, data]) => ({
+      hw_version: hw,
+      total: data.total,
+      success_rate: ((data.success / data.total) * 100).toFixed(1),
+      avg_duration: (data.durations.reduce((a, b) => a + b, 0) / data.durations.length).toFixed(1)
+    })).sort((a, b) => b.total - a.total); // Sort by count descending
+  }, [sensors]);
+
+  // Handlers
+  const handleToggleLock = (sensorId) => {
+    const result = sensorStorage.toggleLock(sensorId);
+    if (result.success) {
+      setRefreshKey(prev => prev + 1);
+    } else {
+      alert(`❌ ${result.error}`);
+    }
+  };
+
+  const handleDelete = (sensorId, sensorSeq) => {
+    const sensor = sensorStorage.getSensorById(sensorId);
+    if (!sensor) return;
+    
+    if (sensor.is_locked) {
+      alert('🔒 Sensor is vergrendeld. Ontgrendel eerst.');
+      return;
+    }
+    
+    if (confirm(`Sensor #${sensorSeq} verwijderen?\n\n⚠️ Actie kan niet ongedaan worden.`)) {
+      const result = sensorStorage.deleteSensor(sensorId);
+      if (result.success) {
+        alert('✓ Sensor verwijderd');
+        setRefreshKey(prev => prev + 1);
+      } else {
+        alert(`❌ ${result.error}`);
+      }
+    }
+  };
+
+  const handleBatchAssign = (sensorId, batchId) => {
+    const result = sensorStorage.assignBatch(sensorId, batchId || null);
+    if (result.success) {
+      setRefreshKey(prev => prev + 1);
+    } else {
+      alert(`❌ ${result.error}`);
+    }
+  };
+
+  const handleExport = () => {
+    const data = sensorStorage.exportJSON();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `agp-sensors-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        const result = sensorStorage.importJSON(data);
+        
+        if (result.success) {
+          alert(`✅ Import succesvol!\n\nSensors: ${result.summary.sensorsAdded} toegevoegd, ${result.summary.sensorsSkipped} overgeslagen`);
+          setRefreshKey(prev => prev + 1);
+        } else {
+          alert(`❌ Import mislukt:\n\n${result.error}`);
+        }
+      } catch (err) {
+        alert(`❌ Invalid JSON:\n\n${err.message}`);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleSort = (column) => {
     if (sortColumn === column) {
-      // Toggle direction
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
       setSortColumn(column);
-      setSortDirection('desc');
+      setSortDirection('asc');
     }
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setFilters({
-      startDate: null,
-      endDate: null,
-      lotNumber: null,
-      hwVersion: null,
-      successOnly: false,
-      failedOnly: false
-    });
-  };
-
-  // Handle batch assignment
-  const handleBatchAssignment = (sensorId, batchId) => {
-    if (!batchId || batchId === '') {
-      // Unassign
-      unassignSensor(sensorId);
-    } else {
-      // Assign to batch
-      assignSensorToBatch(sensorId, batchId, 'manual');
-    }
-    // Trigger refresh
-    setRefreshKey(prev => prev + 1);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div 
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: '#FFFFFF',
-        zIndex: 9999,
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'var(--paper)',
+        width: '95%',
+        height: '95%',
+        border: '3px solid var(--ink)',
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: '"SF Mono", "Monaco", "Courier New", monospace',
         overflow: 'hidden'
-      }}
-    >
-      {/* HEADER */}
-      <div style={{
-        padding: '24px',
-        borderBottom: '3px solid #000000',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
       }}>
-        <h1 style={{
-          margin: 0,
-          fontSize: '24px',
-          fontWeight: 'bold',
-          textTransform: 'uppercase',
-          letterSpacing: '1px'
+        {/* Header */}
+        <div style={{
+          padding: '20px',
+          borderBottom: '3px solid var(--ink)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          🔬 SENSOR HISTORIE
-        </h1>
-        
-        <div style={{ display: 'flex', gap: '12px' }}>
-          {onOpenStock && (
+          <h2 style={{ margin: 0, fontFamily: 'monospace', fontSize: '24px', color: 'var(--ink)' }}>
+            SENSOR GESCHIEDENIS ({sortedSensors.length})
+          </h2>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={onOpenStock} style={{
+              padding: '10px 20px',
+              border: '2px solid var(--ink)',
+              backgroundColor: 'var(--color-green)',
+              color: 'var(--paper)',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontWeight: 'bold'
+            }}>
+              📦 STOCK
+            </button>
+            <button onClick={handleExport} style={{
+              padding: '10px 20px',
+              border: '2px solid var(--ink)',
+              backgroundColor: 'var(--paper)',
+              color: 'var(--ink)',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontWeight: 'bold'
+            }}>
+              EXPORT JSON
+            </button>
+            <label style={{
+              padding: '10px 20px',
+              border: '2px solid var(--ink)',
+              backgroundColor: 'var(--paper)',
+              color: 'var(--ink)',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontWeight: 'bold'
+            }}>
+              IMPORT JSON
+              <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
+            </label>
+            <button onClick={onClose} style={{
+              padding: '10px 20px',
+              border: '2px solid var(--ink)',
+              backgroundColor: 'var(--ink)',
+              color: 'var(--paper)',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontWeight: 'bold'
+            }}>
+              SLUITEN
+            </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div style={{
+          padding: '15px 20px',
+          borderBottom: '2px solid var(--ink)',
+          display: 'flex',
+          gap: '15px',
+          backgroundColor: 'var(--bg-secondary)'
+        }}>
+          <select
+            value={filters.statusFilter}
+            onChange={(e) => setFilters(prev => ({ ...prev, statusFilter: e.target.value }))}
+            style={{
+              padding: '8px',
+              border: '2px solid var(--ink)',
+              fontFamily: 'monospace',
+              backgroundColor: 'var(--paper)',
+              color: 'var(--ink)'
+            }}
+          >
+            <option value="all">Alle statussen</option>
+            <option value="active">🔄 Active</option>
+            <option value="overdue">⏰ Overdue</option>
+            <option value="success">✅ Success</option>
+            <option value="failed">❌ Failed</option>
+          </select>
+          
+          {filters.statusFilter !== 'all' && (
             <button
-              onClick={onOpenStock}
+              onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'all' }))}
               style={{
-                padding: '8px 16px',
-                backgroundColor: '#FFFFFF',
-                color: '#000000',
-                border: '3px solid #000000',
-                fontSize: '14px',
-                fontWeight: 'bold',
+                padding: '8px 12px',
+                border: '2px solid var(--ink)',
+                backgroundColor: 'var(--paper)',
+                color: 'var(--ink)',
                 cursor: 'pointer',
-                textTransform: 'uppercase'
+                fontFamily: 'monospace'
               }}
             >
-              📦 VOORRAAD
+              ✗ Reset
             </button>
           )}
-          <label
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#000000',
-              color: '#FFFFFF',
-              border: '3px solid #000000',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              textTransform: 'uppercase'
-            }}
-          >
-            ↑ IMPORT
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleFileSelect}
-              style={{ display: 'none' }} />
-          </label>
-          <button
-            onClick={handleExport}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#000000',
-              color: '#FFFFFF',
-              border: '3px solid #000000',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              textTransform: 'uppercase'
-            }}
-          >
-            ↓ EXPORT
-          </button>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#000000',
-              color: '#FFFFFF',
-              border: '3px solid #000000',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              textTransform: 'uppercase'
-            }}
-          >
-            × SLUITEN
-          </button>
+        </div>
+
+        {/* HW Version Stats (last 90 days) */}
+        {hwStats.length > 0 && (
+          <div style={{
+            padding: '15px 20px',
+            borderBottom: '2px solid var(--ink)',
+            backgroundColor: 'var(--bg-tertiary)',
+            display: 'flex',
+            gap: '20px',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '12px', width: '100%', marginBottom: '5px', color: 'var(--ink)' }}>
+              📊 HARDWARE STATS (laatste 90 dagen, alleen beëindigde sensoren)
+            </div>
+            {hwStats.map(stat => (
+              <div key={stat.hw_version} style={{
+                padding: '10px 15px',
+                border: '2px solid var(--ink)',
+                backgroundColor: 'var(--paper)',
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                color: 'var(--ink)'
+              }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                  {stat.hw_version} (n={stat.total})
+                </div>
+                <div>≥7 dagen: {stat.success_rate}%</div>
+                <div>Ø duur: {stat.avg_duration} dagen</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Table */}
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <table style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontFamily: 'monospace'
+          }}>
+            <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--ink)', color: 'var(--paper)' }}>
+              <tr>
+                <th style={{ padding: '12px', textAlign: 'left', cursor: 'pointer', borderRight: '2px solid var(--paper)' }}
+                    onClick={() => handleSort('sequence')}>
+                  # {sortColumn === 'sequence' && (sortDirection === 'asc' ? '↑' : '↓')}
+                </th>
+                <th style={{ padding: '12px', textAlign: 'center', borderRight: '2px solid var(--paper)' }}>
+                  🔒
+                </th>
+                <th style={{ padding: '12px', textAlign: 'left', cursor: 'pointer', borderRight: '2px solid var(--paper)' }}
+                    onClick={() => handleSort('start_date')}>
+                  START {sortColumn === 'start_date' && (sortDirection === 'asc' ? '↑' : '↓')}
+                </th>
+                <th style={{ padding: '12px', textAlign: 'left', borderRight: '2px solid var(--paper)' }}>
+                  END
+                </th>
+                <th style={{ padding: '12px', textAlign: 'right', borderRight: '2px solid var(--paper)' }}>
+                  DUUR
+                </th>
+                <th style={{ padding: '12px', textAlign: 'left', borderRight: '2px solid var(--paper)' }}>
+                  HW
+                </th>
+                <th style={{ padding: '12px', textAlign: 'left', borderRight: '2px solid var(--paper)' }}>
+                  BATCH
+                </th>
+                <th style={{ padding: '12px', textAlign: 'center', cursor: 'pointer', borderRight: '2px solid var(--paper)' }}
+                    onClick={() => handleSort('status')}>
+                  STATUS {sortColumn === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                </th>
+                <th style={{ padding: '12px', textAlign: 'center' }}>
+                  DELETE
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedSensors.map(sensor => (
+                <tr key={sensor.id} style={{ borderBottom: '1px solid var(--grid-line)' }}>
+                  {/* Sequence */}
+                  <td style={{ padding: '10px 12px', fontWeight: 'bold', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)' }}>
+                    #{sensor.sequence}
+                  </td>
+                  
+                  {/* Lock */}
+                  <td style={{
+                    padding: '10px 12px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    backgroundColor: sensor.is_locked ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                    borderRight: '1px solid var(--grid-line)'
+                  }} onClick={() => handleToggleLock(sensor.id)}>
+                    {sensor.is_locked ? '🔒' : '🔓'}
+                  </td>
+                  
+                  {/* Start Date */}
+                  <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)' }}>
+                    {new Date(sensor.start_date).toLocaleString('nl-NL')}
+                  </td>
+                  
+                  {/* End Date */}
+                  <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)' }}>
+                    {sensor.end_date ? new Date(sensor.end_date).toLocaleString('nl-NL') : '-'}
+                  </td>
+                  
+                  {/* Duration */}
+                  <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    {(() => {
+                      const start = new Date(sensor.start_date);
+                      const end = sensor.end_date ? new Date(sensor.end_date) : new Date();
+                      const hours = (end - start) / (1000 * 60 * 60);
+                      const days = (hours / 24).toFixed(1);
+                      return sensor.end_date ? `${days}d` : `${days}d →`;
+                    })()}
+                  </td>
+                  
+                  {/* HW Version */}
+                  <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)' }}>
+                    {sensor.hw_version || '-'}
+                  </td>
+                  
+                  {/* Batch Assignment */}
+                  <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)' }}>
+                    <select
+                      value={sensor.batch_id || ''}
+                      onChange={(e) => handleBatchAssign(sensor.id, e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '4px',
+                        border: '1px solid var(--ink)',
+                        fontFamily: 'monospace',
+                        fontSize: '11px',
+                        backgroundColor: 'var(--paper)',
+                        color: 'var(--ink)'
+                      }}
+                    >
+                      <option value="">-</option>
+                      {batches.map(b => (
+                        <option key={b.batch_id} value={b.batch_id}>
+                          {b.lot_number}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  
+                  {/* Status - V4 PROPER WAY */}
+                  <td style={{ padding: '10px 12px', textAlign: 'center', borderRight: '1px solid var(--grid-line)' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '6px 12px',
+                      backgroundColor: sensor.statusInfo.color,
+                      color: 'var(--paper)',
+                      border: `2px solid ${sensor.statusInfo.color}`,
+                      fontWeight: 'bold',
+                      fontSize: '11px',
+                      letterSpacing: '1px'
+                    }}>
+                      {sensor.statusInfo.emoji} {sensor.statusInfo.label.toUpperCase()}
+                    </span>
+                  </td>
+                  
+                  {/* Delete */}
+                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                    <button
+                      onClick={() => handleDelete(sensor.id, sensor.sequence)}
+                      disabled={sensor.is_locked}
+                      style={{
+                        padding: '6px 12px',
+                        border: '2px solid var(--color-red)',
+                        backgroundColor: sensor.is_locked ? 'var(--bg-tertiary)' : 'var(--paper)',
+                        color: sensor.is_locked ? 'var(--text-secondary)' : 'var(--color-red)',
+                        cursor: sensor.is_locked ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        fontFamily: 'monospace'
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-
-      {/* SCROLLABLE CONTENT */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '24px'
-      }}>
-
-        {/* OVERALL STATS */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '16px',
-          marginBottom: '24px',
-          paddingBottom: '24px',
-          borderBottom: '3px solid #000000'
-        }}>
-          {/* Total */}
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#000000' }}>
-              {overallStats.total}
-            </div>
-            <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: '#000000' }}>
-              TOTAAL
-            </div>
-            <div style={{ fontSize: '10px', marginTop: '4px', color: '#666666' }}>
-              {overallStats.totalDays}d totaal
-            </div>
-          </div>
-
-          {/* Success Rate */}
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              fontSize: '32px', 
-              fontWeight: 'bold',
-              color: overallStats.successRate >= 70 ? '#00AA00' : '#FF8800'
-            }}>
-              {overallStats.successRate}%
-            </div>
-            <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: '#000000' }}>
-              SUCCESS
-            </div>
-            <div style={{ fontSize: '10px', marginTop: '4px', color: '#666666' }}>
-              {overallStats.successful}/{overallStats.successful + overallStats.failed} voltooid
-            </div>
-          </div>
-
-          {/* Average Duration */}
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#000000' }}>
-              {overallStats.avgDuration}d
-            </div>
-            <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: '#000000' }}>
-              GEM. DUUR
-            </div>
-            <div style={{ fontSize: '10px', marginTop: '4px', color: '#666666' }}>
-              Doel: 7.0d
-            </div>
-          </div>
-
-          {/* Failed/Running */}
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: overallStats.failed > 0 ? '#CC0000' : '#000000' }}>
-              {overallStats.failed}
-            </div>
-            <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: '#000000' }}>
-              FAILED
-            </div>
-            {overallStats.running > 0 && (
-              <div style={{ fontSize: '10px', marginTop: '4px', color: '#FF8800' }}>
-                {overallStats.running} actief 🔄
-              </div>
-            )}
-          </div>
-        </div>
-          {/* IMPORT PREVIEW */}
-          {importPreview && (
-            <div style={{
-              border: '3px solid #000000',
-              padding: '24px',
-              marginBottom: '24px',
-              backgroundColor: '#F5F5F5'
-            }}>
-              <div style={{
-                fontSize: '18px',
-                fontWeight: 'bold',
-                color: '#000000',
-                textTransform: 'uppercase',
-                letterSpacing: '2px',
-                marginBottom: '16px'
-              }}>
-                📋 IMPORT PREVIEW
-              </div>
-              <div style={{
-                fontSize: '14px',
-                color: '#000000',
-                lineHeight: '1.8',
-                marginBottom: '24px'
-              }}>
-                <div><strong>File:</strong> {importFile?.name}</div>
-                <div><strong>Sensors:</strong> {importPreview.sensors.length}</div>
-                <div><strong>Deleted:</strong> {importPreview.deletedSensors.length}</div>
-                <div><strong>Export Date:</strong> {new Date(importPreview.exportDate).toLocaleString('nl-NL')}</div>
-              </div>
-
-              {/* Import Options */}
-              <div style={{
-                borderTop: '2px solid #000000',
-                paddingTop: '16px',
-                marginBottom: '16px'
-              }}>
-                <div style={{
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  color: '#000000',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  marginBottom: '12px'
-                }}>
-                  OPTIES
-                </div>
-
-                {/* Checkboxes */}
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: '14px',
-                    color: '#000000',
-                    cursor: 'pointer',
-                    marginBottom: '8px'
-                  }}>
-                    <input
-                      type="checkbox"
-                      checked={importOptions.importDeleted}
-                      onChange={(e) => setImportOptions({
-                        ...importOptions,
-                        importDeleted: e.target.checked
-                      })}
-                      style={{ marginRight: '8px' }} />
-                    Import deleted sensors lijst
-                  </label>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: '14px',
-                    color: '#000000',
-                    cursor: 'pointer'
-                  }}>
-                    <input
-                      type="checkbox"
-                      checked={importOptions.importLocks}
-                      onChange={(e) => setImportOptions({
-                        ...importOptions,
-                        importLocks: e.target.checked
-                      })}
-                      style={{ marginRight: '8px' }} />
-                    Import lock states
-                  </label>
-                </div>
-
-                {/* Radio buttons for mode */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: '14px',
-                    color: '#000000',
-                    cursor: 'pointer',
-                    marginBottom: '8px'
-                  }}>
-                    <input
-                      type="radio"
-                      checked={importOptions.mode === 'merge'}
-                      onChange={() => setImportOptions({
-                        ...importOptions,
-                        mode: 'merge'
-                      })}
-                      style={{ marginRight: '8px' }} />
-                    MERGE (voeg nieuwe toe, behoud bestaande)
-                  </label>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: '14px',
-                    color: '#CC0000',
-                    cursor: 'pointer'
-                  }}>
-                    <input
-                      type="radio"
-                      checked={importOptions.mode === 'replace'}
-                      onChange={() => setImportOptions({
-                        ...importOptions,
-                        mode: 'replace'
-                      })}
-                      style={{ marginRight: '8px' }} />
-                    REPLACE (wis alles, herstel backup)
-                  </label>
-                </div>
-              </div>
-
-              {/* Confirm Button */}
-              <button
-                onClick={handleImportConfirm}
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  padding: '12px 24px',
-                  border: '3px solid #000000',
-                  backgroundColor: '#000000',
-                  color: '#FFFFFF',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  letterSpacing: '2px',
-                  width: '100%'
-                }}
-              >
-                ✓ BEVESTIG IMPORT
-              </button>
-            </div>
-          )}
-
-          {/* HW Version Stats */}
-          {hwStats.length > 0 && (
-            <div style={{
-              border: '3px solid #000000',
-              padding: '16px',
-              backgroundColor: '#F5F5F5',
-              marginBottom: '24px'
-            }}>
-              <h2 style={{
-                fontSize: '14px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                color: '#000000',
-                marginBottom: '16px'
-              }}>
-                HARDWARE VERSIE PERFORMANCE
-              </h2>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                gap: '12px'
-              }}>
-                {hwStats.map(hw => (
-                  <div key={hw.hwVersion} style={{
-                    border: '2px solid #000000',
-                    padding: '12px',
-                    backgroundColor: '#FFFFFF'
-                  }}>
-                    <div style={{
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      color: '#000000',
-                      marginBottom: '8px'
-                    }}>
-                      {hw.hwVersion}
-                    </div>
-                    <div style={{
-                      fontSize: '20px',
-                      fontWeight: 'bold',
-                      color: hw.successRate >= 70 ? '#00AA00' : '#FF8800'
-                    }}>
-                      {hw.successRate}%
-                    </div>
-                    <div style={{
-                      fontSize: '10px',
-                      textTransform: 'uppercase',
-                      color: '#666666',
-                      marginTop: '4px'
-                    }}>
-                      {hw.successful}/{hw.successful + hw.failed} • {hw.avgDuration}d gem
-                      {hw.running > 0 && ` • ${hw.running} 🔄`}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Batch Performance (top 10) */}
-          {lotStats.length > 0 && (
-            <div style={{
-              border: '3px solid #000000',
-              padding: '16px',
-              backgroundColor: '#F5F5F5',
-              marginBottom: '24px'
-            }}>
-              <h2 style={{
-                fontSize: '14px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                color: '#000000',
-                marginBottom: '16px'
-              }}>
-                TOP 10 BATCHES
-              </h2>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                gap: '8px'
-              }}>
-                {lotStats.slice(0, 10).map(lot => (
-                  <div key={lot.lotNumber} style={{
-                    border: '2px solid #000000',
-                    padding: '10px',
-                    backgroundColor: '#FFFFFF'
-                  }}>
-                    <div style={{
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      color: '#000000',
-                      marginBottom: '6px'
-                    }}>
-                      {lot.lotNumber}
-                    </div>
-                    <div style={{
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      color: lot.successRate >= 70 ? '#00AA00' : 
-                             lot.successRate >= 50 ? '#FF8800' : '#CC0000'
-                    }}>
-                      {lot.successRate}%
-                    </div>
-                    <div style={{
-                      fontSize: '9px',
-                      textTransform: 'uppercase',
-                      color: '#666666',
-                      marginTop: '4px'
-                    }}>
-                      {lot.total > (lot.successful + lot.failed) 
-                        ? `${lot.successful}/${lot.successful + lot.failed} • ${lot.running} 🔄`
-                        : `${lot.successful}/${lot.total} sensors`}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sensors Table */}
-          <div style={{
-            border: '3px solid #000000',
-            backgroundColor: '#F5F5F5',
-            overflowX: 'auto'
-          }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: '12px'
-            }}>
-              <thead style={{
-                backgroundColor: '#000000',
-                color: '#FFFFFF'
-              }}>
-                <tr>
-                  <th 
-                    onClick={() => handleSort('chronological_index')}
-                    style={{
-                      padding: '12px',
-                      textAlign: 'left',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      cursor: 'pointer',
-                      borderRight: '1px solid #FFFFFF'
-                    }}
-                  >
-                    #ID {sortColumn === 'chronological_index' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th 
-                    style={{
-                      padding: '12px',
-                      textAlign: 'center',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      borderRight: '1px solid #FFFFFF',
-                      width: '80px'
-                    }}
-                  >
-                    LOCK
-                  </th>
-                  <th 
-                    onClick={() => handleSort('start_date')}
-                    style={{
-                      padding: '12px',
-                      textAlign: 'left',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      cursor: 'pointer',
-                      borderRight: '1px solid #FFFFFF'
-                    }}
-                  >
-                    START {sortColumn === 'start_date' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th 
-                    onClick={() => handleSort('end_date')}
-                    style={{
-                      padding: '12px',
-                      textAlign: 'left',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      cursor: 'pointer',
-                      borderRight: '1px solid #FFFFFF'
-                    }}
-                  >
-                    EINDE {sortColumn === 'end_date' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
-
-                  <th 
-                    onClick={() => handleSort('duration_days')}
-                    style={{
-                      padding: '12px',
-                      textAlign: 'left',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      cursor: 'pointer',
-                      borderRight: '1px solid #FFFFFF'
-                    }}
-                  >
-                    DUUR {sortColumn === 'duration_days' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
-                  {/* LOT column hidden - lot_number now shown in BATCH column */}
-                  <th 
-                    onClick={() => handleSort('hw_version')}
-                    style={{
-                      padding: '12px',
-                      textAlign: 'left',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      cursor: 'pointer',
-                      borderRight: '1px solid #FFFFFF'
-                    }}
-                  >
-                    HW {sortColumn === 'hw_version' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th 
-                    style={{
-                      padding: '12px',
-                      textAlign: 'left',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      borderRight: '1px solid #FFFFFF'
-                    }}
-                  >
-                    BATCH
-                  </th>
-                  <th 
-                    onClick={() => handleSort('success')}
-                    style={{
-                      padding: '12px',
-                      textAlign: 'left',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      cursor: 'pointer',
-                      borderRight: '1px solid #FFFFFF'
-                    }}
-                  >
-                    STATUS {sortColumn === 'success' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th 
-                    style={{
-                      padding: '12px',
-                      textAlign: 'center',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      width: '80px'
-                    }}
-                  >
-                    DELETE
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {sortedSensors.map(sensor => (
-                  <tr key={sensor.sensor_id} style={{
-                    borderBottom: '1px solid #CCCCCC',
-                    backgroundColor: '#FFFFFF'
-                  }}>
-                    <td style={{
-                      padding: '10px 12px',
-                      borderRight: '1px solid #CCCCCC',
-                      color: '#000000',
-                      fontWeight: 'bold'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>#{sensor.chronological_index}</span>
-                        {(() => {
-                          const assignment = getAssignmentForSensor(sensor.sensor_id);
-                          if (assignment) {
-                            const batch = batches.find(b => b.batch_id === assignment.batch_id);
-                            return (
-                              <span 
-                                title={batch ? `Batch: ${batch.lot_number}` : 'Assigned to batch'}
-                                style={{
-                                  fontSize: '9px',
-                                  padding: '2px 6px',
-                                  fontWeight: 'bold',
-                                  letterSpacing: '0.5px',
-                                  backgroundColor: '#000000',
-                                  color: '#FFFFFF',
-                                  border: '1px solid #000000'
-                                }}
-                              >
-                                BATCH
-                              </span>
-                            );
-                          }
-                          return null;
-                        })()}
-                        <span 
-                          style={{
-                            fontSize: '9px',
-                            padding: '2px 6px',
-                            fontWeight: 'bold',
-                            letterSpacing: '0.5px',
-                            backgroundColor: sensor.storageSource === 'localStorage' ? '#00AA00' : '#666666',
-                            color: '#FFFFFF',
-                            border: '1px solid ' + (sensor.storageSource === 'localStorage' ? '#00AA00' : '#666666')
-                          }}
-                          title={sensor.storageSource === 'localStorage' 
-                            ? 'Recent sensor - can be edited/deleted' 
-                            : 'Historical sensor - read-only from database'}
-                        >
-                          {sensor.storageSource === 'localStorage' ? 'RECENT' : 'HISTORICAL'}
-                        </span>
-                      </div>
-                    </td>
-                    <td style={{
-                      padding: '10px 12px',
-                      borderRight: '1px solid #CCCCCC',
-                      textAlign: 'center',
-                      fontSize: '18px',
-                      cursor: sensor.isEditable ? 'pointer' : 'not-allowed',
-                      backgroundColor: sensor.is_manually_locked 
-                        ? '#FFEEEE' 
-                        : '#EEFFEE',
-                      opacity: sensor.isEditable ? 1 : 0.5
-                    }}
-                    onClick={sensor.isEditable ? () => {
-                      const result = toggleSensorLock(sensor.sensor_id);
-                      if (result.success) {
-                        // Trigger re-render without page reload
-                        setRefreshKey(prev => prev + 1);
-                      } else {
-                        // Show enhanced error message with detail if available
-                        if (result.detail) {
-                          alert(`❌ ${result.message}\n\n${result.detail}`);
-                        } else {
-                          alert(`❌ Fout: ${result.message}`);
-                        }
-                      }
-                    } : undefined}
-                    title={
-                      !sensor.isEditable 
-                        ? 'Read-only sensor (historical data from database)'
-                        : sensor.is_manually_locked
-                          ? 'Locked - Click to unlock (allows deletion)'
-                          : 'Unlocked - Click to lock (prevents deletion)'
-                    }
-                    >
-                      {sensor.is_manually_locked ? '🔒' : '🔓'}
-                    </td>
-                    <td style={{
-                      padding: '10px 12px',
-                      borderRight: '1px solid #CCCCCC',
-                      color: '#000000'
-                    }}>
-                      {sensor.start_date ? new Date(sensor.start_date).toLocaleString('nl-NL', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : '-'}
-                    </td>
-                    <td style={{
-                      padding: '10px 12px',
-                      borderRight: '1px solid #CCCCCC',
-                      color: '#000000'
-                    }}>
-                      {sensor.end_date ? new Date(sensor.end_date).toLocaleString('nl-NL', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : '-'}
-                    </td>
-                    <td style={{
-                      padding: '10px 12px',
-                      borderRight: '1px solid #CCCCCC',
-                      color: (() => {
-                        // Recalculate duration from timestamps (don't trust DB)
-                        if (!sensor.start_date || !sensor.end_date) return '#000000';
-                        const startMs = new Date(sensor.start_date).getTime();
-                        const endMs = new Date(sensor.end_date).getTime();
-                        const durationDays = (endMs - startMs) / (1000 * 60 * 60 * 24);
-                        
-                        return durationDays >= 6.75 ? '#00AA00' :
-                               durationDays >= 6 ? '#FF8800' :
-                               '#CC0000';
-                      })(),
-                      fontWeight: 'bold'
-                    }}>
-                      {(() => {
-                        // Recalculate duration from timestamps (don't trust DB)
-                        if (!sensor.start_date || !sensor.end_date) return '0.0d';
-                        const startMs = new Date(sensor.start_date).getTime();
-                        const endMs = new Date(sensor.end_date).getTime();
-                        const durationDays = (endMs - startMs) / (1000 * 60 * 60 * 24);
-                        return durationDays.toFixed(1) + 'd';
-                      })()}
-                    </td>
-                    {/* LOT cell hidden - lot_number now shown in BATCH cell */}
-                    <td style={{
-                      padding: '10px 12px',
-                      borderRight: '1px solid #CCCCCC',
-                      color: '#000000',
-                      fontWeight: 'bold'
-                    }}>
-                      {sensor.hw_version || '-'}
-                    </td>
-                    <td style={{
-                      padding: '10px 12px',
-                      borderRight: '1px solid #CCCCCC'
-                    }}>
-                      {/* Show lot_number as main value */}
-                      <div style={{
-                        fontWeight: 'bold',
-                        color: '#000000',
-                        fontSize: '12px',
-                        marginBottom: '4px'
-                      }}>
-                        {sensor.lot_number || sensor.batch || '-'}
-                      </div>
-                      
-                      {/* Stock batch assignment dropdown (optional) */}
-                      <select
-                        value={(() => {
-                          const assignment = getAssignmentForSensor(sensor.sensor_id);
-                          return assignment ? assignment.batch_id : '';
-                        })()}
-                        onChange={(e) => handleBatchAssignment(sensor.sensor_id, e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '4px',
-                          border: '1px solid #000000',
-                          backgroundColor: '#FFFFFF',
-                          color: '#000000',
-                          fontSize: '9px',
-                          cursor: 'pointer'
-                        }}
-                        title="Optional: Assign to stock batch"
-                      >
-                        <option value="">Stock: -</option>
-                        {batches.map(batch => (
-                          <option key={batch.batch_id} value={batch.batch_id}>
-                            Stock: {batch.lot_number}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td style={{
-                      padding: '10px 12px',
-                      borderRight: '1px solid #CCCCCC',
-                      color: '#000000'
-                    }}>
-                      {(() => {
-                        // Recalculate duration from timestamps (don't trust DB)
-                        let days = 0;
-                        if (sensor.start_date && sensor.end_date) {
-                          const startMs = new Date(sensor.start_date).getTime();
-                          const endMs = new Date(sensor.end_date).getTime();
-                          days = (endMs - startMs) / (1000 * 60 * 60 * 24);
-                        }
-                        
-                        let statusColor, statusBg, statusText;
-                        
-                        if (days >= 6.75) {
-                          statusColor = '#00AA00';
-                          statusBg = '#00AA00';
-                          statusText = '✓ OK';
-                        } else if (days >= 6.0) {
-                          statusColor = '#FF8800';
-                          statusBg = '#FF8800';
-                          statusText = '⚠ SHORT';
-                        } else {
-                          statusColor = '#CC0000';
-                          statusBg = '#CC0000';
-                          statusText = '✗ FAIL';
-                        }
-                        
-                        return (
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '4px 12px',
-                            fontSize: '10px',
-                            fontWeight: 'bold',
-                            textTransform: 'uppercase',
-                            letterSpacing: '1px',
-                            border: `2px solid ${statusColor}`,
-                            backgroundColor: statusBg,
-                            color: '#FFFFFF'
-                          }}>
-                            {statusText}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td style={{
-                      padding: '10px 12px',
-                      textAlign: 'center'
-                    }}>
-                      <button
-                        onClick={async () => {
-                          // Debug logging
-                          debug.log('[DELETE] Sensor data:', {
-                            sensor_id: sensor.sensor_id,
-                            chronological_index: sensor.chronological_index,
-                            start_date: sensor.start_date,
-                            is_manually_locked: sensor.is_manually_locked
-                          });
-                          
-                          if (sensor.is_manually_locked) {
-                            // Locked - cannot delete
-                            alert(
-                              `🔒 SENSOR VERGRENDELD\n\n` +
-                              `Deze sensor kan niet verwijderd worden.\n\n` +
-                              `Klik eerst op het slotje (🔒) om te ontgrendelen,\n` +
-                              `daarna kun je verwijderen.`
-                            );
-                            return;
-                          }
-                          
-                          // Unlocked - allow delete
-                          if (confirm(
-                            `Sensor #${sensor.chronological_index} verwijderen?\n\n` +
-                            `Start: ${new Date(sensor.start_date).toLocaleDateString('nl-NL')}\n\n` +
-                            `⚠️ Deze actie kan niet ongedaan worden gemaakt.`
-                          )) {
-                            debug.log('[DELETE] Calling deleteSensorWithLockCheck with ID:', sensor.sensor_id);
-                            const result = await deleteSensorWithLockCheck(sensor.sensor_id);
-                            debug.log('[DELETE] Result:', result);
-                            
-                            if (result.success) {
-                              alert(`✓ Sensor verwijderd!`);
-                              // Trigger re-render without page reload
-                              setRefreshKey(prev => prev + 1);
-                            } else {
-                              // Show enhanced error message with detail if available
-                              if (result.detail) {
-                                alert(`❌ ${result.message}\n\n${result.detail}`);
-                              } else {
-                                alert(`❌ Fout: ${result.message}`);
-                              }
-                            }
-                          }
-                        }}
-                        disabled={sensor.is_manually_locked}
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: '10px',
-                          fontWeight: 'bold',
-                          textTransform: 'uppercase',
-                          letterSpacing: '1px',
-                          border: '2px solid #CC0000',
-                          backgroundColor: sensor.is_manually_locked ? '#CCCCCC' : 'transparent',
-                          color: sensor.is_manually_locked ? '#666666' : '#CC0000',
-                          cursor: sensor.is_manually_locked ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        {sensor.is_manually_locked ? '🔒 DEL' : '✗ DEL'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
     </div>
   );
 }

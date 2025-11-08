@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Status Calculation</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #000; color: #0f0; }
+    pre { background: #111; padding: 10px; overflow-x: auto; }
+    button { padding: 10px; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Test sensorStorage.getAllSensors()</h1>
+  <button onclick="testGetAll()">Test getAllSensors()</button>
+  <div id="output"></div>
+
+  <script type="module">
+    window.testGetAll = async function() {
+      const output = document.getElementById('output');
+      
+      try {
+        // Import the actual storage module
+        const sensorStorage = await import('/src/storage/sensorStorage.js');
+        
+        const allSensors = sensorStorage.getAllSensors();
+        const sensor222 = allSensors.find(s => s.id === 'sensor_1762231226000');
+
+        if (!sensor222) {
+          output.innerHTML = '<p style="color: #f00;">❌ Sensor #222 not found!</p>';
+          return;
+        }
+
+        output.innerHTML = `
+          <h2 style="color: #0f0;">✅ Found Sensor #222</h2>
+          <pre>${JSON.stringify(sensor222, null, 2)}</pre>
+          
+          <h2>Status Info:</h2>
+          <table border="1" cellpadding="5" style="color: #0f0;">
+            <tr><td>statusInfo.status:</td><td><strong>${sensor222.statusInfo?.status || 'MISSING'}</strong></td></tr>
+            <tr><td>statusInfo.emoji:</td><td>${sensor222.statusInfo?.emoji || 'MISSING'}</td></tr>
+            <tr><td>statusInfo.label:</td><td>${sensor222.statusInfo?.label || 'MISSING'}</td></tr>
+          </table>
+        `;
+      } catch (err) {
+        output.innerHTML = `<p style="color: #f00;">❌ Error: ${err.message}</p><pre>${err.stack}</pre>`;
+      }
+    };
+  </script>
+</body>
+</html>

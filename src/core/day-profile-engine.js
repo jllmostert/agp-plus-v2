@@ -11,8 +11,8 @@
  */
 
 import { CONFIG, utils, calculateMetrics, detectEvents } from './metrics-engine.js';
-import { getSensorAtDate } from '../storage/sensorStorage.js';
 import { getEventsForDate } from '../storage/eventStorage.js';
+import { getAllSensors } from '../storage/sensorStorage.js';
 
 /**
  * Get the last 7 days from the dataset
@@ -195,17 +195,16 @@ function detectSensorChanges(allData, targetDate) {
   
   // PRIORITY 1: Check sensor database (high confidence)
   try {
-    const { getSensorDatabase } = require('../storage/sensorStorage.js');
-    const sensorDb = getSensorDatabase();
+    const sensors = getAllSensors();
     
-    if (sensorDb && sensorDb.sensors) {
+    if (sensors && sensors.length > 0) {
       // Find sensors that started on this day
       const targetDateObj = utils.parseDate(targetDate, '00:00:00');
       const nextDayObj = new Date(targetDateObj);
       nextDayObj.setDate(nextDayObj.getDate() + 1);
       
-      for (const sensor of sensorDb.sensors) {
-        const sensorStart = new Date(sensor.start_timestamp);
+      for (const sensor of sensors) {
+        const sensorStart = new Date(sensor.start_date);
         
         // Check if sensor start is within target day
         if (sensorStart >= targetDateObj && sensorStart < nextDayObj) {

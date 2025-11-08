@@ -6,6 +6,58 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.0.1 - UI Polish & Color System Integration] - 2025-11-08
+
+### 🎨 Complete Brutalist Color System Integration
+**Session**: 21  
+**Goal**: Eliminate all hardcoded colors, integrate CSS variable system
+
+### ✅ Changes
+
+#### Sensor History UI Enhancements
+**Missing Features Restored**:
+- ✅ Added "📦 STOCK" button back to sensor history header (green accent)
+- ✅ New "DUUR" column between END and HW showing sensor duration
+  - Format: `7.2d` for ended sensors
+  - Format: `6.5d →` for active sensors (arrow indicates running)
+- ✅ Right-aligned duration column with tabular-nums for clean display
+
+#### Complete Color System Integration
+**ALL Components Now Use CSS Variables**:
+- ✅ `SensorHistoryPanel.jsx` - Full brutalist palette integration
+- ✅ `StockPanel.jsx` - Paper/ink theme consistency
+- ✅ `StockBatchCard.jsx` - Semantic color usage (red for >80% usage)
+- ✅ `StockBatchForm.jsx` - Modal styling with palette colors
+
+**Color Mappings Standardized**:
+```css
+#FFF/#FFFFFF     → var(--paper)           /* Warm off-white */
+#000/#000000     → var(--ink)             /* Near-black */
+#F5F5F5          → var(--bg-secondary)    /* Light panels */
+#FFFACD          → var(--bg-tertiary)     /* Light sections */
+#CCC             → var(--grid-line)       /* Subtle borders */
+#CC0000/#FF0000  → var(--color-red)       /* Danger/delete */
+#666666          → var(--text-secondary)  /* Muted text */
+#4CAF50          → var(--color-green)     /* Success/stock */
+Lock cells       → var(--bg-tertiary)     /* Locked state */
+                 → var(--bg-secondary)    /* Unlocked state */
+```
+
+### 🎯 Benefits
+- **Theme Consistency**: All UI components use unified color system
+- **Maintainability**: Colors defined once in `globals.css`
+- **Future-Proof**: Easy to add dark mode or alternative themes
+- **Zero Hardcoding**: No hex colors in component files
+- **Medical Aesthetic**: Paper/ink brutalist feel throughout app
+
+### 📊 Metrics
+- **Files Updated**: 4 component files fully themed
+- **Hardcoded Colors Removed**: ~50+ hex values replaced
+- **Color Variables Used**: 12 semantic CSS variables
+- **Code Quality**: Single source of truth for all colors
+
+---
+
 ## [v3.9.1 - UI Polish & Collapsible Panels] - 2025-11-08
 
 ### 🎨 UI Refinements

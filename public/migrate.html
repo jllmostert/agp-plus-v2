@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGP+ V4 Migration</title>
+  <style>
+    body {
+      font-family: Monaco, monospace;
+      background: #1a1a1a;
+      color: #e3e0dc;
+      padding: 40px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      border-bottom: 3px solid #e3e0dc;
+      padding-bottom: 10px;
+    }
+    
+    .section {
+      margin: 30px 0;
+      padding: 20px;
+      border: 2px solid #e3e0dc;
+      background: rgba(227, 224, 220, 0.05);
+    }
+    
+    button {
+      padding: 15px 30px;
+      border: 3px solid #e3e0dc;
+      background: transparent;
+      color: #e3e0dc;
+      font-family: Monaco, monospace;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 10px 10px 10px 0;
+    }
+    
+    button:hover {
+      background: rgba(227, 224, 220, 0.1);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    #console {
+      background: #0a0a0a;
+      border: 2px solid #e3e0dc;
+      padding: 20px;
+      height: 500px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      font-family: Monaco, monospace;
+    }
+    
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .warning { color: #f59e0b; }
+    .info { color: #3b82f6; }
+  </style>
+</head>
+<body>
+  <h1>AGP+ V4 Migration</h1>
+  
+  <div class="section">
+    <h2>⚠️ IMPORTANT - READ BEFORE PROCEEDING</h2>
+    <p>This migration will:</p>
+    <ul>
+      <li>✅ Migrate 219 SQLite sensors + 6 localStorage sensors → V4 unified storage</li>
+      <li>✅ Fix sensor #222 resurrection bug (remove from deleted list)</li>
+      <li>✅ Preserve ALL data (nothing will be lost)</li>
+      <li>✅ Backups already created in docs/archive/2025-11-08_sensor_rewrite/</li>
+    </ul>
+    <p><strong>This is a ONE-TIME operation.</strong> After running, the app will use V4 storage only.</p>
+  </div>
+  
+  <div class="section">
+    <h2>Step 1: Pre-Migration Check</h2>
+    <button id="checkBtn" onclick="checkCurrentStorage()">Check Current Storage</button>
+    <div id="checkResult" style="margin-top: 15px;"></div>
+  </div>
+  
+  <div class="section">
+    <h2>Step 2: Run Migration</h2>
+    <button id="migrateBtn" onclick="runMigration()" disabled>🚀 Run Migration</button>
+    <button id="verifyBtn" onclick="verifyMigration()" disabled>✓ Verify Migration</button>
+  </div>
+  
+  <div class="section">
+    <h2>Console Output</h2>
+    <div id="console"></div>
+  </div>
+  
+  <script type="module">
+    import { migrate } from '../scripts/migrate_once.js';
+    import * as storage from '../src/storage/sensorStorage.js';
+    
+    window.runMigrate = migrate;
+    window.storage = storage;
+  </script>
+  
+  <script>
+    const consoleDiv = document.getElementById('console');
+    const originalLog = console.log;
+    const originalError = console.error;
+    const originalWarn = console.warn;
+    
+    // Override console to show in page
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      appendConsole(args.join(' '), 'info');
+    };
+    
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      appendConsole(args.join(' '), 'error');
+    };
+    
+    console.warn = function(...args) {
+      originalWarn.apply(console, args);
+      appendConsole(args.join(' '), 'warning');
+    };
+    
+    function appendConsole(text, type = 'info') {
+      const line = document.createElement('div');
+      line.className = type;
+      line.textContent = text;
+      consoleDiv.appendChild(line);
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+    
+    async function checkCurrentStorage() {
+      appendConsole('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+      appendConsole('🔍 Checking current storage...', 'info');
+      appendConsole('', 'info');
+      
+      // Check old storage
+      const oldKey = 'agp-sensors';
+      const oldData = localStorage.getItem(oldKey);
+      if (oldData) {
+        const parsed = JSON.parse(oldData);
+        appendConsole(`✓ Found old storage (${oldKey}):`, 'success');
+        appendConsole(`  - Sensors: ${parsed.sensors?.length || 0}`, 'info');
+        appendConsole('', 'info');
+      }
+      
+      // Check V4 storage
+      const v4Key = 'agp-sensors-v4';
+      const v4Data = localStorage.getItem(v4Key);
+      if (v4Data) {
+        const parsed = JSON.parse(v4Data);
+        appendConsole(`⚠️ V4 storage already exists!`, 'warning');
+        appendConsole(`  - Sensors: ${parsed.sensors?.length || 0}`, 'info');
+        appendConsole(`  - Migrated: ${parsed.migrated_from_sqlite}`, 'info');
+        appendConsole('', 'info');
+        appendConsole('Migration may have already been run.', 'warning');
+        appendConsole('', 'info');
+      } else {
+        appendConsole('✓ V4 storage does not exist yet (good!)', 'success');
+        appendConsole('', 'info');
+      }
+      
+      // Check export files
+      try {
+        const sqliteResp = await fetch('/sqlite_sensors_export.json');
+        if (sqliteResp.ok) {
+          const data = await sqliteResp.json();
+          appendConsole(`✓ SQLite export found: ${data.length} sensors`, 'success');
+        }
+      } catch (e) {
+        appendConsole(`❌ SQLite export not found!`, 'error');
+      }
+      
+      try {
+        const localResp = await fetch('/agp-sensors-2025-11-08.json');
+        if (localResp.ok) {
+          const data = await localResp.json();
+          appendConsole(`✓ localStorage export found: ${data.sensors.length} sensors`, 'success');
+        }
+      } catch (e) {
+        appendConsole(`❌ localStorage export not found!`, 'error');
+      }
+      
+      appendConsole('', 'info');
+      appendConsole('✓ Pre-migration check complete!', 'success');
+      appendConsole('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+      
+      // Enable migration button
+      document.getElementById('migrateBtn').disabled = false;
+    }
+    
+    async function runMigration() {
+      const btn = document.getElementById('migrateBtn');
+      btn.disabled = true;
+      
+      appendConsole('', 'info');
+      appendConsole('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+      appendConsole('🚀 Starting migration...', 'info');
+      appendConsole('', 'info');
+      
+      try {
+        const result = await window.runMigrate();
+        
+        appendConsole('', 'info');
+        appendConsole('✅ MIGRATION COMPLETE!', 'success');
+        appendConsole('', 'info');
+        
+        // Enable verify button
+        document.getElementById('verifyBtn').disabled = false;
+      } catch (error) {
+        appendConsole('', 'info');
+        appendConsole('❌ MIGRATION FAILED!', 'error');
+        appendConsole(error.toString(), 'error');
+        btn.disabled = false;
+      }
+    }
+    
+    async function verifyMigration() {
+      appendConsole('', 'info');
+      appendConsole('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+      appendConsole('✓ Verifying migration...', 'info');
+      appendConsole('', 'info');
+      
+      const info = window.storage.getStorageInfo();
+      appendConsole(`Version: ${info.version}`, 'info');
+      appendConsole(`Last updated: ${info.last_updated}`, 'info');
+      appendConsole(`Total sensors: ${info.total}`, 'success');
+      appendConsole(`Active sensors: ${info.active}`, 'success');
+      appendConsole(`Deleted sensors: ${info.deleted_count}`, 'info');
+      appendConsole('', 'info');
+      
+      // Check sensor #222
+      const s222 = window.storage.getSensorById('sensor_1762231226000');
+      if (s222) {
+        appendConsole('🎯 Checking sensor #222...', 'info');
+        appendConsole(`  - Status: ${s222.statusInfo.status}`, s222.statusInfo.status === 'active' ? 'success' : 'error');
+        appendConsole(`  - Emoji: ${s222.statusInfo.emoji}`, 'info');
+        appendConsole(`  - Label: ${s222.statusInfo.label}`, 'info');
+        appendConsole('', 'info');
+        
+        if (s222.statusInfo.status === 'active') {
+          appendConsole('✅ BUG FIXED! Sensor #222 now shows ACTIVE!', 'success');
+        } else {
+          appendConsole('❌ Bug not fixed - sensor #222 still shows wrong status', 'error');
+        }
+      } else {
+        appendConsole('❌ Sensor #222 not found!', 'error');
+      }
+      
+      appendConsole('', 'info');
+      appendConsole('✓ Verification complete!', 'success');
+      appendConsole('', 'info');
+      appendConsole('🎉 You can now close this page and refresh the app!', 'success');
+      appendConsole('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+    }
+    
+    window.checkCurrentStorage = checkCurrentStorage;
+    window.runMigration = runMigration;
+    window.verifyMigration = verifyMigration;
+  </script>
+</body>
+</html>

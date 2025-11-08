@@ -79,8 +79,8 @@ export default function StockBatchForm({ batch, onSave, onCancel }) {
       zIndex: 10000
     }}>
       <div style={{
-        backgroundColor: '#FFFFFF',
-        border: '3px solid #000000',
+        backgroundColor: 'var(--paper)',
+        border: '3px solid var(--ink)',
         padding: '24px',
         maxWidth: '600px',
         width: '90%',
@@ -92,7 +92,8 @@ export default function StockBatchForm({ batch, onSave, onCancel }) {
           margin: '0 0 24px 0',
           fontSize: '18px',
           fontWeight: 'bold',
-          textTransform: 'uppercase'
+          textTransform: 'uppercase',
+          color: 'var(--ink)'
         }}>
           {batch ? 'BATCH BEWERKEN' : 'NIEUWE BATCH'}
         </h2>
@@ -100,12 +101,12 @@ export default function StockBatchForm({ batch, onSave, onCancel }) {
         {errors.length > 0 && (
           <div style={{
             padding: '12px',
-            backgroundColor: '#FFE0E0',
-            border: '2px solid #FF0000',
+            backgroundColor: 'var(--bg-tertiary)',
+            border: '2px solid var(--color-red)',
             marginBottom: '16px'
           }}>
             {errors.map((err, i) => (
-              <div key={i} style={{ fontSize: '12px', color: '#FF0000' }}>{err}</div>
+              <div key={i} style={{ fontSize: '12px', color: 'var(--color-red)' }}>{err}</div>
             ))}
           </div>
         )}
@@ -204,8 +205,8 @@ export default function StockBatchForm({ batch, onSave, onCancel }) {
               style={{
                 ...buttonStyle,
                 flex: 1,
-                backgroundColor: '#000000',
-                color: '#FFFFFF'
+                backgroundColor: 'var(--ink)',
+                color: 'var(--paper)'
               }}
             >
               {batch ? 'OPSLAAN' : 'TOEVOEGEN'}
@@ -236,7 +237,8 @@ function FormField({ label, required, children }) {
         fontSize: '12px',
         fontWeight: 'bold',
         textTransform: 'uppercase',
-        marginBottom: '8px'
+        marginBottom: '8px',
+        color: 'var(--ink)'
       }}>
         {label}
       </label>
@@ -248,15 +250,18 @@ function FormField({ label, required, children }) {
 const inputStyle = {
   width: '100%',
   padding: '12px',
-  border: '3px solid #000000',
+  border: '3px solid var(--ink)',
   fontSize: '14px',
-  fontFamily: 'inherit'
+  fontFamily: 'inherit',
+  backgroundColor: 'var(--paper)',
+  color: 'var(--ink)'
 };
 
 const buttonStyle = {
   padding: '12px 24px',
-  border: '3px solid #000000',
-  backgroundColor: '#FFFFFF',
+  border: '3px solid var(--ink)',
+  backgroundColor: 'var(--paper)',
+  color: 'var(--ink)',
   fontSize: '14px',
   fontWeight: 'bold',
   cursor: 'pointer',

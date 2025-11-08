@@ -8,13 +8,13 @@ import React from 'react';
 
 export default function StockBatchCard({ batch, onEdit, onDelete }) {
   const { stats } = batch;
-  const usageColor = stats.usage_percentage > 80 ? '#FF0000' : '#000000';
+  const usageColor = stats.usage_percentage > 80 ? 'var(--color-red)' : 'var(--ink)';
 
   return (
     <div style={{
-      border: '3px solid #000000',
+      border: '3px solid var(--ink)',
       padding: '16px',
-      backgroundColor: '#FFFFFF'
+      backgroundColor: 'var(--paper)'
     }}>
       {/* HEADER */}
       <div style={{
@@ -24,10 +24,10 @@ export default function StockBatchCard({ batch, onEdit, onDelete }) {
         marginBottom: '16px'
       }}>
         <div>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px' }}>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px', color: 'var(--ink)' }}>
             {batch.lot_number}
           </div>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#666666' }}>
+          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
             {batch.source}
           </div>
         </div>
@@ -44,31 +44,31 @@ export default function StockBatchCard({ batch, onEdit, onDelete }) {
         gap: '8px',
         marginBottom: '16px',
         padding: '12px',
-        backgroundColor: '#F5F5F5',
-        border: '1px solid #000000'
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--ink)'
       }}>
         <div>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: usageColor }}>
             {stats.assigned_count}
           </div>
-          <div style={{ fontSize: '10px', textTransform: 'uppercase' }}>GEBRUIKT</div>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>GEBRUIKT</div>
         </div>
         <div>
-          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--ink)' }}>
             {stats.remaining_count}
           </div>
-          <div style={{ fontSize: '10px', textTransform: 'uppercase' }}>RESTEREND</div>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>RESTEREND</div>
         </div>
         <div>
           <div style={{ fontSize: '20px', fontWeight: 'bold', color: usageColor }}>
             {stats.usage_percentage}%
           </div>
-          <div style={{ fontSize: '10px', textTransform: 'uppercase' }}>GEBRUIK</div>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>GEBRUIK</div>
         </div>
       </div>
 
       {/* DATES */}
-      <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
+      <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'var(--ink)' }}>
         <div><strong>ONTVANGEN:</strong> {formatDate(batch.received_date, batch.received_date_exact)}</div>
         {batch.expiry_date && (
           <div><strong>VERVALDATUM:</strong> {batch.expiry_date}</div>
@@ -77,7 +77,7 @@ export default function StockBatchCard({ batch, onEdit, onDelete }) {
           <div><strong>DOOS:</strong> {batch.box_quantity} stuks</div>
         )}
         {batch.notes && (
-          <div style={{ marginTop: '8px', color: '#666666' }}>{batch.notes}</div>
+          <div style={{ marginTop: '8px', color: 'var(--text-secondary)' }}>{batch.notes}</div>
         )}
       </div>
     </div>
@@ -92,8 +92,9 @@ function formatDate(monthDate, exactDate) {
 const buttonStyle = {
   width: '32px',
   height: '32px',
-  border: '2px solid #000000',
-  backgroundColor: '#FFFFFF',
+  border: '2px solid var(--ink)',
+  backgroundColor: 'var(--paper)',
+  color: 'var(--ink)',
   cursor: 'pointer',
   fontSize: '14px',
   fontWeight: 'bold'

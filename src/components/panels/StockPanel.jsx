@@ -89,7 +89,7 @@ export default function StockPanel({ isOpen, onClose }) {
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: 'var(--paper)',
       zIndex: 9999,
       display: 'flex',
       flexDirection: 'column',
@@ -98,7 +98,7 @@ export default function StockPanel({ isOpen, onClose }) {
       {/* HEADER */}
       <div style={{
         padding: '24px',
-        borderBottom: '3px solid #000000',
+        borderBottom: '3px solid var(--ink)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
@@ -108,7 +108,8 @@ export default function StockPanel({ isOpen, onClose }) {
           fontSize: '24px',
           fontWeight: 'bold',
           textTransform: 'uppercase',
-          letterSpacing: '1px'
+          letterSpacing: '1px',
+          color: 'var(--ink)'
         }}>
           VOORRAAD BEHEER
         </h1>
@@ -116,9 +117,9 @@ export default function StockPanel({ isOpen, onClose }) {
           onClick={onClose}
           style={{
             padding: '8px 16px',
-            backgroundColor: '#000000',
-            color: '#FFFFFF',
-            border: '3px solid #000000',
+            backgroundColor: 'var(--ink)',
+            color: 'var(--paper)',
+            border: '3px solid var(--ink)',
             fontSize: '14px',
             fontWeight: 'bold',
             cursor: 'pointer',
@@ -132,37 +133,37 @@ export default function StockPanel({ isOpen, onClose }) {
       {/* SUMMARY STATS */}
       <div style={{
         padding: '24px',
-        borderBottom: '3px solid #000000',
+        borderBottom: '3px solid var(--ink)',
         display: 'grid',
         gridTemplateColumns: 'repeat(5, 1fr)',
         gap: '16px'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{summaryStats.totalBatches}</div>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px' }}>BATCHES</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.totalBatches}</div>
+          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>BATCHES</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{summaryStats.totalQuantity}</div>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px' }}>TOTAAL</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.totalQuantity}</div>
+          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>TOTAAL</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{summaryStats.assignedCount}</div>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px' }}>TOEGEWEZEN</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.assignedCount}</div>
+          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>TOEGEWEZEN</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{summaryStats.remainingCount}</div>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px' }}>RESTEREND</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.remainingCount}</div>
+          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>RESTEREND</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{summaryStats.usagePercentage}%</div>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px' }}>GEBRUIK</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.usagePercentage}%</div>
+          <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>GEBRUIK</div>
         </div>
       </div>
 
       {/* TOOLBAR */}
       <div style={{
         padding: '24px',
-        borderBottom: '3px solid #000000',
+        borderBottom: '3px solid var(--ink)',
         display: 'flex',
         gap: '16px',
         alignItems: 'center'
@@ -175,19 +176,21 @@ export default function StockPanel({ isOpen, onClose }) {
           style={{
             flex: 1,
             padding: '12px',
-            border: '3px solid #000000',
+            border: '3px solid var(--ink)',
             fontSize: '14px',
             fontFamily: 'inherit',
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            backgroundColor: 'var(--paper)',
+            color: 'var(--ink)'
           }}
         />
         <button
           onClick={handleAddNew}
           style={{
             padding: '12px 24px',
-            backgroundColor: '#000000',
-            color: '#FFFFFF',
-            border: '3px solid #000000',
+            backgroundColor: 'var(--ink)',
+            color: 'var(--paper)',
+            border: '3px solid var(--ink)',
             fontSize: '14px',
             fontWeight: 'bold',
             cursor: 'pointer',
@@ -210,7 +213,7 @@ export default function StockPanel({ isOpen, onClose }) {
             padding: '48px',
             fontSize: '14px',
             textTransform: 'uppercase',
-            color: '#666666'
+            color: 'var(--text-secondary)'
           }}>
             {searchQuery ? 'GEEN BATCHES GEVONDEN' : 'GEEN BATCHES - KLIK "+ NIEUWE BATCH"'}
           </div>

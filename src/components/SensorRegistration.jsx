@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { parseCareLinkSections } from '../core/csvSectionParser';
 import { detectSensorChanges } from '../core/sensorDetectionEngine';
-import { addSensor, getSensorHistory, getMostRecentSensorBefore } from '../storage/sensorStorage';
+import { addSensor, getAllSensors } from '../storage/sensorStorage';
 import './SensorRegistration.css';
 
 export default function SensorRegistration({ isOpen, onClose }) {
@@ -148,9 +148,12 @@ export default function SensorRegistration({ isOpen, onClose }) {
       
       // Validation: warn if previous sensor is missing stop time
       // (This shouldn't happen with v3.8.0+ detection, but keep as safety check)
-      const previousSensor = getMostRecentSensorBefore(candidate.timestamp);
+      const allSensors = getAllSensors();
+      const previousSensor = allSensors
+        .filter(s => new Date(s.start_date) < candidate.timestamp)
+        .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))[0];
       if (previousSensor && !previousSensor.end_date) {
-        addDebugLog(`⚠️ Warning: Previous sensor ${previousSensor.sensor_id} has no end_date`);
+        addDebugLog(`⚠️ Warning: Previous sensor ${previousSensor.id} has no end_date`);
         addDebugLog(`   This sensor should have been assigned stopped_at during detection`);
       }
       
@@ -170,7 +173,9 @@ export default function SensorRegistration({ isOpen, onClose }) {
           ? (candidate.stopped_at - candidate.timestamp) / (1000 * 60 * 60 * 24)
           : null,
         reasonStop: candidate.stopped_at ? 'EoL gap detected' : null,
-        status: candidate.lifecycle === 'active' ? 'active' : 'ended',
+        // Fix: Use 'running' for active sensors, 'ended' for stopped
+        // calculateSensorStatus in useSensorDatabase will convert to success/fail based on duration
+        status: candidate.lifecycle === 'active' ? 'running' : 'ended',
         confidence: candidate.confidence,
         lifecycle: candidate.lifecycle || 'unknown',
         lotNumber: null,

@@ -37,8 +37,6 @@ const SensorRow = React.memo(function SensorRow({
   const duration = getDuration();
 
   const handleLockClick = () => {
-    if (!sensor.isEditable) return;
-    
     const result = toggleSensorLock(sensor.sensor_id);
     if (result.success) {
       setRefreshKey(prev => prev + 1);
@@ -79,24 +77,6 @@ const SensorRow = React.memo(function SensorRow({
               BATCH
             </span>
           )}
-          
-          <span 
-            style={{
-              fontSize: '9px',
-              padding: '2px 6px',
-              borderRadius: '2px',
-              fontWeight: 'bold',
-              letterSpacing: '0.05em',
-              backgroundColor: sensor.storageSource === 'localStorage' ? '#065f46' : '#1f2937',
-              color: sensor.storageSource === 'localStorage' ? '#d1fae5' : '#9ca3af',
-              border: sensor.storageSource === 'localStorage' ? '1px solid #10b981' : '1px solid #4b5563'
-            }}
-            title={sensor.storageSource === 'localStorage' 
-              ? 'Recent sensor - can be edited/deleted' 
-              : 'Historical sensor - read-only from database'}
-          >
-            {sensor.storageSource === 'localStorage' ? 'RECENT' : 'HISTORICAL'}
-          </span>
         </div>
       </td>
 
@@ -106,20 +86,15 @@ const SensorRow = React.memo(function SensorRow({
         borderRight: '1px solid var(--grid-line)',
         textAlign: 'center',
         fontSize: '18px',
-        cursor: sensor.isEditable ? 'pointer' : 'not-allowed',
+        cursor: 'pointer',
         backgroundColor: sensor.is_manually_locked 
           ? 'rgba(255, 0, 0, 0.1)' 
-          : 'rgba(0, 255, 0, 0.05)',
-        opacity: sensor.isEditable ? 1 : 0.5
+          : 'rgba(0, 255, 0, 0.05)'
       }}
       onClick={handleLockClick}
-      title={
-        !sensor.isEditable 
-          ? 'Read-only sensor (historical data from database)'
-          : sensor.is_manually_locked
-            ? 'Locked - Click to unlock (allows deletion)'
-            : 'Unlocked - Click to lock (prevents deletion)'
-      }
+      title={sensor.is_manually_locked
+        ? 'Locked - Click to unlock (allows deletion)'
+        : 'Unlocked - Click to lock (prevents deletion)'}
       >
         {sensor.is_manually_locked ? '🔒' : '🔓'}
       </td>
@@ -205,8 +180,8 @@ const SensorRow = React.memo(function SensorRow({
           }}
         >
           <option value="">-</option>
-          {batches.map(b => (
-            <option key={b.batch_id} value={b.batch_id}>
+          {batches.map((b, index) => (
+            <option key={`${b.batch_id}-${index}`} value={b.batch_id}>
               {b.lot_number}
             </option>
           ))}

@@ -28,7 +28,8 @@ function ImportPanel({
   onCSVLoad,
   onProTimeLoad,
   onProTimeDelete,
-  onImportDatabase
+  onImportDatabase,
+  onSensorRegistrationOpen
 }) {
   // Progress tracking state
   const [uploadProgress, setUploadProgress] = useState({
@@ -81,7 +82,7 @@ function ImportPanel({
       {/* Sub-buttons for import options */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(2, 1fr) repeat(2, 1fr)',
         gap: '0.75rem',
         marginBottom: '1rem'
       }}>
@@ -129,6 +130,28 @@ function ImportPanel({
         >
           ProTime PDFs
           {workdays && <span style={{ color: 'var(--color-green)', fontSize: '1rem' }}>✓</span>}
+        </button>
+
+        <button
+          onClick={onSensorRegistrationOpen}
+          style={{
+            background: 'var(--bg-primary)',
+            border: '2px solid var(--color-orange)',
+            color: 'var(--color-orange)',
+            cursor: 'pointer',
+            padding: '1rem',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+          title="Detect and register sensor changes from uploaded CSV"
+        >
+          🔍 Detect Sensors
         </button>
 
         <button

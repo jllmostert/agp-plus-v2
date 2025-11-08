@@ -12,7 +12,7 @@
 
 // Version injected by Vite at build time from package.json
 // In development, defaults to package.json version
-export const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '3.9.1';
+export const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '4.0.1';
 export const APP_NAME = 'AGP+';
 export const APP_FULL_NAME = `${APP_NAME} v${APP_VERSION}`;
 
