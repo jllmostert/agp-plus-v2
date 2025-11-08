@@ -99,6 +99,71 @@ export default function DataCleanupModal({
             </p>
           </div>
           
+          {/* ALL-IN Nuclear Option */}
+          <div className="warning-box" style={{ 
+            background: 'rgba(220, 38, 38, 0.1)',
+            borderColor: 'var(--color-red)',
+            marginTop: '1rem'
+          }}>
+            <p className="mono" style={{ color: 'var(--color-red)' }}>☢️ NUCLEAR OPTION</p>
+            <p style={{ marginBottom: '1rem' }}>
+              <strong>ALL-IN</strong> verwijdert ALLE data behalve patiënt info, sensoren en sensor stock:
+            </p>
+            <ul style={{ 
+              margin: '0 0 1rem 1.5rem',
+              fontFamily: 'Courier New, monospace',
+              fontSize: '0.75rem',
+              lineHeight: '1.6'
+            }}>
+              <li>Alle glucose readings</li>
+              <li>Alle cartridge changes</li>
+              <li>Alle sensor history</li>
+              <li>Alle stock batches</li>
+            </ul>
+            <p style={{ 
+              fontFamily: 'Courier New, monospace',
+              fontSize: '0.75rem',
+              marginBottom: '1rem'
+            }}>
+              ✅ Behoudt: Patiënt info, ProTime werkdagen
+            </p>
+            <p style={{ 
+              fontFamily: 'Courier New, monospace',
+              fontSize: '0.75rem',
+              marginBottom: '1rem'
+            }}>
+              📦 Automatische backup wordt gemaakt voor cleanup
+            </p>
+            <button
+              onClick={() => onCleanup({ type: 'all-in' })}
+              disabled={isExecuting}
+              style={{
+                width: '100%',
+                background: 'var(--color-red)',
+                border: '3px solid var(--border-primary)',
+                color: '#fff',
+                padding: '1rem',
+                fontFamily: 'Courier New, monospace',
+                fontSize: '0.875rem',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                cursor: isExecuting ? 'not-allowed' : 'pointer',
+                opacity: isExecuting ? 0.5 : 1
+              }}
+            >
+              ☢️ ALL-IN (Nuclear Reset)
+            </button>
+          </div>
+          
+          {/* Divider */}
+          <div style={{
+            margin: '1.5rem 0',
+            borderTop: '2px solid var(--border-primary)',
+            paddingTop: '1.5rem'
+          }}>
+            <p className="mono" style={{ marginBottom: '0.5rem' }}>OF: SELECTIEVE CLEANUP</p>
+          </div>
+          
           {/* Period Selector */}
           <div className="form-group">
             <label className="mono">PERIODE:</label>
