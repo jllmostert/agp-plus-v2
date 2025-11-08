@@ -339,8 +339,32 @@ export function importJSON(data) {
       return { success: false, error: 'Invalid data format' };
     }
     
+    const storage = getStorage();
+    const existingSensorIds = new Set(storage.sensors.map(s => s.id));
+    
+    // Count what we're importing
+    let sensorsAdded = 0;
+    let sensorsSkipped = 0;
+    
+    data.sensors.forEach(sensor => {
+      if (existingSensorIds.has(sensor.id)) {
+        sensorsSkipped++;
+      } else {
+        sensorsAdded++;
+      }
+    });
+    
+    // Replace entire storage with imported data
     saveStorage(data);
-    return { success: true };
+    
+    return { 
+      success: true,
+      summary: {
+        sensorsAdded,
+        sensorsSkipped,
+        batchesImported: data.batches?.length || 0
+      }
+    };
   } catch (error) {
     return { success: false, error: error.message };
   }

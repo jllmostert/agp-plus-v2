@@ -193,7 +193,14 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
         const result = sensorStorage.importJSON(data);
         
         if (result.success) {
-          alert(`✅ Import succesvol!\n\nSensors: ${result.summary.sensorsAdded} toegevoegd, ${result.summary.sensorsSkipped} overgeslagen`);
+          const msg = [
+            '✅ Import succesvol!',
+            '',
+            `Sensors: ${result.summary.sensorsAdded} toegevoegd, ${result.summary.sensorsSkipped} overgeslagen`,
+            result.summary.batchesImported > 0 ? `Batches: ${result.summary.batchesImported} geïmporteerd` : ''
+          ].filter(Boolean).join('\n');
+          
+          alert(msg);
           setRefreshKey(prev => prev + 1);
         } else {
           alert(`❌ Import mislukt:\n\n${result.error}`);
@@ -203,6 +210,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
       }
     };
     reader.readAsText(file);
+    
+    // Reset file input
+    e.target.value = '';
   };
 
   const handleSort = (column) => {
