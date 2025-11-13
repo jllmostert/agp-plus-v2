@@ -601,18 +601,25 @@ export default function AGPGenerator() {
 
   /**
    * Handle ProTime data import (PDF text or JSON) - async!
+   * Supports multiple imports - merges workdays instead of replacing
    */
   const handleProTimeLoad = async (text) => {
     try {
-      const workdayDates = parseProTime(text);
+      const newWorkdayDates = parseProTime(text);
       
-      if (!workdayDates || workdayDates.length === 0) {
+      if (!newWorkdayDates || newWorkdayDates.size === 0) {
         console.error('No workdays found in ProTime data');
         return;
       }
 
-      // Convert array to Set for fast lookups
-      const workdaySet = new Set(workdayDates);
+      // ✅ MERGE with existing workdays instead of replacing!
+      const workdaySet = new Set([
+        ...(workdays || []),    // Existing workdays (if any)
+        ...newWorkdayDates      // New workdays from this import
+      ]);
+      
+      console.log(`[ProTime] Imported ${newWorkdayDates.size} new workdays, total now: ${workdaySet.size}`);
+      
       setWorkdays(workdaySet);
       
       // V3 mode: Save to master dataset settings
