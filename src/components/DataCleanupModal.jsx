@@ -99,13 +99,13 @@ export default function DataCleanupModal({
             </p>
           </div>
           
-          {/* ALL-IN Nuclear Option */}
+          {/* ALL-IN Complete Reset Option */}
           <div className="warning-box" style={{ 
             background: 'rgba(220, 38, 38, 0.1)',
             borderColor: 'var(--color-red)',
             marginTop: '1rem'
           }}>
-            <p className="mono" style={{ color: 'var(--color-red)' }}>☢️ NUCLEAR OPTION</p>
+            <p className="mono" style={{ color: 'var(--color-red)' }}>⚠️ COMPLETE RESET</p>
             <p style={{ marginBottom: '1rem' }}>
               <strong>ALL-IN</strong> verwijdert ALLE data behalve patiënt info, sensoren en sensor stock:
             </p>
@@ -151,7 +151,7 @@ export default function DataCleanupModal({
                 opacity: isExecuting ? 0.5 : 1
               }}
             >
-              ☢️ ALL-IN (Nuclear Reset)
+              ⚠️ ALL-IN (Complete Reset)
             </button>
           </div>
           

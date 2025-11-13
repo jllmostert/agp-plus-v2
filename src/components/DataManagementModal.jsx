@@ -207,7 +207,7 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
           overflowY: 'auto',
           minHeight: 0
         }}>
-          {/* ALL-IN Nuclear Option */}
+          {/* ALL-IN Complete Reset Option */}
           <div style={{
             background: 'rgba(220, 38, 38, 0.1)',
             border: '3px solid var(--color-red)',
@@ -221,7 +221,7 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
               marginBottom: '1rem',
               color: 'var(--color-red)'
             }}>
-              NUCLEAR OPTION
+              ⚠️ COMPLETE RESET
             </h3>
             <p style={{
               fontSize: '0.875rem',
@@ -316,7 +316,7 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
                 opacity: isDeleting ? 0.5 : 1
               }}
             >
-              ALL-IN (Nuclear Reset)
+              ⚠️ ALL-IN (Complete Reset)
             </button>
           </div>
           
