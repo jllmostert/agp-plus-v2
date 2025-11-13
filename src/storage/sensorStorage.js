@@ -33,8 +33,8 @@ function initStorage() {
     version: VERSION,
     last_updated: new Date().toISOString(),
     sensors: [],
-    batches: [],
     deleted: []
+    // Note: batches moved to stockStorage.js (v4.0.1)
   };
   saveStorage(data);
   return data;
@@ -282,30 +282,9 @@ export function clearAllSensors() {
 
 // ============================================================================
 // BATCH OPERATIONS
+// Note: Batch management moved to stockStorage.js (v4.0.1)
+// This only handles sensor.batch_id field updates
 // ============================================================================
-
-export function getAllBatches() {
-  const storage = getStorage();
-  return storage.batches;
-}
-
-export function addBatch(data) {
-  const storage = getStorage();
-  
-  const batch = {
-    batch_id: data.batch_id || `BATCH-${Date.now()}`,
-    lot_number: data.lot_number,
-    quantity: data.quantity || 0,
-    received_date: data.received_date,
-    expiry_date: data.expiry_date,
-    source: data.source || 'manual'
-  };
-  
-  storage.batches.push(batch);
-  saveStorage(storage);
-  
-  return batch;
-}
 
 export function assignBatch(sensorId, batchId) {
   const storage = getStorage();

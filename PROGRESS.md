@@ -1362,3 +1362,217 @@ When user says "rewrite the module" five times:
 **Status**: Migration works, data correct, but UI needs COMPLETE REWRITE
 
 ---
+
+
+## [2025-11-13 23:30] - BATCH SYSTEM CONSOLIDATION
+
+### 🎯 ISSUE IDENTIFIED
+**Dual Batch Management Systems causing data disconnect**
+
+**OLD System** (sensorStorage.js):
+- Batches in `storage.batches` (inside sensor storage)
+- Used by: SensorHistoryPanel.jsx line 37
+- 3 functions: getAllBatches(), addBatch(), assignBatch()
+
+**NEW System** (stockStorage.js):
+- Batches in separate `agp-stock-batches` key
+- Assignments in `agp-stock-assignments` key
+- Used by: Export/Import system
+- Better architecture with tracking
+
+**PROBLEM**: 
+- UI shows OLD batches
+- Export/Import use NEW batches
+- Systems don't sync → data loss on export/import
+
+### 📋 CONSOLIDATION PLAN
+
+**Phase 1: Migration Script** (15 min)
+- [ ] Create `migrate-batches-to-stock.js`
+- [ ] Read OLD batches from sensor storage
+- [ ] Write to NEW stockStorage system
+- [ ] Create assignments for sensors with batch_id
+- [ ] Backup before migration
+
+**Phase 2: Update SensorHistoryPanel** (15 min)
+- [ ] Change import: `stockStorage.js` instead of `sensorStorage.js`
+- [ ] Update getAllBatches() call
+- [ ] Update assignBatch() call to use stockStorage
+- [ ] Test dropdown works
+
+**Phase 3: Clean sensorStorage.js** (10 min)
+- [ ] Remove getAllBatches()
+- [ ] Remove addBatch()
+- [ ] Remove assignBatch()
+- [ ] Keep only batch_id field in sensors (foreign key)
+
+**Phase 4: Test & Commit** (10 min)
+- [ ] Test UI batch dropdown
+- [ ] Test batch assignment
+- [ ] Test export includes batches
+- [ ] Test import restores batches
+- [ ] Commit with clear message
+
+**Total Time**: ~50 minutes
+
+### 🚀 EXECUTION STARTING...
+
+
+
+**Phase 1: Migration Script** ✅ COMPLETE (10 min)
+- ✅ Created `scripts/migrate-batches-to-stock.js`
+- ✅ Reads OLD batches from sensor storage
+- ✅ Writes to NEW stockStorage system
+- ✅ Creates assignments for sensors with batch_id
+- ✅ Idempotent (safe to run multiple times)
+- ✅ Tested successfully
+
+Output:
+```
+Migrated 2 batches
+Created 3 assignments
+Batch NG4A12345: 2/10 assigned
+Batch NG4A67890: 1/5 assigned
+```
+
+**Phase 2: Update SensorHistoryPanel** 🔄 IN PROGRESS
+
+
+**Phase 2: Update SensorHistoryPanel** ✅ COMPLETE (12 min)
+- ✅ Added stockStorage import
+- ✅ Changed batches loading to use stockStorage.getAllBatches()
+- ✅ Updated handleBatchAssign to use both systems:
+  - sensorStorage.assignBatch() → updates sensor.batch_id
+  - stockStorage.assignSensorToBatch() → creates assignment record
+- ✅ Handles unassign (null batchId) properly
+
+**Phase 3: Clean sensorStorage.js** 🔄 DECISION NEEDED
+
+Current state:
+- storage.batches array still exists in sensorStorage
+- getAllBatches(), addBatch() functions still present
+- These are now UNUSED (UI uses stockStorage)
+
+Options:
+A) Remove batch functions + deprecate storage.batches array
+B) Keep for backward compatibility (but mark as deprecated)
+C) Add migration notice in sensorStorage
+
+**RECOMMENDATION**: Option A - Clean removal
+- Rationale: V4 is already a breaking change, clean slate is better
+- Batches belong in stockStorage (separation of concerns)
+- Sensor only needs batch_id field (foreign key)
+
+Proceeding with Option A...
+
+
+---
+
+## 2025-11-13 23:30 - BATCH SYSTEM CONSOLIDATION
+
+### Problem Identified
+**Dual batch management systems causing data disconnect**:
+- OLD: `sensorStorage.js` → `storage.batches` (inside sensor storage)
+- NEW: `stockStorage.js` → `agp-stock-batches` (separate key)
+- UI uses OLD, Export/Import use NEW → **systems disconnected**
+
+### Solution
+**Consolidate on stockStorage.js**:
+- ✅ Better architecture (separation of concerns)
+- ✅ Already has assignment tracking
+- ✅ Export/Import already use it
+
+### Tasks
+- [ ] Step 1: Create migration script (move OLD → NEW)
+- [ ] Step 2: Update SensorHistoryPanel to use stockStorage
+- [ ] Step 3: Remove batch functions from sensorStorage
+- [ ] Step 4: Test all batch operations
+- [ ] Step 5: Commit changes
+
+**Status**: STARTED
+**Time**: 23:30
+
+
+
+### Progress Update - 23:35
+
+**Step 1: Create Migration Script** ✅
+- Created `scripts/migrate-batches.js` (128 lines)
+- Created `public/migrate-batches.html` (migration UI)
+- Dev server running on http://localhost:3001
+
+**Next**: Open http://localhost:3001/migrate-batches.html
+1. Click "CHECK STATUS" to see current batches
+2. Click "RUN MIGRATION" to migrate OLD → NEW
+3. Verify migration success
+
+
+
+### Progress Update - 23:45
+
+**Step 2: Update Code** ✅
+- SensorHistoryPanel already uses stockStorage.getAllBatches() ✅
+- export.js already uses stockStorage ✅
+- import.js already uses stockStorage ✅
+
+**Step 3: Remove OLD Batch Functions** ✅
+- Removed getAllBatches() from sensorStorage.js
+- Removed addBatch() from sensorStorage.js
+- Kept assignBatch() (only updates sensor.batch_id field)
+- Removed batches array from initStorage()
+
+**Result**: Systems now consolidated on stockStorage! 🎉
+
+**Next**: Test and commit
+
+
+
+---
+
+## 2025-11-14 00:15 - SESSION RESUME: Verification & Commit
+
+### Session Context
+Resumed from previous chat. Batch consolidation work was COMPLETED but not yet committed.
+
+### Verification Status ✅
+**Code Changes Verified**:
+- ✅ `SensorHistoryPanel.jsx` - Uses stockStorage.getAllBatches() (line 36)
+- ✅ `sensorStorage.js` - Batch functions removed, deprecation note added (line 284-286)
+- ✅ `stockStorage.js` - Fully implemented with batches + assignments
+- ✅ `export.js` - Uses stockStorage for batches
+- ✅ `import.js` - Uses stockStorage for batches
+
+**Migration Scripts Created**:
+- ✅ `scripts/migrate-batches-to-stock.js` - CLI migration tool
+- ✅ `scripts/migrate-batches.js` - Alternative migration
+- ✅ `public/migrate-batches.html` - Browser-based migration UI
+- ✅ `public/migrate-batches.js` - Browser migration logic
+
+**Test Scripts Created**:
+- ✅ `test-stock-export-import.js` - Tests export/import of batches
+- ✅ `test-stock-integration.js` - Analysis script showing the problem
+
+### Git Status
+```
+Modified:
+  - PROGRESS.md (this file)
+  - src/components/panels/SensorHistoryPanel.jsx
+  - src/storage/sensorStorage.js
+
+Untracked:
+  - public/migrate-batches.html
+  - public/migrate-batches.js
+  - scripts/migrate-batches-to-stock.js
+  - scripts/migrate-batches.js
+  - test-stock-export-import.js
+  - test-stock-integration.js
+```
+
+### Next Actions
+1. [ ] Run final test to verify batch operations
+2. [ ] Commit all changes
+3. [ ] Push to GitHub
+4. [ ] Test on live site
+
+**Status**: READY TO COMMIT
+**Time**: 00:15

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Batch Migration Tool</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 40px;
+      max-width: 900px;
+      margin: 0 auto;
+      background: #f5f5f5;
+    }
+    pre {
+      background: #fff;
+      padding: 20px;
+      border: 2px solid #000;
+      overflow-x: auto;
+    }
+    button {
+      padding: 15px 30px;
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: bold;
+      background: #4CAF50;
+      color: white;
+      border: 2px solid #000;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    button.danger {
+      background: #f44336;
+    }
+    button.danger:hover {
+      background: #da190b;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Batch System Migration</h1>
+  <p><strong>Purpose:</strong> Migrate batches from OLD system (sensorStorage) → NEW system (stockStorage)</p>
+  
+  <button onclick="runMigration()">▶️ RUN MIGRATION</button>
+  <button onclick="checkStatus()" style="background: #2196F3">ℹ️ CHECK STATUS</button>
+  <button onclick="location.reload()" style="background: #ff9800">🔄 REFRESH</button>
+  
+  <h2>📊 Output:</h2>
+  <pre id="output">Click "RUN MIGRATION" to start...</pre>
+
+  <script src="migrate-batches.js"></script>
+  <script>
+    function log(message) {
+      const output = document.getElementById('output');
+      output.textContent += message + '\n';
+    }
+
+    function runMigration() {
+      const output = document.getElementById('output');
+      output.textContent = '';
+      
+      // Capture console.log
+      const oldLog = console.log;
+      console.log = function(...args) {
+        log(args.join(' '));
+        oldLog.apply(console, args);
+      };
+      
+      // Run migration by loading the script dynamically
+      const script = document.createElement('script');
+      script.src = 'migrate-batches.js?t=' + Date.now();
+      document.body.appendChild(script);
+    }
+
+    function checkStatus() {
+      const output = document.getElementById('output');
+      output.textContent = '';
+      
+      log('=== CURRENT STATUS ===\n');
+      
+      // Check OLD system
+      const oldData = JSON.parse(localStorage.getItem('agp-sensor-storage') || '{"sensors":[],"batches":[]}');
+      log(`OLD System (sensorStorage):`);
+      log(`  Sensors: ${oldData.sensors?.length || 0}`);
+      log(`  Batches: ${oldData.batches?.length || 0}`);
+      
+      if (oldData.batches && oldData.batches.length > 0) {
+        log(`\n  Batch details:`);
+        oldData.batches.forEach(b => {
+          log(`    - ${b.lot_number} (qty: ${b.quantity || 0})`);
+        });
+      }
+      
+      // Check NEW system
+      log(`\nNEW System (stockStorage):`);
+      const newBatches = JSON.parse(localStorage.getItem('agp-stock-batches') || '[]');
+      const assignments = JSON.parse(localStorage.getItem('agp-stock-assignments') || '[]');
+      log(`  Batches: ${newBatches.length}`);
+      log(`  Assignments: ${assignments.length}`);
+      
+      if (newBatches.length > 0) {
+        log(`\n  Batch details:`);
+        newBatches.forEach(b => {
+          log(`    - ${b.lot_number} (qty: ${b.total_quantity}, assigned: ${b.assigned_count})`);
+        });
+      }
+      
+      log('\n✅ Status check complete');
+    }
+  </script>
+</body>
+</html>

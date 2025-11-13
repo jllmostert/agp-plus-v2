@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import * as sensorStorage from '../../storage/sensorStorage.js';
+import * as stockStorage from '../../storage/stockStorage.js';
 
 export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
   // State
@@ -33,7 +34,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
   useEffect(() => {
     if (isOpen) {
       setSensors(sensorStorage.getAllSensors());
-      setBatches(sensorStorage.getAllBatches());
+      setBatches(stockStorage.getAllBatches()); // NEW: Use stockStorage for batches
     }
   }, [isOpen, refreshKey]);
 
@@ -163,12 +164,31 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
   };
 
   const handleBatchAssign = (sensorId, batchId) => {
-    const result = sensorStorage.assignBatch(sensorId, batchId || null);
-    if (result.success) {
-      setRefreshKey(prev => prev + 1);
-    } else {
-      alert(`❌ ${result.error}`);
+    // Update sensor's batch_id field
+    const sensorResult = sensorStorage.assignBatch(sensorId, batchId || null);
+    if (!sensorResult.success) {
+      alert(`❌ ${sensorResult.error}`);
+      return;
     }
+    
+    // Create/update assignment in stockStorage
+    if (batchId) {
+      try {
+        stockStorage.assignSensorToBatch(sensorId, batchId, 'manual');
+      } catch (error) {
+        console.error('Failed to create stock assignment:', error);
+        // Sensor batch_id is already updated, so this is not critical
+      }
+    } else {
+      // Unassign if batchId is null
+      try {
+        stockStorage.unassignSensor(sensorId);
+      } catch (error) {
+        console.error('Failed to remove stock assignment:', error);
+      }
+    }
+    
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleExport = () => {
