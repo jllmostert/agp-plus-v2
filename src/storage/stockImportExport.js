@@ -1,11 +1,12 @@
 /**
  * STOCK IMPORT/EXPORT MODULE
  * Handle sensor stock batches with sensor assignments
- * V4.2.0 - Stock import/export with sensor connections
+ * V4.2.2 - Stock import/export with replace mode
  */
 
 import { getAllBatches, addBatch, getAllAssignments, assignSensorToBatch, clearAllBatches } from './stockStorage.js';
 import { getAllSensors } from './sensorStorage.js';
+import { VERSION } from '../version.js';
 
 /**
  * Export stock data to JSON
@@ -50,7 +51,7 @@ export async function exportStock() {
     });
     
     const exportData = {
-      version: '4.2.0',
+      version: VERSION,
       export_date: new Date().toISOString(),
       export_type: 'stock',
       statistics: {

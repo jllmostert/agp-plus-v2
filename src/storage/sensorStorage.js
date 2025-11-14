@@ -2,17 +2,17 @@
  * Sensor Storage Module - V4 Clean Implementation
  * 
  * Single source of truth for sensor data.
- * V4.1.0 - Async IndexedDB storage
+ * V4.2.2 - Stock import/export + IndexedDB keyPath fix
  */
 
 import { openDB, STORES, getRecord, putRecord } from './db.js';
+import { VERSION } from '../version.js';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 const STORAGE_KEY = 'sensors-v4'; // IndexedDB key
-const VERSION = '4.1.0'; // Bumped for async
 const SUCCESS_THRESHOLD_DAYS = 6.75;
 
 // ============================================================================
