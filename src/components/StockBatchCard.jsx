@@ -69,7 +69,7 @@ export default function StockBatchCard({ batch, onEdit, onDelete }) {
 
       {/* DATES */}
       <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'var(--ink)' }}>
-        <div><strong>ONTVANGEN:</strong> {formatDate(batch.received_date, batch.received_date_exact)}</div>
+        <div><strong>ONTVANGEN:</strong> {batch.received_date || 'Onbekend'}</div>
         {batch.expiry_date && (
           <div><strong>VERVALDATUM:</strong> {batch.expiry_date}</div>
         )}
@@ -82,11 +82,6 @@ export default function StockBatchCard({ batch, onEdit, onDelete }) {
       </div>
     </div>
   );
-}
-
-function formatDate(monthDate, exactDate) {
-  if (exactDate) return exactDate;
-  return monthDate; // YYYY-MM format
 }
 
 const buttonStyle = {

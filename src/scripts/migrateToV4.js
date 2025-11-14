@@ -121,7 +121,7 @@ function transformBatch(batch) {
     batch_id: batch.batch_id,
     lot_number: batch.lot_number,
     quantity: batch.total_quantity || batch.box_quantity || 0,
-    received_date: batch.received_date_exact || batch.received_date,
+    received_date: batch.received_date,
     expiry_date: batch.expiry_date,
     source: batch.source || 'manual',
     notes: batch.notes || ''

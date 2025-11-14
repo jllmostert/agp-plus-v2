@@ -11,7 +11,6 @@ export default function StockBatchForm({ batch, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     lot_number: '',
     received_date: '',
-    received_date_exact: '',
     source: 'hospital',
     expiry_date: '',
     box_quantity: '',
@@ -26,7 +25,6 @@ export default function StockBatchForm({ batch, onSave, onCancel }) {
       setFormData({
         lot_number: batch.lot_number || '',
         received_date: batch.received_date || '',
-        received_date_exact: batch.received_date_exact || '',
         source: batch.source || 'hospital',
         expiry_date: batch.expiry_date || '',
         box_quantity: batch.box_quantity || '',
@@ -124,21 +122,11 @@ export default function StockBatchForm({ batch, onSave, onCancel }) {
           </FormField>
 
           {/* RECEIVED DATE */}
-          <FormField label="ONTVANGST MAAND *" required>
-            <input
-              type="month"
-              value={formData.received_date}
-              onChange={(e) => handleChange('received_date', e.target.value)}
-              style={inputStyle}
-            />
-          </FormField>
-
-          {/* RECEIVED DATE EXACT (optional) */}
-          <FormField label="EXACTE DATUM (optioneel)">
+          <FormField label="ONTVANGST DATUM *" required>
             <input
               type="date"
-              value={formData.received_date_exact}
-              onChange={(e) => handleChange('received_date_exact', e.target.value)}
+              value={formData.received_date}
+              onChange={(e) => handleChange('received_date', e.target.value)}
               style={inputStyle}
             />
           </FormField>
