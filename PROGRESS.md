@@ -1,10 +1,34 @@
 # AGP+ PROGRESS - SESSION LOG
 
-**Version**: v4.2.1 ✅ ASYNC REFACTOR COMPLETE  
-**Current Focus**: 🚀 All Async Conversions Finished  
-**Last Update**: 2025-11-14 23:45  
+**Version**: v4.2.2 ✅ STOCK IMPORT/EXPORT + INDEXEDDB FIX  
+**Current Focus**: ✅ Stock Management + Database Schema Fixed  
+**Last Update**: 2025-11-14 15:45  
 
 ---
+
+## ✅ SESSION 28 - Stock Import/Export + IndexedDB Fix (2025-11-14 15:15-15:45)
+
+**Status**: ✅ COMPLETE  
+**Duration**: ~30 minutes  
+**Commits**: 59224d2, 81a01b4
+
+### Summary
+Fixed critical IndexedDB bug + added stock import/export with replace/merge modes.
+
+### Features
+1. **Stock Import/Export** ✅ - EXPORT/IMPORT buttons in StockPanel
+2. **Replace/Merge Modes** ✅ - User chooses via confirm dialog  
+3. **IndexedDB Fix** ✅ - Added keyPath to SENSOR_DATA store (DB v5)
+4. **clearAllBatches()** ✅ - New function for replace mode
+
+### Testing
+- ✅ Export stock to JSON
+- ✅ Import (merge mode) - skips duplicates
+- ✅ Import (replace mode) - clears existing
+- ✅ Sensor import now works (no IndexedDB error)
+
+---
+
 
 ## ✅ SESSION 26 - Async Refactor Complete (2025-11-14 23:30-23:45)
 
