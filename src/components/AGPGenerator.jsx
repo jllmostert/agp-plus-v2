@@ -1060,8 +1060,9 @@ export default function AGPGenerator() {
       if (importMergeStrategy === 'replace') {
         console.log('[AGPGenerator] Replace mode: Clearing existing data...');
         
-        // Clear glucose readings
-        await masterDataset.clearAllData();
+        // Clear glucose readings from IndexedDB
+        const { cleanupRecords } = await import('../storage/masterDatasetStorage');
+        await cleanupRecords({ type: 'all-in' }); // Clears readings, cartridges, ProTime
         console.log('[AGPGenerator] Cleared glucose readings');
         
         // Clear sensors
@@ -1074,8 +1075,8 @@ export default function AGPGenerator() {
         console.log('[AGPGenerator] Cleared device events');
         
         // Clear workdays
-        const { clearProTimeData } = await import('../storage/masterDatasetStorage');
-        await clearProTimeData();
+        const { deleteProTimeData } = await import('../storage/masterDatasetStorage');
+        await deleteProTimeData();
         console.log('[AGPGenerator] Cleared workdays');
         
         // Clear patient info
