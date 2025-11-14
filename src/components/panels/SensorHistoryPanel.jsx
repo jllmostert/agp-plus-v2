@@ -94,46 +94,75 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     return sorted;
   }, [filteredSensors, sortColumn, sortDirection]);
 
-  // HW Version Statistics (last 90 days only)
-  const hwStats = useMemo(() => {
+  // Enhanced Statistics
+  const stats = useMemo(() => {
     const now = new Date();
     const ninetyDaysAgo = new Date(now - 90 * 24 * 60 * 60 * 1000);
+    const hwCutoffDate = new Date('2025-07-03T00:00:00');
+    const ninetyDaysBeforeHWCutoff = new Date(hwCutoffDate.getTime() - 90 * 24 * 60 * 60 * 1000);
     
-    // Filter: ended sensors from last 90 days
-    const recentEnded = sensors.filter(s => {
-      if (!s.end_date) return false;
+    // Helper function to calculate stats for a sensor list
+    const calculateStats = (sensorList) => {
+      if (sensorList.length === 0) {
+        return {
+          count: 0,
+          avg_duration: 0,
+          pct_6days: 0,
+          pct_7_9days: 0
+        };
+      }
+      
+      const durations = sensorList.map(s => {
+        const start = new Date(s.start_date);
+        const end = new Date(s.end_date);
+        return (end - start) / (1000 * 60 * 60 * 24); // days
+      });
+      
+      const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
+      const count6days = durations.filter(d => d >= 6).length;
+      const count7_9days = durations.filter(d => d >= 7.9).length;
+      
+      return {
+        count: sensorList.length,
+        avg_duration: avg.toFixed(2),
+        pct_6days: ((count6days / durations.length) * 100).toFixed(1),
+        pct_7_9days: ((count7_9days / durations.length) * 100).toFixed(1)
+      };
+    };
+    
+    // Filter only ended sensors
+    const endedSensors = sensors.filter(s => s.end_date);
+    
+    // 1. Last 90 days
+    const last90Days = endedSensors.filter(s => {
       const endDate = new Date(s.end_date);
       return endDate >= ninetyDaysAgo;
     });
-
-    // Group by HW version
-    const byHW = {};
-    recentEnded.forEach(s => {
-      const hw = s.hw_version || 'Unknown';
-      if (!byHW[hw]) {
-        byHW[hw] = { total: 0, success: 0, durations: [] };
-      }
-      byHW[hw].total++;
-      
-      // Calculate duration
-      const start = new Date(s.start_date);
-      const end = new Date(s.end_date);
-      const days = (end - start) / (1000 * 60 * 60 * 24);
-      byHW[hw].durations.push(days);
-      
-      // Success = >= 7 days
-      if (days >= 7) {
-        byHW[hw].success++;
-      }
+    
+    // 2. 90 days before HW cutoff (A1.01 period)
+    const pre_hw_90days = endedSensors.filter(s => {
+      const endDate = new Date(s.end_date);
+      return endDate >= ninetyDaysBeforeHWCutoff && endDate < hwCutoffDate;
     });
-
-    // Calculate percentages and averages
-    return Object.entries(byHW).map(([hw, data]) => ({
-      hw_version: hw,
-      total: data.total,
-      success_rate: ((data.success / data.total) * 100).toFixed(1),
-      avg_duration: (data.durations.reduce((a, b) => a + b, 0) / data.durations.length).toFixed(1)
-    })).sort((a, b) => b.total - a.total); // Sort by count descending
+    
+    // 3. By year
+    const byYear = {};
+    endedSensors.forEach(s => {
+      const year = new Date(s.start_date).getFullYear();
+      if (!byYear[year]) byYear[year] = [];
+      byYear[year].push(s);
+    });
+    
+    return {
+      last90Days: calculateStats(last90Days),
+      pre_hw_90days: calculateStats(pre_hw_90days),
+      byYear: Object.entries(byYear)
+        .map(([year, sensors]) => ({
+          year: parseInt(year),
+          ...calculateStats(sensors)
+        }))
+        .sort((a, b) => b.year - a.year) // Newest year first
+    };
   }, [sensors]);
 
   // Handlers
@@ -426,37 +455,70 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
           )}
         </div>
 
-        {/* HW Version Stats (last 90 days) */}
-        {hwStats.length > 0 && (
-          <div style={{
-            padding: '15px 20px',
-            borderBottom: '2px solid var(--ink)',
-            backgroundColor: 'var(--bg-tertiary)',
-            display: 'flex',
-            gap: '20px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '12px', width: '100%', marginBottom: '5px', color: 'var(--ink)' }}>
-              📊 HARDWARE STATS (laatste 90 dagen, alleen beëindigde sensoren)
+        {/* Enhanced Statistics */}
+        <div style={{
+          padding: '20px',
+          borderBottom: '3px solid var(--ink)',
+          backgroundColor: 'var(--bg-tertiary)'
+        }}>
+          <div style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '14px', marginBottom: '15px', color: 'var(--ink)' }}>
+            📊 SENSOR STATISTIEKEN (alleen beëindigde sensoren)
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
+            {/* Last 90 days */}
+            <div style={{
+              padding: '15px',
+              border: '2px solid var(--ink)',
+              backgroundColor: 'var(--paper)'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '10px', color: 'var(--color-green)' }}>
+                🟢 LAATSTE 90 DAGEN (n={stats.last90Days.count})
+              </div>
+              <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
+                <div>Ø duur: <strong>{stats.last90Days.avg_duration} dagen</strong></div>
+                <div>≥6 dagen: <strong>{stats.last90Days.pct_6days}%</strong></div>
+                <div>≥7.9 dagen: <strong>{stats.last90Days.pct_7_9days}%</strong></div>
+              </div>
             </div>
-            {hwStats.map(stat => (
-              <div key={stat.hw_version} style={{
-                padding: '10px 15px',
+
+            {/* 90 days before HW cutoff */}
+            {stats.pre_hw_90days.count > 0 && (
+              <div style={{
+                padding: '15px',
                 border: '2px solid var(--ink)',
-                backgroundColor: 'var(--paper)',
-                fontFamily: 'monospace',
-                fontSize: '11px',
-                color: 'var(--ink)'
+                backgroundColor: 'var(--paper)'
               }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                  {stat.hw_version} (n={stat.total})
+                <div style={{ fontWeight: 'bold', marginBottom: '10px', color: 'var(--color-blue)' }}>
+                  🔵 90 DAGEN VÓÓR 3 JULI 2025 (n={stats.pre_hw_90days.count})
                 </div>
-                <div>≥7 dagen: {stat.success_rate}%</div>
-                <div>Ø duur: {stat.avg_duration} dagen</div>
+                <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
+                  <div>Ø duur: <strong>{stats.pre_hw_90days.avg_duration} dagen</strong></div>
+                  <div>≥6 dagen: <strong>{stats.pre_hw_90days.pct_6days}%</strong></div>
+                  <div>≥7.9 dagen: <strong>{stats.pre_hw_90days.pct_7_9days}%</strong></div>
+                </div>
+              </div>
+            )}
+
+            {/* By Year */}
+            {stats.byYear.map(yearData => (
+              <div key={yearData.year} style={{
+                padding: '15px',
+                border: '2px solid var(--ink)',
+                backgroundColor: 'var(--paper)'
+              }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '10px', color: 'var(--ink)' }}>
+                  📅 JAAR {yearData.year} (n={yearData.count})
+                </div>
+                <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
+                  <div>Ø duur: <strong>{yearData.avg_duration} dagen</strong></div>
+                  <div>≥6 dagen: <strong>{yearData.pct_6days}%</strong></div>
+                  <div>≥7.9 dagen: <strong>{yearData.pct_7_9days}%</strong></div>
+                </div>
               </div>
             ))}
           </div>
-        )}
+        </div>
 
         {/* Table */}
         <div style={{ flex: 1, overflow: 'auto' }}>
