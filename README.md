@@ -2,8 +2,8 @@
 
 **Professional diabetes data analysis tool following ADA/ATTD clinical guidelines**
 
-**Current Version:** v4.2.1 (Async Refactor Complete)  
-**Status:** ✅ Production-ready with IndexedDB storage and validated metrics  
+**Current Version:** v4.2.2 (Stock Import/Export + IndexedDB Fix)  
+**Status:** ✅ Production-ready with complete import/export and validated metrics  
 **Live URL:** 🌐 https://agp.jenana.eu (GitHub Pages deployment)
 
 ---
