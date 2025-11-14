@@ -550,6 +550,15 @@ export const parseCSV = (text) => {
         const hasRewind = getColumn(parts, 'Rewind')?.trim() === 'Rewind';
         const hasBolus = !isNaN(utils.parseDecimal(getColumn(parts, 'Bolus Volume Delivered (U)')));
         
+        // DEBUG: Log when Rewind is detected
+        if (hasRewind) {
+          console.log('[parseCSV] REWIND detected:', {
+            date: getColumn(parts, 'Date'),
+            time: getColumn(parts, 'Time'),
+            rewindColumn: getColumn(parts, 'Rewind')
+          });
+        }
+        
         if (!hasGlucose && !hasRewind && !hasBolus && !hasSensorAlert) {
           skippedRows++;
           return null;

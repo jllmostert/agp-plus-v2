@@ -72,6 +72,12 @@ export function getDayProfile(data, date, sensors = []) {
   
   // Get cartridge changes from stored events (v3.7 fix)
   const storedEvents = getEventsForDate(date);
+  
+  // DEBUG: Log cartridge events to see what's in storage
+  if (storedEvents.cartridgeChanges.length > 0) {
+    console.log(`[getDayProfile] Found ${storedEvents.cartridgeChanges.length} cartridge changes for ${date}:`, storedEvents.cartridgeChanges);
+  }
+  
   const cartridgeChanges = storedEvents.cartridgeChanges.map(event => ({
     timestamp: new Date(event.timestamp),
     minuteOfDay: new Date(event.timestamp).getHours() * 60 + new Date(event.timestamp).getMinutes()
