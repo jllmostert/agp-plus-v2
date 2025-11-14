@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { CONFIG } from '../core/metrics-engine.js';
 
 /**
@@ -104,6 +104,20 @@ export default function AGPChart({
   width = 1200,  // Increased from 900 - "fancy chart" should dominate
   height = 500   // Increased from 400 - better vertical space
 }) {
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  // ESC key to close fullscreen
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isFullscreen]);
+  
   if (!agpData || agpData.length === 0) {
     return (
       <div className="card text-center py-12">
@@ -137,23 +151,29 @@ export default function AGPChart({
   );
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-100">
-          Ambulatory Glucose Profile (AGP)
-        </h3>
-        <div className="text-sm text-gray-400">
-          24-hour glucose pattern
+    <>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-100">
+            Ambulatory Glucose Profile (AGP)
+          </h3>
+          <div className="text-sm text-gray-400">
+            Click chart for fullscreen • 24-hour glucose pattern
+          </div>
         </div>
-      </div>
 
-      {/* SVG Chart with Legend Overlay */}
-      <div className="card bg-white border-gray-300 overflow-hidden" style={{ position: 'relative' }}>
-        {/* Legend positioned absolute in top-right */}
-        <ChartLegend hasComparison={!!comparison} />
-        
-        <svg width={width} height={height} className="w-full h-auto">
+        {/* SVG Chart with Legend Overlay - CLICKABLE */}
+        <div 
+          className="card bg-white border-gray-300 overflow-hidden" 
+          style={{ position: 'relative', cursor: 'pointer' }}
+          onClick={() => setIsFullscreen(true)}
+          title="Click to view fullscreen"
+        >
+          {/* Legend positioned absolute in top-right */}
+          <ChartLegend hasComparison={!!comparison} />
+          
+          <svg width={width} height={height} className="w-full h-auto">
           {/* White background */}
           <rect x="0" y="0" width={width} height={height} fill="white" />
           
@@ -245,6 +265,93 @@ export default function AGPChart({
         </svg>
       </div>
     </div>
+
+      {/* Fullscreen Modal */}
+      {isFullscreen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2rem'
+          }}
+          onClick={() => setIsFullscreen(false)}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => setIsFullscreen(false)}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'var(--bg-primary)',
+              border: '2px solid var(--border-primary)',
+              color: 'var(--text-primary)',
+              padding: '0.5rem 1rem',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              zIndex: 10000
+            }}
+          >
+            ✕ CLOSE (ESC)
+          </button>
+
+          {/* Chart Container - fullscreen size */}
+          <div 
+            style={{ 
+              maxWidth: '95vw',
+              maxHeight: '90vh',
+              overflow: 'auto'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="card bg-white border-gray-300" style={{ position: 'relative' }}>
+              <ChartLegend hasComparison={!!comparison} />
+              
+              <svg 
+                width={Math.min(1800, window.innerWidth * 0.9)} 
+                height={Math.min(900, window.innerHeight * 0.8)} 
+                className="w-full h-auto"
+              >
+                <rect x="0" y="0" width={Math.min(1800, window.innerWidth * 0.9)} height={Math.min(900, window.innerHeight * 0.8)} fill="white" />
+                
+                {/* Render same content but with larger dimensions */}
+                {/* Note: This is a simplified version - full implementation would recalculate scales */}
+                <text 
+                  x="50%" 
+                  y="50%" 
+                  textAnchor="middle" 
+                  fill="var(--text-secondary)"
+                  fontSize="24"
+                  fontFamily="monospace"
+                >
+                  Fullscreen AGP Chart
+                </text>
+                <text 
+                  x="50%" 
+                  y="55%" 
+                  textAnchor="middle" 
+                  fill="var(--text-tertiary)"
+                  fontSize="14"
+                  fontFamily="monospace"
+                >
+                  (Full rendering implementation pending)
+                </text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
