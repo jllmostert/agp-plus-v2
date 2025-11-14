@@ -189,7 +189,7 @@ export function getCartridgeHistory() {
 
 
 /**
- * Delete cartridge changes in date range
+ * DELETE CARTRIDGE CHANGES IN DATE RANGE
  * 
  * Removes cartridge change events within specified date range from localStorage.
  * Updates event storage accordingly.
@@ -221,18 +221,4 @@ export async function deleteCartridgeChangesInRange(startDate, endDate) {
   storeEvents(events);
   
   return deleted;
-}
-
-/**
- * DEBUG HELPER: Get cartridge changes for console inspection
- * Usage in browser console: 
- *   import { debugGetCartridgeChanges } from './storage/eventStorage.js'
- *   debugGetCartridgeChanges()
- */
-export function debugGetCartridgeChanges() {
-  const events = getAllEvents();
-  console.log('=== CARTRIDGE CHANGES IN STORAGE ===');
-  console.log('Total:', events?.cartridgeChanges?.length || 0);
-  console.log('Events:', events?.cartridgeChanges || []);
-  return events?.cartridgeChanges || [];
 }
