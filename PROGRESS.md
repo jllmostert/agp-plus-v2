@@ -1952,3 +1952,55 @@ Untracked files:   test-data/*, SESSION_SUMMARY_*.md
 **Time**: 21:15 - 21:30 (~15 minutes)
 **Result**: Single source of truth (main), no branch confusion
 **Strategy**: Work directly on main with frequent commits
+
+
+---
+
+## 2025-11-14 21:45 - BUG FIX: DATA CLEANUP INDEXEDDB ERROR
+
+### Problem
+Data Cleanup (ALL-IN mode) failed with error:
+```
+Cleanup failed: Failed to execute 'transaction' on 'IDBDatabase': 
+One of the specified object stores was not found.
+```
+
+### Root Cause
+`cleanupRecords()` function in `masterDatasetStorage.js` used **wrong IndexedDB store names**:
+- Used: `'readings'` → Actual: `'readingBuckets'`
+- Used: `'cartridges'` → Actual: `'cartridgeEvents'`
+- Used: `'protime'` → **Doesn't exist in IndexedDB** (stored in localStorage)
+
+### Fix Applied
+```javascript
+// BEFORE (incorrect):
+const tx = db.transaction(['readings', 'cartridges', 'protime'], 'readwrite');
+await tx.objectStore('readings').clear();
+await tx.objectStore('cartridges').clear();
+await tx.objectStore('protime').clear();
+
+// AFTER (correct):
+const tx = db.transaction([STORES.READING_BUCKETS, STORES.CARTRIDGE_EVENTS], 'readwrite');
+await tx.objectStore(STORES.READING_BUCKETS).clear();
+await tx.objectStore(STORES.CARTRIDGE_EVENTS).clear();
+// Handle ProTime separately (it's in localStorage)
+await deleteProTimeData();
+```
+
+### Actions Completed
+- ✅ Fixed store names to match actual IndexedDB schema
+- ✅ Moved ProTime cleanup to separate call (localStorage)
+- ✅ Committed: "fix: Use correct IndexedDB store names in cleanup"
+- ✅ Pushed to origin/main
+- ✅ Server restarted
+- ✅ **TESTED: Cleanup now works! ✅**
+
+### Result
+Data Cleanup ALL-IN mode now works correctly:
+- Deletes glucose readings (readingBuckets)
+- Deletes cartridge events (cartridgeEvents)
+- Deletes ProTime workdays (localStorage)
+- Keeps sensors, stock, patient info (as intended)
+
+**Time**: 21:45 - 21:55 (~10 minutes)
+**Status**: ✅ FIXED & VERIFIED WORKING
