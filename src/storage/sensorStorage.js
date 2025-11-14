@@ -14,6 +14,7 @@ import { VERSION } from '../version.js';
 
 const STORAGE_KEY = 'sensors-v4'; // IndexedDB key
 const SUCCESS_THRESHOLD_DAYS = 6.75;
+const SHORT_THRESHOLD_DAYS = 6.0;
 
 // ============================================================================
 // STORAGE ACCESS (ASYNC)
@@ -57,7 +58,7 @@ async function initStorage() {
  * 
  * @param {Object} sensor - Sensor with start_date and end_date
  * @param {Array} deletedList - Optional array of deleted sensor records
- * @returns {string} - 'active' | 'overdue' | 'success' | 'failed' | 'deleted'
+ * @returns {string} - 'active' | 'overdue' | 'success' | 'short' | 'failed' | 'deleted'
  */
 export function calculateStatus(sensor, deletedList = []) {
   if (!sensor || !sensor.start_date) return 'unknown';
@@ -94,7 +95,9 @@ export function calculateStatus(sensor, deletedList = []) {
   const hours = (end - start) / (1000 * 60 * 60);
   const days = hours / 24;
   
-  return days >= SUCCESS_THRESHOLD_DAYS ? 'success' : 'failed';
+  if (days >= SUCCESS_THRESHOLD_DAYS) return 'success';
+  if (days >= SHORT_THRESHOLD_DAYS) return 'short';
+  return 'failed';
 }
 
 /**
@@ -109,6 +112,7 @@ export function getStatusInfo(sensor, deletedList = []) {
     active: { emoji: '🔄', label: 'Active', color: '#fbbf24' },
     overdue: { emoji: '⏰', label: 'Overdue', color: '#f59e0b' },
     success: { emoji: '✅', label: 'Success', color: '#10b981' },
+    short: { emoji: '⚠️', label: 'Short', color: '#f59e0b' },
     failed: { emoji: '❌', label: 'Failed', color: '#ef4444' },
     deleted: { emoji: '🗑️', label: 'Deleted', color: '#6b7280' },
     unknown: { emoji: '❓', label: 'Unknown', color: '#9ca3af' }

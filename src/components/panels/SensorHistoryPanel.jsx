@@ -435,6 +435,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
             <option value="active">🔄 Active</option>
             <option value="overdue">⏰ Overdue</option>
             <option value="success">✅ Success</option>
+            <option value="short">⚠️ Short</option>
             <option value="failed">❌ Failed</option>
           </select>
           
