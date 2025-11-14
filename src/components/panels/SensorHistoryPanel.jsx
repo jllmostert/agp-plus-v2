@@ -470,22 +470,36 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
                   
                   {/* Start Date */}
                   <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)' }}>
-                    {new Date(sensor.start_date).toLocaleString('nl-NL')}
+                    {(() => {
+                      const dateStr = sensor.start_date || sensor.startTimestamp;
+                      if (!dateStr) return 'Invalid Date';
+                      const date = new Date(dateStr);
+                      return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString('nl-NL');
+                    })()}
                   </td>
                   
                   {/* End Date */}
                   <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)' }}>
-                    {sensor.end_date ? new Date(sensor.end_date).toLocaleString('nl-NL') : '-'}
+                    {(() => {
+                      const dateStr = sensor.end_date || sensor.endTimestamp || sensor.stoppedAt;
+                      if (!dateStr) return '-';
+                      const date = new Date(dateStr);
+                      return isNaN(date.getTime()) ? '-' : date.toLocaleString('nl-NL');
+                    })()}
                   </td>
                   
                   {/* Duration */}
                   <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                     {(() => {
-                      const start = new Date(sensor.start_date);
-                      const end = sensor.end_date ? new Date(sensor.end_date) : new Date();
+                      const startStr = sensor.start_date || sensor.startTimestamp;
+                      const endStr = sensor.end_date || sensor.endTimestamp || sensor.stoppedAt;
+                      if (!startStr) return '-';
+                      const start = new Date(startStr);
+                      if (isNaN(start.getTime())) return 'NaN';
+                      const end = endStr ? new Date(endStr) : new Date();
                       const hours = (end - start) / (1000 * 60 * 60);
                       const days = (hours / 24).toFixed(1);
-                      return sensor.end_date ? `${days}d` : `${days}d →`;
+                      return endStr ? `${days}d` : `${days}d →`;
                     })()}
                   </td>
                   

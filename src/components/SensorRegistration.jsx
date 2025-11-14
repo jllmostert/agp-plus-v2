@@ -177,7 +177,14 @@ export default function SensorRegistration({ isOpen, onClose }) {
         batch_id: null
       };
       
-      await addSensor(sensorData);
+      const result = await addSensor(sensorData);
+      
+      if (!result) {
+        addDebugLog(`⚠️ Duplicate sensor skipped: ${sensorId}`);
+        setError(`Sensor already exists: ${sensorId}`);
+        return;
+      }
+      
       addDebugLog(`✅ New sensor added: ${sensorId}`, {
         start: formatTimestamp(candidate.timestamp),
         confidence: candidate.confidence,

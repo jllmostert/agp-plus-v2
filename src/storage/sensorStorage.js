@@ -166,6 +166,13 @@ export async function addSensor(data) {
   const storage = await getStorage();
   
   const id = data.id || `sensor_${Date.now()}`;
+  
+  // Check for duplicate
+  if (storage.sensors.some(s => s.id === id)) {
+    console.warn(`[addSensor] Duplicate sensor ID: ${id} - skipping`);
+    return null;
+  }
+  
   const maxSeq = storage.sensors.reduce((max, s) => Math.max(max, s.sequence || 0), 0);
   
   const sensor = {
