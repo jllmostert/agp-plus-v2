@@ -1836,3 +1836,50 @@ Volledig testen en debuggen van cleanup module op alle mogelijke fouten
 
 **Status**: STARTED
 **Time**: 00:38
+
+
+---
+
+## 2025-11-14 19:45 - SESSION 25: ASYNC MIGRATION SETUP
+
+### Objective
+Voorbereiden async refactor: clean branch setup met alle bugfixes + IndexedDB prep
+
+### Problem
+- Migration branch `feature/indexeddb-migration` was out of sync with main
+- Main had recent bugfixes (ALL-IN cleanup, batch consolidation, ProTime fixes)
+- Risk of merge conflicts if continuing on old branch
+
+### Solution
+**Fresh Branch Strategy** (Option B):
+1. Start from main (includes all bugfixes ✅)
+2. Copy IndexedDB prep files from old branch
+3. Create new `feature/async-migration` branch
+4. Zero merge conflicts, clean git history
+
+### Actions Completed
+- ✅ Switched to main branch
+- ✅ Pulled latest (already up-to-date)
+- ✅ Created `feature/async-migration` branch
+- ✅ Copied from old branch:
+  - `src/storage/indexedDB.js` (13KB)
+  - `src/storage/migrateSensors.js` (13KB)
+  - `ASYNC_REFACTOR_ANALYSIS.md` (26KB)
+  - `HANDOFF_SESSION_24.md` (documentation)
+- ✅ Committed: "feat: Add IndexedDB wrapper and migration prep"
+- ✅ Pushed to remote
+
+### Current State
+**Branch**: `feature/async-migration`
+**Base**: main (with ALL recent bugfixes)
+**Added**: IndexedDB wrapper + migration utilities + analysis
+**Status**: ✅ READY FOR ASYNC REFACTOR
+
+### Next Steps
+1. Begin Session 1: Core Storage Layer (sensorStorage.js → async)
+2. Convert getStorage() and saveStorage() to IndexedDB
+3. Make all 22 exported functions async
+4. Test thoroughly
+
+**Time**: 19:45 - 19:57 (~12 minutes)
+**Result**: Clean starting point, zero technical debt
