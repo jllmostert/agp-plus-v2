@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { parseCareLinkSections } from '../core/csvSectionParser';
 import { detectSensorChanges } from '../core/sensorDetectionEngine';
-import { addSensor, getAllSensors } from '../storage/sensorStorage';
+import { addSensor, getAllSensors, updateSensor } from '../storage/sensorStorage';
 import './SensorRegistration.css';
 
 export default function SensorRegistration({ isOpen, onClose }) {
@@ -146,15 +146,33 @@ export default function SensorRegistration({ isOpen, onClose }) {
         addDebugLog(`⚠️ Sensor lifecycle unknown (insufficient data)`);
       }
       
-      // Validation: warn if previous sensor is missing stop time
-      // (This shouldn't happen with v3.8.0+ detection, but keep as safety check)
+      // Auto-close previous sensor if it has no end_date
       const allSensors = await getAllSensors();
       const previousSensor = allSensors
-        .filter(s => new Date(s.start_date) < candidate.timestamp)
-        .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))[0];
-      if (previousSensor && !previousSensor.end_date) {
-        addDebugLog(`⚠️ Warning: Previous sensor ${previousSensor.id} has no end_date`);
-        addDebugLog(`   This sensor should have been assigned stopped_at during detection`);
+        .filter(s => {
+          const startDate = s.start_date || s.startTimestamp;
+          return startDate && new Date(startDate) < candidate.timestamp;
+        })
+        .sort((a, b) => {
+          const dateA = new Date(a.start_date || a.startTimestamp);
+          const dateB = new Date(b.start_date || b.startTimestamp);
+          return dateB - dateA;
+        })[0];
+      
+      if (previousSensor) {
+        const prevEndDate = previousSensor.end_date || previousSensor.endTimestamp || previousSensor.stoppedAt;
+        if (!prevEndDate) {
+          addDebugLog(`🔄 Auto-closing previous sensor ${previousSensor.id}`);
+          addDebugLog(`   End date: ${candidate.timestamp.toISOString()}`);
+          
+          await updateSensor(previousSensor.id, {
+            end_date: candidate.timestamp.toISOString(),
+            duration_hours: (candidate.timestamp - new Date(previousSensor.start_date || previousSensor.startTimestamp)) / (1000 * 60 * 60),
+            duration_days: (candidate.timestamp - new Date(previousSensor.start_date || previousSensor.startTimestamp)) / (1000 * 60 * 60 * 24)
+          });
+          
+          addDebugLog(`✅ Previous sensor closed successfully`);
+        }
       }
       
       // Add the new sensor using data from detection engine
