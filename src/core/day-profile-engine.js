@@ -14,16 +14,17 @@ import { CONFIG, utils, calculateMetrics, detectEvents } from './metrics-engine.
 import { getEventsForDate } from '../storage/eventStorage.js';
 
 /**
- * Get the last 7 days from the dataset
+ * Get the last N days from the dataset
  * @param {Array} data - Full glucose data array
  * @param {string} csvCreatedDate - CSV creation date (YYYY/MM/DD) - optional, for backward compat
  * @param {Array} sensors - Sensor array (pre-loaded) - optional
- * @returns {Array} Array of up to 7 day profile objects (newest first)
+ * @param {number} numDays - Number of days to return (default: 7)
+ * @returns {Array} Array of up to N day profile objects (newest first)
  * 
- * V3 Note: Now returns last 7 days regardless of completeness.
+ * V3 Note: Now returns last N days regardless of completeness.
  * This allows day profiles to work with filtered datasets (e.g., "Last 14D" filter).
  */
-export function getLastSevenDays(data, csvCreatedDate, sensors = []) {
+export function getLastSevenDays(data, csvCreatedDate, sensors = [], numDays = 7) {
   if (!data || data.length === 0) return [];
   
   // Find all unique days in the dataset
@@ -34,8 +35,8 @@ export function getLastSevenDays(data, csvCreatedDate, sensors = []) {
     }
   });
   
-  // Sort dates (newest first) and take last 7
-  const sortedDates = Array.from(allDays).sort().reverse().slice(0, 7);
+  // Sort dates (newest first) and take last N days
+  const sortedDates = Array.from(allDays).sort().reverse().slice(0, numDays);
   
   if (sortedDates.length === 0) return [];
   

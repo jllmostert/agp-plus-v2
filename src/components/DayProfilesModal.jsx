@@ -1,10 +1,11 @@
 /**
  * DayProfilesModal.jsx
- * Full-screen modal overlay showing last 7 day profiles
+ * Full-screen modal overlay showing last N day profiles
  * 
  * Brutalist design:
  * - Solid black backdrop (90% opacity)
- * - Scrollable container with 7x DayProfileCard
+ * - Scrollable container with NxDayProfileCard
+ * - Toggle between 7 and 14 days
  * - Simple close button (top-right X or ← Terug)
  */
 
@@ -12,7 +13,14 @@ import React from 'react';
 import DayProfileCard from './DayProfileCard';
 import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
 
-export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patientInfo = null }) {
+export default function DayProfilesModal({ 
+  isOpen, 
+  onClose, 
+  dayProfiles, 
+  patientInfo = null,
+  numDays = 7,
+  onChangeNumDays 
+}) {
   if (!isOpen) return null;
 
   return (
@@ -41,7 +49,7 @@ export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patient
       >
         {/* Control buttons - top right, sticky */}
         <div className="sticky top-0 z-10 flex justify-end gap-4 p-6 bg-black bg-opacity-90">
-          {/* Close button - NOW FIRST */}
+          {/* Close button */}
           <button
             onClick={onClose}
             style={{
@@ -68,7 +76,48 @@ export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patient
             ← Sluiten
           </button>
 
-          {/* Print button - NOW SECOND */}
+          {/* Toggle: 7 or 14 days */}
+          {onChangeNumDays && (
+            <div style={{ display: 'flex', gap: '0' }}>
+              <button
+                onClick={() => onChangeNumDays(7)}
+                style={{
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  padding: '12px 24px',
+                  border: '3px solid var(--color-white)',
+                  borderRight: 'none',
+                  backgroundColor: numDays === 7 ? 'var(--color-white)' : 'var(--color-black)',
+                  color: numDays === 7 ? 'var(--color-black)' : 'var(--color-white)',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  letterSpacing: '2px'
+                }}
+              >
+                7D
+              </button>
+              <button
+                onClick={() => onChangeNumDays(14)}
+                style={{
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  padding: '12px 24px',
+                  border: '3px solid var(--color-white)',
+                  backgroundColor: numDays === 14 ? 'var(--color-white)' : 'var(--color-black)',
+                  color: numDays === 14 ? 'var(--color-black)' : 'var(--color-white)',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  letterSpacing: '2px'
+                }}
+              >
+                14D
+              </button>
+            </div>
+          )}
+
+          {/* Print button */}
           <button
             onClick={() => {
               try {
@@ -126,7 +175,7 @@ export default function DayProfilesModal({ isOpen, onClose, dayProfiles, patient
               paddingBottom: '16px'
             }}
           >
-            Dagprofielen - Laatste 7 dagen
+            Dagprofielen - Laatste {numDays} dagen
           </div>
 
           {/* Day cards - stacked vertically */}

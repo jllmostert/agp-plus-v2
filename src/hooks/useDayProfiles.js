@@ -4,10 +4,11 @@ import { getLastSevenDays } from '../core/day-profile-engine.js';
 /**
  * useDayProfiles - Custom hook for individual day profile generation
  * 
- * Generates the last 7 complete days of glucose data with metrics, events,
+ * Generates the last N complete days of glucose data with metrics, events,
  * and achievement badges. Includes AGP curve overlay for comparison.
  * 
  * ðŸ†• v3.1: Now includes TDD (Total Daily Dose) data per day
+ * ðŸ†• v4.2.2: Configurable number of days (7 or 14)
  * 
  * This hook extracts business logic that was previously in AGPGenerator's
  * handleDayProfilesOpen function, maintaining proper separation of concerns.
@@ -15,8 +16,9 @@ import { getLastSevenDays } from '../core/day-profile-engine.js';
  * @param {Array} csvData - Parsed CSV glucose data
  * @param {Object} dateRange - { min: Date, max: Date } from CSV
  * @param {Object} currentMetrics - Current period metrics from useMetrics
+ * @param {number} numDays - Number of days to show (default: 7)
  * 
- * @returns {Array|null} Array of 7 day profile objects, or null if no data
+ * @returns {Array|null} Array of N day profile objects, or null if no data
  * 
  * Each profile object contains:
  * - date: "YYYY/MM/DD"
@@ -31,11 +33,12 @@ import { getLastSevenDays } from '../core/day-profile-engine.js';
  * - agpCurve: AGP percentile data (for overlay comparison)
  * - tdd: TDD data {tdd, autoInsulin, mealBolus, autoPercent, mealPercent} âœ¨ NEW in v3.1
  * 
- * @version 3.1.0
+ * @version 4.2.2
  * @since 2024-10-25 - Extracted from AGPGenerator component
  * @since 2025-10-28 - Added TDD data integration (v3.1 Phase 0)
+ * @since 2025-11-14 - Added configurable number of days (v4.2.2)
  */
-export function useDayProfiles(csvData, dateRange, currentMetrics) {
+export function useDayProfiles(csvData, dateRange, currentMetrics, numDays = 7) {
   // State for TDD data (loaded async from IndexedDB)
   const [tddData, setTddData] = useState(null);
   
@@ -124,8 +127,8 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       
       const csvCreatedDate = formatDateString(maxDate);
       
-      // Generate last 7 day profiles - pass sensors array
-      const profiles = getLastSevenDays(csvData, csvCreatedDate, sensors);
+      // Generate last N day profiles - pass sensors array and numDays
+      const profiles = getLastSevenDays(csvData, csvCreatedDate, sensors, numDays);
       
       if (!profiles || profiles.length === 0) {
         return null;
@@ -159,7 +162,7 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       console.error('[useDayProfiles] Failed to generate day profiles:', err);
       return null;
     }
-  }, [csvData, dateRange, currentMetrics, tddData, workdaySet, sensors]); // Added sensors dependency
+  }, [csvData, dateRange, currentMetrics, tddData, workdaySet, sensors, numDays]); // Added numDays dependency
 }
 
 /**

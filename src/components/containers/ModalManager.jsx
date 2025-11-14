@@ -42,6 +42,8 @@ import BatchAssignmentDialog from '../BatchAssignmentDialog';
  * @param {Function} props.onClosePatientInfo
  * @param {boolean} props.dayProfilesOpen
  * @param {Function} props.onCloseDayProfiles
+ * @param {number} props.numDaysProfile - Number of days to show (7 or 14)
+ * @param {Function} props.onChangeNumDaysProfile - Callback to change number of days
  * @param {boolean} props.sensorHistoryOpen
  * @param {Function} props.onCloseSensorHistory
  * @param {boolean} props.sensorRegistrationOpen
@@ -68,6 +70,8 @@ export default function ModalManager({
   // Day Profiles Modal
   dayProfilesOpen,
   onCloseDayProfiles,
+  numDaysProfile,
+  onChangeNumDaysProfile,
   
   // Sensor History Modal
   sensorHistoryOpen,
@@ -111,6 +115,8 @@ export default function ModalManager({
           onClose={onCloseDayProfiles}
           dayProfiles={dayProfiles}
           patientInfo={patientInfo}
+          numDays={numDaysProfile}
+          onChangeNumDays={onChangeNumDaysProfile}
         />,
         document.body
       )}

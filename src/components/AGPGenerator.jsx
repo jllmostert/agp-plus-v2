@@ -114,6 +114,7 @@ export default function AGPGenerator() {
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
   const [dayProfilesOpen, setDayProfilesOpen] = useState(false); // Day profiles modal state
+  const [numDaysProfile, setNumDaysProfile] = useState(7); // Number of days to show in profiles (7 or 14)
   const [sensorHistoryOpen, setSensorHistoryOpen] = useState(false); // Sensor history modal state
   const [sensorRegistrationOpen, setSensorRegistrationOpen] = useState(false); // Sensor registration modal state
   const [dataManagementOpen, setDataManagementOpen] = useState(false); // Data management modal state
@@ -456,7 +457,7 @@ export default function AGPGenerator() {
   const comparisonData = useComparison(comparisonReadings, startDate, endDate, fullDatasetRange);
   
   // Generate day profiles using custom hook (replaces manual generation)
-  const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult);
+  const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult, numDaysProfile);
   
   // Debug: Check day profiles
   if (dayProfiles && dayProfiles.length > 0) {
@@ -1699,6 +1700,8 @@ export default function AGPGenerator() {
           // Day Profiles Modal
           dayProfilesOpen={dayProfilesOpen}
           onCloseDayProfiles={() => setDayProfilesOpen(false)}
+          numDaysProfile={numDaysProfile}
+          onChangeNumDaysProfile={setNumDaysProfile}
           
           // Sensor History Modal
           sensorHistoryOpen={sensorHistoryOpen}
