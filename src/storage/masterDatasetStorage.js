@@ -983,19 +983,21 @@ export async function cleanupRecords(options) {
     const db = await openDB();
     
     if (options.type === 'all-in') {
-      debug.log('[cleanupRecords] ALL-IN: Deleting readings, cartridges, ProTime. Keeping patient, sensors, stock');
+      debug.log('[cleanupRecords] ALL-IN: Deleting readings, cartridges. Keeping patient, sensors, stock');
       
-      // Delete readings, cartridges, ProTime only
+      // Delete readings and cartridges only
       // KEEP sensors and stock!
-      const tx = db.transaction(['readings', 'cartridges', 'protime'], 'readwrite');
+      const tx = db.transaction([STORES.READING_BUCKETS, STORES.CARTRIDGE_EVENTS], 'readwrite');
       
       await Promise.all([
-        tx.objectStore('readings').clear(),
-        tx.objectStore('cartridges').clear(),
-        tx.objectStore('protime').clear()
+        tx.objectStore(STORES.READING_BUCKETS).clear(),
+        tx.objectStore(STORES.CARTRIDGE_EVENTS).clear()
       ]);
       
       await tx.done;
+      
+      // ProTime data is in localStorage, handle separately
+      await deleteProTimeData();
       
       // DO NOT clear localStorage sensors/stock - we're keeping those!
       
