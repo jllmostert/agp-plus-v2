@@ -437,6 +437,39 @@ export async function resequenceSensors() {
   };
 }
 
+/**
+ * Update hardware versions for all sensors based on start_date
+ * Sensors from 2025-07-03 onwards get A2.01, earlier ones get A1.01
+ */
+export async function updateHardwareVersions() {
+  const storage = await getStorage();
+  const cutoffDate = new Date('2025-07-03T00:00:00');
+  let updated = 0;
+  
+  storage.sensors.forEach(sensor => {
+    if (sensor.start_date) {
+      const startDate = new Date(sensor.start_date);
+      const newVersion = startDate >= cutoffDate ? 'A2.01' : 'A1.01';
+      
+      if (sensor.hw_version !== newVersion) {
+        sensor.hw_version = newVersion;
+        sensor.updated_at = new Date().toISOString();
+        updated++;
+      }
+    }
+  });
+  
+  if (updated > 0) {
+    await saveStorage(storage);
+  }
+  
+  return {
+    success: true,
+    updated,
+    message: `Updated ${updated} sensors with correct HW version`
+  };
+}
+
 export async function getStorageInfo() {
   const storage = await getStorage();
   const stats = await getStatistics();
@@ -480,5 +513,6 @@ export default {
   
   // Utilities
   getStorageInfo,
-  resequenceSensors
+  resequenceSensors,
+  updateHardwareVersions
 };

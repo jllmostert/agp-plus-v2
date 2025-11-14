@@ -263,6 +263,20 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     }
   };
 
+  const handleUpdateHardwareVersions = async () => {
+    if (!confirm('Hardware versies updaten?\n\n• Sensoren vanaf 3 juli 2025 → A2.01\n• Sensoren daarvoor → A1.01\n\nDeze actie kan niet ongedaan worden.')) {
+      return;
+    }
+    
+    const result = await sensorStorage.updateHardwareVersions();
+    if (result.success) {
+      alert(`✓ ${result.message}`);
+      setRefreshKey(prev => prev + 1);
+    } else {
+      alert(`❌ Update mislukt: ${result.error}`);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -343,6 +357,17 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
               fontWeight: 'bold'
             }}>
               🔢 HERNUMMER
+            </button>
+            <button onClick={handleUpdateHardwareVersions} style={{
+              padding: '10px 20px',
+              border: '2px solid var(--color-blue)',
+              backgroundColor: 'var(--paper)',
+              color: 'var(--color-blue)',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontWeight: 'bold'
+            }}>
+              🔧 UPDATE HW
             </button>
             <button onClick={onClose} style={{
               padding: '10px 20px',
