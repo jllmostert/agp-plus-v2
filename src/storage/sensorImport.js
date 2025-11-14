@@ -258,7 +258,7 @@ export async function validateSensorImportFile(file) {
       
       try {
         const results = db.exec('SELECT COUNT(*) FROM sensors');
-        const count = results[0]?.values[0]?[0] || 0;
+        const count = results[0]?.values[0]?.[0] || 0;
         
         db.close();
         
