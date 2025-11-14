@@ -6,6 +6,107 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.2.1 - Async Refactor Complete] - 2025-11-14
+
+### ⚡ Complete Async Storage Refactor
+**Sessions**: 25-26  
+**Goal**: Convert sensorStorage from synchronous localStorage to asynchronous IndexedDB
+
+### ✅ Major Changes
+
+#### Session 26: Day Profile Engine Fix
+**Problem**: day-profile-engine.js async cascade would break useMemo  
+**Solution**: Parameter passing instead of async cascade  
+
+- ✅ Updated `day-profile-engine.js` to accept sensors as parameter
+  - `getLastSevenDays(data, csvCreatedDate, sensors = [])`
+  - `getDayProfile(data, date, sensors = [])`
+  - `detectSensorChanges(allData, targetDate, sensors = [])`
+- ✅ Removed `getAllSensors()` import and try-catch block
+- ✅ All functions remain SYNC (works with React useMemo)
+- ✅ Updated `useDayProfiles.js` to load sensors once and pass through
+- ✅ Fixed optional chaining syntax error in sensorImport.js (`?[0]` → `?.[0]`)
+
+#### Session 25: Core Async Conversion
+**Files Converted to Async**:
+- ✅ `sensorStorage.js` - Full IndexedDB implementation (438 lines)
+  - All 22 exported functions now async
+  - `getStorage()` and `saveStorage()` use IndexedDB
+  - `calculateStatus()` remains sync (accepts deletedList param)
+- ✅ `useSensors.js` - Async hook with Promise.all
+- ✅ `SensorHistoryPanel.jsx` - All event handlers async (~1200 lines)
+  - useEffect with async IIFE
+  - handleToggleLock, handleDelete, handleBatchAssign all async
+- ✅ `masterDatasetStorage.js` - `getSensorBatchSuggestions()` awaits getAllSensors
+- ✅ `DataManagementModal.jsx` - `clearAllSensors()` awaited
+
+### 🎯 Benefits
+- **Large Dataset Support**: IndexedDB handles 90-day imports without crashes
+- **iPad Compatible**: No more localStorage size limits
+- **Performance**: Sensors loaded once, reused efficiently
+- **Clean Architecture**: Proper async/await throughout
+- **Error Handling**: Comprehensive try-catch blocks everywhere
+
+### 📊 Metrics
+- **Functions Converted**: 25+ functions to async
+- **Files Modified**: 7 core files
+- **Time Taken**: ~75 minutes (Sessions 25-26 combined)
+- **Breaking Changes**: None (all changes internal)
+
+---
+
+## [v4.2.0 - Enhanced Import/Export System] - 2025-11-14
+
+### 📦 Sensor & Stock Import/Export
+**Session**: 23  
+**Goal**: Complete import/export functionality for sensors and stock management
+
+### ✅ Major Features
+
+#### 1. Enhanced Sensor Import
+- ✅ Dual format support: JSON and SQLite files
+- ✅ Automatic file type detection (.json, .db, .sqlite)
+- ✅ Duplicate detection (skip existing sensors)
+- ✅ Pre-import validation with detailed feedback
+- ✅ Import statistics (imported vs skipped counts)
+
+#### 2. Stock Import/Export System
+**Export Features**:
+- ✅ Export all stock batches with sensor assignments to JSON
+- ✅ Include full sensor details for reconnection
+- ✅ Usage statistics and metadata in export
+- ✅ Automatic timestamped filename generation
+
+**Import Features**:
+- ✅ Merge mode (preserves existing data, adds new only)
+- ✅ Duplicate detection (skips existing batch_ids)
+- ✅ Sensor validation (checks if referenced sensors exist)
+- ✅ **Automatic Sensor Reconnection**: Matches by lot_number + start_date
+- ✅ Assignment validation and error reporting
+- ✅ Detailed import statistics
+
+#### 3. Developer Tools Integration
+- ✅ New "📦 Import/Export" tab in Developer Tools panel
+- ✅ Integrated SensorImport component (JSON + SQLite)
+- ✅ Integrated StockImportExport component
+- ✅ Consistent brutalist UI styling
+
+### 🎯 Key Design Decisions
+- **Merge Mode**: Safer than replace (no data loss)
+- **Sensor Reconnection**: Automatic matching by physical identifiers
+- **Separate Operations**: Stock export/import independent of master dataset
+
+### 📝 New Files Created
+- `src/storage/stockImportExport.js` (320 lines)
+- `src/components/StockImportExport.jsx` (286 lines)
+
+### 📝 Files Enhanced
+- `src/storage/sensorImport.js` (89 → 286 lines)
+- `src/components/SensorImport.jsx` (152 → 217 lines)
+- `src/components/panels/DevToolsPanel.jsx` (232 → 264 lines)
+
+---
+
 ## [v4.0.1 - UI Polish & Color System Integration] - 2025-11-08
 
 ### 🎨 Complete Brutalist Color System Integration

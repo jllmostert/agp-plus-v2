@@ -1,6 +1,0 @@
-async function detectSensorChanges(allData, targetDate) {
-  const allChanges = [];
-  
-  // PRIORITY 1: Check sensor database (high confidence)
-  try {
-    const sensors = await getAllSensors();

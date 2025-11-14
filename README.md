@@ -2,8 +2,8 @@
 
 **Professional diabetes data analysis tool following ADA/ATTD clinical guidelines**
 
-**Current Version:** v4.0.1 (Color System Integration)  
-**Status:** ✅ Production-ready with validated MAGE/MODD algorithms  
+**Current Version:** v4.2.1 (Async Refactor Complete)  
+**Status:** ✅ Production-ready with IndexedDB storage and validated metrics  
 **Live URL:** 🌐 https://agp.jenana.eu (GitHub Pages deployment)
 
 ---
@@ -22,9 +22,12 @@ Built by a type 1 diabetic who got tired of waiting for healthcare software to c
 - **Individual day profiles**: Every 24-hour period as a separate story, complete with event markers
 - **Master dataset**: Keep years of data, upload whenever, never lose history
 - **Sensor intelligence**: Automatic detection of sensor and cartridge changes from device logs
+- **Stock management**: Track sensor batches, usage, and assignments with full import/export
+- **Advanced import/export**: JSON and SQLite sensor imports, stock batch export with reconnection
 - **Export everything**: HTML reports that look like they came from a diabetes clinic, not a spreadsheet
 - **Backup & restore**: Complete JSON export/import system—backup your entire database, restore on any device
-- **100% Client-Side**: All data stays in your browser (localStorage + IndexedDB), nothing sent to servers
+- **100% Client-Side**: All data stays in your browser (IndexedDB + localStorage), nothing sent to servers
+- **Large dataset support**: IndexedDB storage handles 90-day imports without crashes (even on iPad)
 
 **Clinical standards baked in:**
 - ADA/ATTD 2025 consensus guidelines (we read the boring PDFs so you don't have to)
