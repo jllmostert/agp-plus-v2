@@ -194,7 +194,8 @@ export default function SensorRegistration({ isOpen, onClose }) {
       });
       
       // Show success toast
-      const sensorCount = getSensorHistory().length;
+      const sensors = await getAllSensors();
+      const sensorCount = sensors.length;
       setSuccessToast({
         message: `Sensor added! Total: ${sensorCount}`,
         timestamp: Date.now()
