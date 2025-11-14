@@ -148,7 +148,7 @@ export default function SensorRegistration({ isOpen, onClose }) {
       
       // Validation: warn if previous sensor is missing stop time
       // (This shouldn't happen with v3.8.0+ detection, but keep as safety check)
-      const allSensors = getAllSensors();
+      const allSensors = await getAllSensors();
       const previousSensor = allSensors
         .filter(s => new Date(s.start_date) < candidate.timestamp)
         .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))[0];
