@@ -10,6 +10,8 @@
 import React, { useState } from 'react';
 import DebugPanel from '../devtools/DebugPanel';
 import SensorSQLiteImport from '../devtools/SensorSQLiteImport';
+import SensorImport from '../SensorImport';
+import StockImportExport from '../StockImportExport';
 
 export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
   const [activeTool, setActiveTool] = useState('debug');
@@ -137,6 +139,24 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
         >
           💾 SQLite Import
         </button>
+        
+        <button
+          onClick={() => setActiveTool('import-export')}
+          style={{
+            fontFamily: 'Courier New, monospace',
+            fontSize: '0.875rem',
+            fontWeight: 'bold',
+            padding: '0.75rem 1.5rem',
+            border: '2px solid var(--border-primary)',
+            background: activeTool === 'import-export' ? 'var(--color-green)' : 'var(--bg-secondary)',
+            color: activeTool === 'import-export' ? '#000' : 'var(--text-primary)',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}
+        >
+          📦 Import/Export
+        </button>
       </div>
 
       {/* Warning banner */}
@@ -225,6 +245,44 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
         
         {activeTool === 'debug' && <DebugPanel />}
         {activeTool === 'sqlite' && <SensorSQLiteImport />}
+        
+        {activeTool === 'import-export' && (
+          <div>
+            <div style={{
+              fontFamily: 'Courier New, monospace',
+              marginBottom: '1rem',
+              padding: '1rem',
+              background: 'var(--bg-secondary)',
+              border: '2px solid var(--border-primary)'
+            }}>
+              <h3 style={{ marginBottom: '0.5rem', fontSize: '1.25rem' }}>📦 Import/Export Tools</h3>
+              <p style={{ fontSize: '0.875rem', lineHeight: 1.6, opacity: 0.8 }}>
+                Import sensors from JSON or SQLite databases, and export/import stock batches 
+                with sensor connections.
+              </p>
+            </div>
+            
+            <SensorImport />
+            <StockImportExport />
+            
+            <div style={{
+              fontFamily: 'Courier New, monospace',
+              fontSize: '0.75rem',
+              marginTop: '2rem',
+              padding: '1rem',
+              background: 'rgba(59, 130, 246, 0.05)',
+              border: '1px solid rgba(59, 130, 246, 0.2)',
+              color: 'var(--text-secondary)'
+            }}>
+              <strong>Features:</strong><br />
+              • Sensor import: JSON and SQLite support<br />
+              • Stock import: Automatic sensor reconnection<br />
+              • Duplicate detection: Skip existing records<br />
+              • Validation: Pre-check files before import<br />
+              • Merge mode: Preserve existing data
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -33,8 +33,11 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
   // Load data
   useEffect(() => {
     if (isOpen) {
-      setSensors(sensorStorage.getAllSensors());
-      setBatches(stockStorage.getAllBatches()); // NEW: Use stockStorage for batches
+      (async () => {
+        const sensorsData = await sensorStorage.getAllSensors();
+        setSensors(sensorsData);
+        setBatches(stockStorage.getAllBatches()); // stockStorage is still sync
+      })();
     }
   }, [isOpen, refreshKey]);
 
@@ -134,8 +137,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
   }, [sensors]);
 
   // Handlers
-  const handleToggleLock = (sensorId) => {
-    const result = sensorStorage.toggleLock(sensorId);
+  const handleToggleLock = async (sensorId) => {
+    const result = await sensorStorage.toggleLock(sensorId);
     if (result.success) {
       setRefreshKey(prev => prev + 1);
     } else {
@@ -143,8 +146,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     }
   };
 
-  const handleDelete = (sensorId, sensorSeq) => {
-    const sensor = sensorStorage.getSensorById(sensorId);
+  const handleDelete = async (sensorId, sensorSeq) => {
+    const sensor = await sensorStorage.getSensorById(sensorId);
     if (!sensor) return;
     
     if (sensor.is_locked) {
@@ -153,7 +156,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     }
     
     if (confirm(`Sensor #${sensorSeq} verwijderen?\n\n⚠️ Actie kan niet ongedaan worden.`)) {
-      const result = sensorStorage.deleteSensor(sensorId);
+      const result = await sensorStorage.deleteSensor(sensorId);
       if (result.success) {
         alert('✓ Sensor verwijderd');
         setRefreshKey(prev => prev + 1);
@@ -163,9 +166,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     }
   };
 
-  const handleBatchAssign = (sensorId, batchId) => {
+  const handleBatchAssign = async (sensorId, batchId) => {
     // Update sensor's batch_id field
-    const sensorResult = sensorStorage.assignBatch(sensorId, batchId || null);
+    const sensorResult = await sensorStorage.assignBatch(sensorId, batchId || null);
     if (!sensorResult.success) {
       alert(`❌ ${sensorResult.error}`);
       return;
@@ -191,8 +194,8 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     setRefreshKey(prev => prev + 1);
   };
 
-  const handleExport = () => {
-    const data = sensorStorage.exportJSON();
+  const handleExport = async () => {
+    const data = await sensorStorage.exportJSON();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -207,10 +210,10 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     if (!file) return;
     
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        const result = sensorStorage.importJSON(data);
+        const result = await sensorStorage.importJSON(data);
         
         if (result.success) {
           const msg = [

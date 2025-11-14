@@ -936,24 +936,24 @@ export async function deleteProTimeDataInRange(startDate, endDate) {
 export async function getSensorBatchSuggestions() {
   try {
     // Import dependencies
-    const { getSensorDatabase } = await import('./sensorStorage.js');
+    const { getAllSensors } = await import('./sensorStorage.js');
     const { suggestBatchAssignments } = await import('../core/stock-engine.js');
     
     // Get recent sensors (last 30 days, unlocked only)
-    const db = getSensorDatabase();
-    if (!db || !db.sensors || db.sensors.length === 0) {
+    const allSensors = await getAllSensors();
+    if (!allSensors || allSensors.length === 0) {
       return [];
     }
     
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    const recentSensorIds = db.sensors
+    const recentSensorIds = allSensors
       .filter(s => {
         const startDate = new Date(s.start_date);
-        return startDate >= thirtyDaysAgo && !s.is_manually_locked;
+        return startDate >= thirtyDaysAgo && !s.is_locked;
       })
-      .map(s => s.sensor_id);
+      .map(s => s.id);
     
     // Get batch suggestions
     return suggestBatchAssignments(recentSensorIds);

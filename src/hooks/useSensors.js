@@ -15,11 +15,17 @@ export function useSensors() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const load = () => {
+  const load = async () => {
     try {
-      setSensors(sensorStorage.getAllSensors());
-      setBatches(stockStorage.getAllBatches()); // Use stockStorage for batches
-      setStats(sensorStorage.getStatistics());
+      const [sensorsData, batchesData, statsData] = await Promise.all([
+        sensorStorage.getAllSensors(),
+        stockStorage.getAllBatches(),
+        sensorStorage.getStatistics()
+      ]);
+      
+      setSensors(sensorsData);
+      setBatches(batchesData);
+      setStats(statsData);
       setLoading(false);
     } catch (error) {
       console.error('[useSensors] Load error:', error);
@@ -28,7 +34,7 @@ export function useSensors() {
   };
 
   useEffect(() => {
-    load();
+    load(); // load is now async, but useEffect cleanup doesn't need await
   }, []);
 
   return {

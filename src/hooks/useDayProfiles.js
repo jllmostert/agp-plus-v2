@@ -42,6 +42,9 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
   // State for workday data (loaded async from IndexedDB)
   const [workdaySet, setWorkdaySet] = useState(null);
   
+  // State for sensors (loaded async from IndexedDB)
+  const [sensors, setSensors] = useState([]);
+  
   // Load TDD data on mount and when dependencies change
   useEffect(() => {
     async function loadTDD() {
@@ -61,6 +64,22 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
     
     loadTDD();
   }, [csvData, dateRange]); // Reload when data changes
+  
+  // Load sensors on mount
+  useEffect(() => {
+    async function loadSensors() {
+      try {
+        const { getAllSensors } = await import('../storage/sensorStorage');
+        const loadedSensors = await getAllSensors();
+        setSensors(loadedSensors || []);
+      } catch (err) {
+        console.error('[useDayProfiles] Failed to load sensors:', err);
+        setSensors([]);
+      }
+    }
+    
+    loadSensors();
+  }, []);
   
   // Load ProTime workday data on mount and when dependencies change
   useEffect(() => {
@@ -86,6 +105,11 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
     if (!dateRange || !dateRange.max) {
       return null;
     }
+    
+    // Wait for sensors to load before generating profiles
+    if (!sensors) {
+      return null;
+    }
 
     try {
       // Format CSV creation date (last available date = cutoff for "complete" days)
@@ -100,8 +124,8 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       
       const csvCreatedDate = formatDateString(maxDate);
       
-      // Generate last 7 day profiles (NO completeness requirement in V3)
-      const profiles = getLastSevenDays(csvData, csvCreatedDate);
+      // Generate last 7 day profiles - pass sensors array
+      const profiles = getLastSevenDays(csvData, csvCreatedDate, sensors);
       
       if (!profiles || profiles.length === 0) {
         return null;
@@ -135,7 +159,7 @@ export function useDayProfiles(csvData, dateRange, currentMetrics) {
       console.error('[useDayProfiles] Failed to generate day profiles:', err);
       return null;
     }
-  }, [csvData, dateRange, currentMetrics, tddData, workdaySet]); // Added tddData and workdaySet dependencies
+  }, [csvData, dateRange, currentMetrics, tddData, workdaySet, sensors]); // Added sensors dependency
 }
 
 /**

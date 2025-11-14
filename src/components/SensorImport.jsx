@@ -1,20 +1,24 @@
 /**
  * Sensor Database Import Button
  * 
- * Allows user to import master_sensors.db (SQLite) into IndexedDB.
+ * Allows user to import sensors from:
+ * - SQLite database (.db, .sqlite)
+ * - JSON export (.json)
+ * 
  * Shows import status and sensor count.
  * 
- * @version 3.7.0 - PHASE 2: IndexedDB migration
+ * @version 4.2.0 - Enhanced with JSON import support
  */
 
 import React, { useState, useEffect } from 'react';
-import { importSensorsFromFile } from '../storage/sensorImport.js';
+import { importSensorsFromFile, validateSensorImportFile } from '../storage/sensorImport.js';
 import { getAllSensors } from '../storage/sensorStorage.js';
 
 export default function SensorImport() {
   const [importing, setImporting] = useState(false);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
+  const [validationInfo, setValidationInfo] = useState(null);
   
   // Load stats on mount
   useEffect(() => {
@@ -23,7 +27,7 @@ export default function SensorImport() {
   
   async function loadStats() {
     try {
-      const sensors = getAllSensors();
+      const sensors = await getAllSensors();
       if (sensors && sensors.length > 0) {
         // Extract valid timestamps
         const validTimestamps = sensors
@@ -51,13 +55,44 @@ export default function SensorImport() {
     
     setImporting(true);
     setError(null);
+    setValidationInfo(null);
     
     try {
+      // Validate file first
+      const validation = await validateSensorImportFile(file);
+      
+      if (!validation.valid) {
+        throw new Error(validation.errors?.join(', ') || 'Invalid file');
+      }
+      
+      // Show validation info
+      setValidationInfo({
+        format: validation.format,
+        count: validation.sensorCount,
+        version: validation.version
+      });
+      
+      // Import sensors
       const result = await importSensorsFromFile(file);
       
       if (result.success) {
         await loadStats();
-        alert(`✅ Import succesvol!\n${result.count} sensors geïmporteerd`);
+        
+        let message = `✅ Import succesvol!\n\n`;
+        message += `📥 ${result.count} sensors geïmporteerd`;
+        
+        if (result.skipped > 0) {
+          message += `\n⏭️ ${result.skipped} duplicaten overgeslagen`;
+        }
+        
+        if (result.errors && result.errors.length > 0) {
+          message += `\n\n⚠️ Warnings:\n${result.errors.slice(0, 3).join('\n')}`;
+          if (result.errors.length > 3) {
+            message += `\n... and ${result.errors.length - 3} more`;
+          }
+        }
+        
+        alert(message);
       } else {
         throw new Error(result.errors?.[0] || 'Unknown error');
       }
@@ -67,6 +102,8 @@ export default function SensorImport() {
       alert(`❌ Import mislukt: ${err.message}`);
     } finally {
       setImporting(false);
+      // Reset file input
+      event.target.value = '';
     }
   }
   
@@ -84,7 +121,7 @@ export default function SensorImport() {
         marginBottom: '0.5rem',
         color: 'var(--text-primary)'
       }}>
-        SENSOR DATABASE
+        🗂️ SENSOR IMPORT
       </div>
       
       {stats ? (
@@ -107,7 +144,25 @@ export default function SensorImport() {
           opacity: 0.7,
           color: 'var(--text-secondary)'
         }}>
-          Geen sensor database geïmporteerd
+          Geen sensor database aanwezig
+        </div>
+      )}
+      
+      {validationInfo && (
+        <div style={{
+          fontFamily: '"Courier New", Courier, monospace',
+          fontSize: '11px',
+          marginBottom: '0.5rem',
+          padding: '0.5rem',
+          background: 'rgba(34, 197, 94, 0.1)',
+          border: '2px solid var(--color-green)',
+          color: 'var(--color-green)'
+        }}>
+          <div>📄 Format: {validationInfo.format.toUpperCase()}</div>
+          <div>📊 {validationInfo.count} sensors detected</div>
+          {validationInfo.version && (
+            <div>🏷️ Version: {validationInfo.version}</div>
+          )}
         </div>
       )}
       
@@ -123,15 +178,25 @@ export default function SensorImport() {
         opacity: importing ? 0.5 : 1,
         color: 'var(--text-primary)'
       }}>
-        {importing ? 'IMPORTEREN...' : stats ? '🔄 RE-IMPORT' : '📥 IMPORT DATABASE'}
+        {importing ? 'IMPORTEREN...' : stats ? '🔄 RE-IMPORT' : '📥 IMPORT'}
         <input
           type="file"
-          accept=".db"
+          accept=".db,.sqlite,.json"
           onChange={handleFileSelect}
           disabled={importing}
           style={{ display: 'none' }}
         />
       </label>
+      
+      <div style={{
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: '10px',
+        marginTop: '0.5rem',
+        opacity: 0.6,
+        color: 'var(--text-secondary)'
+      }}>
+        Accepts: .json, .db, .sqlite
+      </div>
       
       {error && (
         <div style={{

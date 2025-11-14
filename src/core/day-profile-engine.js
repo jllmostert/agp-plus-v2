@@ -12,27 +12,18 @@
 
 import { CONFIG, utils, calculateMetrics, detectEvents } from './metrics-engine.js';
 import { getEventsForDate } from '../storage/eventStorage.js';
-import { getAllSensors } from '../storage/sensorStorage.js';
 
 /**
  * Get the last 7 days from the dataset
  * @param {Array} data - Full glucose data array
  * @param {string} csvCreatedDate - CSV creation date (YYYY/MM/DD) - optional, for backward compat
+ * @param {Array} sensors - Sensor array (pre-loaded) - optional
  * @returns {Array} Array of up to 7 day profile objects (newest first)
  * 
  * V3 Note: Now returns last 7 days regardless of completeness.
  * This allows day profiles to work with filtered datasets (e.g., "Last 14D" filter).
  */
-/**
- * Get the last 7 days from the dataset
- * @param {Array} data - Full glucose data array
- * @param {string} csvCreatedDate - CSV creation date (YYYY/MM/DD) - optional, for backward compat
- * @returns {Array} Array of up to 7 day profile objects (newest first)
- * 
- * V3 Note: Now returns last 7 days regardless of completeness.
- * This allows day profiles to work with filtered datasets (e.g., "Last 14D" filter).
- */
-export function getLastSevenDays(data, csvCreatedDate) {
+export function getLastSevenDays(data, csvCreatedDate, sensors = []) {
   if (!data || data.length === 0) return [];
   
   // Find all unique days in the dataset
@@ -48,8 +39,8 @@ export function getLastSevenDays(data, csvCreatedDate) {
   
   if (sortedDates.length === 0) return [];
   
-  // Generate profile for each day
-  const profiles = sortedDates.map(date => getDayProfile(data, date)).filter(p => p !== null);
+  // Generate profile for each day (pass sensors)
+  const profiles = sortedDates.map(date => getDayProfile(data, date, sensors)).filter(p => p !== null);
   
   return profiles;
 }
@@ -58,9 +49,10 @@ export function getLastSevenDays(data, csvCreatedDate) {
  * Generate complete profile for a single day
  * @param {Array} data - Full glucose data array
  * @param {string} date - Date in YYYY/MM/DD format
+ * @param {Array} sensors - Sensor array (pre-loaded) - optional
  * @returns {Object} Day profile with metrics, curve, events, badges
  */
-export function getDayProfile(data, date) {
+export function getDayProfile(data, date, sensors = []) {
   // Filter data for this day
   const dayData = data.filter(row => row.date === date);
   
@@ -75,8 +67,8 @@ export function getDayProfile(data, date) {
   // Generate 24-hour glucose curve (288 bins, 5-min intervals)
   const curve = generate24HourCurve(dayData);
   
-  // Detect sensor changes (pass full dataset to detect cross-day gaps)
-  const sensorChanges = detectSensorChanges(data, date);
+  // Detect sensor changes (pass sensors and full dataset to detect cross-day gaps)
+  const sensorChanges = detectSensorChanges(data, date, sensors);
   
   // Get cartridge changes from stored events (v3.7 fix)
   const storedEvents = getEventsForDate(date);
@@ -188,53 +180,48 @@ function generate24HourCurve(dayData) {
  * 
  * @param {Array} allData - Full glucose dataset (needed for accurate gap calculation)
  * @param {string} targetDate - Date to analyze (YYYY/MM/DD format)
+ * @param {Array} sensors - Sensor array (pre-loaded) - optional
  * @returns {Array} Array of sensor change markers with {timestamp, date, minuteOfDay, gapMinutes, type}
  */
-function detectSensorChanges(allData, targetDate) {
+function detectSensorChanges(allData, targetDate, sensors = []) {
   const allChanges = [];
   
   // PRIORITY 1: Check sensor database (high confidence)
-  try {
-    const sensors = getAllSensors();
+  if (sensors && sensors.length > 0) {
+    // Find sensors that started on this day
+    const targetDateObj = utils.parseDate(targetDate, '00:00:00');
+    const nextDayObj = new Date(targetDateObj);
+    nextDayObj.setDate(nextDayObj.getDate() + 1);
     
-    if (sensors && sensors.length > 0) {
-      // Find sensors that started on this day
-      const targetDateObj = utils.parseDate(targetDate, '00:00:00');
-      const nextDayObj = new Date(targetDateObj);
-      nextDayObj.setDate(nextDayObj.getDate() + 1);
+    for (const sensor of sensors) {
+      const sensorStart = new Date(sensor.start_date);
       
-      for (const sensor of sensors) {
-        const sensorStart = new Date(sensor.start_date);
+      // Check if sensor start is within target day
+      if (sensorStart >= targetDateObj && sensorStart < nextDayObj) {
+        const minuteOfDay = sensorStart.getHours() * 60 + sensorStart.getMinutes();
         
-        // Check if sensor start is within target day
-        if (sensorStart >= targetDateObj && sensorStart < nextDayObj) {
-          const minuteOfDay = sensorStart.getHours() * 60 + sensorStart.getMinutes();
-          
-          // Skip midnight timestamps
-          if (minuteOfDay === 0) continue;
-          
-          allChanges.push({
-            timestamp: sensorStart,
-            date: targetDate,
-            minuteOfDay,
-            type: 'start',
-            confidence: 'high',
-            source: 'database',
-            metadata: {
-              lotNumber: sensor.lot_number,
-              duration: sensor.duration_days
-            }
-          });
-        }
-      }
-      
-      // If we found database matches, return them (high confidence)
-      if (allChanges.length > 0) {
-        return allChanges;
+        // Skip midnight timestamps
+        if (minuteOfDay === 0) continue;
+        
+        allChanges.push({
+          timestamp: sensorStart,
+          date: targetDate,
+          minuteOfDay,
+          type: 'start',
+          confidence: 'high',
+          source: 'database',
+          metadata: {
+            lotNumber: sensor.lot_number,
+            duration: sensor.duration_days
+          }
+        });
       }
     }
-  } catch (err) {
-    // Sensor database not available or error, fall through to CSV detection
+    
+    // If we found database matches, return them (high confidence)
+    if (allChanges.length > 0) {
+      return allChanges;
+    }
   }
   
   // PRIORITY 2: Check CSV alerts for "SENSOR CONNECTED" (medium-high confidence)

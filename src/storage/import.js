@@ -60,8 +60,8 @@ export async function importMasterDataset(file, onProgress = null) {
       };
     }
     
-    if (data.version !== '3.8.0') {
-      errors.push(`Schema version mismatch: file is ${data.version}, app expects 3.8.0`);
+    if (!['3.8.0', '4.0.0', '4.1.0'].includes(data.version)) {
+      errors.push(`Schema version mismatch: file is ${data.version}, app expects 3.8.0 or 4.x.x`);
       // Continue anyway - might still work
     }
     

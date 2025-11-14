@@ -431,7 +431,7 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
                   // Delete sensors if selected
                   if (allInSensors) {
                     const sensorStorage = await import('../storage/sensorStorage');
-                    const result = sensorStorage.default.clearAllSensors();
+                    const result = await sensorStorage.default.clearAllSensors();
                     debug.log('[DataManagementModal] Sensors cleared:', result);
                   }
                   

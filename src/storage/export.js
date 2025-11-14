@@ -19,7 +19,7 @@ export async function exportMasterDataset() {
   try {
     // Fetch all data from IndexedDB
     const months = await getAllMonthBuckets();
-    const sensors = getAllSensors(); // V4: synchronous
+    const sensors = await getAllSensors(); // FIXED: getAllSensors is now async!
     const cartridges = await getCartridgeHistory();
     
     // Fetch ProTime workday data from V3 storage (IndexedDB)

@@ -2,41 +2,46 @@
  * Sensor Storage Module - V4 Clean Implementation
  * 
  * Single source of truth for sensor data.
- * Pure functions, clear API, no complexity.
+ * V4.1.0 - Async IndexedDB storage
  */
+
+import { openDB, STORES, getRecord, putRecord } from './db.js';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const STORAGE_KEY = 'agp-sensors-v4';
-const VERSION = '4.0.0';
+const STORAGE_KEY = 'sensors-v4'; // IndexedDB key
+const VERSION = '4.1.0'; // Bumped for async
 const SUCCESS_THRESHOLD_DAYS = 6.75;
 
 // ============================================================================
-// STORAGE ACCESS
+// STORAGE ACCESS (ASYNC)
 // ============================================================================
 
-function getStorage() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return initStorage();
-  return JSON.parse(raw);
+async function getStorage() {
+  const db = await openDB();
+  const stored = await getRecord(STORES.SENSOR_DATA, STORAGE_KEY);
+  if (!stored) return await initStorage();
+  return stored;
 }
 
-function saveStorage(data) {
+async function saveStorage(data) {
   data.last_updated = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  await putRecord(STORES.SENSOR_DATA, { 
+    id: STORAGE_KEY, 
+    ...data 
+  });
 }
 
-function initStorage() {
+async function initStorage() {
   const data = {
     version: VERSION,
     last_updated: new Date().toISOString(),
     sensors: [],
     deleted: []
-    // Note: batches moved to stockStorage.js (v4.0.1)
   };
-  saveStorage(data);
+  await saveStorage(data);
   return data;
 }
 
@@ -51,14 +56,14 @@ function initStorage() {
  * Do NOT store status. Always calculate fresh.
  * 
  * @param {Object} sensor - Sensor with start_date and end_date
+ * @param {Array} deletedList - Optional array of deleted sensor records
  * @returns {string} - 'active' | 'overdue' | 'success' | 'failed' | 'deleted'
  */
-export function calculateStatus(sensor) {
+export function calculateStatus(sensor, deletedList = []) {
   if (!sensor || !sensor.start_date) return 'unknown';
   
   // Check if deleted
-  const storage = getStorage();
-  const isDeleted = storage.deleted.some(d => d.sensor_id === sensor.id);
+  const isDeleted = deletedList.some(d => d.sensor_id === sensor.id);
   if (isDeleted) return 'deleted';
   
   const now = new Date();
@@ -94,9 +99,11 @@ export function calculateStatus(sensor) {
 
 /**
  * Get status with UI metadata
+ * @param {Object} sensor - Sensor object
+ * @param {Array} deletedList - Optional array of deleted sensor records
  */
-export function getStatusInfo(sensor) {
-  const status = calculateStatus(sensor);
+export function getStatusInfo(sensor, deletedList = []) {
+  const status = calculateStatus(sensor, deletedList);
   
   const info = {
     active: { emoji: '🔄', label: 'Active', color: '#fbbf24' },
@@ -117,27 +124,27 @@ export function getStatusInfo(sensor) {
 // READ OPERATIONS
 // ============================================================================
 
-export function getAllSensors() {
-  const storage = getStorage();
+export async function getAllSensors() {
+  const storage = await getStorage();
   return storage.sensors.map(sensor => ({
     ...sensor,
-    statusInfo: getStatusInfo(sensor)
+    statusInfo: getStatusInfo(sensor, storage.deleted)
   }));
 }
 
-export function getSensorById(id) {
-  const storage = getStorage();
+export async function getSensorById(id) {
+  const storage = await getStorage();
   const sensor = storage.sensors.find(s => s.id === id);
   if (!sensor) return null;
   
   return {
     ...sensor,
-    statusInfo: getStatusInfo(sensor)
+    statusInfo: getStatusInfo(sensor, storage.deleted)
   };
 }
 
-export function getStatistics() {
-  const sensors = getAllSensors();
+export async function getStatistics() {
+  const sensors = await getAllSensors();
   const active = sensors.filter(s => s.statusInfo.status === 'active');
   const ended = sensors.filter(s => s.end_date && s.statusInfo.status !== 'deleted');
   const successful = ended.filter(s => s.statusInfo.status === 'success');
@@ -152,16 +159,13 @@ export function getStatistics() {
 }
 
 // ============================================================================
-// WRITE OPERATIONS
+// WRITE OPERATIONS (ASYNC)
 // ============================================================================
 
-export function addSensor(data) {
-  const storage = getStorage();
+export async function addSensor(data) {
+  const storage = await getStorage();
   
-  // Generate ID if not provided
   const id = data.id || `sensor_${Date.now()}`;
-  
-  // Calculate next sequence
   const maxSeq = storage.sensors.reduce((max, s) => Math.max(max, s.sequence || 0), 0);
   
   const sensor = {
@@ -181,13 +185,13 @@ export function addSensor(data) {
   };
   
   storage.sensors.push(sensor);
-  saveStorage(storage);
+  await saveStorage(storage);
   
   return sensor;
 }
 
-export function updateSensor(id, updates) {
-  const storage = getStorage();
+export async function updateSensor(id, updates) {
+  const storage = await getStorage();
   const index = storage.sensors.findIndex(s => s.id === id);
   
   if (index === -1) return null;
@@ -198,19 +202,16 @@ export function updateSensor(id, updates) {
     updated_at: new Date().toISOString()
   };
   
-  saveStorage(storage);
+  await saveStorage(storage);
   return storage.sensors[index];
 }
 
-export function deleteSensor(id) {
-  const storage = getStorage();
+export async function deleteSensor(id) {
+  const storage = await getStorage();
   
-  // Check if already deleted
   if (storage.deleted.some(d => d.sensor_id === id)) {
     return { success: false, error: 'Already deleted' };
   }
-  
-  // Add to deleted list
   storage.deleted.push({
     sensor_id: id,
     deleted_at: new Date().toISOString()
@@ -220,14 +221,14 @@ export function deleteSensor(id) {
   return { success: true };
 }
 
-export function restoreSensor(id) {
-  const storage = getStorage();
+export async function restoreSensor(id) {
+  const storage = await getStorage();
   const index = storage.deleted.findIndex(d => d.sensor_id === id);
   
   if (index === -1) return { success: false, error: 'Not in deleted list' };
   
   storage.deleted.splice(index, 1);
-  saveStorage(storage);
+  await saveStorage(storage);
   
   return { success: true };
 }
@@ -236,8 +237,8 @@ export function restoreSensor(id) {
 // LOCK OPERATIONS
 // ============================================================================
 
-export function toggleLock(id) {
-  const storage = getStorage();
+export async function toggleLock(id) {
+  const storage = await getStorage();
   const sensor = storage.sensors.find(s => s.id === id);
   
   if (!sensor) return { success: false, error: 'Sensor not found' };
@@ -245,13 +246,13 @@ export function toggleLock(id) {
   sensor.is_locked = !sensor.is_locked;
   sensor.updated_at = new Date().toISOString();
   
-  saveStorage(storage);
+  await saveStorage(storage);
   
   return { success: true, is_locked: sensor.is_locked };
 }
 
-export function setLock(id, locked) {
-  const storage = getStorage();
+export async function setLock(id, locked) {
+  const storage = await getStorage();
   const sensor = storage.sensors.find(s => s.id === id);
   
   if (!sensor) return { success: false, error: 'Sensor not found' };
@@ -259,7 +260,7 @@ export function setLock(id, locked) {
   sensor.is_locked = !!locked;
   sensor.updated_at = new Date().toISOString();
   
-  saveStorage(storage);
+  await saveStorage(storage);
   
   return { success: true, is_locked: sensor.is_locked };
 }
@@ -268,15 +269,14 @@ export function setLock(id, locked) {
 // CLEAR OPERATIONS
 // ============================================================================
 
-export function clearAllSensors() {
+export async function clearAllSensors() {
   const data = {
     version: VERSION,
     last_updated: new Date().toISOString(),
     sensors: [],
-    batches: [],
     deleted: []
   };
-  saveStorage(data);
+  await saveStorage(data);
   return { success: true, cleared: true };
 }
 
@@ -286,8 +286,8 @@ export function clearAllSensors() {
 // This only handles sensor.batch_id field updates
 // ============================================================================
 
-export function assignBatch(sensorId, batchId) {
-  const storage = getStorage();
+export async function assignBatch(sensorId, batchId) {
+  const storage = await getStorage();
   const sensor = storage.sensors.find(s => s.id === sensorId);
   
   if (!sensor) return { success: false, error: 'Sensor not found' };
@@ -295,7 +295,7 @@ export function assignBatch(sensorId, batchId) {
   sensor.batch_id = batchId;
   sensor.updated_at = new Date().toISOString();
   
-  saveStorage(storage);
+  await saveStorage(storage);
   
   return { success: true };
 }
@@ -304,21 +304,21 @@ export function assignBatch(sensorId, batchId) {
 // EXPORT/IMPORT
 // ============================================================================
 
-export function exportJSON() {
-  const storage = getStorage();
+export async function exportJSON() {
+  const storage = await getStorage();
   return {
     ...storage,
     export_date: new Date().toISOString()
   };
 }
 
-export function importJSON(data) {
+export async function importJSON(data) {
   try {
     if (!data.version || !data.sensors) {
       return { success: false, error: 'Invalid data format' };
     }
     
-    const storage = getStorage();
+    const storage = await getStorage();
     const existingSensorIds = new Set(storage.sensors.map(s => s.id));
     const existingBatchIds = new Set(storage.batches?.map(b => b.batch_id) || []);
     
@@ -370,7 +370,7 @@ export function importJSON(data) {
       deleted: storage.deleted // Keep existing deleted list
     };
     
-    saveStorage(mergedData);
+    await saveStorage(mergedData);
     
     return { 
       success: true,
@@ -391,9 +391,9 @@ export function importJSON(data) {
 // UTILITIES
 // ============================================================================
 
-export function getStorageInfo() {
-  const storage = getStorage();
-  const stats = getStatistics();
+export async function getStorageInfo() {
+  const storage = await getStorage();
+  const stats = await getStatistics();
   
   return {
     version: storage.version,
