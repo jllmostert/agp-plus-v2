@@ -162,28 +162,19 @@ export default function SensorRegistration({ isOpen, onClose }) {
       
       const sensorData = {
         id: sensorId,
-        startTimestamp: candidate.timestamp.toISOString(),
-        // Use stopped_at from detection engine (EoL gap detection in v3.8.0+)
-        stoppedAt: candidate.stopped_at ? candidate.stopped_at.toISOString() : null,
-        endTimestamp: candidate.stopped_at ? candidate.stopped_at.toISOString() : null, // Backward compat
-        durationHours: candidate.stopped_at 
+        start_date: candidate.timestamp.toISOString(),
+        end_date: candidate.stopped_at ? candidate.stopped_at.toISOString() : null,
+        duration_hours: candidate.stopped_at 
           ? (candidate.stopped_at - candidate.timestamp) / (1000 * 60 * 60)
           : null,
-        durationDays: candidate.stopped_at
+        duration_days: candidate.stopped_at
           ? (candidate.stopped_at - candidate.timestamp) / (1000 * 60 * 60 * 24)
           : null,
-        reasonStop: candidate.stopped_at ? 'EoL gap detected' : null,
-        // Fix: Use 'running' for active sensors, 'ended' for stopped
-        // calculateSensorStatus in useSensorDatabase will convert to success/fail based on duration
-        status: candidate.lifecycle === 'active' ? 'running' : 'ended',
-        confidence: candidate.confidence,
-        lifecycle: candidate.lifecycle || 'unknown',
-        lotNumber: null,
-        hardwareVersion: null,
-        firmwareVersion: null,
         notes: `CSV auto-detected (${candidate.confidence.toUpperCase()}, score: ${candidate.score}/100)`,
-        source: 'csv_detection',
-        sequence: null
+        lot_number: null,
+        hw_version: null,
+        is_locked: false,
+        batch_id: null
       };
       
       await addSensor(sensorData);
