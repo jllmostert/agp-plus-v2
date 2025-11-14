@@ -1883,3 +1883,72 @@ Voorbereiden async refactor: clean branch setup met alle bugfixes + IndexedDB pr
 
 **Time**: 19:45 - 19:57 (~12 minutes)
 **Result**: Clean starting point, zero technical debt
+
+
+---
+
+## 2025-11-14 21:15 - SESSION 25 CONTINUED: MERGE TO MAIN & CLEANUP
+
+### Objective
+Consolidate all work to main branch, remove all feature branches for clean slate
+
+### Problem
+- Multiple branches causing confusion
+- Uncertainty about which fixes are where
+- Browser cache issues masking actual code state
+
+### Actions Completed
+
+**1. Branch Consolidation**
+- ✅ Merged `feature/async-migration` → main
+- ✅ Added commits:
+  - IndexedDB prep work (wrapper + migration + analysis)
+  - Session 24 & 25 documentation
+  - Fix: clearAllData → cleanupRecords in JSON import
+
+**2. Branch Cleanup**
+- ✅ Deleted `feature/async-migration` (local + remote)
+- ✅ Deleted `feature/indexeddb-migration` (already done earlier)
+- ✅ **Result: ONLY main branch remains**
+
+**3. Bug Fix Committed**
+- Fixed JSON import Replace mode error
+- Changed: `masterDataset.clearAllData()` → `cleanupRecords({ type: 'all-in' })`
+- Changed: `clearProTimeData()` → `deleteProTimeData()`
+- Issue was browser cache + function name mismatch
+
+**4. Clean Rebuild**
+- ✅ Killed all zombie processes (ports 3001-3004)
+- ✅ Cleared Vite cache
+- ✅ Restarted server on port 3001
+- ✅ Fresh build from main branch
+
+### Current State
+**Branch**: `main` (ONLY branch that exists)
+**Server**: http://localhost:3001/ (fresh build)
+**Status**: ✅ CLEAN SLATE ACHIEVED
+
+**Main now contains:**
+- All recent bugfixes (ALL-IN cleanup, batch consolidation, etc.)
+- IndexedDB wrapper (`src/storage/indexedDB.js`)
+- Migration utility (`src/storage/migrateSensors.js`)
+- Complete async refactor analysis (`ASYNC_REFACTOR_ANALYSIS.md`)
+- JSON import fix (clearAllData)
+
+### Git Status
+```
+Branches (local):  main
+Branches (remote): origin/main
+Feature branches:  NONE
+Untracked files:   test-data/*, SESSION_SUMMARY_*.md
+```
+
+### Next Steps
+1. Update HANDOFF document to reflect main-only workflow
+2. Test JSON import Replace mode (should work now)
+3. Begin async refactor on main branch (no feature branches)
+4. Frequent small commits directly to main
+
+**Time**: 21:15 - 21:30 (~15 minutes)
+**Result**: Single source of truth (main), no branch confusion
+**Strategy**: Work directly on main with frequent commits

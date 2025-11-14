@@ -1,22 +1,29 @@
 # HANDOFF - Async Storage Refactor
 
-**Date**: 2025-11-14 19:30  
-**Session**: 24  
-**Branch**: `feature/indexeddb-migration`  
-**Next**: Begin async refactor in new session  
-**Status**: ✅ ANALYSIS COMPLETE, READY TO START
+**Date**: 2025-11-14 21:30 (UPDATED)  
+**Session**: 24-25  
+**Branch**: `main` (ONLY branch - no feature branches)  
+**Next**: Begin async refactor directly on main  
+**Status**: ✅ ANALYSIS COMPLETE, CLEAN SLATE READY
 
 ---
 
 ## 🎯 WHAT WE ACCOMPLISHED
 
-### IndexedDB Migration Preparation (Complete)
+### Phase 1: IndexedDB Migration Preparation (Complete)
 
 ✅ **Step 1**: IndexedDB wrapper created (`indexedDB.js` - 476 lines)  
 ✅ **Step 2**: Migration utility created (`migrateSensors.js` - 487 lines)  
 ✅ **Analysis**: Complete refactor analysis (`ASYNC_REFACTOR_ANALYSIS.md` - 1071 lines)
 
-**All committed and pushed to**: `feature/indexeddb-migration`
+### Phase 2: Branch Consolidation (Complete)
+
+✅ **Merged to main**: All IndexedDB prep work now on main  
+✅ **Deleted all feature branches**: Only `main` exists (local + remote)  
+✅ **Bug fix**: JSON import Replace mode (clearAllData → cleanupRecords)  
+✅ **Clean rebuild**: Fresh Vite cache, server on port 3001
+
+**Current state**: Single source of truth on main branch
 
 ---
 
@@ -67,12 +74,16 @@
 
 ## 🗺️ ROADMAP FOR NEXT SESSION
 
+### NEW STRATEGY: Work Directly on Main
+
+**No feature branches** - commit directly to main with frequent, small commits
+
 ### Session 1: Core Storage Layer (3-4 hours)
 
 **Goal**: Convert `sensorStorage.js` to full async
 
 **Steps**:
-1. ✅ Create branch: `git checkout -b feature/async-sensor-storage`
+1. ✅ Work on main branch (no checkout needed)
 2. ✅ Update private helpers:
    - `getStorage()` → async with IndexedDB
    - `saveStorage()` → async with IndexedDB
@@ -80,6 +91,7 @@
 4. ✅ Fix `calculateStatus()` to accept deleted list (stay sync!)
 5. ✅ Test each function individually
 6. ✅ Commit: "refactor: Convert sensorStorage to async IndexedDB"
+7. ✅ Push to origin/main immediately
 
 **Critical Pattern**:
 ```javascript
@@ -111,6 +123,7 @@ async function getAllSensors() {
    - Loading states
 3. ✅ Test all operations work
 4. ✅ Commit: "refactor: Update components for async storage"
+5. ✅ Push to origin/main
 
 **Critical Pattern**:
 ```javascript
@@ -141,30 +154,32 @@ useEffect(() => {
 4. ✅ Test edge cases (rapid clicks, errors, etc.)
 5. ✅ Documentation updates
 6. ✅ Commit: "feat: Complete IndexedDB migration"
+7. ✅ Push to origin/main
+8. ✅ Deploy to production
 
 ---
 
 ## 🔧 IMPLEMENTATION CHECKLIST
 
 ### Before You Start
-- [ ] Read `ASYNC_REFACTOR_ANALYSIS.md` (full analysis)
+- [x] Read `ASYNC_REFACTOR_ANALYSIS.md` (full analysis)
 - [ ] Have test CSV files ready (14d and 90d)
 - [ ] iPad available for mobile Safari testing
 - [ ] Coffee ☕
 
 ### During Implementation
-- [ ] Create new branch from `feature/indexeddb-migration`
-- [ ] Work in small chunks (commit every 30-60 minutes)
+- [ ] Work directly on main (no branches!)
+- [ ] Small commits every 30-60 minutes
 - [ ] Test each function before moving to next
 - [ ] Add console.log for debugging
-- [ ] Keep `localStorage` data as backup (never delete!)
+- [ ] Push to remote after each commit
 
 ### After Each Session
 - [ ] All tests passing
 - [ ] No console errors
-- [ ] Commit with descriptive message
-- [ ] Update PROGRESS.md
-- [ ] Push to GitHub
+- [ ] Descriptive commit messages
+- [ ] PROGRESS.md updated
+- [ ] Pushed to origin/main
 
 ---
 
@@ -246,10 +261,8 @@ export PATH="/opt/homebrew/bin:$PATH"
 npx vite --port 3001
 ```
 
-### Test on Localhost
-```
-http://localhost:3001
-```
+### Current Server Status
+✅ **Running**: http://localhost:3001/ (main branch, fresh build)
 
 ### Test Files Available
 - `test-data/Jo Mostert 14-11-2025.csv` (recent data)
@@ -280,19 +293,17 @@ After refactor, we MUST be able to:
 # Navigate to project
 cd /Users/jomostert/Documents/Projects/agp-plus
 
-# Make sure we're on migration branch
-git checkout feature/indexeddb-migration
+# Verify we're on main
+git branch --show-current
+# Should output: main
 
-# Pull latest (in case of changes)
-git pull origin feature/indexeddb-migration
-
-# Create new branch for async work
-git checkout -b feature/async-sensor-storage
+# Verify clean state
+git status
 
 # Verify we have our analysis
 ls -lh ASYNC_REFACTOR_ANALYSIS.md
 
-# Open sensorStorage.js in editor (or use Desktop Commander)
+# Open sensorStorage.js in editor
 # Ready to start!
 ```
 
@@ -322,8 +333,8 @@ async function getStorage() {
 
 Before starting next session, clarify:
 
-1. ✅ **Preferred approach**: Full async refactor (confirmed)
-2. ❓ **Rollback plan**: If we hit >12 hours, do we stop and reconsider?
+1. ✅ **Preferred approach**: Work directly on main (confirmed)
+2. ❓ **Rollback plan**: If we hit issues, can we revert commits?
 3. ❓ **Testing priority**: Desktop first, or iPad first?
 4. ❓ **Deployment timing**: After Session 1, 2, or 3?
 
@@ -335,7 +346,8 @@ Before starting next session, clarify:
 **Architecture Readiness**: ✅ EXCELLENT  
 **Scope Clarity**: ✅ CRYSTAL CLEAR  
 **Risk Management**: ✅ ALL MAJOR RISKS IDENTIFIED  
-**Timeline Realism**: ✅ 6-9 HOURS IS ACHIEVABLE
+**Timeline Realism**: ✅ 6-9 HOURS IS ACHIEVABLE  
+**Branch Strategy**: ✅ SIMPLIFIED (main only)
 
 **Overall**: 🟢 **READY TO START**
 
@@ -347,9 +359,10 @@ Before starting next session, clarify:
 **Why**: Enable large dataset imports (90+ days) on mobile Safari  
 **How**: Systematic refactor in 3 sessions, ~6-9 hours total  
 **Risk**: Medium, all major risks identified and mitigated  
-**Benefit**: Fixes critical mobile Safari crash bug
+**Benefit**: Fixes critical mobile Safari crash bug  
+**Strategy**: Work directly on main, commit frequently
 
-**Status**: ✅ All prep work done, ready to begin!
+**Status**: ✅ Clean slate achieved, ready to begin!
 
 ---
 
@@ -362,7 +375,8 @@ Before starting next session, clarify:
 
 ---
 
-**Handoff Date**: 2025-11-14 19:30  
-**Branch**: `feature/indexeddb-migration`  
-**Files Ready**: 3 new files, 1071 lines of analysis  
+**Handoff Date**: 2025-11-14 21:30 (UPDATED)  
+**Branch**: `main` (only branch)  
+**Files Ready**: IndexedDB wrapper, migration, analysis (2446 lines)  
+**Server**: http://localhost:3001/ (running)  
 **Status**: GREEN LIGHT ✅
