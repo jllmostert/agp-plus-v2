@@ -98,8 +98,6 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
   const stats = useMemo(() => {
     const now = new Date();
     const ninetyDaysAgo = new Date(now - 90 * 24 * 60 * 60 * 1000);
-    const hwCutoffDate = new Date('2025-07-03T00:00:00');
-    const ninetyDaysBeforeHWCutoff = new Date(hwCutoffDate.getTime() - 90 * 24 * 60 * 60 * 1000);
     
     // Helper function to calculate stats for a sensor list
     const calculateStats = (sensorList) => {
@@ -108,7 +106,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
           count: 0,
           avg_duration: 0,
           pct_6days: 0,
-          pct_7_9days: 0
+          pct_6_8days: 0
         };
       }
       
@@ -120,13 +118,13 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
       
       const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
       const count6days = durations.filter(d => d >= 6).length;
-      const count7_9days = durations.filter(d => d >= 7.9).length;
+      const count6_8days = durations.filter(d => d >= 6.8).length;
       
       return {
         count: sensorList.length,
         avg_duration: avg.toFixed(2),
         pct_6days: ((count6days / durations.length) * 100).toFixed(1),
-        pct_7_9days: ((count7_9days / durations.length) * 100).toFixed(1)
+        pct_6_8days: ((count6_8days / durations.length) * 100).toFixed(1)
       };
     };
     
@@ -139,13 +137,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
       return endDate >= ninetyDaysAgo;
     });
     
-    // 2. 90 days before HW cutoff (A1.01 period)
-    const pre_hw_90days = endedSensors.filter(s => {
-      const endDate = new Date(s.end_date);
-      return endDate >= ninetyDaysBeforeHWCutoff && endDate < hwCutoffDate;
-    });
-    
-    // 3. By year
+    // 2. By year
     const byYear = {};
     endedSensors.forEach(s => {
       const year = new Date(s.start_date).getFullYear();
@@ -155,7 +147,6 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     
     return {
       last90Days: calculateStats(last90Days),
-      pre_hw_90days: calculateStats(pre_hw_90days),
       byYear: Object.entries(byYear)
         .map(([year, sensors]) => ({
           year: parseInt(year),
@@ -479,27 +470,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
               <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
                 <div>Ø duur: <strong>{stats.last90Days.avg_duration} dagen</strong></div>
                 <div>≥6 dagen: <strong>{stats.last90Days.pct_6days}%</strong></div>
-                <div>≥7.9 dagen: <strong>{stats.last90Days.pct_7_9days}%</strong></div>
+                <div>≥6.8 dagen: <strong>{stats.last90Days.pct_6_8days}%</strong></div>
               </div>
             </div>
-
-            {/* 90 days before HW cutoff */}
-            {stats.pre_hw_90days.count > 0 && (
-              <div style={{
-                padding: '15px',
-                border: '2px solid var(--ink)',
-                backgroundColor: 'var(--paper)'
-              }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '10px', color: 'var(--color-blue)' }}>
-                  🔵 90 DAGEN VÓÓR 3 JULI 2025 (n={stats.pre_hw_90days.count})
-                </div>
-                <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
-                  <div>Ø duur: <strong>{stats.pre_hw_90days.avg_duration} dagen</strong></div>
-                  <div>≥6 dagen: <strong>{stats.pre_hw_90days.pct_6days}%</strong></div>
-                  <div>≥7.9 dagen: <strong>{stats.pre_hw_90days.pct_7_9days}%</strong></div>
-                </div>
-              </div>
-            )}
 
             {/* By Year */}
             {stats.byYear.map(yearData => (
@@ -514,7 +487,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
                 <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
                   <div>Ø duur: <strong>{yearData.avg_duration} dagen</strong></div>
                   <div>≥6 dagen: <strong>{yearData.pct_6days}%</strong></div>
-                  <div>≥7.9 dagen: <strong>{yearData.pct_7_9days}%</strong></div>
+                  <div>≥6.8 dagen: <strong>{yearData.pct_6_8days}%</strong></div>
                 </div>
               </div>
             ))}
