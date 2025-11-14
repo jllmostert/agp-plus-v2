@@ -6,6 +6,70 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.2.2 - Stock Import/Export + IndexedDB Fix] - 2025-11-14
+
+### 🎯 Session 28: Stock Management & Database Schema Fix
+**Duration**: ~30 minutes  
+**Commits**: 59224d2, 81a01b4, d936d69, 16b0254
+
+### ✅ Features Added
+
+#### Stock Import/Export in StockPanel
+- 📤 **EXPORT** button: Export all batches with sensor assignments to JSON
+- 📥 **IMPORT** button: Import stock from JSON with mode selection
+- **Replace Mode**: Clears existing stock, imports fresh (user confirms with OK)
+- **Merge Mode**: Keeps existing, skips duplicates (user cancels prompt)
+- Filename format: `agp-stock-YYYY-MM-DD.json`
+- Success alerts show batch count and assignment count
+- Detailed import statistics with reconnection info
+
+#### New Storage Functions
+- `clearAllBatches()` in stockStorage.js - Clears both batches and assignments
+- Updated `importStock()` with replace mode support
+- Import validates sensor connections and handles duplicates intelligently
+
+### 🐛 Critical Bug Fix
+
+#### IndexedDB Schema Fix
+**Bug**: SENSOR_DATA store had no keyPath → IndexedDB couldn't save records  
+**Symptom**: "Failed to store record in an IDBObjectStore" error on sensor import
+
+**Fix**:
+- Added `{ keyPath: 'id' }` to SENSOR_DATA createObjectStore
+- DB_VERSION: 4 → 5 (triggers automatic migration)
+- Upgrade logic: Deletes old store, recreates with proper keyPath
+- Migration happens automatically on app load
+
+**Result**: ✅ Sensor import now works without errors
+
+### 📦 Version Management
+
+#### Centralized Version System
+- Created `src/version.js` as single source of truth
+- Updated package.json: 4.0.1 → 4.2.2
+- Updated index.html meta tags and title to v4.2.2
+- All storage modules now import VERSION from version.js
+- No more hardcoded version strings
+
+### 🗂️ Files Changed
+- `src/components/panels/StockPanel.jsx` - Add export/import handlers + UI
+- `src/storage/stockStorage.js` - Add clearAllBatches()
+- `src/storage/stockImportExport.js` - Replace mode + VERSION import
+- `src/storage/sensorStorage.js` - Import VERSION from version.js
+- `src/storage/db.js` - Fix SENSOR_DATA keyPath + DB version bump
+- `src/version.js` - NEW: Central version management
+- `package.json` - Version 4.2.2
+- `index.html` - Version 4.2.2 in meta tags
+
+### 🧪 Testing Completed
+- ✅ Stock export to JSON
+- ✅ Stock import (merge mode) - skips duplicates
+- ✅ Stock import (replace mode) - clears existing
+- ✅ Sensor import works (IndexedDB error fixed)
+
+---
+
+
 ## [v4.2.1 - Async Refactor Complete] - 2025-11-14
 
 ### ⚡ Complete Async Storage Refactor
