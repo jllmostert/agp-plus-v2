@@ -175,6 +175,14 @@ export async function addSensor(data) {
   
   const maxSeq = storage.sensors.reduce((max, s) => Math.max(max, s.sequence || 0), 0);
   
+  // Auto-assign hardware version based on start date
+  let hw_version = data.hw_version;
+  if (!hw_version && data.start_date) {
+    const startDate = new Date(data.start_date);
+    const cutoffDate = new Date('2025-07-03T00:00:00');
+    hw_version = startDate >= cutoffDate ? 'A2.01' : 'A1.01';
+  }
+  
   const sensor = {
     id,
     sequence: maxSeq + 1,
@@ -183,7 +191,7 @@ export async function addSensor(data) {
     duration_hours: data.duration_hours || null,
     duration_days: data.duration_days || null,
     lot_number: data.lot_number || null,
-    hw_version: data.hw_version || null,
+    hw_version: hw_version || null,
     notes: data.notes || '',
     is_locked: data.is_locked || false,
     batch_id: data.batch_id || null,
@@ -398,6 +406,37 @@ export async function importJSON(data) {
 // UTILITIES
 // ============================================================================
 
+/**
+ * Resequence all sensors chronologically
+ * Oldest sensor gets sequence #1, newest gets highest number
+ */
+export async function resequenceSensors() {
+  const storage = await getStorage();
+  
+  // Sort by start_date (oldest first)
+  const sorted = [...storage.sensors].sort((a, b) => {
+    const dateA = new Date(a.start_date);
+    const dateB = new Date(b.start_date);
+    return dateA - dateB;
+  });
+  
+  // Reassign sequences starting from 1
+  sorted.forEach((sensor, index) => {
+    sensor.sequence = index + 1;
+    sensor.updated_at = new Date().toISOString();
+  });
+  
+  // Update storage
+  storage.sensors = sorted;
+  await saveStorage(storage);
+  
+  return {
+    success: true,
+    resequenced: sorted.length,
+    message: `Resequenced ${sorted.length} sensors chronologically`
+  };
+}
+
 export async function getStorageInfo() {
   const storage = await getStorage();
   const stats = await getStatistics();
@@ -440,5 +479,6 @@ export default {
   importJSON,
   
   // Utilities
-  getStorageInfo
+  getStorageInfo,
+  resequenceSensors
 };

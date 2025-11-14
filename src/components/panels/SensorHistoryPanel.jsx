@@ -249,6 +249,20 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     }
   };
 
+  const handleResequence = async () => {
+    if (!confirm('Sensors hernummeren?\n\nOudste sensor krijgt #1, nieuwste het hoogste nummer.\n\nDeze actie kan niet ongedaan worden.')) {
+      return;
+    }
+    
+    const result = await sensorStorage.resequenceSensors();
+    if (result.success) {
+      alert(`✓ ${result.message}`);
+      setRefreshKey(prev => prev + 1);
+    } else {
+      alert(`❌ Hernummering mislukt: ${result.error}`);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -319,6 +333,17 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
               IMPORT JSON
               <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
             </label>
+            <button onClick={handleResequence} style={{
+              padding: '10px 20px',
+              border: '2px solid var(--color-blue)',
+              backgroundColor: 'var(--paper)',
+              color: 'var(--color-blue)',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontWeight: 'bold'
+            }}>
+              🔢 HERNUMMER
+            </button>
             <button onClick={onClose} style={{
               padding: '10px 20px',
               border: '2px solid var(--ink)',
