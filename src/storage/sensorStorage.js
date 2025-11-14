@@ -387,9 +387,7 @@ export default {
   toggleLock,
   setLock,
   
-  // Batch
-  getAllBatches,
-  addBatch,
+  // Batch (batch management moved to stockStorage.js)
   assignBatch,
   
   // Export/Import

@@ -1709,3 +1709,36 @@ Deploy:  Auto-deploy via GitHub Actions (in progress)
 ---
 
 **Ready for next session. System is stable and consolidated.**
+
+
+---
+
+## 2025-11-14 00:32 - HOTFIX: Export references
+
+### Problem
+White screen on localhost:3001 with error:
+```
+ReferenceError: Can't find variable: getAllBatches
+Module Code (sensorStorage.js:391)
+```
+
+### Root Cause
+- Removed `getAllBatches()` and `addBatch()` functions from sensorStorage.js
+- **BUT** forgot to remove them from the export list at bottom of file
+- **AND** `useSensors.js` hook was still calling `sensorStorage.getAllBatches()`
+
+### Files Fixed
+1. **sensorStorage.js** (line 391):
+   - Removed `getAllBatches` from exports
+   - Removed `addBatch` from exports
+   - Kept `assignBatch` (still needed)
+
+2. **useSensors.js** (line 9, 21):
+   - Added `import * as stockStorage`
+   - Changed `sensorStorage.getAllBatches()` → `stockStorage.getAllBatches()`
+
+### Verification
+- ⏳ Testing on localhost:3001 now...
+
+**Status**: HOTFIX IN PROGRESS
+**Time**: 00:32

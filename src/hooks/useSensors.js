@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import * as sensorStorage from '../storage/sensorStorage.js';
+import * as stockStorage from '../storage/stockStorage.js';
 
 export function useSensors() {
   const [sensors, setSensors] = useState([]);
@@ -17,7 +18,7 @@ export function useSensors() {
   const load = () => {
     try {
       setSensors(sensorStorage.getAllSensors());
-      setBatches(sensorStorage.getAllBatches());
+      setBatches(stockStorage.getAllBatches()); // Use stockStorage for batches
       setStats(sensorStorage.getStatistics());
       setLoading(false);
     } catch (error) {
