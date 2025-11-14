@@ -2,7 +2,59 @@
 
 **Version**: v4.2.2 ✅ PRODUCTION READY  
 **Current Focus**: ✅ Complete - Ready for Next Session  
-**Last Update**: 2025-11-14 22:15  
+**Last Update**: 2025-11-14 22:45  
+
+---
+
+## ✅ SESSION 31 - Day Profiles: 7/14 Days Toggle (2025-11-14 22:20-22:45)
+
+**Status**: ✅ COMPLETE  
+**Duration**: ~25 minutes  
+**Commits**: 1342fca
+
+### Summary
+Added configurable number of days for day profiles view. Users can now toggle between 7 or 14 days directly in the day profiles modal using brutalist-style toggle buttons.
+
+### Features
+1. **Configurable Days** ✅
+   - day-profile-engine.js: `getLastSevenDays()` accepts `numDays` parameter
+   - useDayProfiles hook: Passes numDays through to engine
+   - Default: 7 days (backward compatible)
+
+2. **Toggle UI** ✅
+   - Two-button toggle: "7D" / "14D"
+   - Active state shows white background, black text
+   - Inactive state shows black background, white text
+   - Brutalist design with 3px borders
+   - Located in modal header between Close and Print buttons
+
+3. **State Management** ✅
+   - AGPGenerator: `numDaysProfile` state (default: 7)
+   - ModalManager: Props passed through
+   - DayProfilesModal: Toggle controls state
+
+4. **Dynamic Title** ✅
+   - "Dagprofielen - Laatste {N} dagen"
+   - Updates based on selected days
+
+### Implementation Details
+- **Architecture**: Parent state pattern (AGPGenerator → ModalManager → DayProfilesModal)
+- **Re-render**: Changing days triggers useDayProfiles hook to regenerate profiles
+- **Performance**: Only fetches as many days as requested (no wasted computation)
+
+### Files Modified
+- `src/core/day-profile-engine.js` - Added numDays parameter to getLastSevenDays
+- `src/hooks/useDayProfiles.js` - Added numDays parameter and dependency
+- `src/components/AGPGenerator.jsx` - Added numDaysProfile state
+- `src/components/containers/ModalManager.jsx` - Pass through numDays props
+- `src/components/DayProfilesModal.jsx` - Added toggle UI
+
+### Testing
+- ✅ Toggle switches between 7 and 14 days
+- ✅ Profiles regenerate on toggle
+- ✅ Title updates dynamically
+- ✅ Default is 7 days
+- ✅ Print button still works with both views
 
 ---
 
