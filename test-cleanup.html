@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cleanup Module Test - AGP+</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #1a1a1a;
+      color: #ffd700;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1 { color: #00ff00; border-bottom: 2px solid #00ff00; }
+    h2 { color: #00ffff; margin-top: 30px; }
+    
+    .test-section {
+      background: #2a2a2a;
+      border: 2px solid #444;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    button {
+      background: #00ff00;
+      color: #1a1a1a;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px 10px 10px 0;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    
+    button:hover { background: #00dd00; }
+    button:active { background: #00bb00; }
+    
+    .success { color: #00ff00; }
+    .error { color: #ff0000; }
+    .warning { color: #ffaa00; }
+    .info { color: #00ffff; }
+    
+    pre {
+      background: #111;
+      color: #0f0;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      border: 1px solid #333;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    
+    th, td {
+      border: 1px solid #444;
+      padding: 12px;
+      text-align: left;
+    }
+    
+    th {
+      background: #333;
+      color: #ffd700;
+      font-weight: bold;
+    }
+    
+    tr:nth-child(even) { background: #222; }
+    tr:nth-child(odd) { background: #2a2a2a; }
+    
+    .old-sensor { color: #ff6666; }
+    .recent-sensor { color: #66ff66; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Cleanup Module Test Suite</h1>
+  <p class="info">Testing deletedSensorsDB cleanup functionality</p>
+
+  <!-- Test 1: Setup -->
+  <div class="test-section">
+    <h2>📦 Test 1: Database Setup</h2>
+    <button onclick="setupTestData()">Create Test Data</button>
+    <button onclick="clearAllData()">Clear All Data</button>
+    <div id="setup-output"></div>
+  </div>
+
+  <!-- Test 2: Count -->
+  <div class="test-section">
+    <h2>📊 Test 2: Count Deleted Sensors</h2>
+    <button onclick="testCount()">Count Sensors</button>
+    <div id="count-output"></div>
+  </div>
+
+  <!-- Test 3: Cleanup -->
+  <div class="test-section">
+    <h2>🧹 Test 3: Cleanup Old Sensors</h2>
+    <button onclick="testCleanup()">Run Cleanup</button>
+    <div id="cleanup-output"></div>
+  </div>
+
+  <!-- Test 4: Verify -->
+  <div class="test-section">
+    <h2>✅ Test 4: Verify Results</h2>
+    <button onclick="verifyResults()">Verify</button>
+    <div id="verify-output"></div>
+  </div>
+
+  <!-- Test 5: Edge Cases -->
+  <div class="test-section">
+    <h2>⚠️  Test 5: Edge Cases</h2>
+    <button onclick="testEdgeCases()">Test Edge Cases</button>
+    <div id="edge-output"></div>
+  </div>
+
+  <script type="module">
+    // Import cleanup module
+    import {
+      openDeletedSensorsDB,
+      addDeletedSensorToDB,
+      getDeletedSensorsFromDB,
+      getDeletedSensorsWithTimestamps,
+      countDeletedSensors,
+      cleanupOldDeletedSensorsDB,
+      syncIndexedDBToLocalStorage
+    } from './src/storage/deletedSensorsDB.js';
+
+    // Make functions globally available for onclick handlers
+    window.deletedSensorsDB = {
+      openDeletedSensorsDB,
+      addDeletedSensorToDB,
+      getDeletedSensorsFromDB,
+      getDeletedSensorsWithTimestamps,
+      countDeletedSensors,
+      cleanupOldDeletedSensorsDB,
+      syncIndexedDBToLocalStorage
+    };
+  </script>
+
+  <script>
+    // Helper function to log output
+    function log(containerId, message, type = 'info') {
+      const container = document.getElementById(containerId);
+      const timestamp = new Date().toLocaleTimeString();
+      const className = type === 'success' ? 'success' : 
+                       type === 'error' ? 'error' :
+                       type === 'warning' ? 'warning' : 'info';
+      
+      const line = document.createElement('div');
+      line.className = className;
+      line.textContent = `[${timestamp}] ${message}`;
+      container.appendChild(line);
+    }
+
+    // Test 1: Setup test data
+    async function setupTestData() {
+      const output = document.getElementById('setup-output');
+      output.innerHTML = '<p class="info">Setting up test data...</p>';
+      
+      try {
+        const { addDeletedSensorToDB } = window.deletedSensorsDB;
+        
+        const now = new Date();
+        const testSensors = [
+          // Recent sensors (<90 days)
+          { id: 'sensor_recent_1', daysAgo: 10 },
+          { id: 'sensor_recent_2', daysAgo: 30 },
+          { id: 'sensor_recent_3', daysAgo: 60 },
+          { id: 'sensor_recent_4', daysAgo: 89 },
+          
+          // Old sensors (>90 days) - SHOULD BE CLEANED UP
+          { id: 'sensor_old_1', daysAgo: 91 },
+          { id: 'sensor_old_2', daysAgo: 120 },
+          { id: 'sensor_old_3', daysAgo: 180 },
+          { id: 'sensor_old_4', daysAgo: 365 }
+        ];
+        
+        // Add sensors with backdated timestamps
+        for (const sensor of testSensors) {
+          const deletedDate = new Date(now - sensor.daysAgo * 24 * 60 * 60 * 1000);
+          
+          // Manually insert with custom timestamp
+          const db = await window.deletedSensorsDB.openDeletedSensorsDB();
+          const transaction = db.transaction(['deleted_sensors'], 'readwrite');
+          const store = transaction.objectStore('deleted_sensors');
+          
+          await new Promise((resolve) => {
+            const request = store.put({
+              sensor_id: sensor.id,
+              deleted_at: deletedDate.toISOString(),
+              version: 1
+            });
+            
+            request.onsuccess = () => resolve();
+            request.onerror = () => resolve();
+          });
+          
+          await new Promise(resolve => {
+            transaction.oncomplete = () => {
+              db.close();
+              resolve();
+            };
+          });
+          
+          log('setup-output', `Added ${sensor.id} (${sensor.daysAgo} days ago)`, 'success');
+        }
+        
+        log('setup-output', `✅ Created ${testSensors.length} test sensors`, 'success');
+        
+      } catch (err) {
+        log('setup-output', `❌ Error: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // Test 2: Count sensors
+    async function testCount() {
+      const output = document.getElementById('count-output');
+      output.innerHTML = '<p class="info">Counting sensors...</p>';
+      
+      try {
+        const { countDeletedSensors, getDeletedSensorsWithTimestamps } = window.deletedSensorsDB;
+        
+        const counts = await countDeletedSensors();
+        const allSensors = await getDeletedSensorsWithTimestamps();
+        
+        log('count-output', `Total: ${counts.totalCount}`, 'info');
+        log('count-output', `Recent (<90 days): ${counts.recentCount}`, 'success');
+        log('count-output', `Old (>90 days): ${counts.oldCount}`, 'warning');
+        
+        // Create table
+        const table = document.createElement('table');
+        table.innerHTML = `
+          <tr>
+            <th>Sensor ID</th>
+            <th>Deleted At</th>
+            <th>Days Ago</th>
+            <th>Status</th>
+          </tr>
+        `;
+        
+        allSensors
+          .sort((a, b) => b.deletedAt - a.deletedAt)
+          .forEach(sensor => {
+            const deletedDate = new Date(sensor.deletedAt);
+            const daysAgo = Math.floor((Date.now() - sensor.deletedAt) / (1000 * 60 * 60 * 24));
+            const isOld = daysAgo > 90;
+            
+            const row = table.insertRow();
+            row.className = isOld ? 'old-sensor' : 'recent-sensor';
+            row.innerHTML = `
+              <td>${sensor.sensorId}</td>
+              <td>${deletedDate.toLocaleString()}</td>
+              <td>${daysAgo}</td>
+              <td>${isOld ? '🔴 OLD' : '🟢 RECENT'}</td>
+            `;
+          });
+        
+        output.appendChild(table);
+        
+      } catch (err) {
+        log('count-output', `❌ Error: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // Test 3: Run cleanup
+    async function testCleanup() {
+      const output = document.getElementById('cleanup-output');
+      output.innerHTML = '<p class="info">Running cleanup...</p>';
+      
+      try {
+        const { cleanupOldDeletedSensorsDB, countDeletedSensors } = window.deletedSensorsDB;
+        
+        // Count before
+        const before = await countDeletedSensors();
+        log('cleanup-output', `Before: ${before.totalCount} total (${before.oldCount} old, ${before.recentCount} recent)`, 'info');
+        
+        // Run cleanup
+        const result = await cleanupOldDeletedSensorsDB();
+        log('cleanup-output', `Cleaned up ${result.removed} old sensors`, 'warning');
+        log('cleanup-output', `${result.remaining} sensors remaining`, 'success');
+        
+        // Count after
+        const after = await countDeletedSensors();
+        log('cleanup-output', `After: ${after.totalCount} total (${after.oldCount} old, ${after.recentCount} recent)`, 'info');
+        
+        // Verify
+        if (after.oldCount === 0 && result.removed === before.oldCount) {
+          log('cleanup-output', '✅ SUCCESS: All old sensors removed!', 'success');
+        } else {
+          log('cleanup-output', '❌ FAILED: Old sensors still present', 'error');
+        }
+        
+      } catch (err) {
+        log('cleanup-output', `❌ Error: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // Test 4: Verify results
+    async function verifyResults() {
+      const output = document.getElementById('verify-output');
+      output.innerHTML = '<p class="info">Verifying...</p>';
+      
+      try {
+        const { getDeletedSensorsWithTimestamps, syncIndexedDBToLocalStorage } = window.deletedSensorsDB;
+        
+        // Get all sensors
+        const sensors = await getDeletedSensorsWithTimestamps();
+        
+        // Check for old sensors
+        const now = Date.now();
+        const EXPIRY_MS = 90 * 24 * 60 * 60 * 1000;
+        const oldSensors = sensors.filter(s => (now - s.deletedAt) > EXPIRY_MS);
+        
+        if (oldSensors.length === 0) {
+          log('verify-output', '✅ No old sensors found (PASS)', 'success');
+        } else {
+          log('verify-output', `❌ Found ${oldSensors.length} old sensors (FAIL)`, 'error');
+          oldSensors.forEach(s => {
+            const daysAgo = Math.floor((now - s.deletedAt) / (1000 * 60 * 60 * 24));
+            log('verify-output', `  - ${s.sensorId} (${daysAgo} days old)`, 'error');
+          });
+        }
+        
+        // Verify localStorage sync
+        await syncIndexedDBToLocalStorage();
+        const localStorageData = JSON.parse(localStorage.getItem('agp-deleted-sensors') || '[]');
+        
+        if (localStorageData.length === sensors.length) {
+          log('verify-output', '✅ localStorage sync correct (PASS)', 'success');
+        } else {
+          log('verify-output', `❌ localStorage mismatch: ${localStorageData.length} vs ${sensors.length} (FAIL)`, 'error');
+        }
+        
+      } catch (err) {
+        log('verify-output', `❌ Error: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // Test 5: Edge cases
+    async function testEdgeCases() {
+      const output = document.getElementById('edge-output');
+      output.innerHTML = '<p class="info">Testing edge cases...</p>';
+      
+      try {
+        const { addDeletedSensorToDB, cleanupOldDeletedSensorsDB, countDeletedSensors } = window.deletedSensorsDB;
+        
+        // Edge case 1: Exactly 90 days (should NOT be removed)
+        log('edge-output', 'Testing sensor exactly 90 days old...', 'info');
+        const db1 = await window.deletedSensorsDB.openDeletedSensorsDB();
+        const tx1 = db1.transaction(['deleted_sensors'], 'readwrite');
+        const store1 = tx1.objectStore('deleted_sensors');
+        
+        const exactly90Days = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+        await new Promise((resolve) => {
+          store1.put({
+            sensor_id: 'sensor_edge_exactly_90',
+            deleted_at: exactly90Days.toISOString(),
+            version: 1
+          });
+          tx1.oncomplete = () => {
+            db1.close();
+            resolve();
+          };
+        });
+        
+        await cleanupOldDeletedSensorsDB();
+        const sensors1 = await window.deletedSensorsDB.getDeletedSensorsFromDB();
+        
+        if (sensors1.includes('sensor_edge_exactly_90')) {
+          log('edge-output', '✅ 90-day sensor kept (PASS)', 'success');
+        } else {
+          log('edge-output', '❌ 90-day sensor removed (FAIL)', 'error');
+        }
+        
+        // Edge case 2: 91 days (should be removed)
+        log('edge-output', 'Testing sensor 91 days old...', 'info');
+        const db2 = await window.deletedSensorsDB.openDeletedSensorsDB();
+        const tx2 = db2.transaction(['deleted_sensors'], 'readwrite');
+        const store2 = tx2.objectStore('deleted_sensors');
+        
+        const exactly91Days = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000);
+        await new Promise((resolve) => {
+          store2.put({
+            sensor_id: 'sensor_edge_91_days',
+            deleted_at: exactly91Days.toISOString(),
+            version: 1
+          });
+          tx2.oncomplete = () => {
+            db2.close();
+            resolve();
+          };
+        });
+        
+        await cleanupOldDeletedSensorsDB();
+        const sensors2 = await window.deletedSensorsDB.getDeletedSensorsFromDB();
+        
+        if (!sensors2.includes('sensor_edge_91_days')) {
+          log('edge-output', '✅ 91-day sensor removed (PASS)', 'success');
+        } else {
+          log('edge-output', '❌ 91-day sensor kept (FAIL)', 'error');
+        }
+        
+        // Edge case 3: Empty database
+        log('edge-output', 'Testing empty database...', 'info');
+        await clearAllData();
+        const result = await cleanupOldDeletedSensorsDB();
+        
+        if (result.removed === 0 && result.remaining === 0) {
+          log('edge-output', '✅ Empty database handled (PASS)', 'success');
+        } else {
+          log('edge-output', '❌ Empty database error (FAIL)', 'error');
+        }
+        
+      } catch (err) {
+        log('edge-output', `❌ Error: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // Clear all data
+    async function clearAllData() {
+      const output = document.getElementById('setup-output');
+      
+      try {
+        const db = await window.deletedSensorsDB.openDeletedSensorsDB();
+        const transaction = db.transaction(['deleted_sensors'], 'readwrite');
+        const store = transaction.objectStore('deleted_sensors');
+        
+        await new Promise((resolve) => {
+          store.clear();
+          transaction.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+        });
+        
+        localStorage.removeItem('agp-deleted-sensors');
+        log('setup-output', '🗑️  All data cleared', 'warning');
+        
+      } catch (err) {
+        log('setup-output', `❌ Error: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // Auto-run setup on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('Cleanup test page loaded');
+    });
+  </script>
+</body>
+</html>

@@ -320,28 +320,66 @@ export function importJSON(data) {
     
     const storage = getStorage();
     const existingSensorIds = new Set(storage.sensors.map(s => s.id));
+    const existingBatchIds = new Set(storage.batches?.map(b => b.batch_id) || []);
     
     // Count what we're importing
     let sensorsAdded = 0;
     let sensorsSkipped = 0;
+    let batchesAdded = 0;
+    let batchesSkipped = 0;
     
-    data.sensors.forEach(sensor => {
+    // Filter sensors (skip duplicates)
+    const newSensors = data.sensors.filter(sensor => {
       if (existingSensorIds.has(sensor.id)) {
         sensorsSkipped++;
-      } else {
-        sensorsAdded++;
+        return false;
       }
+      sensorsAdded++;
+      return true;
     });
     
-    // Replace entire storage with imported data
-    saveStorage(data);
+    // Filter batches (skip duplicates by lot_number OR batch_id)
+    const existingLotNumbers = new Set(
+      storage.batches?.map(b => b.lot_number).filter(Boolean) || []
+    );
+    
+    const newBatches = (data.batches || []).filter(batch => {
+      // Skip if batch_id already exists
+      if (batch.batch_id && existingBatchIds.has(batch.batch_id)) {
+        batchesSkipped++;
+        return false;
+      }
+      
+      // Skip if lot_number already exists (duplicate stock)
+      if (batch.lot_number && existingLotNumbers.has(batch.lot_number)) {
+        console.log(`[importJSON] Skipping duplicate batch with lot_number: ${batch.lot_number}`);
+        batchesSkipped++;
+        return false;
+      }
+      
+      batchesAdded++;
+      return true;
+    });
+    
+    // Merge data (append instead of replace)
+    const mergedData = {
+      ...storage,
+      version: data.version,
+      sensors: [...storage.sensors, ...newSensors],
+      batches: [...(storage.batches || []), ...newBatches],
+      deleted: storage.deleted // Keep existing deleted list
+    };
+    
+    saveStorage(mergedData);
     
     return { 
       success: true,
       summary: {
         sensorsAdded,
         sensorsSkipped,
-        batchesImported: data.batches?.length || 0
+        batchesAdded,
+        batchesSkipped,
+        batchesImported: batchesAdded
       }
     };
   } catch (error) {

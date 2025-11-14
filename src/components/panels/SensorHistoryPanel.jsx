@@ -217,7 +217,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
             '✅ Import succesvol!',
             '',
             `Sensors: ${result.summary.sensorsAdded} toegevoegd, ${result.summary.sensorsSkipped} overgeslagen`,
-            result.summary.batchesImported > 0 ? `Batches: ${result.summary.batchesImported} geïmporteerd` : ''
+            result.summary.batchesAdded > 0 || result.summary.batchesSkipped > 0 
+              ? `Batches: ${result.summary.batchesAdded} toegevoegd, ${result.summary.batchesSkipped} dubbelen overgeslagen`
+              : ''
           ].filter(Boolean).join('\n');
           
           alert(msg);

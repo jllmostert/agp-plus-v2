@@ -1791,3 +1791,48 @@ Total: +1,240 insertions, -37 deletions
 **Quality**: All tests passing, localhost verified
 
 ---
+
+
+---
+
+## 2025-11-14 00:38 - CLEANUP MODULE: FULL TEST & DEBUG
+
+### Objective
+Volledig testen en debuggen van cleanup module op alle mogelijke fouten
+
+### Modules Geïdentificeerd
+1. **cleanup-engine.js** (283 lines) - Core cleanup logic
+   - `calculateAffectedData()` - Preview deletions
+   - `executeCleanup()` - Perform deletions
+   - `calculateLastNDays()` - Date helper
+   
+2. **useDataCleanup.js** (193 lines) - React hook
+   - Modal state management
+   - Preview loading
+   - Cleanup execution
+   - Error handling
+
+3. **DataCleanupModal.jsx** - UI component (not tested yet)
+
+### Test Plan
+- [ ] **Phase 1**: Unit tests voor cleanup-engine.js
+  - [ ] Date helpers (toMidnight, toEndOfDay, getMonthKey)
+  - [ ] calculateAffectedData()
+  - [ ] deleteGlucoseReadings()
+  - [ ] deleteCartridgeEvents()
+  - [ ] executeCleanup()
+  - [ ] Edge cases (empty data, invalid dates, errors)
+
+- [ ] **Phase 2**: Integration tests
+  - [ ] Full cleanup workflow
+  - [ ] Cache invalidation
+  - [ ] Data integrity
+
+- [ ] **Phase 3**: Error scenarios
+  - [ ] Invalid date ranges
+  - [ ] Database errors
+  - [ ] Empty datasets
+  - [ ] Corrupted data
+
+**Status**: STARTED
+**Time**: 00:38
