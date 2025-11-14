@@ -8,6 +8,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [v4.2.2 - Stock Import/Export + IndexedDB Fix] - 2025-11-14
 
+### 🎯 Session 29: SensorHistoryPanel UI Cleanup
+**Duration**: ~15 minutes  
+**Commit**: bef2d85
+
+#### UI Improvements
+- 🎨 Removed unnecessary emojis from SensorHistoryPanel
+  - STOCK button: 📦 → plain "STOCK" text
+  - Delete button: 🗑️ → "DEL" text
+  - Kept functional 🔒/🔓 lock icons (user interface clarity)
+- ✅ Verified all design requirements met:
+  - Statistics collapsible (year stats toggle working)
+  - Badge colors use CSS variables (not hardcoded)
+  - Admin functions already in DevTools panel (CMD+SHIFT+D)
+- 🎯 UI now fully brutalist-compliant
+
+---
+
 ### 🎯 Session 28: Stock Management & Database Schema Fix
 **Duration**: ~30 minutes  
 **Commits**: 59224d2, 81a01b4, d936d69, 16b0254
