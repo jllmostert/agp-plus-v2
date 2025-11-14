@@ -267,90 +267,161 @@ export default function AGPChart({
     </div>
 
       {/* Fullscreen Modal */}
-      {isFullscreen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '2rem'
-          }}
-          onClick={() => setIsFullscreen(false)}
-        >
-          {/* Close Button */}
-          <button
-            onClick={() => setIsFullscreen(false)}
+      {isFullscreen && (() => {
+        // Recalculate dimensions for fullscreen
+        const fsWidth = Math.min(1800, window.innerWidth * 0.92);
+        const fsHeight = Math.min(1000, window.innerHeight * 0.85);
+        const fsMargin = { top: 30, right: 80, bottom: 60, left: 80 };
+        const fsChartWidth = fsWidth - fsMargin.left - fsMargin.right;
+        const fsChartHeight = fsHeight - fsMargin.top - fsMargin.bottom;
+        
+        // Recalculate scales
+        const fsXScale = (minuteOfDay) => fsMargin.left + (minuteOfDay / 1440) * fsChartWidth;
+        const fsYScale = (glucose) => {
+          const clampedGlucose = Math.max(yMin, Math.min(yMax, glucose));
+          return fsMargin.top + fsChartHeight - ((clampedGlucose - yMin) / (yMax - yMin)) * fsChartHeight;
+        };
+        
+        // Recalculate paths for fullscreen
+        const fsPaths = generatePaths(agpData, fsXScale, fsYScale);
+        const fsComparisonPath = comparison ? generatePath(comparison, 'p50', fsXScale, fsYScale) : null;
+        
+        return (
+          <div
             style={{
-              position: 'absolute',
-              top: '1rem',
-              right: '1rem',
-              background: 'var(--bg-primary)',
-              border: '2px solid var(--border-primary)',
-              color: 'var(--text-primary)',
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              zIndex: 10000
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.95)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2rem'
             }}
+            onClick={() => setIsFullscreen(false)}
           >
-            ✕ CLOSE (ESC)
-          </button>
+            {/* Close Button */}
+            <button
+              onClick={() => setIsFullscreen(false)}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: 'var(--bg-primary)',
+                border: '3px solid var(--border-primary)',
+                color: 'var(--text-primary)',
+                padding: '0.75rem 1.5rem',
+                cursor: 'pointer',
+                fontFamily: 'monospace',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                zIndex: 10000,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
+              }}
+            >
+              ✕ CLOSE (ESC)
+            </button>
 
-          {/* Chart Container - fullscreen size */}
-          <div 
-            style={{ 
-              maxWidth: '95vw',
-              maxHeight: '90vh',
-              overflow: 'auto'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="card bg-white border-gray-300" style={{ position: 'relative' }}>
-              <ChartLegend hasComparison={!!comparison} />
-              
-              <svg 
-                width={Math.min(1800, window.innerWidth * 0.9)} 
-                height={Math.min(900, window.innerHeight * 0.8)} 
-                className="w-full h-auto"
-              >
-                <rect x="0" y="0" width={Math.min(1800, window.innerWidth * 0.9)} height={Math.min(900, window.innerHeight * 0.8)} fill="white" />
+            {/* Chart Container - fullscreen size */}
+            <div 
+              style={{ 
+                maxWidth: '95vw',
+                maxHeight: '90vh',
+                overflow: 'auto'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="card bg-white border-gray-300" style={{ position: 'relative' }}>
+                <ChartLegend hasComparison={!!comparison} />
                 
-                {/* Render same content but with larger dimensions */}
-                {/* Note: This is a simplified version - full implementation would recalculate scales */}
-                <text 
-                  x="50%" 
-                  y="50%" 
-                  textAnchor="middle" 
-                  fill="var(--text-secondary)"
-                  fontSize="24"
-                  fontFamily="monospace"
-                >
-                  Fullscreen AGP Chart
-                </text>
-                <text 
-                  x="50%" 
-                  y="55%" 
-                  textAnchor="middle" 
-                  fill="var(--text-tertiary)"
-                  fontSize="14"
-                  fontFamily="monospace"
-                >
-                  (Full rendering implementation pending)
-                </text>
-              </svg>
+                <svg width={fsWidth} height={fsHeight} className="w-full h-auto">
+                  <rect x="0" y="0" width={fsWidth} height={fsHeight} fill="white" />
+                  
+                  <GridLines 
+                    margin={fsMargin}
+                    chartWidth={fsChartWidth}
+                    chartHeight={fsChartHeight}
+                    yScale={fsYScale}
+                    yTicks={yTicks}
+                  />
+
+                  <line
+                    x1={fsXScale(6 * 60)}
+                    y1={fsMargin.top}
+                    x2={fsXScale(6 * 60)}
+                    y2={fsMargin.top + fsChartHeight}
+                    stroke="var(--color-gray-mid)"
+                    strokeWidth="2"
+                    strokeDasharray="8,4"
+                    opacity="0.6"
+                  />
+
+                  <TargetLines 
+                    margin={fsMargin}
+                    chartWidth={fsChartWidth}
+                    yScale={fsYScale}
+                  />
+
+                  <path
+                    d={fsPaths.band_5_95}
+                    fill="var(--color-agp-p5-95)"
+                    opacity="0.8"
+                  />
+                  
+                  <path
+                    d={fsPaths.band_25_75}
+                    fill="var(--color-agp-p25-75)"
+                    opacity="0.8"
+                  />
+
+                  <path
+                    d={fsPaths.median}
+                    fill="none"
+                    stroke="var(--color-agp-median)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+
+                  {fsComparisonPath && (
+                    <path
+                      d={fsComparisonPath}
+                      fill="none"
+                      stroke="var(--text-tertiary)"
+                      strokeWidth="2.5"
+                      strokeDasharray="6,4"
+                      opacity="0.9"
+                    />
+                  )}
+
+                  <EventMarkers 
+                    events={events}
+                    xScale={fsXScale}
+                    yScale={fsYScale}
+                    chartHeight={fsChartHeight}
+                    margin={fsMargin}
+                  />
+
+                  <XAxis 
+                    margin={fsMargin}
+                    chartWidth={fsChartWidth}
+                    chartHeight={fsChartHeight}
+                  />
+                  <YAxis 
+                    margin={fsMargin}
+                    chartHeight={fsChartHeight}
+                    yScale={fsYScale}
+                    yTicks={yTicks}
+                  />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 }
