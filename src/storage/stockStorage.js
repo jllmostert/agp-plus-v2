@@ -100,6 +100,17 @@ export function deleteBatch(batchId) {
   return true;
 }
 
+/**
+ * Clear all batches from storage
+ * WARNING: This deletes ALL batches and their assignments
+ * @returns {boolean} Success status
+ */
+export function clearAllBatches() {
+  localStorage.setItem(BATCHES_KEY, JSON.stringify([]));
+  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify([]));
+  return true;
+}
+
 // ============================================================================
 // ASSIGNMENT OPERATIONS
 // ============================================================================

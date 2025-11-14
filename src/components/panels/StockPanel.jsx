@@ -9,6 +9,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAllBatchesWithStats, sortBatches, filterBatches, calculateSummaryStats } from '../../core/stock-engine.js';
 import { deleteBatch } from '../../storage/stockStorage.js';
+import { exportStock, importStock } from '../../storage/stockImportExport.js';
 import StockBatchCard from '../StockBatchCard.jsx';
 import StockBatchForm from '../StockBatchForm.jsx';
 
@@ -81,6 +82,73 @@ export default function StockPanel({ isOpen, onClose }) {
   const handleEdit = (batch) => {
     setEditingBatch(batch);
     setShowForm(true);
+  };
+
+  const handleExport = async () => {
+    try {
+      const result = await exportStock();
+      
+      if (!result.success) {
+        alert('❌ Export mislukt: ' + result.error);
+        return;
+      }
+      
+      // Download JSON file
+      const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `agp-stock-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      alert(`✅ Stock geëxporteerd!\n\n📦 ${result.data.statistics.total_batches} batches\n🔗 ${result.data.statistics.total_assignments} toewijzingen`);
+    } catch (err) {
+      console.error('[StockPanel] Export error:', err);
+      alert('❌ Export mislukt: ' + err.message);
+    }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      // Ask user: merge or replace?
+      const replaceMode = confirm(
+        '📦 IMPORT MODUS\n\n' +
+        '✅ OK = VERVANGEN (huidige stock wordt gewist)\n' +
+        '❌ ANNULEREN = SAMENVOEGEN (duplicaten worden overgeslagen)'
+      );
+      
+      const result = await importStock(file, {
+        mergeMode: !replaceMode, // replace = !merge
+        validateSensors: true,
+        reconnectSensors: true
+      });
+      
+      if (result.success) {
+        let msg = '✅ Import succesvol!\n\n';
+        msg += `📦 ${result.stats.batches_imported} batches geïmporteerd\n`;
+        if (result.stats.batches_skipped > 0) {
+          msg += `⏭️ ${result.stats.batches_skipped} batches overgeslagen\n`;
+        }
+        msg += `🔗 ${result.stats.assignments_imported} toewijzingen\n`;
+        if (result.stats.assignments_reconnected > 0) {
+          msg += `🔄 ${result.stats.assignments_reconnected} sensoren herverbonden`;
+        }
+        
+        alert(msg);
+        loadBatches(); // Reload data
+      } else {
+        alert('❌ Import mislukt:\n\n' + (result.errors?.[0] || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error('[StockPanel] Import error:', err);
+      alert('❌ Import mislukt: ' + err.message);
+    } finally {
+      e.target.value = ''; // Reset file input
+    }
   };
 
   if (!isOpen) return null;
@@ -184,6 +252,35 @@ export default function StockPanel({ isOpen, onClose }) {
             color: 'var(--ink)'
           }}
         />
+        <button
+          onClick={handleExport}
+          style={{
+            padding: '12px 24px',
+            backgroundColor: 'var(--paper)',
+            color: 'var(--ink)',
+            border: '3px solid var(--ink)',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            textTransform: 'uppercase'
+          }}
+        >
+          📤 EXPORT
+        </button>
+        <label style={{
+            padding: '12px 24px',
+            backgroundColor: 'var(--paper)',
+            color: 'var(--ink)',
+            border: '3px solid var(--ink)',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            display: 'inline-block'
+          }}>
+          📥 IMPORT
+          <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
+        </label>
         <button
           onClick={handleAddNew}
           style={{

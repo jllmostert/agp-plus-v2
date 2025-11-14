@@ -4,7 +4,7 @@
  * V4.2.0 - Stock import/export with sensor connections
  */
 
-import { getAllBatches, addBatch, getAllAssignments, assignSensorToBatch } from './stockStorage.js';
+import { getAllBatches, addBatch, getAllAssignments, assignSensorToBatch, clearAllBatches } from './stockStorage.js';
 import { getAllSensors } from './sensorStorage.js';
 
 /**
@@ -118,7 +118,13 @@ export async function importStock(file, options = {}) {
       };
     }
     
-    // Load current state
+    // REPLACE MODE: Clear existing stock before import
+    if (!mergeMode) {
+      console.log('[importStock] Replace mode: clearing existing stock');
+      clearAllBatches();
+    }
+    
+    // Load current state (empty if replace mode)
     const existingBatches = getAllBatches();
     const existingBatchIds = new Set(existingBatches.map(b => b.batch_id));
     const existingAssignments = getAllAssignments();
@@ -133,15 +139,10 @@ export async function importStock(file, options = {}) {
     // Import batches
     for (const batch of data.batches) {
       try {
-        // Check for duplicate
-        if (existingBatchIds.has(batch.batch_id)) {
-          if (mergeMode) {
-            stats.batches_skipped++;
-            warnings.push(`Batch ${batch.lot_number} (${batch.batch_id}) already exists - skipped`);
-          } else {
-            // In replace mode, would delete existing first
-            stats.batches_skipped++;
-          }
+        // Check for duplicate (only in merge mode)
+        if (mergeMode && existingBatchIds.has(batch.batch_id)) {
+          stats.batches_skipped++;
+          warnings.push(`Batch ${batch.lot_number} (${batch.batch_id}) already exists - skipped`);
           continue;
         }
         

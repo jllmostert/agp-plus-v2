@@ -14,7 +14,7 @@
  */
 
 const DB_NAME = 'agp-plus-db';
-const DB_VERSION = 4;  // Increment for sensorData store
+const DB_VERSION = 5;  // Increment for sensorData keyPath fix
 
 // Store names
 export const STORES = {
@@ -84,7 +84,13 @@ export function openDB() {
       }
       
       if (!db.objectStoreNames.contains(STORES.SENSOR_DATA)) {
-        db.createObjectStore(STORES.SENSOR_DATA);
+        db.createObjectStore(STORES.SENSOR_DATA, { keyPath: 'id' });
+      } else if (oldVersion < 5) {
+        // v5: Add keyPath to existing SENSOR_DATA store
+        // Must delete and recreate to change keyPath
+        console.log('[db.js] Upgrading SENSOR_DATA store to add keyPath');
+        db.deleteObjectStore(STORES.SENSOR_DATA);
+        db.createObjectStore(STORES.SENSOR_DATA, { keyPath: 'id' });
       }
     };
   });
