@@ -343,7 +343,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
               fontFamily: 'monospace',
               fontWeight: 'bold'
             }}>
-              📦 STOCK
+              STOCK
             </button>
             <button onClick={handleExport} style={{
               padding: '10px 20px',
@@ -651,7 +651,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
                         fontFamily: 'monospace'
                       }}
                     >
-                      🗑️
+                      DEL
                     </button>
                   </td>
                 </tr>
