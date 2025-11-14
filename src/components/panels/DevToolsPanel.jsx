@@ -12,9 +12,36 @@ import DebugPanel from '../devtools/DebugPanel';
 import SensorSQLiteImport from '../devtools/SensorSQLiteImport';
 import SensorImport from '../SensorImport';
 import StockImportExport from '../StockImportExport';
+import * as sensorStorage from '../../storage/sensorStorage';
 
 export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
   const [activeTool, setActiveTool] = useState('debug');
+
+  const handleResequence = async () => {
+    if (!confirm('Sensors hernummeren?\n\nOudste sensor krijgt #1, nieuwste het hoogste nummer.\n\nDeze actie kan niet ongedaan worden.')) {
+      return;
+    }
+    
+    const result = await sensorStorage.resequenceSensors();
+    if (result.success) {
+      alert(`✓ ${result.message}`);
+    } else {
+      alert(`❌ Hernummering mislukt: ${result.error}`);
+    }
+  };
+
+  const handleUpdateHardwareVersions = async () => {
+    if (!confirm('Hardware versies updaten?\n\n• Sensoren vanaf 3 juli 2025 → A2.01\n• Sensoren daarvoor → A1.01\n\nDeze actie kan niet ongedaan worden.')) {
+      return;
+    }
+    
+    const result = await sensorStorage.updateHardwareVersions();
+    if (result.success) {
+      alert(`✓ ${result.message}`);
+    } else {
+      alert(`❌ Update mislukt: ${result.error}`);
+    }
+  };
 
   return (
     <div className="panel devtools-panel" style={{
@@ -39,7 +66,7 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
           textTransform: 'uppercase',
           margin: 0
         }}>
-          🛠️ Developer Tools
+          Developer Tools
         </h2>
         
         <button
@@ -56,7 +83,7 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
             textTransform: 'uppercase'
           }}
         >
-          ✕ Close
+          CLOSE
         </button>
       </div>
 
@@ -68,6 +95,24 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
         borderBottom: '2px solid var(--border-secondary)',
         paddingBottom: '1rem'
       }}>
+        <button
+          onClick={() => setActiveTool('admin')}
+          style={{
+            fontFamily: 'Courier New, monospace',
+            fontSize: '0.875rem',
+            fontWeight: 'bold',
+            padding: '0.75rem 1.5rem',
+            border: '2px solid var(--border-primary)',
+            background: activeTool === 'admin' ? 'var(--color-green)' : 'var(--bg-secondary)',
+            color: activeTool === 'admin' ? '#000' : 'var(--text-primary)',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}
+        >
+          Admin
+        </button>
+        
         <button
           onClick={() => setActiveTool('sensors')}
           style={{
@@ -83,7 +128,7 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
             letterSpacing: '0.05em'
           }}
         >
-          🔬 Sensors
+          Sensors
         </button>
         
         <button
@@ -101,7 +146,7 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
             letterSpacing: '0.05em'
           }}
         >
-          💉 Insulin
+          Insulin
         </button>
         
         <button
@@ -119,7 +164,7 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
             letterSpacing: '0.05em'
           }}
         >
-          🐛 Sensor Debug
+          Debug
         </button>
         
         <button
@@ -137,7 +182,7 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
             letterSpacing: '0.05em'
           }}
         >
-          💾 SQLite Import
+          SQLite
         </button>
         
         <button
@@ -155,7 +200,7 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
             letterSpacing: '0.05em'
           }}
         >
-          📦 Import/Export
+          Import/Export
         </button>
       </div>
 
@@ -168,12 +213,70 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
         fontFamily: 'Courier New, monospace',
         fontSize: '0.875rem'
       }}>
-        ⚠️ <strong>Developer Tools</strong>: These tools are for debugging and development only. 
+        <strong>Developer Tools</strong>: These tools are for debugging and development only. 
         They are hidden in production builds unless explicitly enabled.
       </div>
 
       {/* Tool content */}
       <div className="tool-content">
+        {activeTool === 'admin' && (
+          <div style={{
+            padding: '2rem',
+            background: 'var(--bg-secondary)',
+            border: '2px solid var(--border-primary)',
+            fontFamily: 'Courier New, monospace'
+          }}>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Sensor Admin Functions</h3>
+            <p style={{ marginBottom: '1.5rem', lineHeight: 1.6 }}>
+              Administrative functions for bulk sensor operations. These actions cannot be undone.
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <button
+                onClick={handleResequence}
+                style={{
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  padding: '1rem 2rem',
+                  border: '3px solid var(--border-primary)',
+                  background: 'var(--color-blue)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  width: '100%'
+                }}
+              >
+                HERNUMMER SENSOREN
+              </button>
+              <p style={{ fontSize: '0.875rem', marginTop: '-0.5rem', color: 'var(--text-secondary)' }}>
+                Oudste sensor krijgt #1, nieuwste het hoogste nummer (chronologisch gesorteerd op start datum)
+              </p>
+              
+              <button
+                onClick={handleUpdateHardwareVersions}
+                style={{
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  padding: '1rem 2rem',
+                  border: '3px solid var(--border-primary)',
+                  background: 'var(--color-blue)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  width: '100%'
+                }}
+              >
+                UPDATE HARDWARE VERSIES
+              </button>
+              <p style={{ fontSize: '0.875rem', marginTop: '-0.5rem', color: 'var(--text-secondary)' }}>
+                Sensoren vanaf 3 juli 2025 → A2.01, daarvoor → A1.01 (automatische toewijzing)
+              </p>
+            </div>
+          </div>
+        )}
+        
         {activeTool === 'sensors' && (
           <div style={{
             padding: '2rem',
@@ -181,7 +284,7 @@ export default function DevToolsPanel({ onClose, onSensorRegistrationOpen }) {
             border: '2px solid var(--border-primary)',
             fontFamily: 'Courier New, monospace'
           }}>
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>🔬 Sensor Registration</h3>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Sensor Registration</h3>
             <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>
               Register new sensors from CareLink CSV exports. This tool extracts sensor information
               and adds them to your sensor database.

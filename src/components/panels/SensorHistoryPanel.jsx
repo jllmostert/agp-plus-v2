@@ -17,6 +17,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
   const [sensors, setSensors] = useState([]);
   const [batches, setBatches] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [statsExpanded, setStatsExpanded] = useState(false);
   
   // Filters
   const [filters, setFilters] = useState({
@@ -367,28 +368,6 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
               IMPORT JSON
               <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
             </label>
-            <button onClick={handleResequence} style={{
-              padding: '10px 20px',
-              border: '2px solid var(--color-blue)',
-              backgroundColor: 'var(--paper)',
-              color: 'var(--color-blue)',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              fontWeight: 'bold'
-            }}>
-              🔢 HERNUMMER
-            </button>
-            <button onClick={handleUpdateHardwareVersions} style={{
-              padding: '10px 20px',
-              border: '2px solid var(--color-blue)',
-              backgroundColor: 'var(--paper)',
-              color: 'var(--color-blue)',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              fontWeight: 'bold'
-            }}>
-              🔧 UPDATE HW
-            </button>
             <button onClick={onClose} style={{
               padding: '10px 20px',
               border: '2px solid var(--ink)',
@@ -423,11 +402,11 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
             }}
           >
             <option value="all">Alle statussen</option>
-            <option value="active">🔄 Active</option>
-            <option value="overdue">⏰ Overdue</option>
-            <option value="success">✅ Success</option>
-            <option value="short">⚠️ Short</option>
-            <option value="failed">❌ Failed</option>
+            <option value="active">Active</option>
+            <option value="overdue">Overdue</option>
+            <option value="success">Success</option>
+            <option value="short">Short</option>
+            <option value="failed">Failed</option>
           </select>
           
           {filters.statusFilter !== 'all' && (
@@ -453,19 +432,42 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
           borderBottom: '3px solid var(--ink)',
           backgroundColor: 'var(--bg-tertiary)'
         }}>
-          <div style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '14px', marginBottom: '15px', color: 'var(--ink)' }}>
-            📊 SENSOR STATISTIEKEN (alleen beëindigde sensoren)
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '15px'
+          }}>
+            <div style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '14px', color: 'var(--ink)' }}>
+              SENSOR STATISTIEKEN (alleen beëindigde sensoren)
+            </div>
+            {stats.byYear.length > 0 && (
+              <button
+                onClick={() => setStatsExpanded(!statsExpanded)}
+                style={{
+                  padding: '6px 12px',
+                  border: '2px solid var(--ink)',
+                  backgroundColor: 'var(--paper)',
+                  color: 'var(--ink)',
+                  cursor: 'pointer',
+                  fontFamily: 'monospace',
+                  fontSize: '11px'
+                }}
+              >
+                {statsExpanded ? '▼ VERBERG JAARSTATS' : '▶ TOON JAARSTATS'}
+              </button>
+            )}
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
-            {/* Last 90 days */}
+            {/* Last 90 days - always visible */}
             <div style={{
               padding: '15px',
               border: '2px solid var(--ink)',
               backgroundColor: 'var(--paper)'
             }}>
               <div style={{ fontWeight: 'bold', marginBottom: '10px', color: 'var(--color-green)' }}>
-                🟢 LAATSTE 90 DAGEN (n={stats.last90Days.count})
+                LAATSTE 90 DAGEN (n={stats.last90Days.count})
               </div>
               <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
                 <div>Ø duur: <strong>{stats.last90Days.avg_duration} dagen</strong></div>
@@ -474,15 +476,15 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
               </div>
             </div>
 
-            {/* By Year */}
-            {stats.byYear.map(yearData => (
+            {/* By Year - collapsible */}
+            {statsExpanded && stats.byYear.map(yearData => (
               <div key={yearData.year} style={{
                 padding: '15px',
                 border: '2px solid var(--ink)',
                 backgroundColor: 'var(--paper)'
               }}>
                 <div style={{ fontWeight: 'bold', marginBottom: '10px', color: 'var(--ink)' }}>
-                  📅 JAAR {yearData.year} (n={yearData.count})
+                  JAAR {yearData.year} (n={yearData.count})
                 </div>
                 <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
                   <div>Ø duur: <strong>{yearData.avg_duration} dagen</strong></div>
@@ -508,7 +510,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
                   # {sortColumn === 'sequence' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
                 <th style={{ padding: '12px', textAlign: 'center', borderRight: '2px solid var(--paper)' }}>
-                  🔒
+                  LOCK
                 </th>
                 <th style={{ padding: '12px', textAlign: 'left', cursor: 'pointer', borderRight: '2px solid var(--paper)' }}
                     onClick={() => handleSort('start_date')}>
@@ -623,14 +625,14 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
                     <span style={{
                       display: 'inline-block',
                       padding: '6px 12px',
-                      backgroundColor: sensor.statusInfo.color,
+                      backgroundColor: `var(${sensor.statusInfo.colorVar})`,
                       color: 'var(--paper)',
-                      border: `2px solid ${sensor.statusInfo.color}`,
+                      border: `2px solid var(${sensor.statusInfo.colorVar})`,
                       fontWeight: 'bold',
                       fontSize: '11px',
                       letterSpacing: '1px'
                     }}>
-                      {sensor.statusInfo.emoji} {sensor.statusInfo.label.toUpperCase()}
+                      {sensor.statusInfo.label.toUpperCase()}
                     </span>
                   </td>
                   

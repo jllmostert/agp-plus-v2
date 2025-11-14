@@ -109,13 +109,13 @@ export function getStatusInfo(sensor, deletedList = []) {
   const status = calculateStatus(sensor, deletedList);
   
   const info = {
-    active: { emoji: '🔄', label: 'Active', color: '#fbbf24' },
-    overdue: { emoji: '⏰', label: 'Overdue', color: '#f59e0b' },
-    success: { emoji: '✅', label: 'Success', color: '#10b981' },
-    short: { emoji: '⚠️', label: 'Short', color: '#f59e0b' },
-    failed: { emoji: '❌', label: 'Failed', color: '#ef4444' },
-    deleted: { emoji: '🗑️', label: 'Deleted', color: '#6b7280' },
-    unknown: { emoji: '❓', label: 'Unknown', color: '#9ca3af' }
+    active: { label: 'Active', colorVar: '--color-yellow' },
+    overdue: { label: 'Overdue', colorVar: '--color-orange' },
+    success: { label: 'Success', colorVar: '--color-green' },
+    short: { label: 'Short', colorVar: '--color-orange' },
+    failed: { label: 'Failed', colorVar: '--color-red' },
+    deleted: { label: 'Deleted', colorVar: '--ink' },
+    unknown: { label: 'Unknown', colorVar: '--ink' }
   };
   
   return {
