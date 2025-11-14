@@ -2,7 +2,49 @@
 
 **Version**: v4.2.2 ✅ PRODUCTION READY  
 **Current Focus**: ✅ Complete - Ready for Next Session  
-**Last Update**: 2025-11-14 21:45  
+**Last Update**: 2025-11-14 22:15  
+
+---
+
+## ✅ SESSION 30 - Cartridge Change Debug (2025-11-14 21:50-22:15)
+
+**Status**: ✅ COMPLETE  
+**Duration**: ~25 minutes  
+**Commits**: 30d8f5f, ad3a181
+
+### Summary
+Investigated and verified cartridge change (REWIND) display in day profiles. Added temporary debug logging to trace data flow, confirmed everything works correctly, then cleaned up debug code.
+
+### Investigation
+1. **Added Debug Logging** ✅
+   - day-profile-engine.js: Log when cartridge changes found
+   - parsers.js: Log when REWIND events detected in CSV
+   - eventStorage.js: Debug helper for console inspection
+
+2. **Testing** ✅
+   - Verified REWIND events detected during CSV parsing
+   - Confirmed events stored in localStorage correctly
+   - Confirmed events displayed in day profiles
+
+3. **Cleanup** ✅
+   - Removed all debug logging after verification
+   - Code back to production-ready state
+
+### Outcome
+- ✅ Cartridge changes (orange dashed lines) display correctly in day profiles
+- ✅ Detection and storage pipeline working as designed
+- ✅ No bugs found - was working correctly all along
+
+### Files Modified
+- `src/core/day-profile-engine.js` - Temp debug, then removed
+- `src/core/parsers.js` - Temp debug, then removed
+- `src/storage/eventStorage.js` - Temp debug helper, then removed
+
+### Notes
+- System was already working correctly
+- Debug logging helped verify the complete data flow
+- REWIND events show as orange dashed vertical lines in day profiles
+- Events stored in localStorage under 'agp-device-events' key
 
 ---
 
