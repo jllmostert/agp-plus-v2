@@ -689,9 +689,9 @@ export default function AGPGenerator() {
   };
 
   /**
-   * Handle HTML export
+   * Handle HTML export (async to track export history)
    */
-  const handleExportHTML = () => {
+  const handleExportHTML = async () => {
     if (!metricsResult || !startDate || !endDate) return;
     
     // Format dates to YYYY/MM/DD
@@ -702,33 +702,42 @@ export default function AGPGenerator() {
       return `${year}/${month}/${day}`;
     };
     
-    downloadHTML({
-      metrics: metricsResult.metrics,
-      agpData: metricsResult.agp,
-      events: metricsResult.events,
-      tddData: tddData, // Add TDD statistics
-      startDate: formatDate(startDate),
-      endDate: formatDate(endDate),
-      // ALWAYS include day/night metrics in export (independent of UI toggle)
-      dayNightMetrics: {
-        day: metricsResult.dayMetrics,
-        night: metricsResult.nightMetrics
-      },
-      workdaySplit: workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics ? {
-        workday: metricsResult.workdayMetrics,
-        restday: metricsResult.restdayMetrics,
-        workdayCount: metricsResult.workdayMetrics.days,
-        restdayCount: metricsResult.restdayMetrics.days
-      } : null,
-      comparison: comparisonData ? {
-        current: metricsResult.metrics,
-        previous: comparisonData.comparison,
-        comparisonAGP: comparisonData.comparisonAGP,
-        prevStart: formatDate(new Date(comparisonData.prevStart)),
-        prevEnd: formatDate(new Date(comparisonData.prevEnd))
-      } : null,
-      patientInfo: patientInfo // Add patient info to export
-    });
+    try {
+      const result = await downloadHTML({
+        metrics: metricsResult.metrics,
+        agpData: metricsResult.agp,
+        events: metricsResult.events,
+        tddData: tddData, // Add TDD statistics
+        startDate: formatDate(startDate),
+        endDate: formatDate(endDate),
+        // ALWAYS include day/night metrics in export (independent of UI toggle)
+        dayNightMetrics: {
+          day: metricsResult.dayMetrics,
+          night: metricsResult.nightMetrics
+        },
+        workdaySplit: workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics ? {
+          workday: metricsResult.workdayMetrics,
+          restday: metricsResult.restdayMetrics,
+          workdayCount: metricsResult.workdayMetrics.days,
+          restdayCount: metricsResult.restdayMetrics.days
+        } : null,
+        comparison: comparisonData ? {
+          current: metricsResult.metrics,
+          previous: comparisonData.comparison,
+          comparisonAGP: comparisonData.comparisonAGP,
+          prevStart: formatDate(new Date(comparisonData.prevStart)),
+          prevEnd: formatDate(new Date(comparisonData.prevEnd))
+        } : null,
+        patientInfo: patientInfo // Add patient info to export
+      });
+      
+      if (result.success) {
+        console.log(`[AGPGenerator] AGP HTML exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
+      }
+    } catch (error) {
+      console.error('[AGPGenerator] Error exporting AGP HTML:', error);
+      alert('Export failed. Check console for details.');
+    }
   };
 
   // ============================================
@@ -1355,9 +1364,17 @@ export default function AGPGenerator() {
           {navigation.activePanel === 'export' && (
             <ExportPanel
               onExportHTML={handleExportHTML}
-              onExportDayProfiles={() => {
+              onExportDayProfiles={async () => {
                 if (dayProfiles && dayProfiles.length > 0) {
-                  downloadDayProfilesHTML(dayProfiles, patientInfo);
+                  try {
+                    const result = await downloadDayProfilesHTML(dayProfiles, patientInfo);
+                    if (result.success) {
+                      console.log(`[AGPGenerator] Day Profiles exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
+                    }
+                  } catch (error) {
+                    console.error('[AGPGenerator] Error exporting day profiles:', error);
+                    alert('Export failed. Check console for details.');
+                  }
                 } else {
                   alert('No day profiles available');
                 }
