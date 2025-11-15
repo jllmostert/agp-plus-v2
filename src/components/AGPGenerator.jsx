@@ -11,6 +11,7 @@ import { useUploadStorage } from '../hooks/useUploadStorage';
 import { useDayProfiles } from '../hooks/useDayProfiles';
 import { useMasterDataset } from '../hooks/useMasterDataset';
 import { useDataStatus } from '../hooks/useDataStatus';
+import { useModalState } from '../hooks/useModalState';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
@@ -110,15 +111,13 @@ export default function AGPGenerator() {
   const [dayNightEnabled, setDayNightEnabled] = useState(false);
   const [dataImportExpanded, setDataImportExpanded] = useState(false); // Collapsible data import (closed by default)
   const [dataExportExpanded, setDataExportExpanded] = useState(false); // Collapsible data export (closed by default)
-  const [patientInfoOpen, setPatientInfoOpen] = useState(false);
+  
+  // Modal state management (extracted to custom hook)
+  const modals = useModalState();
+  
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
-  const [dayProfilesOpen, setDayProfilesOpen] = useState(false); // Day profiles modal state
   const [numDaysProfile, setNumDaysProfile] = useState(7); // Number of days to show in profiles (7 or 14)
-  const [sensorHistoryOpen, setSensorHistoryOpen] = useState(false); // Sensor history modal state
-  const [sensorRegistrationOpen, setSensorRegistrationOpen] = useState(false); // Sensor registration modal state
-  const [dataManagementOpen, setDataManagementOpen] = useState(false); // Data management modal state
-  const [showStockModal, setShowStockModal] = useState(false); // Stock management modal state
   const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
   const [tddByDay, setTddByDay] = useState(null); // TDD data by day (all days) from storage
@@ -134,8 +133,7 @@ export default function AGPGenerator() {
     return saved === 'true';
   });
   
-  // Import modal state
-  const [dataImportModalOpen, setDataImportModalOpen] = useState(false);
+  // Import state (will be extracted in Session 3)
   const [importValidation, setImportValidation] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -165,10 +163,10 @@ export default function AGPGenerator() {
     loadPatientInfo();
     
     // Reload when modal closes (in case data was updated)
-    if (!patientInfoOpen) {
+    if (!modals.patientInfoOpen) {
       loadPatientInfo();
     }
-  }, [patientInfoOpen]);
+  }, [modals.patientInfoOpen]);
 
   // Load TDD data from storage
   useEffect(() => {
@@ -200,7 +198,7 @@ export default function AGPGenerator() {
       }
     };
     loadLastImport();
-  }, [dataImportModalOpen]); // Reload when modal opens/closes
+  }, [modals.dataImportModalOpen]); // Reload when modal opens/closes
   
   // Keyboard shortcuts (Phase B + Session 18)
   useEffect(() => {
@@ -894,7 +892,7 @@ export default function AGPGenerator() {
       return;
     }
 
-    setDayProfilesOpen(true);
+    modals.setDayProfilesOpen(true);
   };
 
   /**
@@ -966,7 +964,7 @@ export default function AGPGenerator() {
       try {
         // Start validation
         setIsValidating(true);
-        setDataImportModalOpen(true);
+        modals.setDataImportModalOpen(true);
         
         // Validate file
         const validation = await validateImportFile(file);
@@ -998,7 +996,7 @@ export default function AGPGenerator() {
       console.log('[AGPGenerator] Starting import...');
       console.log('[AGPGenerator] Merge strategy:', importMergeStrategy);
       console.log('[AGPGenerator] Create backup:', createBackupBeforeImport);
-      setDataImportModalOpen(false);
+      modals.setDataImportModalOpen(false);
       setIsImporting(true);
       
       // Create backup before import if enabled
@@ -1282,7 +1280,7 @@ export default function AGPGenerator() {
 
               {/* Patient Button - Compact */}
               <button
-                onClick={() => setPatientInfoOpen(true)}
+                onClick={() => modals.setPatientInfoOpen(true)}
                 style={{
                   padding: '0.5rem 0.75rem',
                   background: 'var(--color-green)',
@@ -1411,7 +1409,7 @@ export default function AGPGenerator() {
                   onClick={() => {
                     debug.log('[AGPGenerator] 🗑️ CLEANUP button clicked!');
                     debug.log('[AGPGenerator] dataStatus.hasData:', dataStatus.hasData);
-                    setDataManagementOpen(true);
+                    modals.setDataManagementOpen(true);
                   }}
                   disabled={!dataStatus.hasData}
                   style={{
@@ -1528,7 +1526,7 @@ export default function AGPGenerator() {
               onProTimeLoad={handleProTimeLoad}
               onProTimeDelete={handleProTimeDelete}
               onImportDatabase={handleDatabaseImport}
-              onSensorRegistrationOpen={() => setSensorRegistrationOpen(true)}
+              onSensorRegistrationOpen={() => modals.setSensorRegistrationOpen(true)}
             />
           )}
           
@@ -1545,7 +1543,7 @@ export default function AGPGenerator() {
             <SensorHistoryPanel 
               isOpen={true}
               onClose={() => setActivePanel('import')}
-              onOpenStock={() => setShowStockModal(true)}
+              onOpenStock={() => modals.setShowStockModal(true)}
             />
           )}
           
@@ -1600,10 +1598,10 @@ export default function AGPGenerator() {
             endDate={endDate}
             activeReadings={activeReadings}
             handleDayProfilesOpen={handleDayProfilesOpen}
-            setShowStockModal={setShowStockModal}
+            setShowStockModal={modals.setShowStockModal}
             sensorsLoading={sensorsLoading}
             sensorsError={sensorsError}
-            setSensorHistoryOpen={setSensorHistoryOpen}
+            setSensorHistoryOpen={modals.setSensorHistoryOpen}
             dataImportExpanded={dataImportExpanded}
             setDataImportExpanded={setDataImportExpanded}
             dataExportExpanded={dataExportExpanded}
@@ -1681,7 +1679,7 @@ export default function AGPGenerator() {
           }}>
             <DevToolsPanel 
               onClose={() => setShowDevTools(false)} 
-              onSensorRegistrationOpen={() => setSensorRegistrationOpen(true)}
+              onSensorRegistrationOpen={() => modals.setSensorRegistrationOpen(true)}
             />
           </div>
         )}
@@ -1694,35 +1692,35 @@ export default function AGPGenerator() {
           dataStatus={dataStatus}
           
           // Patient Info Modal
-          patientInfoOpen={patientInfoOpen}
-          onClosePatientInfo={() => setPatientInfoOpen(false)}
+          patientInfoOpen={modals.patientInfoOpen}
+          onClosePatientInfo={() => modals.setPatientInfoOpen(false)}
           
           // Day Profiles Modal
-          dayProfilesOpen={dayProfilesOpen}
-          onCloseDayProfiles={() => setDayProfilesOpen(false)}
+          dayProfilesOpen={modals.dayProfilesOpen}
+          onCloseDayProfiles={() => modals.setDayProfilesOpen(false)}
           numDaysProfile={numDaysProfile}
           onChangeNumDaysProfile={setNumDaysProfile}
           
           // Sensor History Modal
-          sensorHistoryOpen={sensorHistoryOpen}
-          onCloseSensorHistory={() => setSensorHistoryOpen(false)}
+          sensorHistoryOpen={modals.sensorHistoryOpen}
+          onCloseSensorHistory={() => modals.setSensorHistoryOpen(false)}
           onOpenStockFromHistory={() => {
-            setSensorHistoryOpen(false);
-            setShowStockModal(true);
+            modals.setSensorHistoryOpen(false);
+            modals.setShowStockModal(true);
           }}
           
           // Sensor Registration Modal
-          sensorRegistrationOpen={sensorRegistrationOpen}
-          onCloseSensorRegistration={() => setSensorRegistrationOpen(false)}
+          sensorRegistrationOpen={modals.sensorRegistrationOpen}
+          onCloseSensorRegistration={() => modals.setSensorRegistrationOpen(false)}
           
           // Data Management Modal
-          dataManagementOpen={dataManagementOpen}
-          onCloseDataManagement={() => setDataManagementOpen(false)}
+          dataManagementOpen={modals.dataManagementOpen}
+          onCloseDataManagement={() => modals.setDataManagementOpen(false)}
           onDataManagementDelete={handleDataManagementDelete}
           
           // Stock Management Modal
-          showStockModal={showStockModal}
-          onCloseStockModal={() => setShowStockModal(false)}
+          showStockModal={modals.showStockModal}
+          onCloseStockModal={() => modals.setShowStockModal(false)}
           
           // Batch Assignment Dialog
           batchAssignmentDialog={batchAssignmentDialog}
@@ -1732,9 +1730,9 @@ export default function AGPGenerator() {
 
         {/* Data Import Modal */}
         <DataImportModal
-          isOpen={dataImportModalOpen}
+          isOpen={modals.dataImportModalOpen}
           onClose={() => {
-            setDataImportModalOpen(false);
+            modals.setDataImportModalOpen(false);
             setImportValidation(null);
             setPendingImportFile(null);
             setImportMergeStrategy('append'); // Reset to default on close
