@@ -39,3 +39,9 @@ coverage/
 
 # Test data exports (can be large)
 test-data/agp-master-*.json
+
+# Experimental/WIP features (not ready for production)
+src/components/CloudSync.jsx
+src/utils/githubSync.js
+src/utils/smartImport.js
+docs/ARCHITECTURE_DIAGRAMS.md

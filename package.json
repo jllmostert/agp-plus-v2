@@ -1,7 +1,7 @@
 {
   "name": "agp-plus",
-  "version": "4.2.2",
-  "description": "AGP+ v4.2.2 - Ambulatory Glucose Profile with Stock Management",
+  "version": "4.3.0",
+  "description": "AGP+ v4.3.0 - Ambulatory Glucose Profile with Stock Management",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3001",
