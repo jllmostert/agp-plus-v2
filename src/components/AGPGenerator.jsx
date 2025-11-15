@@ -12,6 +12,7 @@ import { useDayProfiles } from '../hooks/useDayProfiles';
 import { useMasterDataset } from '../hooks/useMasterDataset';
 import { useDataStatus } from '../hooks/useDataStatus';
 import { useModalState } from '../hooks/useModalState';
+import { usePanelNavigation } from '../hooks/usePanelNavigation';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
@@ -72,9 +73,6 @@ export default function AGPGenerator() {
   // V3 Upload error state
   const [v3UploadError, setV3UploadError] = useState(null);
   
-  // Keyboard shortcuts legend state (Phase F1.2)
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  
   // Upload storage management
   const {
     savedUploads,
@@ -115,23 +113,15 @@ export default function AGPGenerator() {
   // Modal state management (extracted to custom hook)
   const modals = useModalState();
   
+  // Panel navigation + keyboard shortcuts (extracted to custom hook)
+  const navigation = usePanelNavigation();
+  
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
   const [numDaysProfile, setNumDaysProfile] = useState(7); // Number of days to show in profiles (7 or 14)
   const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
   const [tddByDay, setTddByDay] = useState(null); // TDD data by day (all days) from storage
-  
-  // ============================================
-  // STATE: Panel Navigation (Phase B)
-  // ============================================
-  
-  const [activePanel, setActivePanel] = useState('import'); // Current active panel
-  const [showDevTools, setShowDevTools] = useState(() => {
-    // Check localStorage for persisted DevTools state
-    const saved = localStorage.getItem('agp-devtools-enabled');
-    return saved === 'true';
-  });
   
   // Import state (will be extracted in Session 3)
   const [importValidation, setImportValidation] = useState(null);
@@ -200,59 +190,6 @@ export default function AGPGenerator() {
     loadLastImport();
   }, [modals.dataImportModalOpen]); // Reload when modal opens/closes
   
-  // Keyboard shortcuts (Phase B + Session 18)
-  useEffect(() => {
-    const handleKeyboard = (e) => {
-      // Panel switching: Ctrl+1/2/3/4
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
-        switch(e.key) {
-          case '1':
-            e.preventDefault();
-            setActivePanel('import');
-            console.log('[Keyboard] Switched to Import panel');
-            break;
-          case '2':
-            e.preventDefault();
-            setActivePanel('dagprofielen');
-            console.log('[Keyboard] Switched to Day Profiles panel');
-            break;
-          case '3':
-            e.preventDefault();
-            setActivePanel('sensoren');
-            console.log('[Keyboard] Switched to Sensors panel');
-            break;
-          case '4':
-            e.preventDefault();
-            setActivePanel('export');
-            console.log('[Keyboard] Switched to Export panel');
-            break;
-        }
-      }
-      
-      // Ctrl+Shift+D: Toggle DevTools
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
-        e.preventDefault();
-        setShowDevTools(prev => {
-          const newValue = !prev;
-          localStorage.setItem('agp-devtools-enabled', newValue.toString());
-          console.log('[AGPGenerator] DevTools:', newValue ? 'enabled' : 'disabled');
-          return newValue;
-        });
-      }
-      
-      // Escape: Close DevTools
-      if (e.key === 'Escape' && showDevTools) {
-        e.preventDefault();
-        setShowDevTools(false);
-        localStorage.setItem('agp-devtools-enabled', 'false');
-        console.log('[AGPGenerator] DevTools closed via Escape');
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyboard);
-    return () => window.removeEventListener('keydown', handleKeyboard);
-  }, [showDevTools]);
-
   /**
    * Auto-select last 14 days when data becomes ready (green light)
    * This provides instant visualization on app startup
@@ -488,7 +425,7 @@ export default function AGPGenerator() {
    * Handle panel navigation changes (Phase B)
    */
   const handlePanelChange = (panelId) => {
-    setActivePanel(panelId);
+    navigation.setActivePanel(panelId);
   };
 
   // ============================================
@@ -1507,7 +1444,7 @@ export default function AGPGenerator() {
         
         {/* Phase B: Main Navigation - After old header */}
         <HeaderBar 
-          activePanel={activePanel}
+          activePanel={navigation.activePanel}
           onPanelChange={handlePanelChange}
         />
         
@@ -1516,7 +1453,7 @@ export default function AGPGenerator() {
           padding: '1rem 2rem'
         }}>
           
-          {activePanel === 'import' && (
+          {navigation.activePanel === 'import' && (
             <ImportPanel
               csvData={csvData}
               workdays={workdays}
@@ -1530,24 +1467,24 @@ export default function AGPGenerator() {
             />
           )}
           
-          {activePanel === 'dagprofielen' && (
+          {navigation.activePanel === 'dagprofielen' && (
             <DayProfilesPanel
               isOpen={true}
-              onClose={() => setActivePanel('import')}
+              onClose={() => navigation.setActivePanel('import')}
               dayProfiles={dayProfiles}
               patientInfo={patientInfo}
             />
           )}
           
-          {activePanel === 'sensoren' && (
+          {navigation.activePanel === 'sensoren' && (
             <SensorHistoryPanel 
               isOpen={true}
-              onClose={() => setActivePanel('import')}
+              onClose={() => navigation.setActivePanel('import')}
               onOpenStock={() => modals.setShowStockModal(true)}
             />
           )}
           
-          {activePanel === 'export' && (
+          {navigation.activePanel === 'export' && (
             <ExportPanel
               onExportHTML={handleExportHTML}
               onExportDayProfiles={() => {
@@ -1576,7 +1513,7 @@ export default function AGPGenerator() {
         <MigrationBanner />
 
         {/* V3 Date Range Filter - Show on import panel */}
-        {activePanel === 'import' && useV3Mode && masterDataset.stats && (
+        {navigation.activePanel === 'import' && useV3Mode && masterDataset.stats && (
           <section className="section">
             <DateRangeFilter
               datasetRange={masterDataset.stats.dateRange}
@@ -1650,7 +1587,7 @@ export default function AGPGenerator() {
         {/* END OLD CONTROL BUTTONS */}
 
         {/* Main Content - Show when on import panel */}
-        {activePanel === 'import' && ((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
+        {navigation.activePanel === 'import' && ((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
           <VisualizationContainer
             metricsResult={metricsResult}
             comparisonData={comparisonData}
@@ -1664,7 +1601,7 @@ export default function AGPGenerator() {
         )}
 
         {/* Phase B: DevTools Overlay (if enabled) */}
-        {showDevTools && (
+        {navigation.showDevTools && (
           <div style={{
             position: 'fixed',
             top: 0,
@@ -1678,7 +1615,7 @@ export default function AGPGenerator() {
             overflow: 'auto'
           }}>
             <DevToolsPanel 
-              onClose={() => setShowDevTools(false)} 
+              onClose={() => navigation.setShowDevTools(false)} 
               onSensorRegistrationOpen={() => modals.setSensorRegistrationOpen(true)}
             />
           </div>
@@ -1873,7 +1810,7 @@ export default function AGPGenerator() {
           zIndex: 1000
         }}>
           <button
-            onClick={() => setShowShortcuts(!showShortcuts)}
+            onClick={() => navigation.setShowShortcuts(!navigation.showShortcuts)}
             style={{
               padding: '0.5rem',
               background: 'var(--bg-secondary)',
@@ -1889,7 +1826,7 @@ export default function AGPGenerator() {
             ⌨️ Shortcuts
           </button>
           
-          {showShortcuts && (
+          {navigation.showShortcuts && (
             <div style={{
               position: 'absolute',
               bottom: '100%',
