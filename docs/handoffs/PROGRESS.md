@@ -1,8 +1,106 @@
 # AGP+ PROGRESS - SESSION LOG
 
-**Version**: v4.2.2 ✅ PRODUCTION READY  
-**Current Focus**: 🎊 Phase 1 Refactoring COMPLETE!  
-**Last Update**: 2025-11-15 10:30  
+**Version**: v4.3.0 ✅ PRODUCTION READY  
+**Current Focus**: 📚 Documentation Synchronization Complete!  
+**Last Update**: 2025-11-15 13:25  
+
+---
+
+## ✅ SESSION 33 - Documentation Restructure & Tier System (2025-11-15 12:45-13:25)
+
+**Status**: ✅ COMPLETE  
+**Duration**: ~40 minutes  
+**Commits**: 3ff509a
+
+### Summary
+Complete documentation restructure implementing proper tier system. Updated all strategic documents (PROJECT_BRIEFING.md, README.md) to reflect current v4.3.0 state and established clear tier 1/2/3 separation for crash-resistant development workflow.
+
+### Completed Tasks
+1. **Documentation Status Check** ✅
+   - Verified CHANGELOG.md up-to-date (Session 32 documented)
+   - Verified STATUS.md up-to-date (v4.3.0 Phase 1 Complete)
+   - Verified TODO.md up-to-date (priorities current)
+   - Confirmed PROGRESS.md as source of truth
+
+2. **PROJECT_BRIEFING.md Complete Rewrite** ✅ (691 lines)
+   - **From**: Outdated Option C roadmap (409 lines, dated 2025-11-02)
+   - **To**: Strategic tier 2 project overview
+   
+   **New Structure**:
+   - Project vision & purpose (what/why AGP+ exists)
+   - Design constraints & philosophy (medical accuracy, brutalist UI, browser-only, data portability, crash-resistant dev)
+   - Documentation tier system (Tier 1/2/3 explained in detail)
+   - Project structure & directory rationale
+   - Architecture philosophy (storage hybrid, component design)
+   - Development standards (git workflow, commit conventions, session workflow)
+   - Roadmap (as section, not whole doc - completed work + optional future phases)
+   - Document navigation guide (I need X → Go to Y)
+   - Tier system quick reference
+   
+   **Key Insight**: Established PROGRESS.md as source of truth updated DURING work, Tier 2 docs updated AFTER work complete
+
+3. **README.md Update** ✅ (495 lines)
+   - Updated version: v4.2.2 → v4.3.0
+   - Updated status: Phase 1 Refactoring Complete
+   - Added features: 7/14 day toggle, fullscreen charts, custom hooks
+   - **Tech stack corrected**: Removed Tailwind/Dexie, added sql.js/custom hooks/pure CSS
+   - Project structure updated with hooks/ and accurate docs/ tier structure
+   - Architecture section: Storage strategy, state management, recent improvements
+   - Import/export: Progress tracking, merge strategies, auto-backup
+   - Clinical metrics: All targets updated (ATTD 2023 consensus)
+   - Event detection: 3-tier system with indicators
+   - Documentation section: Tier system explained, PROJECT_BRIEFING as main doc
+   - Version history: v4.3.0 added with highlights
+
+### Files Created/Modified
+**Modified**:
+- `docs/project/PROJECT_BRIEFING.md` - Complete rewrite (409 → 691 lines)
+- `README.md` - Comprehensive update (393 → 495 lines)
+
+**No new files** - focused on updating existing strategic documents
+
+### Architecture Decisions
+**Tier System Clarification**:
+- **Tier 1** (Operational): PROGRESS.md updated minute-by-minute DURING sessions
+- **Tier 2** (Strategic): PROJECT_BRIEFING, STATUS, TODO, CHANGELOG updated AFTER sessions
+- **Tier 3** (Reference): metric_definitions, device specs - rarely updated
+
+**Document Roles**:
+- PROGRESS.md = Source of truth (what happened, minute by minute)
+- PROJECT_BRIEFING.md = Strategic overview (project fundamentals, never outdated)
+- STATUS.md = Current version status (what works/doesn't)
+- TODO.md = Priorities (what's next)
+- CHANGELOG.md = Version history (formal record)
+
+### Git Workflow
+```bash
+git add -A
+git commit -m "docs: Complete documentation restructure & update to v4.3.0"
+git push origin main
+```
+
+**Commit**: 3ff509a  
+**Changes**: 25 files changed (deletions from restructure + new content)
+
+### Key Achievements
+- ✅ Tier system properly documented and explained
+- ✅ PROJECT_BRIEFING now timeless strategic document (not version-specific)
+- ✅ README user-focused with accurate tech stack
+- ✅ Clear navigation: "I need X" → "Go to doc Y"
+- ✅ All docs synchronized to v4.3.0 Phase 1 Complete status
+- ✅ Crash recovery workflow documented (read PROGRESS.md first)
+
+### Documentation Philosophy Established
+**From PROJECT_BRIEFING.md**:
+> "PROGRESS.md is the single source of truth for what just happened. All other docs (CHANGELOG, STATUS, TODO) get updated from PROGRESS after sessions complete."
+
+This session exemplifies proper tier 2 update: Read tier 1 (PROGRESS), update tier 2 docs (PROJECT_BRIEFING, README), commit, then update tier 1 (this entry).
+
+### Next Steps
+Documentation synchronized! Ready for:
+- Optional feature work (see TODO.md)
+- Testing & stability verification
+- Future Phase 2/3 planning (if desired)
 
 ---
 
