@@ -28,6 +28,7 @@ import SavedUploadsList from './SavedUploadsList';
 import { MigrationBanner } from './MigrationBanner';
 import DataImportModal from './DataImportModal';
 import HeaderBar from './HeaderBar';
+import KeyboardHelp from './KeyboardHelp';
 
 // Container Components
 import ModalManager from './containers/ModalManager';
@@ -1705,11 +1706,11 @@ export default function AGPGenerator() {
               minWidth: '200px',
               boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
             }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>⌨️ Keyboard Shortcuts</div>
-              <div style={{ marginBottom: '0.25rem' }}>Ctrl+1/2/3/4: Switch panels</div>
-              <div style={{ marginBottom: '0.25rem' }}>Ctrl+Shift+D: Toggle DevTools</div>
-              <div style={{ marginBottom: '0.25rem' }}>Esc: Close DevTools</div>
-              <div>Tab: Navigate elements</div>
+              <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>⌨️ Toetsenbord</div>
+              <div style={{ marginBottom: '0.25rem' }}>F: Volledig scherm (AGP)</div>
+              <div style={{ marginBottom: '0.25rem' }}>ESC: Sluiten / Terug</div>
+              <div style={{ marginBottom: '0.25rem' }}>Tab: Navigeren</div>
+              <div>Enter/Spatie: Activeren</div>
             </div>
           )}
         </div>

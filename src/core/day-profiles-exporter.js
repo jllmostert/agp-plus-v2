@@ -721,8 +721,11 @@ export const generateDayProfilesHTML = (dayProfiles, patientInfo = null) => {
 
 /**
  * Download day profiles HTML as file
+ * @param {Array} dayProfiles - Day profiles data
+ * @param {Object} patientInfo - Patient information
+ * @returns {Promise<Object>} Export result with filename and fileSize
  */
-export const downloadDayProfilesHTML = (dayProfiles, patientInfo = null) => {
+export const downloadDayProfilesHTML = async (dayProfiles, patientInfo = null) => {
   try {
     const html = generateDayProfilesHTML(dayProfiles, patientInfo);
     const blob = new Blob([html], { type: 'text/html' });
@@ -732,14 +735,31 @@ export const downloadDayProfilesHTML = (dayProfiles, patientInfo = null) => {
     
     // Generate unique filename with timestamp (consistent with AGP report format)
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // YYYY-MM-DDTHH-MM-SS
-    link.download = `AGP_DayProfiles_${timestamp}.html`;
+    const filename = `AGP_DayProfiles_${timestamp}.html`;
+    link.download = filename;
     
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    return true;
+    // Track export in history
+    try {
+      const { addExportEvent } = await import('../storage/exportHistory');
+      addExportEvent({
+        filename,
+        type: 'day-profiles-html',
+        fileSize: blob.size,
+        stats: {
+          profileCount: dayProfiles?.length || 0
+        }
+      });
+    } catch (error) {
+      console.error('[downloadDayProfilesHTML] Failed to track export:', error);
+      // Don't fail the export if tracking fails
+    }
+    
+    return { success: true, filename, fileSize: blob.size };
   } catch (error) {
     console.error('Error downloading day profiles HTML:', error);
     throw error;

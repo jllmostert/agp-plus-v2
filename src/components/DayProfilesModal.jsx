@@ -25,6 +25,10 @@ export default function DayProfilesModal({
 
   return (
     <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="day-profiles-modal-title"
+      aria-describedby="day-profiles-modal-desc"
       style={{
         position: 'fixed',
         top: 0,
@@ -48,10 +52,15 @@ export default function DayProfilesModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Control buttons - top right, sticky */}
-        <div className="sticky top-0 z-10 flex justify-end gap-4 p-6 bg-black bg-opacity-90">
+        <div 
+          className="sticky top-0 z-10 flex justify-end gap-4 p-6 bg-black bg-opacity-90"
+          role="toolbar"
+          aria-label="Day profiles controls"
+        >
           {/* Close button */}
           <button
             onClick={onClose}
+            aria-label="Close day profiles modal"
             style={{
               fontFamily: 'Courier New, monospace',
               fontSize: '18px',
@@ -78,9 +87,15 @@ export default function DayProfilesModal({
 
           {/* Toggle: 7 or 14 days */}
           {onChangeNumDays && (
-            <div style={{ display: 'flex', gap: '0' }}>
+            <div 
+              style={{ display: 'flex', gap: '0' }}
+              role="group"
+              aria-label="Number of days to display"
+            >
               <button
                 onClick={() => onChangeNumDays(7)}
+                aria-label="Show 7 days"
+                aria-pressed={numDays === 7}
                 style={{
                   fontFamily: 'Courier New, monospace',
                   fontSize: '18px',
@@ -99,6 +114,8 @@ export default function DayProfilesModal({
               </button>
               <button
                 onClick={() => onChangeNumDays(14)}
+                aria-label="Show 14 days"
+                aria-pressed={numDays === 14}
                 style={{
                   fontFamily: 'Courier New, monospace',
                   fontSize: '18px',
@@ -127,6 +144,7 @@ export default function DayProfilesModal({
                 alert('Er is een fout opgetreden bij het exporteren van dagprofielen.');
               }
             }}
+            aria-label="Print day profiles to HTML"
             style={{
               fontFamily: 'Courier New, monospace',
               fontSize: '18px',
@@ -160,8 +178,14 @@ export default function DayProfilesModal({
             padding: '0 24px 48px'
           }}
         >
+          {/* Screen reader description */}
+          <p id="day-profiles-modal-desc" className="sr-only">
+            Modal showing glucose day profiles for the last {numDays} days. Each profile shows glucose patterns, metrics, and events for a single day. Use toolbar at top to change number of days displayed or print the profiles.
+          </p>
+
           {/* Title */}
           <div
+            id="day-profiles-modal-title"
             className="day-profiles-title"
             style={{
               fontFamily: 'Courier New, monospace',

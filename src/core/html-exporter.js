@@ -950,8 +950,10 @@ export const generateHTML = (options) => {
 
 /**
  * Trigger browser download of HTML report
+ * @param {Object} options - Export options
+ * @returns {Promise<Object>} Export result with filename and fileSize
  */
-export const downloadHTML = (options) => {
+export const downloadHTML = async (options) => {
   const html = generateHTML(options);
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
@@ -960,10 +962,31 @@ export const downloadHTML = (options) => {
   
   // Generate unique filename with timestamp
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // YYYY-MM-DDTHH-MM-SS
-  a.download = `AGP_Report_${timestamp}.html`;
+  const filename = `AGP_Report_${timestamp}.html`;
+  a.download = filename;
   
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  
+  // Track export in history
+  try {
+    const { addExportEvent } = await import('../storage/exportHistory');
+    addExportEvent({
+      filename,
+      type: 'agp-html',
+      fileSize: blob.size,
+      stats: {
+        startDate: options.startDate,
+        endDate: options.endDate,
+        hasComparison: !!options.comparison
+      }
+    });
+  } catch (error) {
+    console.error('[downloadHTML] Failed to track export:', error);
+    // Don't fail the export if tracking fails
+  }
+  
+  return { success: true, filename, fileSize: blob.size };
 };

@@ -150,16 +150,61 @@ export default function AGPChart({
     [comparison, xScale, yScale]
   );
 
+  // Generate accessible summary for screen readers
+  const accessibleSummary = useMemo(() => {
+    if (!agpData || agpData.length === 0) return '';
+    
+    // Calculate median values for key time points
+    const midnight = agpData[0];
+    const morning = agpData[72]; // 06:00 (72 * 5min = 360min)
+    const noon = agpData[144];    // 12:00
+    const evening = agpData[216]; // 18:00
+    
+    // Calculate overall glucose statistics
+    const allMedians = agpData.map(d => d.p50).filter(v => v != null);
+    const overallMedian = allMedians.length > 0 
+      ? (allMedians.reduce((a, b) => a + b, 0) / allMedians.length).toFixed(0)
+      : 'N/A';
+    
+    return `Ambulatory Glucose Profile: Interactive chart showing 24-hour glucose patterns aggregated from multiple days. 
+      Overall median glucose: ${overallMedian} mg per deciliter. 
+      Key time points - Midnight: ${midnight?.p50?.toFixed(0) || 'N/A'}, 
+      6 AM: ${morning?.p50?.toFixed(0) || 'N/A'}, 
+      Noon: ${noon?.p50?.toFixed(0) || 'N/A'}, 
+      6 PM: ${evening?.p50?.toFixed(0) || 'N/A'} mg per deciliter. 
+      The chart displays three percentile bands: 5th to 95th percentile in light gray showing full variation, 
+      25th to 75th percentile in medium gray showing typical range, 
+      and median line in black showing most common glucose value. 
+      Clinical target range of 70 to 180 mg per deciliter is marked with horizontal lines. 
+      ${events.hypoEpisodes?.events?.length || 0} low glucose episodes and 
+      ${events.hyper?.events?.length || 0} high glucose episodes are marked on the chart.
+      ${comparison ? 'A comparison curve from a previous period is shown as a dashed line.' : ''}
+      Keyboard shortcut: Press F to toggle fullscreen view. Press Escape to exit fullscreen.`;
+  }, [agpData, events, comparison]);
+
+  // Keyboard shortcut: F for fullscreen
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // F key toggles fullscreen (not when typing in input)
+      if (e.key === 'f' && !e.target.matches('input, textarea')) {
+        e.preventDefault();
+        setIsFullscreen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-4" role="region" aria-labelledby="agp-chart-title">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-100">
+          <h3 className="text-lg font-semibold text-gray-100" id="agp-chart-title">
             Ambulatory Glucose Profile (AGP)
           </h3>
-          <div className="text-sm text-gray-400">
-            Click chart for fullscreen • 24-hour glucose pattern
+          <div className="text-sm text-gray-400" role="note" aria-label="Keyboard shortcuts and interaction help">
+            Click chart for fullscreen • Press F for fullscreen • Press ESC to exit • 24-hour glucose pattern
           </div>
         </div>
 
@@ -168,100 +213,150 @@ export default function AGPChart({
           className="card bg-white border-gray-300 overflow-hidden" 
           style={{ position: 'relative', cursor: 'pointer' }}
           onClick={() => setIsFullscreen(true)}
-          title="Click to view fullscreen"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsFullscreen(true);
+            }
+          }}
+          title="Click or press Enter to view fullscreen (or press F)"
+          role="button"
+          tabIndex={0}
+          aria-label="AGP Chart - Interactive glucose profile chart. Click, press Enter, or press F to view in fullscreen mode. Press Escape to exit fullscreen."
         >
           {/* Legend positioned absolute in top-right */}
           <ChartLegend hasComparison={!!comparison} />
           
-          <svg width={width} height={height} className="w-full h-auto">
+          {/* Screen reader summary (visually hidden but announced) */}
+          <div 
+            className="sr-only" 
+            aria-live="polite"
+            role="status"
+            aria-atomic="true"
+          >
+            {accessibleSummary}
+          </div>
+          
+          <svg 
+            width={width} 
+            height={height} 
+            className="w-full h-auto"
+            role="img"
+            aria-labelledby="agp-chart-title agp-chart-desc"
+          >
+            {/* Accessible description */}
+            <title id="agp-svg-title">Ambulatory Glucose Profile Chart</title>
+            <desc id="agp-chart-desc">
+              {accessibleSummary}
+            </desc>
           {/* White background */}
           <rect x="0" y="0" width={width} height={height} fill="white" />
           
           {/* Grid lines */}
-          <GridLines 
-            margin={margin}
-            chartWidth={chartWidth}
-            chartHeight={chartHeight}
-            yScale={yScale}
-            yTicks={yTicks}
-          />
+          <g aria-label="Grid lines for glucose values">
+            <GridLines 
+              margin={margin}
+              chartWidth={chartWidth}
+              chartHeight={chartHeight}
+              yScale={yScale}
+              yTicks={yTicks}
+            />
+          </g>
 
           {/* Night end marker - vertical dashed line at 06:00 */}
-          <line
-            x1={xScale(6 * 60)}
-            y1={margin.top}
-            x2={xScale(6 * 60)}
-            y2={margin.top + chartHeight}
-            stroke="var(--color-gray-mid)"
-            strokeWidth="2"
-            strokeDasharray="8,4"
-            opacity="0.6"
-          />
+          <g aria-label="Night period end marker at 6 AM">
+            <line
+              x1={xScale(6 * 60)}
+              y1={margin.top}
+              x2={xScale(6 * 60)}
+              y2={margin.top + chartHeight}
+              stroke="var(--color-gray-mid)"
+              strokeWidth="2"
+              strokeDasharray="8,4"
+              opacity="0.6"
+            />
+          </g>
 
           {/* Target lines */}
-          <TargetLines 
-            margin={margin}
-            chartWidth={chartWidth}
-            yScale={yScale}
-          />
+          <g aria-label="Clinical target glucose ranges: 54 mg/dL (critical low), 70-180 mg/dL (target range), 250 mg/dL (critical high)">
+            <TargetLines 
+              margin={margin}
+              chartWidth={chartWidth}
+              yScale={yScale}
+            />
+          </g>
 
           {/* Percentile bands - BRUTALIST GRAYSCALE */}
           {/* 5-95th percentile band - light gray */}
-          <path
-            d={paths.band_5_95}
-            fill="var(--color-agp-p5-95)"
-            opacity="0.8"
-          />
+          <g aria-label="5th to 95th percentile range - shows variation in glucose levels">
+            <path
+              d={paths.band_5_95}
+              fill="var(--color-agp-p5-95)"
+              opacity="0.8"
+            />
+          </g>
           
           {/* 25-75th percentile band - medium gray */}
-          <path
-            d={paths.band_25_75}
-            fill="var(--color-agp-p25-75)"
-            opacity="0.8"
-          />
+          <g aria-label="25th to 75th percentile range - interquartile range showing typical glucose values">
+            <path
+              d={paths.band_25_75}
+              fill="var(--color-agp-p25-75)"
+              opacity="0.8"
+            />
+          </g>
 
           {/* Median line (p50) - BRUTALIST BLACK SOLID */}
-          <path
-            d={paths.median}
-            fill="none"
-            stroke="var(--color-agp-median)"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
+          <g aria-label="Median glucose line - typical glucose value at each time of day">
+            <path
+              d={paths.median}
+              fill="none"
+              stroke="var(--color-agp-median)"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+          </g>
 
           {/* Comparison overlay (if present) - gray dashed thicker */}
           {comparisonPath && (
-            <path
-              d={comparisonPath}
-              fill="none"
-              stroke="var(--text-tertiary)"
-              strokeWidth="2.5"
-              strokeDasharray="6,4"
-              opacity="0.9"
-            />
+            <g aria-label="Previous period comparison - dashed line">
+              <path
+                d={comparisonPath}
+                fill="none"
+                stroke="var(--text-tertiary)"
+                strokeWidth="2.5"
+                strokeDasharray="6,4"
+                opacity="0.9"
+              />
+            </g>
           )}
 
           {/* Event markers */}
-          <EventMarkers 
-            events={events}
-            xScale={xScale}
-            yScale={yScale}
-            chartHeight={chartHeight}
-            margin={margin}
-          />
+          <g aria-label={`Glucose events: ${events.hypoEpisodes?.events?.length || 0} hypoglycemia episodes, ${events.hyper?.events?.length || 0} hyperglycemia episodes`}>
+            <EventMarkers 
+              events={events}
+              xScale={xScale}
+              yScale={yScale}
+              chartHeight={chartHeight}
+              margin={margin}
+            />
+          </g>
 
           {/* Axes */}
-          <XAxis 
-            margin={margin}
-            chartWidth={chartWidth}
-            chartHeight={chartHeight}
-          />
-          <YAxis 
-            margin={margin}
-            chartHeight={chartHeight}
-            yScale={yScale}
-            yTicks={yTicks}
-          />
+          <g aria-label="Time axis - 24 hour format from midnight to midnight">
+            <XAxis 
+              margin={margin}
+              chartWidth={chartWidth}
+              chartHeight={chartHeight}
+            />
+          </g>
+          <g aria-label={`Glucose axis - range from ${yMin} to ${yMax} mg/dL with clinical targets at 70 and 180`}>
+            <YAxis 
+              margin={margin}
+              chartHeight={chartHeight}
+              yScale={yScale}
+              yTicks={yTicks}
+            />
+          </g>
         </svg>
       </div>
     </div>
@@ -338,84 +433,121 @@ export default function AGPChart({
               <div className="card bg-white border-gray-300" style={{ position: 'relative' }}>
                 <ChartLegend hasComparison={!!comparison} />
                 
-                <svg width={fsWidth} height={fsHeight} className="w-full h-auto">
+                {/* Screen reader announcement for fullscreen */}
+                <div className="sr-only" aria-live="polite">
+                  Fullscreen mode activated. Press Escape or click Close to exit.
+                </div>
+                
+                <svg 
+                  width={fsWidth} 
+                  height={fsHeight} 
+                  className="w-full h-auto"
+                  role="img"
+                  aria-label="Ambulatory Glucose Profile - Fullscreen View"
+                  aria-describedby="agp-chart-desc-fs"
+                >
+                  {/* Accessible description for fullscreen */}
+                  <desc id="agp-chart-desc-fs">
+                    {accessibleSummary}
+                  </desc>
+                  
                   <rect x="0" y="0" width={fsWidth} height={fsHeight} fill="white" />
                   
-                  <GridLines 
-                    margin={fsMargin}
-                    chartWidth={fsChartWidth}
-                    chartHeight={fsChartHeight}
-                    yScale={fsYScale}
-                    yTicks={yTicks}
-                  />
+                  <g aria-label="Grid lines for glucose values">
+                    <GridLines 
+                      margin={fsMargin}
+                      chartWidth={fsChartWidth}
+                      chartHeight={fsChartHeight}
+                      yScale={fsYScale}
+                      yTicks={yTicks}
+                    />
+                  </g>
 
-                  <line
-                    x1={fsXScale(6 * 60)}
-                    y1={fsMargin.top}
-                    x2={fsXScale(6 * 60)}
-                    y2={fsMargin.top + fsChartHeight}
-                    stroke="var(--color-gray-mid)"
-                    strokeWidth="2"
-                    strokeDasharray="8,4"
-                    opacity="0.6"
-                  />
+                  <g aria-label="Night period end marker at 6 AM">
+                    <line
+                      x1={fsXScale(6 * 60)}
+                      y1={fsMargin.top}
+                      x2={fsXScale(6 * 60)}
+                      y2={fsMargin.top + fsChartHeight}
+                      stroke="var(--color-gray-mid)"
+                      strokeWidth="2"
+                      strokeDasharray="8,4"
+                      opacity="0.6"
+                    />
+                  </g>
 
-                  <TargetLines 
-                    margin={fsMargin}
-                    chartWidth={fsChartWidth}
-                    yScale={fsYScale}
-                  />
+                  <g aria-label="Clinical target glucose ranges: 54 mg/dL (critical low), 70-180 mg/dL (target range), 250 mg/dL (critical high)">
+                    <TargetLines 
+                      margin={fsMargin}
+                      chartWidth={fsChartWidth}
+                      yScale={fsYScale}
+                    />
+                  </g>
 
-                  <path
-                    d={fsPaths.band_5_95}
-                    fill="var(--color-agp-p5-95)"
-                    opacity="0.8"
-                  />
+                  <g aria-label="5th to 95th percentile range - shows variation in glucose levels">
+                    <path
+                      d={fsPaths.band_5_95}
+                      fill="var(--color-agp-p5-95)"
+                      opacity="0.8"
+                    />
+                  </g>
                   
-                  <path
-                    d={fsPaths.band_25_75}
-                    fill="var(--color-agp-p25-75)"
-                    opacity="0.8"
-                  />
+                  <g aria-label="25th to 75th percentile range - interquartile range showing typical glucose values">
+                    <path
+                      d={fsPaths.band_25_75}
+                      fill="var(--color-agp-p25-75)"
+                      opacity="0.8"
+                    />
+                  </g>
 
-                  <path
-                    d={fsPaths.median}
-                    fill="none"
-                    stroke="var(--color-agp-median)"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
+                  <g aria-label="Median glucose line - typical glucose value at each time of day">
+                    <path
+                      d={fsPaths.median}
+                      fill="none"
+                      stroke="var(--color-agp-median)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </g>
 
                   {fsComparisonPath && (
-                    <path
-                      d={fsComparisonPath}
-                      fill="none"
-                      stroke="var(--text-tertiary)"
-                      strokeWidth="2.5"
-                      strokeDasharray="6,4"
-                      opacity="0.9"
-                    />
+                    <g aria-label="Previous period comparison - dashed line">
+                      <path
+                        d={fsComparisonPath}
+                        fill="none"
+                        stroke="var(--text-tertiary)"
+                        strokeWidth="2.5"
+                        strokeDasharray="6,4"
+                        opacity="0.9"
+                      />
+                    </g>
                   )}
 
-                  <EventMarkers 
-                    events={events}
-                    xScale={fsXScale}
-                    yScale={fsYScale}
-                    chartHeight={fsChartHeight}
-                    margin={fsMargin}
-                  />
+                  <g aria-label={`Glucose events: ${events.hypoEpisodes?.events?.length || 0} hypoglycemia episodes, ${events.hyper?.events?.length || 0} hyperglycemia episodes`}>
+                    <EventMarkers 
+                      events={events}
+                      xScale={fsXScale}
+                      yScale={fsYScale}
+                      chartHeight={fsChartHeight}
+                      margin={fsMargin}
+                    />
+                  </g>
 
-                  <XAxis 
-                    margin={fsMargin}
-                    chartWidth={fsChartWidth}
-                    chartHeight={fsChartHeight}
-                  />
-                  <YAxis 
-                    margin={fsMargin}
-                    chartHeight={fsChartHeight}
-                    yScale={fsYScale}
-                    yTicks={yTicks}
-                  />
+                  <g aria-label="Time axis - 24 hour format from midnight to midnight">
+                    <XAxis 
+                      margin={fsMargin}
+                      chartWidth={fsChartWidth}
+                      chartHeight={fsChartHeight}
+                    />
+                  </g>
+                  <g aria-label={`Glucose axis - range from ${yMin} to ${yMax} mg/dL with clinical targets at 70 and 180`}>
+                    <YAxis 
+                      margin={fsMargin}
+                      chartHeight={fsChartHeight}
+                      yScale={fsYScale}
+                      yTicks={yTicks}
+                    />
+                  </g>
                 </svg>
               </div>
             </div>

@@ -20,22 +20,43 @@ export default function DayProfileCard({ profile }) {
   // TDD display logic
   const showTDD = tdd && tdd.tdd > 0;
 
+  // Accessible summary with more detail
+  const accessibleSummary = `Daily glucose profile for ${dayOfWeek}, ${profile.dateObj.toLocaleDateString('nl-NL')}. 
+    Time in range: ${metrics.tirPercentage?.toFixed(0) || 'N/A'} percent of the day between 70 and 180 mg per deciliter. 
+    Mean glucose: ${metrics.mean?.toFixed(0) || 'N/A'} mg per deciliter with standard deviation of ${metrics.sd?.toFixed(0) || 'N/A'}. 
+    Coefficient of variation: ${metrics.cv?.toFixed(1) || 'N/A'} percent. 
+    MAGE glycemic excursion: ${metrics.mage?.toFixed(0) || 'N/A'} mg per deciliter. 
+    ${events.hypoEpisodes?.events?.length || 0} low glucose episodes detected. 
+    ${sensorChanges?.length || 0} sensor changes and ${cartridgeChanges?.length || 0} insulin cartridge changes on this day.
+    ${badges.length > 0 ? `Special markers: ${badges.map(b => b.label).join(', ')}.` : ''}
+    ${readingCount || 0} total glucose readings recorded.
+    ${isWorkday ? 'This was a workday.' : 'This was not a workday.'}`;
+
   return (
     <div
       className="day-profile-card"
+      role="article"
+      aria-label={`Glucose profile for ${dayOfWeek}, ${date}`}
       style={{
         border: '3px solid var(--color-black)',
         backgroundColor: 'var(--color-white)',
         padding: 0,
         display: 'grid',
         gridTemplateColumns: '1fr auto',
-        gridTemplateRows: showTDD ? 'auto auto 1fr auto' : 'auto 1fr auto', // âœ¨ NEW: 4 rows if TDD available
+        gridTemplateRows: showTDD ? 'auto auto 1fr auto' : 'auto 1fr auto',
         gap: 0,
         minHeight: '400px'
       }}
     >
+      {/* Screen reader summary */}
+      <div className="sr-only">
+        {accessibleSummary}
+      </div>
+
       {/* Header - Date + Badges (spans full width) */}
       <div
+        role="banner"
+        aria-label={`Header: ${dayOfWeek}, ${date}`}
         style={{
           gridColumn: '1 / -1',
           borderBottom: '3px solid var(--color-black)',
@@ -376,32 +397,59 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
     .join(' ');
 
   return (
-    <svg width="100%" height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+    <svg 
+      width="100%" 
+      height={svgHeight} 
+      viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+      role="img"
+      aria-labelledby="day-curve-title"
+      aria-describedby="day-curve-desc"
+    >
+      {/* Accessible title */}
+      <title id="day-curve-title">24-hour glucose curve</title>
+      
+      {/* Accessible description */}
+      <desc id="day-curve-desc">
+        24-hour continuous glucose monitoring curve with {validPoints.length} data points recorded throughout the day. 
+        The chart displays glucose levels from {yMin.toFixed(0)} to {yMax.toFixed(0)} mg per deciliter. 
+        Clinical target range of 70 to 180 mg per deciliter is highlighted with a gray background band. 
+        {outlierLow.length > 0 ? `${outlierLow.length} readings below the chart range. ` : ''}
+        {outlierHigh.length > 0 ? `${outlierHigh.length} readings above the chart range. ` : ''}
+        The curve shows {pathSegments.length} continuous segments, indicating {pathSegments.length > 1 ? 'some gaps in glucose monitoring data' : 'continuous monitoring throughout the day'}.
+        {sensorChanges?.length > 0 ? ` ${sensorChanges.length} sensor changes marked with blue vertical lines. ` : ''}
+        {cartridgeChanges?.length > 0 ? ` ${cartridgeChanges.length} insulin cartridge changes marked with orange dashed lines. ` : ''}
+        {events?.hypoEpisodes?.events?.length > 0 ? ` ${events.hypoEpisodes.events.length} low glucose episodes marked with red triangles. ` : ''}
+      </desc>
+
       {/* Target zone (brutalist grey band) - only if fully visible */}
       {showTargetZone && (
-        <rect
-          x={padding.left}
-          y={padding.top + targetLow}
-          width={chartWidth}
-          height={targetHeight}
-          fill="#E0E0E0"
-          opacity={1}
-        />
+        <g aria-label="Target glucose range 70-180 mg/dL highlighted in gray">
+          <rect
+            x={padding.left}
+            y={padding.top + targetLow}
+            width={chartWidth}
+            height={targetHeight}
+            fill="#E0E0E0"
+            opacity={1}
+          />
+        </g>
       )}
 
       {/* Grid lines - smart ticks with emphasis on clinical boundaries */}
-      {yTicks.map((value) => (
-        <line
-          key={value}
-          x1={padding.left}
-          y1={padding.top + yScale(value)}
-          x2={padding.left + chartWidth}
-          y2={padding.top + yScale(value)}
-          stroke={value === 70 || value === 180 ? "#999" : "#ddd"}
-          strokeWidth={value === 70 || value === 180 ? 1.5 : 1}
-          strokeDasharray={value === 70 || value === 180 ? "6,3" : "4,4"}
-        />
-      ))}
+      <g aria-label="Grid lines and glucose value markers">
+        {yTicks.map((value) => (
+          <line
+            key={value}
+            x1={padding.left}
+            y1={padding.top + yScale(value)}
+            x2={padding.left + chartWidth}
+            y2={padding.top + yScale(value)}
+            stroke={value === 70 || value === 180 ? "#999" : "#ddd"}
+            strokeWidth={value === 70 || value === 180 ? 1.5 : 1}
+            strokeDasharray={value === 70 || value === 180 ? "6,3" : "4,4"}
+          />
+        ))}
+      </g>
 
       {/* Y-axis labels - smart ticks */}
       {yTicks.map((value) => (
@@ -477,88 +525,104 @@ function GlucoseCurve24h({ curve, events, sensorChanges, cartridgeChanges, agpCu
       ))}
 
       {/* Glucose curve */}
-      <g transform={`translate(${padding.left}, ${padding.top})`}>
+      <g transform={`translate(${padding.left}, ${padding.top})`} aria-label="Glucose measurements throughout the day">
         {/* AGP median curve (dotted - reference from overall period) */}
         {agpCurve && agpCurve.length === 288 && (
-          <path
-            d={`M ${agpCurve.map((d, i) => `${xScale(i)},${yScale(d.p50)}`).join(' L ')}`}
-            fill="none"
-            stroke="#666"
-            strokeWidth={2}
-            strokeDasharray="8,4"
-            opacity={0.6}
-          />
+          <g aria-label="AGP reference curve - median glucose from entire period">
+            <path
+              d={`M ${agpCurve.map((d, i) => `${xScale(i)},${yScale(d.p50)}`).join(' L ')}`}
+              fill="none"
+              stroke="#666"
+              strokeWidth={2}
+              strokeDasharray="8,4"
+              opacity={0.6}
+            />
+          </g>
         )}
 
         {/* Daily glucose curve (solid black) */}
         {curvePath && (
-          <path d={curvePath} fill="none" stroke="var(--color-black)" strokeWidth={2} />
+          <g aria-label="Daily glucose curve - continuous measurements">
+            <path d={curvePath} fill="none" stroke="var(--color-black)" strokeWidth={2} />
+          </g>
         )}
 
         {/* Event markers - colored by severity */}
-        {events.hypoEpisodes?.events?.map((episode, i) => (
-          <circle
-            key={`hypo-${i}`}
-            cx={xScale((episode.minuteOfDay || 0) / 5)}
-            cy={yScale(episode.startGlucose || 60)}
-            r={6}
-            fill={episode.severity === 'severe' ? '#DC2626' : '#F59E0B'}
-            stroke="var(--color-black)"
-            strokeWidth={2}
-            title={`${episode.severity === 'severe' ? 'Severe' : 'Low'} episode (nadir: ${Math.round(episode.nadir)} mg/dL, ${episode.duration}min)`}
-          />
-        ))}
+        <g aria-label={`Hypoglycemia events: ${events.hypoEpisodes?.events?.length || 0} episodes`}>
+          {events.hypoEpisodes?.events?.map((episode, i) => (
+            <circle
+              key={`hypo-${i}`}
+              cx={xScale((episode.minuteOfDay || 0) / 5)}
+              cy={yScale(episode.startGlucose || 60)}
+              r={6}
+              fill={episode.severity === 'severe' ? '#DC2626' : '#F59E0B'}
+              stroke="var(--color-black)"
+              strokeWidth={2}
+              title={`${episode.severity === 'severe' ? 'Severe' : 'Low'} episode (nadir: ${Math.round(episode.nadir)} mg/dL, ${episode.duration}min)`}
+            />
+          ))}
+        </g>
 
-        {events.hyper.events.map((event, i) => (
-          <circle
-            key={`hyper-${i}`}
-            cx={xScale((event.minuteOfDay || 0) / 5)}
-            cy={yScale(event.startGlucose || 260)}
-            r={6}
-            fill="#EF4444"
-            stroke="var(--color-black)"
-            strokeWidth={2}
-          />
-        ))}
+        <g aria-label={`Hyperglycemia events: ${events.hyper.events.length} episodes`}>
+          {events.hyper.events.map((event, i) => (
+            <circle
+              key={`hyper-${i}`}
+              cx={xScale((event.minuteOfDay || 0) / 5)}
+              cy={yScale(event.startGlucose || 260)}
+              r={6}
+              fill="#EF4444"
+              stroke="var(--color-black)"
+              strokeWidth={2}
+            />
+          ))}
+        </g>
 
         {/* Sensor change marker - ONE red dashed line when sensor stops */}
-        {sensorChanges && sensorChanges.filter(c => c.type === 'start').map((change, i) => (
-          <g key={`sensor-start-${i}`}>
-            <line
-              x1={xScale(change.minuteOfDay / 5)}
-              y1={0}
-              x2={xScale(change.minuteOfDay / 5)}
-              y2={chartHeight}
-              stroke="var(--color-red)"
-              strokeWidth={2}
-              strokeDasharray="4,4"
-            />
-            <text
-              x={xScale(change.minuteOfDay / 5) + 5}
-              y={15}
-              fontSize="10"
-              fontFamily="Courier New, monospace"
-              fill="var(--color-red)"
-              fontWeight="bold"
-            >
-              SENSOR VERVANGEN
-            </text>
+        {sensorChanges && sensorChanges.filter(c => c.type === 'start').length > 0 && (
+          <g aria-label="Sensor change events">
+            {sensorChanges.filter(c => c.type === 'start').map((change, i) => (
+              <g key={`sensor-start-${i}`}>
+                <line
+                  x1={xScale(change.minuteOfDay / 5)}
+                  y1={0}
+                  x2={xScale(change.minuteOfDay / 5)}
+                  y2={chartHeight}
+                  stroke="var(--color-red)"
+                  strokeWidth={2}
+                  strokeDasharray="4,4"
+                />
+                <text
+                  x={xScale(change.minuteOfDay / 5) + 5}
+                  y={15}
+                  fontSize="10"
+                  fontFamily="Courier New, monospace"
+                  fill="var(--color-red)"
+                  fontWeight="bold"
+                >
+                  SENSOR VERVANGEN
+                </text>
+              </g>
+            ))}
           </g>
-        ))}
+        )}
         
         {/* Cartridge change markers */}
-        {cartridgeChanges?.map((change, i) => (
-          <line
-            key={`cartridge-${i}`}
-            x1={xScale(change.minuteOfDay / 5)}
-            y1={0}
-            x2={xScale(change.minuteOfDay / 5)}
-            y2={chartHeight}
-            stroke="#FF8C00"
-            strokeWidth={2}
-            strokeDasharray="2,2"
-          />
-        ))}
+        {cartridgeChanges && cartridgeChanges.length > 0 && (
+          <g aria-label="Cartridge change events">
+            {cartridgeChanges.map((change, i) => (
+              <line
+                key={`cartridge-${i}`}
+                x1={xScale(change.minuteOfDay / 5)}
+                y1={0}
+                x2={xScale(change.minuteOfDay / 5)}
+                y2={chartHeight}
+                stroke="#FF8C00"
+                strokeWidth={2}
+                strokeDasharray="2,2"
+              />
+            ))}
+          </g>
+        )}
       </g>
 
       {/* Legend */}

@@ -18,27 +18,42 @@ export default function TIRBar({ metrics }) {
   const tir = parseFloat(metrics.tir) || 0;
   const tar = parseFloat(metrics.tar) || 0;
   
+  // Screen reader summary
+  const accessibleSummary = `Time in Range distribution: ${tbr.toFixed(1)}% below range (under 70 mg/dL), ${tir.toFixed(1)}% in target range (70-180 mg/dL), ${tar.toFixed(1)}% above range (over 180 mg/dL). Target is at least 70% in range.`;
+  
   return (
     <div 
       className="card" 
+      role="region"
+      aria-labelledby="tir-bar-title"
       style={{ 
         padding: '1rem',
         marginBottom: '0'
       }}
     >
-      <h4 style={{
-        fontSize: '0.75rem',
-        fontWeight: 700,
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
-        marginBottom: '0.75rem',
-        color: 'var(--text-primary)'
-      }}>
+      <h4 
+        id="tir-bar-title"
+        style={{
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          marginBottom: '0.75rem',
+          color: 'var(--text-primary)'
+        }}
+      >
         Time in Range Distribution
       </h4>
       
+      {/* Screen reader summary */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {accessibleSummary}
+      </div>
+      
       {/* Single-line bar - GUARANTEED */}
       <div 
+        role="img"
+        aria-label="Time in Range bar chart"
         style={{
           display: 'flex',
           height: '36px',
@@ -52,6 +67,8 @@ export default function TIRBar({ metrics }) {
         {/* TBR - Soviet Red */}
         {tbr > 0 && (
           <div
+            role="img"
+            aria-label={`Time below range: ${tbr.toFixed(1)}% (below 70 mg/dL)`}
             style={{
               width: `${tbr}%`,
               background: 'var(--color-tbr)',
@@ -73,6 +90,8 @@ export default function TIRBar({ metrics }) {
         
         {/* TIR - Gray/White */}
         <div
+          role="img"
+          aria-label={`Time in range: ${tir.toFixed(1)}% (70-180 mg/dL, target is 70% or more)`}
           style={{
             width: `${tir}%`,
             background: 'var(--color-tir)',
@@ -94,6 +113,8 @@ export default function TIRBar({ metrics }) {
         {/* TAR - Yellow */}
         {tar > 0 && (
           <div
+            role="img"
+            aria-label={`Time above range: ${tar.toFixed(1)}% (above 180 mg/dL)`}
             style={{
               width: `${tar}%`,
               background: 'var(--color-tar)',
@@ -116,6 +137,8 @@ export default function TIRBar({ metrics }) {
       
       {/* Legend - Monospace, uppercase */}
       <div 
+        role="note"
+        aria-label="Legend: TBR is time below 70 mg/dL, TIR is time in range 70-180 mg/dL with target of 70% or more, TAR is time above 180 mg/dL"
         style={{
           display: 'flex',
           justifyContent: 'space-between',

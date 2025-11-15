@@ -2,6 +2,7 @@
  * DATABASE EXPORT UTILITIES
  * Export complete IndexedDB dataset as JSON
  * V3.8.0 - Database Export Phase
+ * V4.3.0 - Added export history tracking
  */
 
 import { getAllMonthBuckets } from './masterDatasetStorage';
@@ -115,8 +116,29 @@ export async function exportAndDownload() {
   try {
     const data = await exportMasterDataset();
     const filename = generateExportFilename();
+    
+    // Calculate file size
+    const jsonStr = JSON.stringify(data, null, 2);
+    const fileSize = new Blob([jsonStr]).size;
+    
     downloadJSON(data, filename);
-    return { success: true, filename, recordCount: data.totalReadings };
+    
+    // Track export in history
+    const { addExportEvent } = await import('./exportHistory');
+    addExportEvent({
+      filename,
+      type: 'database-json',
+      recordCount: data.totalReadings,
+      fileSize,
+      stats: {
+        months: data.months?.length || 0,
+        sensors: data.sensors?.length || 0,
+        workdays: data.workdays?.length || 0,
+        stockBatches: data.stockBatches?.length || 0
+      }
+    });
+    
+    return { success: true, filename, recordCount: data.totalReadings, fileSize };
   } catch (error) {
     console.error('[exportAndDownload] Failed:', error);
     return { success: false, error: error.message };

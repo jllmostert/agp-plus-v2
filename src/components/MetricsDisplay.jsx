@@ -54,12 +54,18 @@ export default function MetricsDisplay({ metrics, tddData }) {
   return (
     <>
       {/* HERO GRID - Golden Ratio Layout (1:1.61) */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1.61fr',
-        gap: '2rem',
-        marginBottom: '2rem'
-      }}>
+      <div 
+        role="region"
+        aria-labelledby="hero-metrics-title"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1.61fr',
+          gap: '2rem',
+          marginBottom: '2rem'
+        }}
+      >
+        {/* Screen reader title */}
+        <h3 id="hero-metrics-title" className="sr-only">Primary Glucose Metrics</h3>
         
         {/* LEFT ZONE - TIR + Mean (stacked) */}
         <div style={{
@@ -69,7 +75,10 @@ export default function MetricsDisplay({ metrics, tddData }) {
         }}>
           {/* TIR - Large card */}
           <div 
-            className="card-hero" 
+            className="card-hero"
+            role="article"
+            aria-labelledby="tir-card-title"
+            aria-describedby="tir-card-desc"
             style={{ 
               padding: '2rem',
               display: 'flex',
@@ -80,8 +89,10 @@ export default function MetricsDisplay({ metrics, tddData }) {
           >
             <Tooltip text={getMetricTooltip('tir')}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                <Activity style={{ width: '24px', height: '24px', color: 'var(--text-inverse)' }} />
-                <span style={{ 
+                <Activity style={{ width: '24px', height: '24px', color: 'var(--text-inverse)' }} aria-hidden="true" />
+                <span 
+                  id="tir-card-title"
+                  style={{ 
                   fontSize: '0.875rem', 
                   fontWeight: 700, 
                   letterSpacing: '0.1em',
@@ -102,7 +113,9 @@ export default function MetricsDisplay({ metrics, tddData }) {
               {safeFormat(metrics.tir, 1)}%
             </div>
             
-            <div style={{ 
+            <div 
+              id="tir-card-desc"
+              style={{ 
               fontSize: '0.75rem', 
               fontWeight: 600,
               letterSpacing: '0.05em',
@@ -211,15 +224,23 @@ export default function MetricsDisplay({ metrics, tddData }) {
       </div>
 
       {/* SECONDARY GRID - Detail Metrics (aligned grid layout) */}
-      <div style={{ 
+      <div 
+        role="region"
+        aria-labelledby="secondary-metrics-title"
+        style={{ 
         display: 'grid',
         gridTemplateColumns: '200px 1fr 1fr',
         gap: '1rem',
         alignItems: 'stretch'
       }}>
+        {/* Screen reader title */}
+        <h3 id="secondary-metrics-title" className="sr-only">Detailed Glucose Metrics</h3>
         
         {/* Variability Metrics */}
-        <div style={{ 
+        <div 
+          role="heading"
+          aria-level="4"
+          style={{ 
           display: 'flex',
           alignItems: 'center',
           fontSize: '0.875rem', 
@@ -318,6 +339,8 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
   return (
     <div 
       className="card"
+      role="article"
+      aria-label={`${label} metric: ${value}${unit}. ${subtitle || ''}`}
       style={{
         padding: compact ? '1rem' : '1.5rem',
         minHeight: compact ? '90px' : '180px',
@@ -329,7 +352,9 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
       {/* Icon + Label */}
       <Tooltip text={metricId ? getMetricTooltip(metricId) : ''}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: compact ? '0.5rem' : '1rem' }}>
-          <Icon style={{ 
+          <Icon 
+            aria-hidden="true"
+            style={{ 
             width: compact ? '16px' : '20px', 
             height: compact ? '16px' : '20px',
             color: status === 'danger' ? 'var(--color-red)' : 
@@ -395,6 +420,8 @@ function SecondaryMetricCard({ label, value, unit, subtitle, status = 'neutral',
 
   return (
     <div 
+      role="article"
+      aria-label={`${label} metric: ${value}${unit || ''}. ${subtitle || ''}`}
       style={{
         backgroundColor: 'var(--bg-card-dark)', // #1a1a1a - brutalist dark
         color: 'var(--color-white)',
