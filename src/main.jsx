@@ -4,6 +4,7 @@ import AGPGenerator from './components/AGPGenerator.jsx';
 // import { MigrationBanner } from './components/MigrationBanner.jsx'; // Disabled: v3.0 migration not ready yet
 import './styles/globals.css';
 import { APP_VERSION, APP_FULL_NAME } from './utils/version.js';
+import { DataProvider } from './contexts/DataContext.jsx';
 
 // Import tombstone store initialization
 import { 
@@ -63,10 +64,10 @@ const root = createRoot(rootElement);
 // Render application
 // Note: StrictMode temporarily disabled for debugging
 root.render(
-  <>
+  <DataProvider>
     {/* <MigrationBanner /> */}
     <AGPGenerator />
-  </>
+  </DataProvider>
 );
 
 /**
