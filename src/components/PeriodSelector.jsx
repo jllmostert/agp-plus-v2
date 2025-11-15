@@ -1,48 +1,46 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
+import { usePeriod } from '../hooks/usePeriod';
 
 /**
  * PeriodSelector - Date range selection component
  * 
  * Provides preset period buttons (14d, 30d, 90d) and custom date inputs
- * for flexible analysis period selection.
+ * for flexible analysis period selection. Now uses PeriodContext.
  * 
- * @param {Date} props.startDate - Currently selected start date
- * @param {Date} props.endDate - Currently selected end date
- * @param {Object} props.availableDates - { min: Date, max: Date } available date range from CSV
- * @param {Function} props.onChange - Callback when dates change: (startDate, endDate) => void
- * 
- * @version 2.1.0
+ * @version 3.0.0 - Converted to use PeriodContext
  */
-export default function PeriodSelector({ startDate, endDate, availableDates, onChange }) {
-  if (!availableDates) {
+export default function PeriodSelector() {
+  const { startDate, endDate, safeDateRange, updateDateRange } = usePeriod();
+  
+  if (!safeDateRange || !safeDateRange.max) {
     return null;
   }
 
   const handlePresetClick = (days) => {
-    const end = new Date(availableDates.max);
+    const end = new Date(safeDateRange.max);
     const start = new Date(end);
     start.setDate(start.getDate() - days + 1);
     
     // Ensure start is not before available data
-    const actualStart = start < availableDates.min ? availableDates.min : start;
+    const actualStart = start < safeDateRange.min ? safeDateRange.min : start;
     
-    onChange(actualStart, end);
+    updateDateRange(actualStart, end);
   };
 
   const handleCustomStartChange = (e) => {
     if (!endDate) return; // Need endDate to validate
     const newStart = new Date(e.target.value);
-    if (newStart <= endDate && newStart >= availableDates.min) {
-      onChange(newStart, endDate);
+    if (newStart <= endDate && newStart >= safeDateRange.min) {
+      updateDateRange(newStart, endDate);
     }
   };
 
   const handleCustomEndChange = (e) => {
     if (!startDate) return; // Need startDate to validate
     const newEnd = new Date(e.target.value);
-    if (newEnd >= startDate && newEnd <= availableDates.max) {
-      onChange(startDate, newEnd);
+    if (newEnd >= startDate && newEnd <= safeDateRange.max) {
+      updateDateRange(startDate, newEnd);
     }
   };
 
@@ -106,7 +104,7 @@ export default function PeriodSelector({ startDate, endDate, availableDates, onC
           <input
             type="date"
             value={formatDateForInput(startDate)}
-            min={formatDateForInput(availableDates.min)}
+            min={formatDateForInput(safeDateRange.min)}
             max={formatDateForInput(endDate)}
             onChange={handleCustomStartChange}
             className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-gray-100 text-sm
@@ -123,7 +121,7 @@ export default function PeriodSelector({ startDate, endDate, availableDates, onC
             type="date"
             value={formatDateForInput(endDate)}
             min={formatDateForInput(startDate)}
-            max={formatDateForInput(availableDates.max)}
+            max={formatDateForInput(safeDateRange.max)}
             onChange={handleCustomEndChange}
             className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-gray-100 text-sm
                        focus:outline-none focus:ring-1 focus:ring-blue-500"

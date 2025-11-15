@@ -21,6 +21,7 @@ import HypoglycemiaEvents from '../HypoglycemiaEvents';
 import DayNightSplit from '../DayNightSplit';
 import WorkdaySplit from '../WorkdaySplit';
 import ComparisonView from '../ComparisonView';
+import { usePeriod } from '../../hooks/usePeriod';
 
 const VisualizationContainer = React.memo(function VisualizationContainer({
   // Metrics data
@@ -30,15 +31,14 @@ const VisualizationContainer = React.memo(function VisualizationContainer({
   // TDD data
   tddData,
   
-  // Period info
-  startDate,
-  endDate,
-  
   // Feature toggles
   workdays,
   dayNightEnabled,
   onDayNightToggle
 }) {
+  // Get period state from context
+  const { startDate, endDate } = usePeriod();
+  
   if (!metricsResult) return null;
   
   return (

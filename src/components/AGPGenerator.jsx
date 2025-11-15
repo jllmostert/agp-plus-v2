@@ -4,16 +4,14 @@ import { debug } from '../utils/debug.js';
 import { APP_VERSION, APP_FULL_NAME } from '../utils/version.js';
 
 // Custom hooks
-import { useCSVData } from '../hooks/useCSVData';
 import { useMetrics } from '../hooks/useMetrics';
 import { useComparison } from '../hooks/useComparison';
-import { useUploadStorage } from '../hooks/useUploadStorage';
 import { useDayProfiles } from '../hooks/useDayProfiles';
-import { useMasterDataset } from '../hooks/useMasterDataset';
-import { useDataStatus } from '../hooks/useDataStatus';
 import { useModalState } from '../hooks/useModalState';
 import { usePanelNavigation } from '../hooks/usePanelNavigation';
 import { useImportExport } from '../hooks/useImportExport';
+import { useData } from '../hooks/useData';
+import { PeriodProvider, usePeriod } from '../contexts/PeriodContext.jsx';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
@@ -54,26 +52,37 @@ import DevToolsPanel from './panels/DevToolsPanel';
  * - Metrics calculation coordination
  * - Component composition and data flow
  */
-export default function AGPGenerator() {
+function AGPGeneratorContent() {
   // ============================================
-  // HOOKS: Data Management
+  // CONTEXT: Data Management (from DataContext)
   // ============================================
   
-  // V3: Master dataset (incremental storage)
-  const masterDataset = useMasterDataset();
-  
-  // Data status monitoring (green/yellow/red light)
-  const dataStatus = useDataStatus(masterDataset.allReadings);
+  const data = useData();
+  // Destructure commonly used values for convenience
+  const {
+    masterDataset,
+    dataStatus,
+    csvData,
+    dateRange,
+    activeReadings,
+    activeDateRange,
+    comparisonReadings,
+    fullDatasetRange,
+    uploadStorage,
+    tddByDay,
+    csvError,
+    v3UploadError,
+    isFilteringData,
+    useV3Mode,
+    loadCSV,
+    loadParsedData,
+    clearError,
+    refreshData
+  } = data;
   
   // Note: Sensors are managed by SensorHistoryPanel directly via useSensors hook
   
-  // V2: Legacy CSV uploads (fallback during transition)
-  const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
-  
-  // V3 Upload error state
-  const [v3UploadError, setV3UploadError] = useState(null);
-  
-  // Upload storage management
+  // Destructure uploadStorage for direct access (backward compat)
   const {
     savedUploads,
     activeUploadId,
@@ -86,14 +95,13 @@ export default function AGPGenerator() {
     deleteUpload,
     renameUpload,
     updateProTimeData
-  } = useUploadStorage();
+  } = uploadStorage;
 
   // ============================================
-  // STATE: Period Selection
+  // STATE: Period Selection (from PeriodContext)
   // ============================================
   
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const { startDate, endDate, safeDateRange: periodSafeDateRange, setStartDate, setEndDate } = usePeriod();
   
   // V3: Selected date range for master dataset filter
   const [selectedDateRange, setSelectedDateRange] = useState({
@@ -124,7 +132,7 @@ export default function AGPGenerator() {
   const [numDaysProfile, setNumDaysProfile] = useState(7); // Number of days to show in profiles (7 or 14)
   const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
-  const [tddByDay, setTddByDay] = useState(null); // TDD data by day (all days) from storage
+  // Note: tddByDay now comes from DataContext
 
   // Load patient info from storage
   useEffect(() => {
@@ -145,23 +153,7 @@ export default function AGPGenerator() {
     }
   }, [modals.patientInfoOpen]);
 
-  // Load TDD data from storage
-  useEffect(() => {
-    const loadTDD = async () => {
-      try {
-        const { loadTDDData } = await import('../storage/masterDatasetStorage');
-        const tdd = await loadTDDData();
-        if (tdd && tdd.tddByDay) {
-          // Store ALL daily TDD values, not just stats
-          // We'll calculate period-specific stats in useMemo below
-          setTddByDay(tdd.tddByDay);
-        }
-      } catch (err) {
-        console.error('Failed to load TDD data:', err);
-      }
-    };
-    loadTDD();
-  }, [activeUploadId]); // Reload when upload changes
+  // Note: TDD loading moved to DataContext
 
   // Load last import info
   useEffect(() => {
@@ -219,89 +211,17 @@ export default function AGPGenerator() {
     }
   }, [csvData, savedUploads]);
 
-  // ============================================
-  // CALCULATED DATA: Metrics & Comparison
-  // ============================================
-  
-  // V3: Dual-mode data source
-  // Use master dataset if available, otherwise fall back to v2 CSV uploads
-  const prevReadingsRef = useRef([]);
-  const prevV3ModeRef = useRef(false);
-  
-  // Determine mode: V3 if we have readings OR if we had V3 mode before (sticky during loads)
-  // ALWAYS use V3 for new uploads (Phase 4.0)
-  const hasV3Data = masterDataset.readings.length > 0;
-  const hadV3Mode = prevV3ModeRef.current;
-  const useV3Mode = true; // Force V3 mode for all new uploads
-  
-  // Update ref for next render
-  if (hasV3Data) {
-    prevV3ModeRef.current = true;
-  }
-  
-  // Keep previous readings during load to prevent crashes
-  const activeReadings = useMemo(() => {
-    // If we have new V3 data, use it
-    if (hasV3Data) {
-      prevReadingsRef.current = masterDataset.readings;
-      return masterDataset.readings;
-    }
-    
-    // If loading and we had V3 data before, keep showing old V3 data
-    if (masterDataset.isLoading && hadV3Mode && prevReadingsRef.current.length > 0) {
-      return prevReadingsRef.current;
-    }
-    
-    // Otherwise fall back to V2
-    const readings = csvData;
-    if (readings && readings.length > 0) {
-      prevReadingsRef.current = readings;
-    }
-    return readings;
-  }, [hasV3Data, masterDataset.readings, masterDataset.isLoading, hadV3Mode, csvData]);
-  
   // Load ProTime workdays from master dataset on init
   useEffect(() => {
     if (useV3Mode && masterDataset.stats?.workdays) {
       setWorkdays(masterDataset.stats.workdays);
     }
   }, [useV3Mode, masterDataset.stats?.workdays]);
-  
-  // Comparison needs FULL dataset (not filtered) to calculate previous periods
-  const comparisonReadings = useMemo(() => {
-    if (useV3Mode) {
-      // V3: Use unfiltered dataset
-      const allReadings = masterDataset.allReadings || [];
-      return allReadings;
-    }
-    // V2: Use current csvData (not filtered in V2)
-    return csvData;
-  }, [useV3Mode, masterDataset.allReadings, masterDataset.isLoading, csvData]);
-  
-  const activeDateRange = useV3Mode ? masterDataset.stats?.dateRange : dateRange;
-  
-  // V3: Show loading indicator during date range changes
-  const isFilteringData = masterDataset.isLoading && useV3Mode;
-  
-  // V3: Get FULL dataset range for comparison availability checks
-  // This is needed so useComparison can check historical data availability
-  const fullDatasetRange = useMemo(() => {
-    // Try V3 first
-    if (useV3Mode && masterDataset.stats?.dateRange) {
-      const { min, max } = masterDataset.stats.dateRange;
-      if (min && max) {
-        return {
-          min: new Date(min),
-          max: new Date(max)
-        };
-      }
-    }
-    // Fallback to V2 CSV dateRange (even if useV3Mode is true but no V3 data yet)
-    if (dateRange && dateRange.min && dateRange.max) {
-      return dateRange;
-    }
-    return null;
-  }, [useV3Mode, masterDataset.stats, dateRange]);
+
+  // ============================================
+  // CALCULATED DATA: Metrics & Comparison
+  // Note: activeReadings, comparisonReadings, fullDatasetRange now from DataContext
+  // ============================================
   
   // V3: Convert active filtered range for day profiles
   // This is the FILTERED range (e.g., "last 14 days"), not full dataset
@@ -1332,10 +1252,6 @@ export default function AGPGenerator() {
           
           {navigation.activePanel === 'import' && (
             <ImportPanel
-              csvData={csvData}
-              workdays={workdays}
-              csvError={csvError}
-              v3UploadError={v3UploadError}
               onCSVLoad={handleCSVLoad}
               onProTimeLoad={handleProTimeLoad}
               onProTimeDelete={handleProTimeDelete}
@@ -1433,10 +1349,6 @@ export default function AGPGenerator() {
           {/* IMPORT Expanded Content */}
           {dataImportExpanded && (
             <ImportPanel
-              csvData={csvData}
-              workdays={workdays}
-              csvError={csvError}
-              v3UploadError={v3UploadError}
               onCSVLoad={handleCSVLoad}
               onProTimeLoad={handleProTimeLoad}
               onProTimeDelete={handleProTimeDelete}
@@ -1477,8 +1389,6 @@ export default function AGPGenerator() {
             metricsResult={metricsResult}
             comparisonData={comparisonData}
             tddData={tddData}
-            startDate={startDate}
-            endDate={endDate}
             workdays={workdays}
             dayNightEnabled={dayNightEnabled}
             onDayNightToggle={handleDayNightToggle}
@@ -1733,6 +1643,22 @@ export default function AGPGenerator() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * AGPGenerator - Wrapper component that provides PeriodContext
+ * 
+ * Gets masterDataset from DataContext and wraps AGPGeneratorContent
+ * with PeriodProvider to manage period selection state.
+ */
+export default function AGPGenerator() {
+  const { masterDataset } = useData();
+  
+  return (
+    <PeriodProvider masterDataset={masterDataset}>
+      <AGPGeneratorContent />
+    </PeriodProvider>
   );
 }
 
