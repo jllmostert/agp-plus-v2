@@ -1,8 +1,44 @@
 # AGP+ PROGRESS - SESSION LOG
 
 **Version**: v4.3.0 → v4.4.0 (Sprint S1 complete!)  
-**Current Focus**: ✅ Sprint S1: Chart Accessibility DONE  
-**Last Update**: 2025-11-15 17:00  
+**Current Focus**: 🐛 Bugfix: Day profiles white screen  
+**Last Update**: 2025-11-15 17:15  
+
+---
+
+## 🐛 SESSION 34B - Bugfix: String .toFixed() Error (2025-11-15 17:10-17:15)
+
+**Status**: ✅ FIXED  
+**Duration**: 5 minutes  
+**Issue**: Day profiles showing white screen on open
+
+### Problem
+Opening day profiles modal caused a white screen crash:
+```
+TypeError: metrics.sd?.toFixed is not a function
+```
+
+**Root Cause**: In the accessibility improvements (Session 34), we used `.toFixed()` on metric values that are **strings** (`"45"`) instead of numbers (`45`). The optional chaining `?.` doesn't help because the property exists, it's just not a number.
+
+### Solution
+Wrapped all metric values in `Number()` before calling `.toFixed()`:
+```javascript
+// ❌ Before (crashes on strings)
+metrics.sd?.toFixed(0)
+
+// ✅ After (safe for strings and numbers)
+Number(metrics.sd)?.toFixed(0)
+```
+
+### Files Fixed
+- `src/components/DayProfileCard.jsx` - Fixed metrics.mean, metrics.sd, metrics.cv, metrics.mage, metrics.tirPercentage
+- `src/components/AGPChart.jsx` - Added Number() wrapper for safety on p50 values
+
+### Testing
+- ✅ Day profiles modal opens correctly
+- ✅ Accessible summaries work
+- ✅ No console errors
+- ✅ Charts render properly
 
 ---
 

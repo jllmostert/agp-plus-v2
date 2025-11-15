@@ -168,10 +168,10 @@ export default function AGPChart({
     
     return `Ambulatory Glucose Profile: Interactive chart showing 24-hour glucose patterns aggregated from multiple days. 
       Overall median glucose: ${overallMedian} mg per deciliter. 
-      Key time points - Midnight: ${midnight?.p50?.toFixed(0) || 'N/A'}, 
-      6 AM: ${morning?.p50?.toFixed(0) || 'N/A'}, 
-      Noon: ${noon?.p50?.toFixed(0) || 'N/A'}, 
-      6 PM: ${evening?.p50?.toFixed(0) || 'N/A'} mg per deciliter. 
+      Key time points - Midnight: ${Number(midnight?.p50)?.toFixed(0) || 'N/A'}, 
+      6 AM: ${Number(morning?.p50)?.toFixed(0) || 'N/A'}, 
+      Noon: ${Number(noon?.p50)?.toFixed(0) || 'N/A'}, 
+      6 PM: ${Number(evening?.p50)?.toFixed(0) || 'N/A'} mg per deciliter. 
       The chart displays three percentile bands: 5th to 95th percentile in light gray showing full variation, 
       25th to 75th percentile in medium gray showing typical range, 
       and median line in black showing most common glucose value. 

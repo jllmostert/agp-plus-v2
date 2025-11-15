@@ -22,10 +22,10 @@ export default function DayProfileCard({ profile }) {
 
   // Accessible summary with more detail
   const accessibleSummary = `Daily glucose profile for ${dayOfWeek}, ${profile.dateObj.toLocaleDateString('nl-NL')}. 
-    Time in range: ${metrics.tirPercentage?.toFixed(0) || 'N/A'} percent of the day between 70 and 180 mg per deciliter. 
-    Mean glucose: ${metrics.mean?.toFixed(0) || 'N/A'} mg per deciliter with standard deviation of ${metrics.sd?.toFixed(0) || 'N/A'}. 
-    Coefficient of variation: ${metrics.cv?.toFixed(1) || 'N/A'} percent. 
-    MAGE glycemic excursion: ${metrics.mage?.toFixed(0) || 'N/A'} mg per deciliter. 
+    Time in range: ${Number(metrics.tirPercentage)?.toFixed(0) || 'N/A'} percent of the day between 70 and 180 mg per deciliter. 
+    Mean glucose: ${Number(metrics.mean)?.toFixed(0) || 'N/A'} mg per deciliter with standard deviation of ${Number(metrics.sd)?.toFixed(0) || 'N/A'}. 
+    Coefficient of variation: ${Number(metrics.cv)?.toFixed(1) || 'N/A'} percent. 
+    MAGE glycemic excursion: ${Number(metrics.mage)?.toFixed(0) || 'N/A'} mg per deciliter. 
     ${events.hypoEpisodes?.events?.length || 0} low glucose episodes detected. 
     ${sensorChanges?.length || 0} sensor changes and ${cartridgeChanges?.length || 0} insulin cartridge changes on this day.
     ${badges.length > 0 ? `Special markers: ${badges.map(b => b.label).join(', ')}.` : ''}
