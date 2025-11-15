@@ -13,13 +13,12 @@ import { useMasterDataset } from '../hooks/useMasterDataset';
 import { useDataStatus } from '../hooks/useDataStatus';
 import { useModalState } from '../hooks/useModalState';
 import { usePanelNavigation } from '../hooks/usePanelNavigation';
+import { useImportExport } from '../hooks/useImportExport';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
 import { downloadHTML } from '../core/html-exporter';
 import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
-import { exportAndDownload } from '../storage/export';
-import { importMasterDataset, validateImportFile } from '../storage/import';
 import { calculateTDDStatistics } from '../core/insulin-engine';
 
 // UI Components
@@ -116,28 +115,15 @@ export default function AGPGenerator() {
   // Panel navigation + keyboard shortcuts (extracted to custom hook)
   const navigation = usePanelNavigation();
   
+  // Import/Export orchestration (extracted to custom hook)
+  const importExport = useImportExport();
+  
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
   const [numDaysProfile, setNumDaysProfile] = useState(7); // Number of days to show in profiles (7 or 14)
   const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
   const [tddByDay, setTddByDay] = useState(null); // TDD data by day (all days) from storage
-  
-  // Import state (will be extracted in Session 3)
-  const [importValidation, setImportValidation] = useState(null);
-  const [isValidating, setIsValidating] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [pendingImportFile, setPendingImportFile] = useState(null);
-  const [importMergeStrategy, setImportMergeStrategy] = useState('append'); // 'append' or 'replace'
-  const [lastImportInfo, setLastImportInfo] = useState(null);
-  const [createBackupBeforeImport, setCreateBackupBeforeImport] = useState(true);
-  const [lastBackupFile, setLastBackupFile] = useState(null);
-  const [importProgress, setImportProgress] = useState({
-    stage: '',
-    current: 0,
-    total: 7,
-    percentage: 0
-  });
 
   // Load patient info from storage
   useEffect(() => {
@@ -887,6 +873,7 @@ export default function AGPGenerator() {
   /**
    * Handle database import from JSON file
    * Opens file picker, validates file, shows confirmation modal
+   * Now uses useImportExport hook
    */
   const handleDatabaseImport = async () => {
     // Create file input
@@ -899,24 +886,14 @@ export default function AGPGenerator() {
       if (!file) return;
       
       try {
-        // Start validation
-        setIsValidating(true);
+        // Open modal and start validation
         modals.setDataImportModalOpen(true);
         
-        // Validate file
-        const validation = await validateImportFile(file);
-        
-        setImportValidation(validation);
-        setIsValidating(false);
-        setPendingImportFile(file);
+        // Validate file using hook
+        await importExport.validateFile(file);
         
       } catch (err) {
         console.error('Validation failed:', err);
-        setImportValidation({
-          valid: false,
-          errors: [err.message]
-        });
-        setIsValidating(false);
       }
     };
     
@@ -925,125 +902,27 @@ export default function AGPGenerator() {
 
   /**
    * Confirm and execute import after validation
+   * Now uses useImportExport hook
    */
   const handleImportConfirm = async () => {
-    if (!pendingImportFile) return;
+    if (!importExport.pendingImportFile) return;
     
     try {
-      console.log('[AGPGenerator] Starting import...');
-      console.log('[AGPGenerator] Merge strategy:', importMergeStrategy);
-      console.log('[AGPGenerator] Create backup:', createBackupBeforeImport);
+      // Close modal
       modals.setDataImportModalOpen(false);
-      setIsImporting(true);
       
-      // Create backup before import if enabled
-      if (createBackupBeforeImport) {
-        console.log('[AGPGenerator] Creating backup before import...');
-        
-        try {
-          // Export current database
-          const { exportMasterDataset } = await import('../storage/export');
-          const backupData = await exportMasterDataset();
-          
-          // Generate backup filename
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-          const time = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
-          const backupFilename = `backup-before-import-${timestamp}-${time}.json`;
-          
-          // Download backup automatically
-          const blob = new Blob([JSON.stringify(backupData, null, 2)], { 
-            type: 'application/json' 
-          });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = backupFilename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-          
-          setLastBackupFile({ 
-            filename: backupFilename, 
-            timestamp: Date.now() 
-          });
-          
-          console.log('[AGPGenerator] Backup created:', backupFilename);
-          
-          // Small delay to ensure download starts
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-        } catch (backupError) {
-          console.error('[AGPGenerator] Backup creation failed:', backupError);
-          
-          // Ask user if they want to continue without backup
-          const continueWithoutBackup = confirm(
-            '⚠️ Backup Creation Failed\n\n' +
-            `Error: ${backupError.message}\n\n` +
-            'Do you want to continue importing without a backup?\n' +
-            '(Not recommended)'
-          );
-          
-          if (!continueWithoutBackup) {
-            throw new Error('Import cancelled: Backup creation failed');
-          }
-          
-          console.log('[AGPGenerator] User chose to continue without backup');
-        }
-      }
-      
-      // If replace mode, clear existing data first
-      if (importMergeStrategy === 'replace') {
-        console.log('[AGPGenerator] Replace mode: Clearing existing data...');
-        
-        // Clear glucose readings from IndexedDB
-        const { cleanupRecords } = await import('../storage/masterDatasetStorage');
-        await cleanupRecords({ type: 'all-in' }); // Clears readings, cartridges, ProTime
-        console.log('[AGPGenerator] Cleared glucose readings');
-        
-        // Clear sensors
-        const { clearAllSensors } = await import('../storage/sensorStorage');
-        await clearAllSensors();
-        console.log('[AGPGenerator] Cleared sensors');
-        
-        // Clear events (cartridges and sensor changes)
-        localStorage.removeItem('agp-device-events');
-        console.log('[AGPGenerator] Cleared device events');
-        
-        // Clear workdays
-        const { deleteProTimeData } = await import('../storage/masterDatasetStorage');
-        await deleteProTimeData();
-        console.log('[AGPGenerator] Cleared workdays');
-        
-        // Clear patient info
-        const { patientStorage } = await import('../utils/patientStorage');
-        await patientStorage.clear();
-        console.log('[AGPGenerator] Cleared patient info');
-        
-        // Clear stock management (batches and assignments)
-        localStorage.removeItem('agp-stock-batches');
-        localStorage.removeItem('agp-stock-assignments');
-        console.log('[AGPGenerator] Cleared stock data');
-        
-        console.log('[AGPGenerator] All existing data cleared');
-      }
-      
-      // Execute import with progress tracking
-      console.log('[AGPGenerator] Calling importMasterDataset...');
-      const result = await importMasterDataset(
-        pendingImportFile,
-        (progress) => {
-          console.log('[AGPGenerator] Import progress:', progress);
-          setImportProgress(progress);
-        }
-      );
-      console.log('[AGPGenerator] Import result:', result);
+      // Execute import using hook
+      const result = await importExport.executeImport();
       
       if (result.success) {
         // Show success message with stats
         const stats = result.stats;
-        const strategyText = importMergeStrategy === 'replace' ? '🔄 Strategy: Replace (cleared existing data)' : '➕ Strategy: Append (added to existing data)';
-        const backupText = lastBackupFile ? `\n💾 Backup: ${lastBackupFile.filename}` : '';
+        const strategyText = importExport.importMergeStrategy === 'replace' 
+          ? '🔄 Strategy: Replace (cleared existing data)' 
+          : '➕ Strategy: Append (added to existing data)';
+        const backupText = importExport.lastBackupFile 
+          ? `\n💾 Backup: ${importExport.lastBackupFile.filename}` 
+          : '';
         const message = `✅ Import Complete!\n\n` +
           `${strategyText}${backupText}\n\n` +
           `📊 Months: ${stats.monthsImported}\n` +
@@ -1065,10 +944,10 @@ export default function AGPGenerator() {
                             stats.stockBatchesImported + stats.stockAssignmentsImported;
         
         addImportEvent({
-          filename: pendingImportFile.name,
+          filename: importExport.pendingImportFile?.name || 'unknown',
           recordCount: totalRecords,
           duration: result.duration,
-          strategy: importMergeStrategy,
+          strategy: importExport.importMergeStrategy,
           stats: stats
         });
         console.log('[AGPGenerator] Import event tracked in history');
@@ -1100,12 +979,12 @@ export default function AGPGenerator() {
       console.error('Import failed:', err);
       
       // If we created a backup, offer to restore it
-      if (lastBackupFile) {
+      if (importExport.lastBackupFile) {
         const errorMessage = 
           `❌ Import Failed\n\n` +
           `Error: ${err.message}\n\n` +
           `🔄 A backup was created before import:\n` +
-          `${lastBackupFile.filename}\n\n` +
+          `${importExport.lastBackupFile.filename}\n\n` +
           `The backup file should be in your Downloads folder.\n` +
           `You can restore it by:\n` +
           `1. Close this message\n` +
@@ -1116,18 +995,6 @@ export default function AGPGenerator() {
       } else {
         alert(`❌ Import Failed:\n\n${err.message}`);
       }
-      
-    } finally {
-      // Clean up
-      setIsImporting(false);
-      setPendingImportFile(null);
-      setImportValidation(null);
-      setImportProgress({
-        stage: '',
-        current: 0,
-        total: 7,
-        percentage: 0
-      });
     }
   };
 
@@ -1495,7 +1362,7 @@ export default function AGPGenerator() {
                 }
               }}
               onExportDatabase={async () => {
-                const result = await exportAndDownload();
+                const result = await importExport.handleExport();
                 if (result.success) {
                   alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
                 } else {
@@ -1670,24 +1537,21 @@ export default function AGPGenerator() {
           isOpen={modals.dataImportModalOpen}
           onClose={() => {
             modals.setDataImportModalOpen(false);
-            setImportValidation(null);
-            setPendingImportFile(null);
-            setImportMergeStrategy('append'); // Reset to default on close
-            setLastBackupFile(null); // Clear backup info on close
+            importExport.resetState(); // Reset import state using hook
           }}
           onConfirm={handleImportConfirm}
-          validationResult={importValidation}
-          isValidating={isValidating}
-          mergeStrategy={importMergeStrategy}
-          onMergeStrategyChange={setImportMergeStrategy}
-          lastImport={lastImportInfo}
-          createBackup={createBackupBeforeImport}
-          onCreateBackupChange={setCreateBackupBeforeImport}
-          lastBackupFile={lastBackupFile}
+          validationResult={importExport.importValidation}
+          isValidating={importExport.isValidating}
+          mergeStrategy={importExport.importMergeStrategy}
+          onMergeStrategyChange={importExport.setImportMergeStrategy}
+          lastImport={importExport.lastImportInfo}
+          createBackup={importExport.createBackupBeforeImport}
+          onCreateBackupChange={importExport.setCreateBackupBeforeImport}
+          lastBackupFile={importExport.lastBackupFile}
         />
 
         {/* Import Progress Overlay */}
-        {isImporting && (
+        {importExport.isImporting && (
           <div style={{
             position: 'fixed',
             top: 0,
@@ -1727,7 +1591,7 @@ export default function AGPGenerator() {
                 color: 'var(--color-green)',
                 marginBottom: '1.5rem'
               }}>
-                {importProgress.percentage}%
+                {importExport.importProgress.percentage}%
               </div>
               
               {/* Progress Bar */}
@@ -1742,7 +1606,7 @@ export default function AGPGenerator() {
                 <div style={{
                   height: '100%',
                   background: 'var(--color-green)',
-                  width: `${importProgress.percentage}%`,
+                  width: `${importExport.importProgress.percentage}%`,
                   transition: 'width 0.3s ease'
                 }} />
               </div>
@@ -1754,11 +1618,11 @@ export default function AGPGenerator() {
                 color: 'var(--text-secondary)',
                 lineHeight: 1.6
               }}>
-                {importProgress.stage ? (
+                {importExport.importProgress.stage ? (
                   <>
-                    Importing {importProgress.stage}...
+                    Importing {importExport.importProgress.stage}...
                     <br />
-                    ({importProgress.current} of {importProgress.total})
+                    ({importExport.importProgress.current} of {importExport.importProgress.total})
                   </>
                 ) : (
                   'Preparing import...'
