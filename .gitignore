@@ -38,9 +38,10 @@ coverage/
 .cache/*.pdf
 
 # Test data exports (can be large)
-test-data/agp-master-*.json
-test-data/backup-*.json
-test-data/archive/exports/*.json
+test-data/*.json
+test-data/*.csv
+test-data/archive/**/*.json
+test-data/archive/**/*.csv
 
 # Experimental/WIP features (not ready for production)
 src/components/CloudSync.jsx
