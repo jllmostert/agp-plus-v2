@@ -6,6 +6,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.3.1 - Version Display & Export Timestamps] - 2025-11-16
+
+### 🐛 Bug Fixes & Improvements
+**Session 40**: Quick quality-of-life improvements
+
+#### Fixed: Version Display
+- ✅ Document title now updates dynamically from package.json version
+- ✅ Meta description updates automatically on page load
+- ✅ Fixed hardcoded v4.2.2 → v4.3.0 in index.html
+- ✅ Fixed noscript fallback version (was v3.8.0!)
+- 📍 Implementation: `main.jsx` calls `updateDocumentMeta()` before rendering
+
+#### Fixed: Export Filenames with Readable Timestamps
+- ✅ Master database export: `agp-master-2025-11-16_10-30-15.json` (was: `agp-master-1730000000.json`)
+- ✅ Sensor export: `agp-sensors-2025-11-16_10-30-15.json` (was: `agp-sensors-2025-11-16.json`)
+- ✅ Stock export: `agp-stock-2025-11-16_10-30-15.json` (was: `agp-stock-2025-11-16.json`)
+- 📍 Format: `YYYY-MM-DD_HH-MM-SS` for easy sorting and readability
+- 📍 Files modified:
+  - `storage/export.js` - `generateExportFilename()`
+  - `panels/SensorHistoryPanel.jsx` - `handleExport()`
+  - `panels/StockPanel.jsx` - `handleExport()`
+
+#### Impact
+- 🎨 Better user experience with accurate version display in browser tabs
+- 📁 Export files now have meaningful, sortable filenames
+- 🔧 Single source of truth for version (package.json)
+
+---
+
 ## [v4.3.0 - Phase 1 Refactoring Complete] - 2025-11-15
 
 ### 🎯 Session 32: useImportExport Hook (Phase 1 Complete!)
@@ -1277,3 +1306,129 @@ See `HANDOFF_PAUSE.md` for detailed pickup instructions
 
 ---
 
+
+---
+
+## [v4.3.1 - Phase 4: Legacy Cleanup Complete] - 2025-11-16
+
+### 🧹 Session 39: Legacy Code Removal & Architecture Cleanup
+**Duration**: ~120 minutes  
+**Commits**: [pending]
+
+#### Phase 4: Legacy Cleanup - COMPLETE! 🎉
+**Summary**: Removed all legacy collapsible UI code and completed migration to panel-based architecture. Deleted 524 lines of dead code across 6 files, including 2 completely unused components.
+
+#### Legacy Collapsible UI System Removed
+**Removed Components**:
+- 🗑️ DataLoadingContainer.jsx (~200 lines) - old collapsible button system
+- 🗑️ DayProfilesModal.jsx (~150 lines) - replaced by DayProfilesPanel
+
+**Removed State Management**:
+- 🗑️ `dataImportExpanded` state + setter
+- 🗑️ `dataExportExpanded` state + setter
+- 🗑️ `dayProfilesOpen` modal state + setter
+- 🗑️ Related useEffect (auto-expand logic)
+- 🗑️ Handler functions: `handleLoadSavedUpload` (36 lines), `handleDayProfilesOpen` (24 lines)
+
+**Removed Imports**:
+- 🗑️ `SavedUploadsList` - unused component
+- 🗑️ `FileUpload` - unused component  
+- 🗑️ `PeriodSelector` - unused component
+- 🗑️ `DataLoadingContainer` - deleted component
+- 🗑️ `DayProfilesModal` - deleted component
+
+**AGPGenerator.jsx Cleanup**:
+- 🗑️ Removed entire disabled `{false && (...)}` block (58 lines)
+- 🗑️ Removed DataLoadingContainer props and render (18 lines)
+- 🗑️ Removed DayProfiles modal props to ModalManager (5 lines)
+- 🗑️ Cleaned up period change handler (removed expand logic)
+- 🗑️ Removed load saved upload handler
+- 📉 **Net reduction: 147 lines** (1553 lines final)
+
+#### useModalState.js Cleanup
+- 🗑️ Removed `dayProfilesOpen` state
+- 🗑️ Removed `setDayProfilesOpen` setter
+- 🗑️ Updated `openModal` helper (removed dayProfiles key)
+- 🗑️ Updated `closeModal` helper (removed dayProfiles key)
+- 🗑️ Updated `closeAll` helper (removed setDayProfilesOpen call)
+- 📉 **Net reduction: 10 lines**
+
+#### ModalManager.jsx Cleanup
+- 🗑️ Removed DayProfilesModal import
+- 🗑️ Removed dayProfilesOpen props (4 props)
+- 🗑️ Removed DayProfilesModal render code (12 lines)
+- ✨ Updated JSDoc (7 → 6 modals)
+- 📉 **Net reduction: 17 lines**
+
+#### DayProfiles Toggle Feature Completed
+**DayProfilesPanel.jsx**:
+- ✨ Added 7d/14d toggle button in header
+- ✨ Dynamic title: "Laatste {numDays} dagen"
+- ✨ Button visual state (inverted colors when active)
+- ✨ Console logging for debugging
+
+**AGPGenerator.jsx**:
+- ✨ Connected `numDaysProfile` state to DayProfilesPanel
+- ✨ Connected `setNumDaysProfile` callback
+- ✨ State already existed (lifted for MetricsProvider)
+
+**Flow**:
+- User clicks toggle → `setNumDaysProfile(7|14)` → MetricsProvider updates → useDayProfiles re-runs with new numDays → Panel renders 7 or 14 cards
+
+#### Documentation Updates
+**New Files**:
+- ✨ **ARCHITECTURE_OVERVIEW.md** (398 lines)
+  - Complete app architecture guide
+  - Context API layers explained
+  - File structure with descriptions
+  - Data flow diagrams
+  - Storage architecture details
+  - UI architecture patterns
+  - Design decisions rationale
+  - Performance targets
+  - Future roadmap
+
+**Restored Files**:
+- ✨ **ARCHITECTURE_DEEP_DIVE.md** - moved from archive to active docs (critical sensor storage analysis)
+
+**Archived Files**:
+- 📦 Moved old handoffs to `/docs/handoffs/archive-2025-11/`
+  - SESSION_34_*.md (2 files)
+  - SESSION_35_*.md (1 file)
+  - SESSION_38_*.md (1 file)
+  - HANDOFF_SPRINT_S2.md
+  - SPRINT_S2_SUMMARY.md
+  - TRACK2_AUDIT.md
+
+#### Phase 4 Impact Summary
+**Total Lines Removed**: 524 lines
+- AGPGenerator.jsx: 147 lines
+- DataLoadingContainer.jsx: 200 lines (file deleted)
+- DayProfilesModal.jsx: 150 lines (file deleted)
+- useModalState.js: 10 lines
+- ModalManager.jsx: 17 lines
+
+**Components Deleted**: 2
+- DataLoadingContainer (unused legacy)
+- DayProfilesModal (replaced by panel)
+
+**State Variables Removed**: 3
+- dataImportExpanded
+- dataExportExpanded  
+- dayProfilesOpen
+
+**Architecture Benefits**:
+- ✅ Single UI paradigm (panels only, no collapsibles)
+- ✅ Cleaner state management (removed dual system)
+- ✅ Better code maintainability
+- ✅ Consistent navigation patterns
+- ✅ No dead code remaining
+
+#### Testing Completed
+- ✅ App loads without errors
+- ✅ All panels accessible (import, dagprofielen, sensoren, export, devtools)
+- ✅ 7d/14d toggle works in dagprofielen panel
+- ✅ No console errors
+- ✅ All existing features functional
+
+---

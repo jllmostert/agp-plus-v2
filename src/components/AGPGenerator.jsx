@@ -4,27 +4,19 @@ import { debug } from '../utils/debug.js';
 import { APP_VERSION, APP_FULL_NAME } from '../utils/version.js';
 
 // Custom hooks
-import { useCSVData } from '../hooks/useCSVData';
-import { useMetrics } from '../hooks/useMetrics';
-import { useComparison } from '../hooks/useComparison';
-import { useUploadStorage } from '../hooks/useUploadStorage';
-import { useDayProfiles } from '../hooks/useDayProfiles';
-import { useMasterDataset } from '../hooks/useMasterDataset';
-import { useDataStatus } from '../hooks/useDataStatus';
 import { useModalState } from '../hooks/useModalState';
 import { usePanelNavigation } from '../hooks/usePanelNavigation';
 import { useImportExport } from '../hooks/useImportExport';
+import { useData } from '../hooks/useData';
+import { PeriodProvider, usePeriod } from '../contexts/PeriodContext.jsx';
+import { MetricsProvider, useMetricsContext } from '../contexts/MetricsContext.jsx';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
 import { downloadHTML } from '../core/html-exporter';
 import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
-import { calculateTDDStatistics } from '../core/insulin-engine';
 
 // UI Components
-import FileUpload from './FileUpload';
-import PeriodSelector from './PeriodSelector';
-import SavedUploadsList from './SavedUploadsList';
 import { MigrationBanner } from './MigrationBanner';
 import DataImportModal from './DataImportModal';
 import HeaderBar from './HeaderBar';
@@ -32,7 +24,6 @@ import KeyboardHelp from './KeyboardHelp';
 
 // Container Components
 import ModalManager from './containers/ModalManager';
-import DataLoadingContainer from './containers/DataLoadingContainer';
 import VisualizationContainer from './containers/VisualizationContainer';
 import { DateRangeFilter } from './DateRangeFilter';
 
@@ -54,26 +45,43 @@ import DevToolsPanel from './panels/DevToolsPanel';
  * - Metrics calculation coordination
  * - Component composition and data flow
  */
-export default function AGPGenerator() {
+function AGPGeneratorContent({ 
+  workdays, 
+  setWorkdays, 
+  numDaysProfile, 
+  setNumDaysProfile 
+}) {
   // ============================================
-  // HOOKS: Data Management
+  // CONTEXT: Data Management (from DataContext)
   // ============================================
   
-  // V3: Master dataset (incremental storage)
-  const masterDataset = useMasterDataset();
-  
-  // Data status monitoring (green/yellow/red light)
-  const dataStatus = useDataStatus(masterDataset.allReadings);
+  const data = useData();
+  // Destructure commonly used values for convenience
+  const {
+    masterDataset,
+    dataStatus,
+    csvData,
+    dateRange,
+    activeReadings,
+    activeDateRange,
+    comparisonReadings,
+    fullDatasetRange,
+    uploadStorage,
+    tddByDay,
+    csvError,
+    v3UploadError,
+    setV3UploadError,
+    isFilteringData,
+    useV3Mode,
+    loadCSV,
+    loadParsedData,
+    clearError,
+    refreshData
+  } = data;
   
   // Note: Sensors are managed by SensorHistoryPanel directly via useSensors hook
   
-  // V2: Legacy CSV uploads (fallback during transition)
-  const { csvData, dateRange, loadCSV, loadParsedData, error: csvError } = useCSVData();
-  
-  // V3 Upload error state
-  const [v3UploadError, setV3UploadError] = useState(null);
-  
-  // Upload storage management
+  // Destructure uploadStorage for direct access (backward compat)
   const {
     savedUploads,
     activeUploadId,
@@ -86,14 +94,13 @@ export default function AGPGenerator() {
     deleteUpload,
     renameUpload,
     updateProTimeData
-  } = useUploadStorage();
+  } = uploadStorage;
 
   // ============================================
-  // STATE: Period Selection
+  // STATE: Period Selection (from PeriodContext)
   // ============================================
   
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const { startDate, endDate, safeDateRange: periodSafeDateRange, setStartDate, setEndDate } = usePeriod();
   
   // V3: Selected date range for master dataset filter
   const [selectedDateRange, setSelectedDateRange] = useState({
@@ -103,12 +110,11 @@ export default function AGPGenerator() {
 
   // ============================================
   // STATE: Optional Features
+  // Note: workdays and numDaysProfile are now passed as props
   // ============================================
   
-  const [workdays, setWorkdays] = useState(null); // Set of workday date strings
   const [dayNightEnabled, setDayNightEnabled] = useState(false);
-  const [dataImportExpanded, setDataImportExpanded] = useState(false); // Collapsible data import (closed by default)
-  const [dataExportExpanded, setDataExportExpanded] = useState(false); // Collapsible data export (closed by default)
+  // Legacy collapsible sections removed - now using panel architecture
   
   // Modal state management (extracted to custom hook)
   const modals = useModalState();
@@ -121,10 +127,9 @@ export default function AGPGenerator() {
   
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
-  const [numDaysProfile, setNumDaysProfile] = useState(7); // Number of days to show in profiles (7 or 14)
   const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
-  const [tddByDay, setTddByDay] = useState(null); // TDD data by day (all days) from storage
+  // Note: tddByDay now comes from DataContext
 
   // Load patient info from storage
   useEffect(() => {
@@ -145,37 +150,8 @@ export default function AGPGenerator() {
     }
   }, [modals.patientInfoOpen]);
 
-  // Load TDD data from storage
-  useEffect(() => {
-    const loadTDD = async () => {
-      try {
-        const { loadTDDData } = await import('../storage/masterDatasetStorage');
-        const tdd = await loadTDDData();
-        if (tdd && tdd.tddByDay) {
-          // Store ALL daily TDD values, not just stats
-          // We'll calculate period-specific stats in useMemo below
-          setTddByDay(tdd.tddByDay);
-        }
-      } catch (err) {
-        console.error('Failed to load TDD data:', err);
-      }
-    };
-    loadTDD();
-  }, [activeUploadId]); // Reload when upload changes
-
-  // Load last import info
-  useEffect(() => {
-    const loadLastImport = async () => {
-      try {
-        const { getLastImport } = await import('../storage/importHistory');
-        const lastImport = getLastImport();
-        setLastImportInfo(lastImport);
-      } catch (err) {
-        console.error('Failed to load import history:', err);
-      }
-    };
-    loadLastImport();
-  }, [modals.dataImportModalOpen]); // Reload when modal opens/closes
+  // Note: TDD loading moved to DataContext
+  // Note: Import history loading moved to useImportExport hook
   
   /**
    * Auto-select last 14 days when data becomes ready (green light)
@@ -209,99 +185,20 @@ export default function AGPGenerator() {
     }
   }, [dataStatus.lightColor, dataStatus.dateRange, startDate, endDate]);
 
-  /**
-   * Auto-expand import section if no data loaded but saved uploads exist
-   * This ensures user can always access their saved data on app startup
-   */
-  useEffect(() => {
-    if (!csvData && savedUploads.length > 0) {
-      setDataImportExpanded(true);
-    }
-  }, [csvData, savedUploads]);
-
-  // ============================================
-  // CALCULATED DATA: Metrics & Comparison
-  // ============================================
-  
-  // V3: Dual-mode data source
-  // Use master dataset if available, otherwise fall back to v2 CSV uploads
-  const prevReadingsRef = useRef([]);
-  const prevV3ModeRef = useRef(false);
-  
-  // Determine mode: V3 if we have readings OR if we had V3 mode before (sticky during loads)
-  // ALWAYS use V3 for new uploads (Phase 4.0)
-  const hasV3Data = masterDataset.readings.length > 0;
-  const hadV3Mode = prevV3ModeRef.current;
-  const useV3Mode = true; // Force V3 mode for all new uploads
-  
-  // Update ref for next render
-  if (hasV3Data) {
-    prevV3ModeRef.current = true;
-  }
-  
-  // Keep previous readings during load to prevent crashes
-  const activeReadings = useMemo(() => {
-    // If we have new V3 data, use it
-    if (hasV3Data) {
-      prevReadingsRef.current = masterDataset.readings;
-      return masterDataset.readings;
-    }
-    
-    // If loading and we had V3 data before, keep showing old V3 data
-    if (masterDataset.isLoading && hadV3Mode && prevReadingsRef.current.length > 0) {
-      return prevReadingsRef.current;
-    }
-    
-    // Otherwise fall back to V2
-    const readings = csvData;
-    if (readings && readings.length > 0) {
-      prevReadingsRef.current = readings;
-    }
-    return readings;
-  }, [hasV3Data, masterDataset.readings, masterDataset.isLoading, hadV3Mode, csvData]);
-  
   // Load ProTime workdays from master dataset on init
   useEffect(() => {
     if (useV3Mode && masterDataset.stats?.workdays) {
       setWorkdays(masterDataset.stats.workdays);
     }
   }, [useV3Mode, masterDataset.stats?.workdays]);
+
+  // ============================================
+  // CALCULATED DATA: Metrics & Comparison
+  // Note: Now provided by MetricsContext
+  // ============================================
   
-  // Comparison needs FULL dataset (not filtered) to calculate previous periods
-  const comparisonReadings = useMemo(() => {
-    if (useV3Mode) {
-      // V3: Use unfiltered dataset
-      const allReadings = masterDataset.allReadings || [];
-      return allReadings;
-    }
-    // V2: Use current csvData (not filtered in V2)
-    return csvData;
-  }, [useV3Mode, masterDataset.allReadings, masterDataset.isLoading, csvData]);
-  
-  const activeDateRange = useV3Mode ? masterDataset.stats?.dateRange : dateRange;
-  
-  // V3: Show loading indicator during date range changes
-  const isFilteringData = masterDataset.isLoading && useV3Mode;
-  
-  // V3: Get FULL dataset range for comparison availability checks
-  // This is needed so useComparison can check historical data availability
-  const fullDatasetRange = useMemo(() => {
-    // Try V3 first
-    if (useV3Mode && masterDataset.stats?.dateRange) {
-      const { min, max } = masterDataset.stats.dateRange;
-      if (min && max) {
-        return {
-          min: new Date(min),
-          max: new Date(max)
-        };
-      }
-    }
-    // Fallback to V2 CSV dateRange (even if useV3Mode is true but no V3 data yet)
-    if (dateRange && dateRange.min && dateRange.max) {
-      return dateRange;
-    }
-    return null;
-  }, [useV3Mode, masterDataset.stats, dateRange]);
+  // Get all metrics from context (calculated in MetricsProvider)
+  const { metricsResult, comparisonData, dayProfiles, tddData } = useMetricsContext();
   
   // V3: Convert active filtered range for day profiles
   // This is the FILTERED range (e.g., "last 14 days"), not full dataset
@@ -330,65 +227,6 @@ export default function AGPGenerator() {
     }
     return fullDatasetRange; // Fallback to full range
   }, [useV3Mode, activeDateRange, fullDatasetRange]);
-  
-  // Calculate metrics for current period
-  const metricsResult = useMetrics(activeReadings, startDate, endDate, workdays);
-  
-  // Calculate TDD statistics for selected period (not entire dataset)
-  const tddData = useMemo(() => {
-    if (!tddByDay || !startDate || !endDate) {
-      return null;
-    }
-    
-    try {
-      // Format dates to YYYY/MM/DD for matching with tddByDay keys
-      const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}/${month}/${day}`;
-      };
-      
-      const startStr = formatDate(startDate);
-      const endStr = formatDate(endDate);
-      
-      // Filter tddByDay to only include dates within selected period
-      const periodTddByDay = Object.fromEntries(
-        Object.entries(tddByDay).filter(([date, _]) => date >= startStr && date <= endStr)
-      );
-      
-      if (Object.keys(periodTddByDay).length === 0) {
-        return null;
-      }
-      
-      // Calculate statistics for the filtered period using imported function
-      return calculateTDDStatistics(periodTddByDay);
-    } catch (err) {
-      console.error('[AGPGenerator] Failed to calculate period TDD:', err);
-      return null;
-    }
-  }, [tddByDay, startDate, endDate]);
-  
-  // Debug: Check if AGP data exists
-  if (metricsResult && activeReadings && activeReadings.length > 0) {
-  }
-  
-  // Auto-calculate comparison for preset periods
-  // CRITICAL: Use comparisonReadings (full dataset) not activeReadings (filtered)
-  // This ensures previous period data is available for comparison calculations
-  const comparisonData = useComparison(comparisonReadings, startDate, endDate, fullDatasetRange);
-  
-  // Generate day profiles using custom hook (replaces manual generation)
-  const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult, numDaysProfile);
-  
-  // Debug: Check day profiles
-  if (dayProfiles && dayProfiles.length > 0) {
-    const profile = dayProfiles[0];
-    
-    // Also log a sample reading to verify rewind field
-    if (activeReadings && activeReadings.length > 0) {
-    }
-  }
 
   // ============================================
   // EVENT HANDLERS: Date Range Filter (V3)
@@ -670,15 +508,10 @@ export default function AGPGenerator() {
 
   /**
    * Handle period selection change
-   * Collapse import section when user actively changes period
    */
   const handlePeriodChange = (newStartDate, newEndDate) => {
     setStartDate(newStartDate);
     setEndDate(newEndDate);
-    
-    // User is actively choosing a period = ready to analyze
-    // Collapse import section to maximize space for metrics
-    setDataImportExpanded(false);
   };
 
   /**
@@ -689,9 +522,9 @@ export default function AGPGenerator() {
   };
 
   /**
-   * Handle HTML export
+   * Handle HTML export (async to track export history)
    */
-  const handleExportHTML = () => {
+  const handleExportHTML = async () => {
     if (!metricsResult || !startDate || !endDate) return;
     
     // Format dates to YYYY/MM/DD
@@ -702,33 +535,42 @@ export default function AGPGenerator() {
       return `${year}/${month}/${day}`;
     };
     
-    downloadHTML({
-      metrics: metricsResult.metrics,
-      agpData: metricsResult.agp,
-      events: metricsResult.events,
-      tddData: tddData, // Add TDD statistics
-      startDate: formatDate(startDate),
-      endDate: formatDate(endDate),
-      // ALWAYS include day/night metrics in export (independent of UI toggle)
-      dayNightMetrics: {
-        day: metricsResult.dayMetrics,
-        night: metricsResult.nightMetrics
-      },
-      workdaySplit: workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics ? {
-        workday: metricsResult.workdayMetrics,
-        restday: metricsResult.restdayMetrics,
-        workdayCount: metricsResult.workdayMetrics.days,
-        restdayCount: metricsResult.restdayMetrics.days
-      } : null,
-      comparison: comparisonData ? {
-        current: metricsResult.metrics,
-        previous: comparisonData.comparison,
-        comparisonAGP: comparisonData.comparisonAGP,
-        prevStart: formatDate(new Date(comparisonData.prevStart)),
-        prevEnd: formatDate(new Date(comparisonData.prevEnd))
-      } : null,
-      patientInfo: patientInfo // Add patient info to export
-    });
+    try {
+      const result = await downloadHTML({
+        metrics: metricsResult.metrics,
+        agpData: metricsResult.agp,
+        events: metricsResult.events,
+        tddData: tddData, // Add TDD statistics
+        startDate: formatDate(startDate),
+        endDate: formatDate(endDate),
+        // ALWAYS include day/night metrics in export (independent of UI toggle)
+        dayNightMetrics: {
+          day: metricsResult.dayMetrics,
+          night: metricsResult.nightMetrics
+        },
+        workdaySplit: workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics ? {
+          workday: metricsResult.workdayMetrics,
+          restday: metricsResult.restdayMetrics,
+          workdayCount: metricsResult.workdayMetrics.days,
+          restdayCount: metricsResult.restdayMetrics.days
+        } : null,
+        comparison: comparisonData ? {
+          current: metricsResult.metrics,
+          previous: comparisonData.comparison,
+          comparisonAGP: comparisonData.comparisonAGP,
+          prevStart: formatDate(new Date(comparisonData.prevStart)),
+          prevEnd: formatDate(new Date(comparisonData.prevEnd))
+        } : null,
+        patientInfo: patientInfo // Add patient info to export
+      });
+      
+      if (result.success) {
+        console.log(`[AGPGenerator] AGP HTML exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
+      }
+    } catch (error) {
+      console.error('[AGPGenerator] Error exporting AGP HTML:', error);
+      alert('Export failed. Check console for details.');
+    }
   };
 
   // ============================================
@@ -754,69 +596,6 @@ export default function AGPGenerator() {
     } catch (err) {
       alert(`Failed to save: ${err.message}`);
     }
-  };
-
-  /**
-   * Load saved upload (async!)
-   */
-  const handleLoadSavedUpload = async (id) => {
-    try {
-      const upload = await loadUpload(id);
-      if (!upload) return;
-
-      // Load CSV data (already parsed, skip parsing)
-      loadParsedData(upload.csvData, upload.dateRange);
-
-      // Load ProTime data if present
-      if (upload.proTimeData) {
-        setWorkdays(upload.proTimeData);
-      } else {
-        setWorkdays(null);
-      }
-
-      // Keep data import section OPEN so user can see what's loaded
-      setDataImportExpanded(true);
-
-      // Auto-select last 14 days (same logic as useEffect)
-      const end = new Date(upload.dateRange.max);
-      const start = new Date(end);
-      start.setDate(start.getDate() - 13); // 14 days = today - 13 days
-      
-      // If data range is shorter than 14 days, use full range
-      const actualStart = start < upload.dateRange.min ? upload.dateRange.min : start;
-      
-      setStartDate(actualStart);
-      setEndDate(end);
-
-      // Show success toast
-      setLoadToast(`✅ Loaded: ${upload.name}`);
-      setTimeout(() => setLoadToast(null), 3000); // Auto-hide after 3s
-      
-    } catch (err) {
-      console.error('Failed to load upload:', err);
-      alert(`Failed to load upload: ${err.message}`);
-    }
-  };
-
-  /**
-   * Handle day profiles modal open
-   * Day profiles are now generated by useDayProfiles hook,
-   * so this just validates data and opens the modal
-   * 
-   * Works with both V2 (csvData) and V3 (masterDataset) modes
-   */
-  const handleDayProfilesOpen = () => {
-    if (!activeReadings || activeReadings.length === 0) {
-      alert('Load data first.');
-      return;
-    }
-
-    if (!dayProfiles || dayProfiles.length === 0) {
-      alert('No complete days available for analysis.');
-      return;
-    }
-
-    modals.setDayProfilesOpen(true);
   };
 
   /**
@@ -1001,6 +780,7 @@ export default function AGPGenerator() {
 
   // ============================================
   // RENDER: Main UI
+  // Note: MetricsProvider is now in AGPGenerator wrapper
   // ============================================
 
   return (
@@ -1323,10 +1103,6 @@ export default function AGPGenerator() {
           
           {navigation.activePanel === 'import' && (
             <ImportPanel
-              csvData={csvData}
-              workdays={workdays}
-              csvError={csvError}
-              v3UploadError={v3UploadError}
               onCSVLoad={handleCSVLoad}
               onProTimeLoad={handleProTimeLoad}
               onProTimeDelete={handleProTimeDelete}
@@ -1341,6 +1117,8 @@ export default function AGPGenerator() {
               onClose={() => navigation.setActivePanel('import')}
               dayProfiles={dayProfiles}
               patientInfo={patientInfo}
+              numDays={numDaysProfile}
+              onNumDaysChange={setNumDaysProfile}
             />
           )}
           
@@ -1355,9 +1133,17 @@ export default function AGPGenerator() {
           {navigation.activePanel === 'export' && (
             <ExportPanel
               onExportHTML={handleExportHTML}
-              onExportDayProfiles={() => {
+              onExportDayProfiles={async () => {
                 if (dayProfiles && dayProfiles.length > 0) {
-                  downloadDayProfilesHTML(dayProfiles, patientInfo);
+                  try {
+                    const result = await downloadDayProfilesHTML(dayProfiles, patientInfo);
+                    if (result.success) {
+                      console.log(`[AGPGenerator] Day Profiles exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
+                    }
+                  } catch (error) {
+                    console.error('[AGPGenerator] Error exporting day profiles:', error);
+                    alert('Export failed. Check console for details.');
+                  }
                 } else {
                   alert('No day profiles available');
                 }
@@ -1391,77 +1177,12 @@ export default function AGPGenerator() {
           </section>
         )}
 
-        {/* Control Buttons: HIDDEN IN PHASE B */}
-        {false && (
-        <section className="section">
-          {/* DataLoadingContainer with all 5 buttons */}
-          <DataLoadingContainer 
-            csvData={csvData}
-            workdays={workdays}
-            metricsResult={metricsResult}
-            startDate={startDate}
-            endDate={endDate}
-            activeReadings={activeReadings}
-            handleDayProfilesOpen={handleDayProfilesOpen}
-            setShowStockModal={modals.setShowStockModal}
-            sensorsLoading={sensorsLoading}
-            sensorsError={sensorsError}
-            setSensorHistoryOpen={modals.setSensorHistoryOpen}
-            dataImportExpanded={dataImportExpanded}
-            setDataImportExpanded={setDataImportExpanded}
-            dataExportExpanded={dataExportExpanded}
-            setDataExportExpanded={setDataExportExpanded}
-          />
-
-          {/* IMPORT Expanded Content */}
-          {dataImportExpanded && (
-            <ImportPanel
-              csvData={csvData}
-              workdays={workdays}
-              csvError={csvError}
-              v3UploadError={v3UploadError}
-              onCSVLoad={handleCSVLoad}
-              onProTimeLoad={handleProTimeLoad}
-              onProTimeDelete={handleProTimeDelete}
-            />
-          )}
-
-          {/* EXPORT Expanded Content */}
-          {dataExportExpanded && metricsResult && startDate && endDate && (
-            <ExportPanel
-              onExportHTML={handleExportHTML}
-              onExportDayProfiles={() => {
-                if (dayProfiles && dayProfiles.length > 0) {
-                  downloadDayProfilesHTML(dayProfiles, patientInfo);
-                } else {
-                  alert('No day profiles available');
-                }
-              }}
-              onExportDatabase={async () => {
-                const result = await exportAndDownload();
-                if (result.success) {
-                  alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
-                } else {
-                  alert(`❌ Export failed: ${result.error}`);
-                }
-              }}
-              onImportDatabase={handleDatabaseImport}
-              dayProfiles={dayProfiles}
-              patientInfo={patientInfo}
-            />
-          )}
-        </section>
-        )}
-        {/* END OLD CONTROL BUTTONS */}
-
         {/* Main Content - Show when on import panel */}
         {navigation.activePanel === 'import' && ((csvData && dateRange) || useV3Mode) && startDate && endDate && metricsResult && (
           <VisualizationContainer
             metricsResult={metricsResult}
             comparisonData={comparisonData}
             tddData={tddData}
-            startDate={startDate}
-            endDate={endDate}
             workdays={workdays}
             dayNightEnabled={dayNightEnabled}
             onDayNightToggle={handleDayNightToggle}
@@ -1499,12 +1220,6 @@ export default function AGPGenerator() {
           // Patient Info Modal
           patientInfoOpen={modals.patientInfoOpen}
           onClosePatientInfo={() => modals.setPatientInfoOpen(false)}
-          
-          // Day Profiles Modal
-          dayProfilesOpen={modals.dayProfilesOpen}
-          onCloseDayProfiles={() => modals.setDayProfilesOpen(false)}
-          numDaysProfile={numDaysProfile}
-          onChangeNumDaysProfile={setNumDaysProfile}
           
           // Sensor History Modal
           sensorHistoryOpen={modals.sensorHistoryOpen}
@@ -1716,6 +1431,36 @@ export default function AGPGenerator() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * AGPGenerator - Wrapper component that provides context providers
+ * 
+ * Gets masterDataset from DataContext and wraps AGPGeneratorContent
+ * with PeriodProvider and MetricsProvider to manage state.
+ * 
+ * Note: workdays and numDaysProfile state must be lifted here so
+ * MetricsProvider can access them before AGPGeneratorContent uses the context.
+ */
+export default function AGPGenerator() {
+  const { masterDataset } = useData();
+  
+  // Lift state that MetricsProvider needs
+  const [workdays, setWorkdays] = useState(null);
+  const [numDaysProfile, setNumDaysProfile] = useState(7);
+  
+  return (
+    <PeriodProvider masterDataset={masterDataset}>
+      <MetricsProvider workdays={workdays} numDaysProfile={numDaysProfile}>
+        <AGPGeneratorContent 
+          workdays={workdays}
+          setWorkdays={setWorkdays}
+          numDaysProfile={numDaysProfile}
+          setNumDaysProfile={setNumDaysProfile}
+        />
+      </MetricsProvider>
+    </PeriodProvider>
   );
 }
 

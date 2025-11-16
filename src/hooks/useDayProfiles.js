@@ -100,17 +100,31 @@ export function useDayProfiles(csvData, dateRange, currentMetrics, numDays = 7) 
   }, [csvData, dateRange]); // Reload when data changes
   
   return useMemo(() => {
+    console.log('[useDayProfiles] DEBUG:', {
+      hasCsvData: !!csvData && csvData.length > 0,
+      csvDataLength: csvData?.length,
+      hasDateRange: !!dateRange,
+      dateRange: dateRange,
+      hasSensors: !!sensors,
+      sensorsLength: sensors?.length,
+      hasCurrentMetrics: !!currentMetrics,
+      numDays
+    });
+    
     // Guard: require all dependencies with proper structure
     if (!csvData || csvData.length === 0) {
+      console.log('[useDayProfiles] ❌ No CSV data');
       return null;
     }
 
     if (!dateRange || !dateRange.max) {
+      console.log('[useDayProfiles] ❌ No dateRange or dateRange.max');
       return null;
     }
     
     // Wait for sensors to load before generating profiles
     if (!sensors) {
+      console.log('[useDayProfiles] ❌ Sensors not loaded');
       return null;
     }
 
@@ -122,15 +136,29 @@ export function useDayProfiles(csvData, dateRange, currentMetrics, numDays = 7) 
       
       // Additional guard: validate maxDate is valid
       if (isNaN(maxDate.getTime())) {
+        console.log('[useDayProfiles] ❌ Invalid maxDate');
         return null;
       }
       
       const csvCreatedDate = formatDateString(maxDate);
+      console.log('[useDayProfiles] ✅ About to call getLastSevenDays:', {
+        csvCreatedDate,
+        csvDataLength: csvData.length,
+        sensorsLength: sensors.length,
+        numDays
+      });
       
       // Generate last N day profiles - pass sensors array and numDays
       const profiles = getLastSevenDays(csvData, csvCreatedDate, sensors, numDays);
       
+      console.log('[useDayProfiles] 📊 Profiles result:', {
+        profilesReturned: !!profiles,
+        profilesLength: profiles?.length,
+        firstProfile: profiles?.[0]?.date
+      });
+      
       if (!profiles || profiles.length === 0) {
+        console.log('[useDayProfiles] ❌ No profiles generated');
         return null;
       }
       

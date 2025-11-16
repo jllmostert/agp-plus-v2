@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * Import/Export orchestration
@@ -33,6 +33,20 @@ export function useImportExport() {
     total: 7,
     percentage: 0
   });
+
+  // Load last import info on mount
+  useEffect(() => {
+    const loadLastImport = async () => {
+      try {
+        const { getLastImport } = await import('../storage/importHistory');
+        const lastImport = getLastImport();
+        setLastImportInfo(lastImport);
+      } catch (err) {
+        console.error('[useImportExport] Failed to load import history:', err);
+      }
+    };
+    loadLastImport();
+  }, []);
 
   // === METHODS ===
   

@@ -4,6 +4,19 @@ import AGPGenerator from './components/AGPGenerator.jsx';
 // import { MigrationBanner } from './components/MigrationBanner.jsx'; // Disabled: v3.0 migration not ready yet
 import './styles/globals.css';
 import { APP_VERSION, APP_FULL_NAME } from './utils/version.js';
+import { DataProvider } from './contexts/DataContext.jsx';
+
+// Update document title and meta tags with current version
+function updateDocumentMeta() {
+  // Update page title
+  document.title = `${APP_FULL_NAME} - Ambulatory Glucose Profile Generator`;
+  
+  // Update meta description
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription) {
+    metaDescription.content = `${APP_FULL_NAME} - Ambulatory Glucose Profile Generator for Medtronic 780G CGM data analysis`;
+  }
+}
 
 // Import tombstone store initialization
 import { 
@@ -57,16 +70,19 @@ import {
 // Get root element
 const rootElement = document.getElementById('root');
 
+// Update document meta before rendering
+updateDocumentMeta();
+
 // Create React 18 root
 const root = createRoot(rootElement);
 
 // Render application
 // Note: StrictMode temporarily disabled for debugging
 root.render(
-  <>
+  <DataProvider>
     {/* <MigrationBanner /> */}
     <AGPGenerator />
-  </>
+  </DataProvider>
 );
 
 /**

@@ -101,11 +101,19 @@ export function downloadJSON(data, filename) {
 }
 
 /**
- * Generate filename with timestamp
- * @returns {string} Filename like "agp-master-1730000000000.json"
+ * Generate filename with readable timestamp
+ * @returns {string} Filename like "agp-master-2025-11-16_10-30-15.json"
  */
 export function generateExportFilename() {
-  const timestamp = Date.now();
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  
+  const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
   return `agp-master-${timestamp}.json`;
 }
 

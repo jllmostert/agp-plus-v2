@@ -16,14 +16,9 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 import FileUpload from '../FileUpload';
+import { useData } from '../../hooks/useData';
 
 function ImportPanel({
-  // Data state
-  csvData,
-  workdays,
-  csvError,
-  v3UploadError,
-  
   // Handlers
   onCSVLoad,
   onProTimeLoad,
@@ -31,6 +26,9 @@ function ImportPanel({
   onImportDatabase,
   onSensorRegistrationOpen
 }) {
+  // Get data from context
+  const { csvData, workdays, csvError, v3UploadError } = useData();
+  
   // Progress tracking state
   const [uploadProgress, setUploadProgress] = useState({
     isUploading: false,
