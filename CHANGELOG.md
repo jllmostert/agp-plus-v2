@@ -6,6 +6,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.3.1 - Version Display & Export Timestamps] - 2025-11-16
+
+### 🐛 Bug Fixes & Improvements
+**Session 40**: Quick quality-of-life improvements
+
+#### Fixed: Version Display
+- ✅ Document title now updates dynamically from package.json version
+- ✅ Meta description updates automatically on page load
+- ✅ Fixed hardcoded v4.2.2 → v4.3.0 in index.html
+- ✅ Fixed noscript fallback version (was v3.8.0!)
+- 📍 Implementation: `main.jsx` calls `updateDocumentMeta()` before rendering
+
+#### Fixed: Export Filenames with Readable Timestamps
+- ✅ Master database export: `agp-master-2025-11-16_10-30-15.json` (was: `agp-master-1730000000.json`)
+- ✅ Sensor export: `agp-sensors-2025-11-16_10-30-15.json` (was: `agp-sensors-2025-11-16.json`)
+- ✅ Stock export: `agp-stock-2025-11-16_10-30-15.json` (was: `agp-stock-2025-11-16.json`)
+- 📍 Format: `YYYY-MM-DD_HH-MM-SS` for easy sorting and readability
+- 📍 Files modified:
+  - `storage/export.js` - `generateExportFilename()`
+  - `panels/SensorHistoryPanel.jsx` - `handleExport()`
+  - `panels/StockPanel.jsx` - `handleExport()`
+
+#### Impact
+- 🎨 Better user experience with accurate version display in browser tabs
+- 📁 Export files now have meaningful, sortable filenames
+- 🔧 Single source of truth for version (package.json)
+
+---
+
 ## [v4.3.0 - Phase 1 Refactoring Complete] - 2025-11-15
 
 ### 🎯 Session 32: useImportExport Hook (Phase 1 Complete!)

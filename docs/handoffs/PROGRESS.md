@@ -2,7 +2,7 @@
 
 **Current Version**: v4.3.1  
 **Last Updated**: 2025-11-16  
-**Session**: 39
+**Session**: 40
 
 ---
 
@@ -19,7 +19,7 @@
 - ✅ Organized documentation (archived old handoffs)
 
 **Impact**:
-- AGPGenerator.jsx: 1819 → 1553 lines (-266 lines across Phase 1-4)
+- AGPGenerator.jsx: 1819 → 1546 lines (-273 lines across Phase 1-4)
 - Total dead code removed: 524 lines
 - Architecture simplified: Single UI paradigm (panels only)
 
@@ -81,23 +81,17 @@
 
 ### Short Term (Next 2-4 Sessions)
 
-**Track 3: Context API Phase 4 (Optional)**
+**Track 3: Context API Phase 4 (IN PROGRESS)**
 - UIContext extraction for remaining UI state
-- Target: AGPGenerator < 1000 lines
+- Target: AGPGenerator < 1200 lines (0 useState)
+- Estimated: 4-6 hours (Sessions 40-43)
+
+**Track 2: Safety & Accessibility (Next)**
+- Sprint S3: Workday/weekend metrics (hero + secondary only)
+- Sprint S4: Advanced comparison features
 - Estimated: 4-6 hours
 
-**Track 2: Safety & Accessibility (Continued)**
-- Sprint S3: Workday/weekend split
-- Sprint S4: Advanced comparison views
-- Estimated: 6-8 hours
-
 ### Medium Term (Next Month)
-
-**Track 4: Medical Accuracy**
-- Advanced glucose variability metrics
-- Insulin-on-board visualization  
-- Basal rate overlay on AGP
-- Estimated: 12-16 hours
 
 **UI Polish**
 - Panel transitions (smooth animations)
@@ -113,19 +107,19 @@
 - Estimated code reduction: 500+ lines
 - Breaking change: Requires user data migration
 
-**Advanced Features**
+**Advanced Features (TBD)**
 - Multi-sensor correlation analysis
-- ML-based pattern detection
-- Insulin pump settings optimizer
-- Meal impact analysis
+- Pattern detection and insights
+- Export improvements
+- Custom report templates
 
 ---
 
 ## 📊 METRICS
 
 ### Code Quality
-- **AGPGenerator Lines**: 1553 (down from 1819)
-- **Total Reduction**: -266 lines (-14.6%)
+- **AGPGenerator Lines**: 1546 (down from 1819)
+- **Total Reduction**: -273 lines (-15.0%)
 - **State Variables**: 10 (down from 22)
 - **Custom Hooks**: 6 active
 - **Context Layers**: 3 active
@@ -175,6 +169,13 @@
 
 ### Recent Sessions
 
+**Session 40** (2025-11-16): Planning Track 3 Phase 4 🔄
+- Verified Phase 4 completion
+- Updated PROGRESS.md metrics (1546 lines)
+- Adjusted roadmap (no insulin viz, workdays metrics only)
+- Created PHASE4_PLAN.md + SESSION_41_QUICKSTART.md
+- Ready for UIContext extraction
+
 **Session 39** (2025-11-16): Phase 4 Legacy Cleanup ✅
 - Removed 524 lines of dead code
 - Added 7d/14d toggle to day profiles
@@ -201,14 +202,14 @@
 ## 🚀 NEXT STEPS
 
 ### Immediate (Session 40)
-1. Git commit + push (Phase 4 complete)
-2. Test app thoroughly on fresh data
-3. Plan Track 3 Phase 4 (UIContext extraction)
+1. ✅ Git commit + push (Phase 4 complete) - DONE
+2. ✅ Test app thoroughly - Verified working
+3. 🔄 Plan Track 3 Phase 4 (UIContext extraction) - IN PROGRESS
 
 ### This Week
-1. Sprint S3: Workday/weekend visualization
-2. Performance benchmarking across recent changes
-3. Update project roadmap with Q1 2026 goals
+1. Track 3 Phase 4: UIContext extraction (optional)
+2. Sprint S3: Workday/weekend visualization
+3. Performance benchmarking across recent changes
 
 ### This Month
 1. Complete Track 2 (Safety & Accessibility)
