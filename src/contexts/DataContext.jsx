@@ -181,6 +181,7 @@ export function DataProvider({ children }) {
     dataStatus,
     isFilteringData,
     v3UploadError,
+    setV3UploadError, // Export setter for error handling
     
     // Upload management
     uploadStorage,

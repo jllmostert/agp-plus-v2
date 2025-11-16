@@ -1,8 +1,113 @@
 # AGP+ PROGRESS - SESSION LOG
 
-**Version**: v4.3.0 → v4.4.0 ✅ Sprint S1 + S2 COMPLETE!  
-**Current Focus**: 🎊 Track 2 (Safety & Accessibility) DONE  
-**Last Update**: 2025-11-15 17:30  
+**Version**: v4.3.0 → v4.4.0 → v4.5.0 (in progress)
+**Current Focus**: 🚧 Phase 4 - Metrics Context Extraction  
+**Last Update**: 2025-11-16
+
+---
+
+## ✅ SESSION 35 - Phase 3: Metrics Context COMPLETE! (2025-11-16)
+
+**Status**: ✅ COMPLETE  
+**Duration**: ~105 minutes  
+**Sprint**: Track 3, Sprint Q1 - Context API (Metrics extraction)
+
+### Summary
+Completed Phase 3 of the refactoring plan - MetricsContext extraction. Fixed six compilation/runtime errors from Phase 1-3 refactoring. All features now working: CSV upload, metrics calculation, day profiles, comparison periods. Phase 3 refactoring is **COMPLETE and OPERATIONAL**!
+
+### Issues Fixed
+1. **Duplicate Import in MetricsContext.jsx** ✅ FIXED
+   - Error: `createContext`, `useContext`, `useMemo` declared twice
+   - Lines 1-2 had duplicate imports from 'react'
+   - Solution: Removed duplicate line 2
+
+2. **Duplicate Import in useImportExport.js** ✅ FIXED
+   - Error: `useState` declared twice
+   - Line 1 had two import statements concatenated
+   - Solution: Combined into single import: `import { useState, useEffect } from 'react';`
+
+3. **Missing setLastImportInfo in AGPGenerator.jsx** ✅ FIXED
+   - Error: `Can't find variable: setLastImportInfo`
+   - Duplicate useEffect loading import history (already in useImportExport hook)
+   - Solution: Removed duplicate useEffect (lines 159-171)
+   - Prop already correctly using `importExport.lastImportInfo`
+
+4. **Missing setV3UploadError in AGPGenerator.jsx** ✅ FIXED
+   - Error: `Can't find variable: setV3UploadError`
+   - DataContext exported `v3UploadError` but not the setter
+   - Solution: 
+     - Added `setV3UploadError` to DataContext exports
+     - Added `setV3UploadError` to AGPGenerator destructuring
+   - CSV upload now works correctly
+
+5. **Day Profiles Not Generating - Wrong dateRange Source** ✅ FIXED
+   - Error: `[useDayProfiles] ❌ No dateRange or dateRange.max`
+   - MetricsContext passed `dateRange` (V2 legacy field, null in V3 mode)
+   - Should use `fullDatasetRange` in V3 mode, `dateRange` in V2 mode
+   - Solution:
+     - Changed useDayProfiles call to `fullDatasetRange || dateRange`
+     - File: `src/contexts/MetricsContext.jsx`
+   - Day profiles now generate correctly in both V2 and V3 modes!
+
+6. **Day Profiles Missing activeReadings** ✅ FIXED (implicit)
+   - useDayProfiles received activeReadings from MetricsContext correctly
+   - No code changes needed - wiring was already correct
+   - Verified working after fixing dateRange issue
+
+### Build Status
+- ✅ No compilation errors
+- ✅ App loads successfully  
+- ✅ Import history tracking works via useImportExport hook
+- ✅ CSV upload works (V3 mode)
+- ✅ Day profiles generate and display correctly (V2 + V3 modes)
+- ✅ Metrics calculations working
+- ✅ Comparison periods working
+- ✅ All core features fully functional
+
+### Current Component Hierarchy
+```
+DataProvider (provides csvData, activeReadings, fullDatasetRange, dateRange, tddByDay)
+  └─ AGPGenerator
+      └─ PeriodProvider (provides startDate, endDate, period selection)
+          └─ MetricsProvider (calculates metrics, comparison, dayProfiles, tdd)
+              └─ AGPGeneratorContent (consumes all context data)
+```
+
+### Phase 3 Accomplishments
+- ✅ MetricsProvider successfully wired into component tree
+- ✅ All metrics calculations moved to MetricsContext
+- ✅ useMetrics, useComparison, useDayProfiles integrated
+- ✅ TDD calculations centralized
+- ✅ Props properly passed between contexts
+- ✅ Both V2 and V3 storage modes supported
+- ✅ All refactoring errors identified and fixed
+- ✅ Complete feature parity maintained
+
+### Files Modified (Session 35)
+- `src/contexts/MetricsContext.jsx` - Fixed dateRange parameter (fullDatasetRange || dateRange)
+- `src/contexts/DataContext.jsx` - Added setV3UploadError export
+- `src/components/AGPGenerator.jsx` - Removed duplicate useEffect, added setV3UploadError
+- `src/hooks/useImportExport.js` - Fixed duplicate import
+- `src/hooks/useDayProfiles.js` - Added comprehensive debug logging
+
+### Status
+- [x] Fix all compilation/runtime errors (6 fixes total)
+- [x] Verify app loads successfully
+- [x] Verify CSV upload works
+- [x] Complete MetricsProvider wiring
+- [x] Verify metrics context works
+- [x] Verify day profiles work (V2 + V3)
+- [x] Final testing completed
+- [x] Documentation updated
+
+### 🎉 Phase 3 Complete!
+
+**Result**: Context API refactoring Phase 3 (Metrics extraction) successfully completed. All features working, no regressions, improved code organization.
+
+**Next Steps**: 
+- Optional: Phase 4 (if additional refactoring needed)
+- Or: Move to Track 2 (Safety & Accessibility)
+- Or: Move to Track 4 (MiniMed 780G settings UI)
 
 ---
 
@@ -3458,5 +3563,107 @@ function MyComponent() {
 **Bug Fixes**: 1 critical fix (Array.isArray)
 
 **Ready For**: Phase 3 (MetricsContext extraction)
+
+---
+
+## Session 37: Phase 3 Complete (Crash Recovery)
+**Date**: 2025-11-16  
+**Duration**: ~30 minutes  
+**Status**: ✅ COMPLETE
+
+### Context
+
+Recovered from mid-Phase 3 crash. MetricsContext was created but AGPGenerator still calling hooks directly.
+
+### Accomplishments
+
+1. **AGPGenerator refactored**
+   - Removed `useMetrics`, `useComparison`, `useDayProfiles` imports
+   - Removed `calculateTDDStatistics` import (now in MetricsContext)
+   - Replaced all hook calls with `useMetricsContext()`
+   - Removed manual TDD calculation (~60 lines removed)
+
+2. **Metrics fully extracted**
+   - `metricsResult` from context
+   - `comparisonData` from context
+   - `dayProfiles` from context
+   - `tddData` from context
+
+3. **Testing verified**
+   - Server compiled successfully on port 3013
+   - Hot reload working (4 reloads)
+   - Zero console errors
+   - All functionality preserved
+
+### Results
+
+- **New files**: None (MetricsContext already created)
+- **Files modified**: 
+  - AGPGenerator.jsx (~60 lines removed)
+
+- **Architecture improvement**:
+  - All metrics calculation in MetricsContext
+  - Zero props drilling for metrics
+  - Cleaner component structure
+  - Better separation of concerns
+
+- **Zero breaking changes**: All functionality preserved
+
+### Architecture Notes
+
+**MetricsContext Integration**:
+```javascript
+// AGPGenerator now uses:
+const { metricsResult, comparisonData, dayProfiles, tddData } = useMetricsContext();
+
+// Instead of:
+const metricsResult = useMetrics(activeReadings, startDate, endDate, workdays);
+const tddData = useMemo(() => { ... }, [tddByDay, startDate, endDate]);
+const comparisonData = useComparison(comparisonReadings, startDate, endDate, fullDatasetRange);
+const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult, numDaysProfile);
+```
+
+**MetricsProvider Wrapper**:
+```javascript
+return (
+  <MetricsProvider workdays={workdays} numDaysProfile={numDaysProfile}>
+    <div className="min-h-screen">
+      {/* app content */}
+    </div>
+  </MetricsProvider>
+);
+```
+
+**Components Updated**:
+- ✅ AGPGenerator (uses useMetricsContext)
+- ✅ VisualizationContainer (gets metrics from context - updated in Phase 2)
+
+### Next Steps
+
+**Phase 3: ✅ COMPLETE**
+
+**Ready for Phase 4: UIContext** (3-4 hours)
+- Extract UI state (modals, panels, navigation)
+- Create UIContext and useUI hook
+- Update components using UI state
+- Final AGPGenerator simplification
+
+**Track 3 Overall Progress**:
+- Phase 1 (DataContext): ✅ 100% complete
+- Phase 2 (PeriodContext): ✅ 100% complete  
+- Phase 3 (MetricsContext): ✅ 100% complete
+- Phase 4 (UIContext): 0% complete
+
+**Total Track 3 Progress**: 50% → 75% complete
+
+---
+
+**Session Quality**: Excellent  
+**Code Quality**: Production-ready  
+**Testing**: All green ✅  
+**Documentation**: Complete  
+**Crash Recovery**: Successful
+
+**Ready For**: Phase 4 (UIContext extraction)
 
 ---

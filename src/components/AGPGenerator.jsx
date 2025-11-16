@@ -4,20 +4,17 @@ import { debug } from '../utils/debug.js';
 import { APP_VERSION, APP_FULL_NAME } from '../utils/version.js';
 
 // Custom hooks
-import { useMetrics } from '../hooks/useMetrics';
-import { useComparison } from '../hooks/useComparison';
-import { useDayProfiles } from '../hooks/useDayProfiles';
 import { useModalState } from '../hooks/useModalState';
 import { usePanelNavigation } from '../hooks/usePanelNavigation';
 import { useImportExport } from '../hooks/useImportExport';
 import { useData } from '../hooks/useData';
 import { PeriodProvider, usePeriod } from '../contexts/PeriodContext.jsx';
+import { MetricsProvider, useMetricsContext } from '../contexts/MetricsContext.jsx';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
 import { downloadHTML } from '../core/html-exporter';
 import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
-import { calculateTDDStatistics } from '../core/insulin-engine';
 
 // UI Components
 import FileUpload from './FileUpload';
@@ -52,7 +49,12 @@ import DevToolsPanel from './panels/DevToolsPanel';
  * - Metrics calculation coordination
  * - Component composition and data flow
  */
-function AGPGeneratorContent() {
+function AGPGeneratorContent({ 
+  workdays, 
+  setWorkdays, 
+  numDaysProfile, 
+  setNumDaysProfile 
+}) {
   // ============================================
   // CONTEXT: Data Management (from DataContext)
   // ============================================
@@ -72,6 +74,7 @@ function AGPGeneratorContent() {
     tddByDay,
     csvError,
     v3UploadError,
+    setV3UploadError,
     isFilteringData,
     useV3Mode,
     loadCSV,
@@ -111,9 +114,9 @@ function AGPGeneratorContent() {
 
   // ============================================
   // STATE: Optional Features
+  // Note: workdays and numDaysProfile are now passed as props
   // ============================================
   
-  const [workdays, setWorkdays] = useState(null); // Set of workday date strings
   const [dayNightEnabled, setDayNightEnabled] = useState(false);
   const [dataImportExpanded, setDataImportExpanded] = useState(false); // Collapsible data import (closed by default)
   const [dataExportExpanded, setDataExportExpanded] = useState(false); // Collapsible data export (closed by default)
@@ -129,7 +132,6 @@ function AGPGeneratorContent() {
   
   const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
   const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
-  const [numDaysProfile, setNumDaysProfile] = useState(7); // Number of days to show in profiles (7 or 14)
   const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
   const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
   // Note: tddByDay now comes from DataContext
@@ -154,20 +156,7 @@ function AGPGeneratorContent() {
   }, [modals.patientInfoOpen]);
 
   // Note: TDD loading moved to DataContext
-
-  // Load last import info
-  useEffect(() => {
-    const loadLastImport = async () => {
-      try {
-        const { getLastImport } = await import('../storage/importHistory');
-        const lastImport = getLastImport();
-        setLastImportInfo(lastImport);
-      } catch (err) {
-        console.error('Failed to load import history:', err);
-      }
-    };
-    loadLastImport();
-  }, [modals.dataImportModalOpen]); // Reload when modal opens/closes
+  // Note: Import history loading moved to useImportExport hook
   
   /**
    * Auto-select last 14 days when data becomes ready (green light)
@@ -220,8 +209,11 @@ function AGPGeneratorContent() {
 
   // ============================================
   // CALCULATED DATA: Metrics & Comparison
-  // Note: activeReadings, comparisonReadings, fullDatasetRange now from DataContext
+  // Note: Now provided by MetricsContext
   // ============================================
+  
+  // Get all metrics from context (calculated in MetricsProvider)
+  const { metricsResult, comparisonData, dayProfiles, tddData } = useMetricsContext();
   
   // V3: Convert active filtered range for day profiles
   // This is the FILTERED range (e.g., "last 14 days"), not full dataset
@@ -250,65 +242,6 @@ function AGPGeneratorContent() {
     }
     return fullDatasetRange; // Fallback to full range
   }, [useV3Mode, activeDateRange, fullDatasetRange]);
-  
-  // Calculate metrics for current period
-  const metricsResult = useMetrics(activeReadings, startDate, endDate, workdays);
-  
-  // Calculate TDD statistics for selected period (not entire dataset)
-  const tddData = useMemo(() => {
-    if (!tddByDay || !startDate || !endDate) {
-      return null;
-    }
-    
-    try {
-      // Format dates to YYYY/MM/DD for matching with tddByDay keys
-      const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}/${month}/${day}`;
-      };
-      
-      const startStr = formatDate(startDate);
-      const endStr = formatDate(endDate);
-      
-      // Filter tddByDay to only include dates within selected period
-      const periodTddByDay = Object.fromEntries(
-        Object.entries(tddByDay).filter(([date, _]) => date >= startStr && date <= endStr)
-      );
-      
-      if (Object.keys(periodTddByDay).length === 0) {
-        return null;
-      }
-      
-      // Calculate statistics for the filtered period using imported function
-      return calculateTDDStatistics(periodTddByDay);
-    } catch (err) {
-      console.error('[AGPGenerator] Failed to calculate period TDD:', err);
-      return null;
-    }
-  }, [tddByDay, startDate, endDate]);
-  
-  // Debug: Check if AGP data exists
-  if (metricsResult && activeReadings && activeReadings.length > 0) {
-  }
-  
-  // Auto-calculate comparison for preset periods
-  // CRITICAL: Use comparisonReadings (full dataset) not activeReadings (filtered)
-  // This ensures previous period data is available for comparison calculations
-  const comparisonData = useComparison(comparisonReadings, startDate, endDate, fullDatasetRange);
-  
-  // Generate day profiles using custom hook (replaces manual generation)
-  const dayProfiles = useDayProfiles(activeReadings, safeDateRange, metricsResult, numDaysProfile);
-  
-  // Debug: Check day profiles
-  if (dayProfiles && dayProfiles.length > 0) {
-    const profile = dayProfiles[0];
-    
-    // Also log a sample reading to verify rewind field
-    if (activeReadings && activeReadings.length > 0) {
-    }
-  }
 
   // ============================================
   // EVENT HANDLERS: Date Range Filter (V3)
@@ -930,6 +863,7 @@ function AGPGeneratorContent() {
 
   // ============================================
   // RENDER: Main UI
+  // Note: MetricsProvider is now in AGPGenerator wrapper
   // ============================================
 
   return (
@@ -1647,17 +1581,31 @@ function AGPGeneratorContent() {
 }
 
 /**
- * AGPGenerator - Wrapper component that provides PeriodContext
+ * AGPGenerator - Wrapper component that provides context providers
  * 
  * Gets masterDataset from DataContext and wraps AGPGeneratorContent
- * with PeriodProvider to manage period selection state.
+ * with PeriodProvider and MetricsProvider to manage state.
+ * 
+ * Note: workdays and numDaysProfile state must be lifted here so
+ * MetricsProvider can access them before AGPGeneratorContent uses the context.
  */
 export default function AGPGenerator() {
   const { masterDataset } = useData();
   
+  // Lift state that MetricsProvider needs
+  const [workdays, setWorkdays] = useState(null);
+  const [numDaysProfile, setNumDaysProfile] = useState(7);
+  
   return (
     <PeriodProvider masterDataset={masterDataset}>
-      <AGPGeneratorContent />
+      <MetricsProvider workdays={workdays} numDaysProfile={numDaysProfile}>
+        <AGPGeneratorContent 
+          workdays={workdays}
+          setWorkdays={setWorkdays}
+          numDaysProfile={numDaysProfile}
+          setNumDaysProfile={setNumDaysProfile}
+        />
+      </MetricsProvider>
     </PeriodProvider>
   );
 }
