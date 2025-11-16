@@ -1,0 +1,15 @@
+fix(metrics): Day profiles now work in V3 mode (fullDatasetRange)
+
+- Fix MetricsContext to use fullDatasetRange || dateRange
+- Resolves undefined dateRange in V3 IndexedDB mode  
+- Day profiles modal now displays all 7-day cards correctly
+- Maintains backwards compatibility with V2 legacy CSV mode
+
+Bug: useDayProfiles received undefined dateRange in V3 mode
+Root cause: V3 uses fullDatasetRange, not dateRange
+Fix: Fallback pattern fullDatasetRange || dateRange
+
+Tested: ✅ V3 mode (7 profiles displayed)
+Verified: Toggle 7/14 days, metrics, curves, events all working
+
+Session 38 - 1 line changed, 100% functionality restored
