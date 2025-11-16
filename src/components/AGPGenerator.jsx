@@ -10,6 +10,7 @@ import { useImportExport } from '../hooks/useImportExport';
 import { useData } from '../hooks/useData';
 import { PeriodProvider, usePeriod } from '../contexts/PeriodContext.jsx';
 import { MetricsProvider, useMetricsContext } from '../contexts/MetricsContext.jsx';
+import useUI from '../hooks/useUI';
 
 // Core utilities
 import { parseProTime } from '../core/parsers';
@@ -45,12 +46,37 @@ import DevToolsPanel from './panels/DevToolsPanel';
  * - Metrics calculation coordination
  * - Component composition and data flow
  */
-function AGPGeneratorContent({ 
-  workdays, 
-  setWorkdays, 
-  numDaysProfile, 
-  setNumDaysProfile 
-}) {
+function AGPGeneratorContent() {
+  // ============================================
+  // CONTEXT: UI State Management (from UIContext)
+  // ============================================
+  
+  const ui = useUI();
+  
+  // Destructure UI state and methods for convenience
+  const {
+    dayNightEnabled,
+    setDayNightEnabled,
+    patientInfo,
+    setPatientInfo,
+    clearPatientInfo,
+    loadToast,
+    setLoadToast,
+    showToast,
+    batchAssignmentDialog,
+    setBatchAssignmentDialog,
+    openBatchDialog,
+    closeBatchDialog,
+    pendingUpload,
+    setPendingUpload,
+    clearPending,
+    workdays,
+    loadWorkdays,
+    clearWorkdays,
+    numDaysProfile,
+    setNumDaysProfile
+  } = ui;
+  
   // ============================================
   // CONTEXT: Data Management (from DataContext)
   // ============================================
@@ -110,10 +136,9 @@ function AGPGeneratorContent({
 
   // ============================================
   // STATE: Optional Features
-  // Note: workdays and numDaysProfile are now passed as props
+  // Note: workdays and numDaysProfile are now managed by UIContext
   // ============================================
   
-  const [dayNightEnabled, setDayNightEnabled] = useState(false);
   // Legacy collapsible sections removed - now using panel architecture
   
   // Modal state management (extracted to custom hook)
@@ -125,30 +150,8 @@ function AGPGeneratorContent({
   // Import/Export orchestration (extracted to custom hook)
   const importExport = useImportExport();
   
-  const [patientInfo, setPatientInfo] = useState(null); // Patient metadata from storage
-  const [loadToast, setLoadToast] = useState(null); // Toast notification for load success
-  const [batchAssignmentDialog, setBatchAssignmentDialog] = useState({ open: false, suggestions: [] }); // Batch assignment dialog
-  const [pendingUpload, setPendingUpload] = useState(null); // Two-phase upload: { detectedEvents, suggestions }
+  // Note: All UI state (dayNightEnabled, patientInfo, loadToast, dialogs, etc.) now comes from UIContext
   // Note: tddByDay now comes from DataContext
-
-  // Load patient info from storage
-  useEffect(() => {
-    const loadPatientInfo = async () => {
-      try {
-        const { patientStorage } = await import('../utils/patientStorage');
-        const info = await patientStorage.get();
-        setPatientInfo(info);
-      } catch (err) {
-        console.error('Failed to load patient info:', err);
-      }
-    };
-    loadPatientInfo();
-    
-    // Reload when modal closes (in case data was updated)
-    if (!modals.patientInfoOpen) {
-      loadPatientInfo();
-    }
-  }, [modals.patientInfoOpen]);
 
   // Note: TDD loading moved to DataContext
   // Note: Import history loading moved to useImportExport hook
@@ -188,9 +191,9 @@ function AGPGeneratorContent({
   // Load ProTime workdays from master dataset on init
   useEffect(() => {
     if (useV3Mode && masterDataset.stats?.workdays) {
-      setWorkdays(masterDataset.stats.workdays);
+      loadWorkdays(masterDataset.stats.workdays);
     }
-  }, [useV3Mode, masterDataset.stats?.workdays]);
+  }, [useV3Mode, masterDataset.stats?.workdays, loadWorkdays]);
 
   // ============================================
   // CALCULATED DATA: Metrics & Comparison
@@ -302,20 +305,20 @@ function AGPGeneratorContent({
    */
   useEffect(() => {
     if (useV3Mode && !workdays) {
-      const loadWorkdays = async () => {
+      const loadWorkdaysFromStorage = async () => {
         try {
           const { loadProTimeData } = await import('../storage/masterDatasetStorage');
           const savedWorkdays = await loadProTimeData();
           
           if (savedWorkdays && savedWorkdays.size > 0) {
-            setWorkdays(savedWorkdays);
+            loadWorkdays(savedWorkdays);
           }
         } catch (err) {
           console.error('[ProTime] Failed to load from V3:', err);
         }
       };
       
-      loadWorkdays();
+      loadWorkdaysFromStorage();
     }
   }, [useV3Mode, workdays]);
 
@@ -345,6 +348,9 @@ function AGPGeneratorContent({
         // No confirmation needed - refresh normally
         console.log('[CSV Upload] No batch matches, sensors stored immediately');
         masterDataset.refresh();
+        
+        // Show success toast
+        showToast(`✅ CSV geüpload!`, 3000);
         
       } catch (err) {
         console.error('[CSV Upload] V3 upload failed:', err);
@@ -381,7 +387,7 @@ function AGPGeneratorContent({
       
       console.log(`[ProTime] Imported ${newWorkdayDates.size} new workdays, total now: ${workdaySet.size}`);
       
-      setWorkdays(workdaySet);
+      loadWorkdays(workdaySet);
       
       // V3 mode: Save to master dataset settings
       if (useV3Mode) {
@@ -412,7 +418,7 @@ function AGPGeneratorContent({
   const handleProTimeDelete = async () => {
     try {
       // Clear workdays from state
-      setWorkdays(null);
+      clearWorkdays();
       
       // V3 mode: Delete from master dataset settings
       if (useV3Mode) {
@@ -459,6 +465,9 @@ function AGPGeneratorContent({
         masterDataset.refresh(); // Refresh UI with new sensors
         
         console.log(`[Batch Assignment] Upload complete: ${assignments.length} sensors assigned`);
+        
+        // Show success toast
+        showToast(`✅ CSV geüpload! ${assignments.length} sensors toegewezen`, 3000);
       } else {
         // OLD: Legacy path for manual assignments (post-upload)
         const { assignSensorToBatch } = await import('../storage/stockStorage');
@@ -630,7 +639,7 @@ function AGPGeneratorContent({
         // Reload workdays state from storage
         const { loadProTimeData } = await import('../storage/masterDatasetStorage');
         const newWorkdays = await loadProTimeData();
-        setWorkdays(newWorkdays || new Set());
+        loadWorkdays(newWorkdays || new Set());
       }
       
       // Delete cartridge events
@@ -695,15 +704,22 @@ function AGPGeneratorContent({
       const result = await importExport.executeImport();
       
       if (result.success) {
-        // Show success message with stats
+        // Show success toast
         const stats = result.stats;
+        const totalRecords = stats.readingsImported + stats.sensorsImported + 
+                            stats.cartridgesImported + stats.workdaysImported +
+                            stats.stockBatchesImported + stats.stockAssignmentsImported;
+        showToast(`✅ Import geslaagd! ${totalRecords} records toegevoegd`, 4000);
+        
+        // Show detailed stats in console
         const strategyText = importExport.importMergeStrategy === 'replace' 
           ? '🔄 Strategy: Replace (cleared existing data)' 
           : '➕ Strategy: Append (added to existing data)';
         const backupText = importExport.lastBackupFile 
           ? `\n💾 Backup: ${importExport.lastBackupFile.filename}` 
           : '';
-        const message = `✅ Import Complete!\n\n` +
+        console.log(
+          `✅ Import Complete!\n\n` +
           `${strategyText}${backupText}\n\n` +
           `📊 Months: ${stats.monthsImported}\n` +
           `📈 Readings: ${stats.readingsImported}\n` +
@@ -713,15 +729,11 @@ function AGPGeneratorContent({
           (stats.patientInfoImported ? `👤 Patient Info: Yes\n` : '') +
           (stats.stockBatchesImported > 0 ? `📦 Batches: ${stats.stockBatchesImported}\n` : '') +
           (stats.stockAssignmentsImported > 0 ? `🔗 Assignments: ${stats.stockAssignmentsImported}\n` : '') +
-          `\n⏱️ Duration: ${(result.duration / 1000).toFixed(1)}s`;
-        
-        alert(message);
+          `\n⏱️ Duration: ${(result.duration / 1000).toFixed(1)}s`
+        );
         
         // Track import in history
         const { addImportEvent } = await import('../storage/importHistory');
-        const totalRecords = stats.readingsImported + stats.sensorsImported + 
-                            stats.cartridgesImported + stats.workdaysImported +
-                            stats.stockBatchesImported + stats.stockAssignmentsImported;
         
         addImportEvent({
           filename: importExport.pendingImportFile?.name || 'unknown',
@@ -739,7 +751,7 @@ function AGPGeneratorContent({
         if (stats.workdaysImported > 0) {
           const { loadProTimeData } = await import('../storage/masterDatasetStorage');
           const newWorkdays = await loadProTimeData();
-          setWorkdays(newWorkdays || new Set());
+          loadWorkdays(newWorkdays || new Set());
         }
         
         // Reload patient info if imported
@@ -1440,25 +1452,17 @@ function AGPGeneratorContent({
  * Gets masterDataset from DataContext and wraps AGPGeneratorContent
  * with PeriodProvider and MetricsProvider to manage state.
  * 
- * Note: workdays and numDaysProfile state must be lifted here so
- * MetricsProvider can access them before AGPGeneratorContent uses the context.
+ * Note: workdays and numDaysProfile come from UIContext but must be passed
+ * to MetricsProvider as it needs them for calculations.
  */
 export default function AGPGenerator() {
   const { masterDataset } = useData();
-  
-  // Lift state that MetricsProvider needs
-  const [workdays, setWorkdays] = useState(null);
-  const [numDaysProfile, setNumDaysProfile] = useState(7);
+  const { workdays, numDaysProfile } = useUI();
   
   return (
     <PeriodProvider masterDataset={masterDataset}>
       <MetricsProvider workdays={workdays} numDaysProfile={numDaysProfile}>
-        <AGPGeneratorContent 
-          workdays={workdays}
-          setWorkdays={setWorkdays}
-          numDaysProfile={numDaysProfile}
-          setNumDaysProfile={setNumDaysProfile}
-        />
+        <AGPGeneratorContent />
       </MetricsProvider>
     </PeriodProvider>
   );

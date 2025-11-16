@@ -5,6 +5,9 @@ import AGPGenerator from './components/AGPGenerator.jsx';
 import './styles/globals.css';
 import { APP_VERSION, APP_FULL_NAME } from './utils/version.js';
 import { DataProvider } from './contexts/DataContext.jsx';
+import { PeriodProvider } from './contexts/PeriodContext.jsx';
+import { MetricsProvider } from './contexts/MetricsContext.jsx';
+import { UIProvider } from './contexts/UIContext.jsx';
 
 // Update document title and meta tags with current version
 function updateDocumentMeta() {
@@ -80,8 +83,14 @@ const root = createRoot(rootElement);
 // Note: StrictMode temporarily disabled for debugging
 root.render(
   <DataProvider>
-    {/* <MigrationBanner /> */}
-    <AGPGenerator />
+    <PeriodProvider>
+      <MetricsProvider>
+        <UIProvider>
+          {/* <MigrationBanner /> */}
+          <AGPGenerator />
+        </UIProvider>
+      </MetricsProvider>
+    </PeriodProvider>
   </DataProvider>
 );
 
