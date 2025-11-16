@@ -2,7 +2,8 @@
  * ModalManager.jsx
  * 
  * Centralized modal rendering component.
- * Handles all 7 modals in AGP+ application via React portals.
+ * Handles all 6 modals in AGP+ application via React portals.
+ * (DayProfiles now uses DayProfilesPanel instead of modal)
  * 
  * EXTRACTED FROM: AGPGenerator.jsx (Phase 1 of god component split)
  * REASON: Isolate modal render logic for better organization
@@ -10,8 +11,9 @@
  * NOTE: State management remains in AGPGenerator for simplicity.
  * This component is purely presentational - it renders modals based on props.
  * 
- * @version 1.0.0
+ * @version 1.1.0
  * @created 2025-11-02
+ * @updated 2025-11-16 - Removed DayProfilesModal (migrated to panel architecture)
  */
 
 import React from 'react';
@@ -19,7 +21,6 @@ import ReactDOM from 'react-dom';
 
 // Modal Components
 import PatientInfo from '../PatientInfo';
-import DayProfilesModal from '../DayProfilesModal';
 import SensorHistoryPanel from '../panels/SensorHistoryPanel';
 import SensorRegistration from '../SensorRegistration';
 import DataManagementModal from '../DataManagementModal';
@@ -40,10 +41,6 @@ import BatchAssignmentDialog from '../BatchAssignmentDialog';
  * Modal States (controlled by parent):
  * @param {boolean} props.patientInfoOpen
  * @param {Function} props.onClosePatientInfo
- * @param {boolean} props.dayProfilesOpen
- * @param {Function} props.onCloseDayProfiles
- * @param {number} props.numDaysProfile - Number of days to show (7 or 14)
- * @param {Function} props.onChangeNumDaysProfile - Callback to change number of days
  * @param {boolean} props.sensorHistoryOpen
  * @param {Function} props.onCloseSensorHistory
  * @param {boolean} props.sensorRegistrationOpen
@@ -66,12 +63,6 @@ export default function ModalManager({
   // Patient Info Modal
   patientInfoOpen,
   onClosePatientInfo,
-  
-  // Day Profiles Modal
-  dayProfilesOpen,
-  onCloseDayProfiles,
-  numDaysProfile,
-  onChangeNumDaysProfile,
   
   // Sensor History Modal
   sensorHistoryOpen,
@@ -104,19 +95,6 @@ export default function ModalManager({
         <PatientInfo 
           isModal={true}
           onClose={onClosePatientInfo} 
-        />,
-        document.body
-      )}
-
-      {/* Day Profiles Modal */}
-      {dayProfilesOpen && ReactDOM.createPortal(
-        <DayProfilesModal 
-          isOpen={dayProfilesOpen}
-          onClose={onCloseDayProfiles}
-          dayProfiles={dayProfiles}
-          patientInfo={patientInfo}
-          numDays={numDaysProfile}
-          onChangeNumDays={onChangeNumDaysProfile}
         />,
         document.body
       )}

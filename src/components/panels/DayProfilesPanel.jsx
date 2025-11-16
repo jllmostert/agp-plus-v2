@@ -8,12 +8,14 @@
  * - Simple close button (top-right X or ← Terug)
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import DayProfileCard from '../DayProfileCard';
 import { downloadDayProfilesHTML } from '../../core/day-profiles-exporter';
 
-export default function DayProfilesPanel({ isOpen, onClose, dayProfiles, patientInfo = null }) {
+export default function DayProfilesPanel({ isOpen, onClose, dayProfiles, patientInfo = null, numDays = 7, onNumDaysChange }) {
   if (!isOpen) return null;
+  
+  console.log('[DayProfilesPanel] Rendering with:', { numDays, profilesCount: dayProfiles?.length });
 
   return (
     <div 
@@ -68,7 +70,38 @@ export default function DayProfilesPanel({ isOpen, onClose, dayProfiles, patient
             ← Sluiten
           </button>
 
-          {/* Print button - NOW SECOND */}
+          {/* Toggle 7d/14d button */}
+          <button
+            onClick={() => {
+              const newNumDays = numDays === 7 ? 14 : 7;
+              console.log('[DayProfilesPanel] Toggle clicked:', { from: numDays, to: newNumDays });
+              onNumDaysChange?.(newNumDays);
+            }}
+            style={{
+              fontFamily: 'Courier New, monospace',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              padding: '12px 24px',
+              border: '3px solid var(--color-white)',
+              backgroundColor: numDays === 7 ? 'var(--color-black)' : 'var(--color-white)',
+              color: numDays === 7 ? 'var(--color-white)' : 'var(--color-black)',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              letterSpacing: '2px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = numDays === 7 ? 'var(--color-white)' : 'var(--color-black)';
+              e.target.style.color = numDays === 7 ? 'var(--color-black)' : 'var(--color-white)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = numDays === 7 ? 'var(--color-black)' : 'var(--color-white)';
+              e.target.style.color = numDays === 7 ? 'var(--color-white)' : 'var(--color-black)';
+            }}
+          >
+            {numDays === 7 ? '7d' : '14d'}
+          </button>
+
+          {/* Print button - NOW LAST */}
           <button
             onClick={() => {
               try {
@@ -126,7 +159,7 @@ export default function DayProfilesPanel({ isOpen, onClose, dayProfiles, patient
               paddingBottom: '16px'
             }}
           >
-            Dagprofielen - Laatste 7 dagen
+            Dagprofielen - Laatste {numDays} dagen
           </div>
 
           {/* Day cards - stacked vertically */}

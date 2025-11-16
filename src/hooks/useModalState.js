@@ -10,7 +10,6 @@ import { useState } from 'react';
 export function useModalState() {
   // Individual modal states
   const [patientInfoOpen, setPatientInfoOpen] = useState(false);
-  const [dayProfilesOpen, setDayProfilesOpen] = useState(false);
   const [sensorHistoryOpen, setSensorHistoryOpen] = useState(false);
   const [sensorRegistrationOpen, setSensorRegistrationOpen] = useState(false);
   const [dataManagementOpen, setDataManagementOpen] = useState(false);
@@ -21,7 +20,6 @@ export function useModalState() {
   const openModal = (name) => {
     const setters = {
       patientInfo: setPatientInfoOpen,
-      dayProfiles: setDayProfilesOpen,
       sensorHistory: setSensorHistoryOpen,
       sensorRegistration: setSensorRegistrationOpen,
       dataManagement: setDataManagementOpen,
@@ -35,7 +33,6 @@ export function useModalState() {
   const closeModal = (name) => {
     const setters = {
       patientInfo: setPatientInfoOpen,
-      dayProfiles: setDayProfilesOpen,
       sensorHistory: setSensorHistoryOpen,
       sensorRegistration: setSensorRegistrationOpen,
       dataManagement: setDataManagementOpen,
@@ -48,7 +45,6 @@ export function useModalState() {
   // Helper: Close all modals at once
   const closeAll = () => {
     setPatientInfoOpen(false);
-    setDayProfilesOpen(false);
     setSensorHistoryOpen(false);
     setSensorRegistrationOpen(false);
     setDataManagementOpen(false);
@@ -59,7 +55,6 @@ export function useModalState() {
   return {
     // Individual states (read access)
     patientInfoOpen,
-    dayProfilesOpen,
     sensorHistoryOpen,
     sensorRegistrationOpen,
     dataManagementOpen,
@@ -68,7 +63,6 @@ export function useModalState() {
     
     // Individual setters (for direct control if needed)
     setPatientInfoOpen,
-    setDayProfilesOpen,
     setSensorHistoryOpen,
     setSensorRegistrationOpen,
     setDataManagementOpen,
