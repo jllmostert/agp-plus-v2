@@ -67,10 +67,23 @@ export default function ComparisonView({
     return {
       value: Math.abs(delta).toFixed(decimals),
       sign,
+      raw: delta,
       isPositive: delta > 0,
       isNegative: delta < 0,
       isNeutral: delta === 0
     };
+  };
+
+  // Get trend color based on whether change is good or bad
+  const getTrendColor = (metricKey, delta) => {
+    if (!delta || delta.isNeutral) return 'var(--text-tertiary)';
+    
+    // TIR: higher is better
+    if (metricKey === 'tir') {
+      return delta.isPositive ? 'var(--color-green)' : 'var(--color-red)';
+    }
+    // Mean, CV, GMI: lower is better
+    return delta.isNegative ? 'var(--color-green)' : 'var(--color-red)';
   };
 
   const metrics = [
@@ -285,7 +298,7 @@ export default function ComparisonView({
                     fontSize: '0.75rem',
                     fontWeight: 600,
                     marginTop: '0.75rem',
-                    color: 'var(--color-orange)',
+                    color: getTrendColor(metric.key, delta),
                     letterSpacing: '0.05em'
                   }}
                 >
