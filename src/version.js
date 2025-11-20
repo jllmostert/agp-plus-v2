@@ -3,9 +3,9 @@
  * Single source of truth for application version
  */
 
-export const VERSION = '4.2.2';
-export const VERSION_DATE = '2025-11-14';
-export const VERSION_NAME = 'Stock Import/Export + IndexedDB Fix';
+export const VERSION = '4.3.2';
+export const VERSION_DATE = '2025-11-20';
+export const VERSION_NAME = 'Layout Consolidation + Grid-Style Comparisons';
 
 export default {
   VERSION,

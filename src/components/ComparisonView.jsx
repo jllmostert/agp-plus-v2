@@ -1,22 +1,28 @@
 import React from 'react';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { BarChart2 } from 'lucide-react';
+import Tooltip from './Tooltip';
+import { getMetricTooltip } from '../utils/metricDefinitions';
 
 /**
- * Safe number formatter - handles NaN, null, undefined, strings
- */
-const safeFormat = (val, decimals = 0) => {
-  const num = Number(val);
-  if (isNaN(num) || !isFinite(num)) return 'N/A';
-  return num.toFixed(decimals);
-};
-
-/**
- * ComparisonView - Period-over-period comparison component
+ * ComparisonView - Period vs Previous Period Metrics Comparison
  * 
- * Grid-based layout: [Label] [Current] [Previous]
- * Inline styles for consistency with MetricsDisplay
+ * Displays side-by-side comparison of glucose metrics between current and previous period.
+ * Shows delta/difference between the two periods for quick insights.
  * 
- * @version 2.1.2 CLINICAL GRID
+ * Layout: 3-column grid (matching WorkScheduleAnalysis style)
+ * - Column 1 (orange): Metric label
+ * - Column 2 (dark): Current period metrics + delta
+ * - Column 3 (dark): Previous period metrics
+ * 
+ * @param {Object} currentMetrics - Metrics for current period
+ * @param {Object} previousMetrics - Metrics for previous period
+ * @param {Date} startDate - Current period start
+ * @param {Date} endDate - Current period end
+ * @param {Date} prevStart - Previous period start
+ * @param {Date} prevEnd - Previous period end
+ * 
+ * @version 3.0.0
+ * @since 2025-11-16 - Sprint S3 grid redesign + GMI row
  */
 export default function ComparisonView({ 
   currentMetrics, 
@@ -26,9 +32,16 @@ export default function ComparisonView({
   prevStart,
   prevEnd
 }) {
+  // If either dataset missing, don't render
   if (!currentMetrics || !previousMetrics) {
     return null;
   }
+
+  const safeFormat = (val, decimals = 0) => {
+    const num = Number(val);
+    if (isNaN(num) || !isFinite(num)) return 'N/A';
+    return num.toFixed(decimals);
+  };
 
   // Format dates for display
   const formatDate = (date) => {
@@ -41,311 +54,322 @@ export default function ComparisonView({
   const currentDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
   const previousDays = Math.ceil((prevEnd - prevStart) / (1000 * 60 * 60 * 24)) + 1;
 
-  // Metrics to compare
-  const comparisons = [
+  // Calculate delta (current - previous)
+  const calculateDelta = (currentVal, prevVal, decimals = 1) => {
+    const curr = Number(currentVal);
+    const prev = Number(prevVal);
+    
+    if (isNaN(curr) || isNaN(prev)) return null;
+    
+    const delta = curr - prev;
+    const sign = delta > 0 ? '↑ +' : delta < 0 ? '↓ ' : '';
+    
+    return {
+      value: Math.abs(delta).toFixed(decimals),
+      sign,
+      isPositive: delta > 0,
+      isNegative: delta < 0,
+      isNeutral: delta === 0
+    };
+  };
+
+  const metrics = [
     {
-      id: 'tir',
+      key: 'tir',
       label: 'Time in Range',
-      sublabel: '70-180 mg/dL',
-      current: currentMetrics.tir,
-      previous: previousMetrics.tir,
       unit: '%',
-      format: (v) => safeFormat(v, 1),
-      betterIfHigher: true,
-      target: 'Target ≥70%',
+      decimals: 1,
+      tooltip: 'tir',
+      subtitle: '70-180 mg/dL'
     },
     {
-      id: 'mean',
+      key: 'mean',
       label: 'Mean Glucose',
-      current: currentMetrics.mean,
-      previous: previousMetrics.mean,
       unit: 'mg/dL',
-      format: (v) => safeFormat(v, 0),
-      currentSD: currentMetrics.sd,
-      previousSD: previousMetrics.sd,
-      target: 'Target 70-180',
+      decimals: 0,
+      tooltip: 'mean',
+      subtitle: null
     },
     {
-      id: 'cv',
+      key: 'cv',
       label: 'Coefficient Variation',
-      current: currentMetrics.cv,
-      previous: previousMetrics.cv,
       unit: '%',
-      format: (v) => safeFormat(v, 1),
-      betterIfLower: true,
-      target: 'Target ≤36%',
+      decimals: 1,
+      tooltip: 'cv',
+      subtitle: 'Target ≤36%'
     },
     {
-      id: 'gmi',
-      label: 'GMI (est. HbA1c)',
-      current: currentMetrics.gmi,
-      previous: previousMetrics.gmi,
+      key: 'gmi',
+      label: 'GMI',
       unit: '%',
-      format: (v) => safeFormat(v, 1),
-      betterIfLower: true,
-      target: 'Target <7.0%',
-    },
+      decimals: 1,
+      tooltip: 'gmi',
+      subtitle: 'Glucose Management Indicator'
+    }
   ];
 
   return (
-    <div style={{ 
-      backgroundColor: 'var(--bg-secondary)',
-      border: '4px solid var(--color-black)',
-      padding: '2rem',
-      marginBottom: '2rem'
-    }}>
+    <div
+      role="region"
+      aria-labelledby="comparison-title"
+      style={{
+        marginTop: '2rem',
+        marginBottom: '2rem'
+      }}
+    >
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '2rem',
-        padding: '1.5rem',
-        backgroundColor: 'var(--color-black)',
-        border: '3px solid var(--color-orange)'
-      }}>
-        <h3 style={{ 
-          fontSize: '1.25rem',
-          fontWeight: 700,
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase',
-          color: 'var(--color-white)'
-        }}>
-          Period Comparison
-        </h3>
-        <div style={{ 
-          fontSize: '1rem',
-          color: 'var(--color-orange)',
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          fontFamily: 'monospace'
-        }}>
-          {formatDate(startDate)} → {formatDate(endDate)} vs {formatDate(prevStart)} → {formatDate(prevEnd)}
-        </div>
-      </div>
-
-      {/* Comparison Grid */}
-      <div style={{ 
-        display: 'grid',
-        gridTemplateColumns: '200px 1fr 1fr',
-        gap: '1rem',
-        alignItems: 'stretch'
-      }}>
-        {comparisons.map((comp) => (
-          <ComparisonRow key={comp.id} {...comp} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * ComparisonRow - Single row in comparison grid
- * [Label] [Current Card] [Previous Card]
- */
-function ComparisonRow({ 
-  label, 
-  sublabel,
-  current, 
-  previous, 
-  unit, 
-  format, 
-  currentSD,
-  previousSD,
-  betterIfHigher, 
-  betterIfLower,
-  target 
-}) {
-  // Calculate delta and trend
-  const delta = current - previous;
-  const deltaFormatted = format(Math.abs(delta));
-  
-  let trendIcon = '→';
-  let trendColor = 'var(--text-secondary)'; // gray-500
-  
-  if (Math.abs(delta) > 0.5) {
-    if (betterIfHigher) {
-      trendIcon = delta > 0 ? '↑' : '↓';
-      trendColor = delta > 0 ? 'var(--color-green)' : 'var(--color-red)'; // green-500 : red-500
-    } else if (betterIfLower) {
-      trendIcon = delta > 0 ? '↑' : '↓';
-      trendColor = delta < 0 ? 'var(--color-green)' : 'var(--color-red)'; // green-500 : red-500
-    } else {
-      trendIcon = delta > 0 ? '↑' : '↓';
-    }
-  }
-
-  return (
-    <>
-      {/* Label */}
-      <div style={{ 
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        gap: '0.5rem',
-        backgroundColor: 'var(--color-orange)',
-        padding: '1rem',
-        border: '3px solid var(--color-black)'
-      }}>
-        <div style={{ 
-          fontSize: '0.875rem',
-          fontWeight: 700,
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-          color: 'var(--color-black)'
-        }}>
-          {label}
-        </div>
-        {sublabel && (
-          <div style={{ 
-            fontSize: '0.75rem',
-            color: 'var(--color-black)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            fontWeight: 600,
-            opacity: 0.8
-          }}>
-            {sublabel}
-          </div>
-        )}
-      </div>
-
-      {/* Current Period Card */}
-      <div style={{
-        backgroundColor: 'var(--bg-card-dark)',
-        color: 'var(--color-white)',
-        padding: '1.5rem',
-        borderRadius: '0',
-        border: '3px solid var(--color-green)', // Green = current/active
-        transition: 'all 100ms linear'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'scale(1.02)';
-        e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-green) inset';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-      >
-        <div style={{ 
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-          marginBottom: '1rem',
-          color: 'var(--color-green)',
-          borderBottom: '2px solid var(--color-green)',
-          paddingBottom: '0.5rem'
-        }}>
-          Current Period
-        </div>
-        <div style={{ 
-          fontSize: '2.5rem',
-          fontWeight: 700,
-          letterSpacing: '-0.02em',
+      <div
+        style={{
+          backgroundColor: 'var(--color-black)',
           color: 'var(--color-white)',
-          fontVariantNumeric: 'tabular-nums',
-          lineHeight: 1
-        }}>
-          {format(current)}
-          <span style={{ fontSize: '1.25rem', marginLeft: '0.5rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{unit}</span>
-        </div>
-        {currentSD != null && (
-          <div style={{ 
-            fontSize: '1rem',
-            fontWeight: 600,
-            marginTop: '0.75rem',
-            color: 'var(--text-tertiary)'
-          }}>
-            ± {safeFormat(currentSD, 0)} SD
-          </div>
-        )}
-        
-        {/* Trend Indicator */}
-        <div style={{ 
-          marginTop: '1rem',
-          paddingTop: '1rem',
-          borderTop: '2px solid var(--text-tertiary)',
+          padding: '1rem 1.5rem',
+          border: '3px solid var(--color-black)',
           display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <span style={{ fontSize: '1.5rem', color: trendColor }}>{trendIcon}</span>
-          <span style={{ fontSize: '1rem', color: trendColor, fontWeight: 700, letterSpacing: '0.05em' }}>
-            {delta > 0 ? '+' : ''}{deltaFormatted} {unit}
-          </span>
+          marginBottom: '1rem'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <BarChart2 
+            aria-hidden="true"
+            style={{ width: '20px', height: '20px' }} 
+          />
+          <h3
+            id="comparison-title"
+            style={{
+              margin: 0,
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase'
+            }}
+          >
+            Period Comparison
+          </h3>
+        </div>
+        <div
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            color: 'var(--color-orange)'
+          }}
+        >
+          {formatDate(startDate)}-{formatDate(endDate)} ({currentDays}d) vs {formatDate(prevStart)}-{formatDate(prevEnd)} ({previousDays}d)
         </div>
       </div>
 
-      {/* Previous Period Card */}
-      <div style={{
-        backgroundColor: 'var(--bg-card-dark)',
-        color: 'var(--color-white)',
-        padding: '1.5rem',
-        borderRadius: '0',
-        border: '3px solid var(--text-tertiary)', // Gray = previous/historical
-        transition: 'all 100ms linear'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'scale(1.02)';
-        e.currentTarget.style.boxShadow = '0 0 0 3px var(--text-tertiary) inset';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-      >
-        <div style={{ 
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-          marginBottom: '1rem',
-          color: 'var(--text-tertiary)',
-          borderBottom: '2px solid var(--text-tertiary)',
-          paddingBottom: '0.5rem'
-        }}>
-          Previous Period
-        </div>
-        <div style={{ 
-          fontSize: '2.5rem',
-          fontWeight: 700,
-          letterSpacing: '-0.02em',
-          color: 'var(--color-white)',
-          fontVariantNumeric: 'tabular-nums',
-          lineHeight: 1
-        }}>
-          {format(previous)}
-          <span style={{ fontSize: '1.25rem', marginLeft: '0.5rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{unit}</span>
-        </div>
-        {previousSD != null && (
-          <div style={{ 
-            fontSize: '1rem',
-            fontWeight: 600,
-            marginTop: '0.75rem',
-            color: 'var(--text-tertiary)'
-          }}>
-            ± {safeFormat(previousSD, 0)} SD
+      {/* Metrics Grid */}
+      {metrics.map((metric, index) => {
+        const currentVal = currentMetrics[metric.key];
+        const prevVal = previousMetrics[metric.key];
+        const delta = calculateDelta(currentVal, prevVal, metric.decimals);
+        const currentSD = currentMetrics.sd;
+        const prevSD = previousMetrics.sd;
+        const isLast = index === metrics.length - 1;
+
+        return (
+          <div
+            key={metric.key}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '200px 1fr 1fr',
+              gap: '1rem',
+              marginBottom: isLast ? '0' : '1rem'
+            }}
+          >
+            {/* Label Column */}
+            <div
+              style={{
+                backgroundColor: 'var(--color-orange)',
+                color: 'var(--color-black)',
+                padding: '1.5rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                border: '3px solid var(--color-black)'
+              }}
+            >
+              <Tooltip text={metric.tooltip ? getMetricTooltip(metric.tooltip) : ''}>
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    lineHeight: 1.3
+                  }}
+                >
+                  {metric.label}
+                </div>
+              </Tooltip>
+              {metric.subtitle && (
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 600,
+                    marginTop: '0.25rem',
+                    opacity: 0.7
+                  }}
+                >
+                  {metric.subtitle}
+                </div>
+              )}
+            </div>
+
+            {/* Current Period Column */}
+            <div
+              style={{
+                backgroundColor: 'var(--bg-card-dark)',
+                color: 'var(--color-white)',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                border: '3px solid var(--color-black)'
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-orange)',
+                  marginBottom: '0.5rem'
+                }}
+              >
+                Current Period
+              </div>
+              
+              <div
+                style={{
+                  fontSize: '2.5rem',
+                  fontWeight: 700,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1,
+                  fontVariantNumeric: 'tabular-nums'
+                }}
+              >
+                {safeFormat(currentVal, metric.decimals)}
+                <span
+                  style={{
+                    fontSize: '1.25rem',
+                    marginLeft: '0.5rem',
+                    opacity: 0.7
+                  }}
+                >
+                  {metric.unit}
+                </span>
+              </div>
+
+              {/* SD subtitle for mean */}
+              {metric.key === 'mean' && currentSD && (
+                <div
+                  style={{
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    marginTop: '0.5rem',
+                    color: 'var(--text-tertiary)'
+                  }}
+                >
+                  ± {safeFormat(currentSD, 0)} SD
+                </div>
+              )}
+
+              {/* Delta */}
+              {delta && !delta.isNeutral && (
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    marginTop: '0.75rem',
+                    color: 'var(--color-orange)',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  {delta.sign}{delta.value} {metric.unit} vs previous
+                </div>
+              )}
+            </div>
+
+            {/* Previous Period Column */}
+            <div
+              style={{
+                backgroundColor: 'var(--bg-card-dark)',
+                color: 'var(--color-white)',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                border: '3px solid var(--color-black)'
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-tertiary)',
+                  marginBottom: '0.5rem'
+                }}
+              >
+                Previous Period
+              </div>
+              
+              <div
+                style={{
+                  fontSize: '2.5rem',
+                  fontWeight: 700,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1,
+                  fontVariantNumeric: 'tabular-nums'
+                }}
+              >
+                {safeFormat(prevVal, metric.decimals)}
+                <span
+                  style={{
+                    fontSize: '1.25rem',
+                    marginLeft: '0.5rem',
+                    opacity: 0.7
+                  }}
+                >
+                  {metric.unit}
+                </span>
+              </div>
+
+              {/* SD subtitle for mean */}
+              {metric.key === 'mean' && prevSD && (
+                <div
+                  style={{
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    marginTop: '0.5rem',
+                    color: 'var(--text-tertiary)'
+                  }}
+                >
+                  ± {safeFormat(prevSD, 0)} SD
+                </div>
+              )}
+
+              <div
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                  marginTop: '0.75rem',
+                  color: 'var(--text-tertiary)',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase'
+                }}
+              >
+                {previousDays} days
+              </div>
+            </div>
           </div>
-        )}
-        
-        {/* Target Info */}
-        {target && (
-          <div style={{ 
-            marginTop: '1rem',
-            paddingTop: '1rem',
-            borderTop: '2px solid var(--text-tertiary)',
-            fontSize: '0.75rem',
-            color: 'var(--color-orange)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            fontWeight: 700
-          }}>
-            {target}
-          </div>
-        )}
-      </div>
-    </>
+        );
+      })}
+    </div>
   );
 }

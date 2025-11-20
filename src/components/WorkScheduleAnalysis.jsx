@@ -1,28 +1,28 @@
 import React from 'react';
-import { Sun, Moon } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
 import Tooltip from './Tooltip';
 import { getMetricTooltip } from '../utils/metricDefinitions';
 
 /**
- * DayNightSplit - Day vs Night Metrics Comparison
+ * WorkScheduleAnalysis - Workday vs Rest Day Metrics Comparison
  * 
- * Displays side-by-side comparison of glucose metrics between day and night periods.
- * Shows delta/difference between the two periods for quick insights.
+ * Displays side-by-side comparison of glucose metrics between workdays and rest days.
+ * Shows delta/difference between the two groups for quick insights.
  * 
- * Layout: 3-column grid (matching WorkScheduleAnalysis style)
+ * Layout: 3-column grid
  * - Column 1 (orange): Metric label
- * - Column 2 (dark): Day metrics (06:00-00:00) + delta
- * - Column 3 (dark): Night metrics (00:00-06:00)
+ * - Column 2 (dark): Workday metrics + delta
+ * - Column 3 (dark): Rest day metrics
  * 
- * @param {Object} dayMetrics - Metrics calculated for day period (06:00-00:00)
- * @param {Object} nightMetrics - Metrics calculated for night period (00:00-06:00)
+ * @param {Object} workdayMetrics - Metrics calculated for workdays only
+ * @param {Object} restdayMetrics - Metrics calculated for rest days only
  * 
- * @version 2.0.0
- * @since 2025-11-16 - Sprint S3 grid redesign
+ * @version 1.0.0
+ * @since 2025-11-16 - Sprint S3 (Track 2: Safety & Accessibility)
  */
-export default function DayNightSplit({ dayMetrics, nightMetrics }) {
+export default function WorkScheduleAnalysis({ workdayMetrics, restdayMetrics }) {
   // If either dataset missing, don't render
-  if (!dayMetrics || !nightMetrics) {
+  if (!workdayMetrics || !restdayMetrics) {
     return null;
   }
 
@@ -32,14 +32,14 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
     return num.toFixed(decimals);
   };
 
-  // Calculate delta (day - night)
-  const calculateDelta = (dayVal, nightVal, decimals = 1) => {
-    const day = Number(dayVal);
-    const night = Number(nightVal);
+  // Calculate delta (workday - restday)
+  const calculateDelta = (workVal, restVal, decimals = 1) => {
+    const work = Number(workVal);
+    const rest = Number(restVal);
     
-    if (isNaN(day) || isNaN(night)) return null;
+    if (isNaN(work) || isNaN(rest)) return null;
     
-    const delta = day - night;
+    const delta = work - rest;
     const sign = delta > 0 ? '↑ +' : delta < 0 ? '↓ ' : '';
     
     return {
@@ -49,6 +49,13 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
       isNegative: delta < 0,
       isNeutral: delta === 0
     };
+  };
+
+  // Get comparison label
+  const getComparisonLabel = (metricKey) => {
+    // For TIR: higher is better, so positive delta is good
+    // For Mean/CV: depends on context
+    return 'vs rest';
   };
 
   const metrics = [
@@ -81,7 +88,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
   return (
     <div
       role="region"
-      aria-labelledby="day-night-title"
+      aria-labelledby="work-schedule-title"
       style={{
         marginTop: '2rem',
         marginBottom: '2rem'
@@ -101,12 +108,12 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Sun 
+          <Briefcase 
             aria-hidden="true"
             style={{ width: '20px', height: '20px' }} 
           />
           <h3
-            id="day-night-title"
+            id="work-schedule-title"
             style={{
               margin: 0,
               fontSize: '0.875rem',
@@ -115,7 +122,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
               textTransform: 'uppercase'
             }}
           >
-            Day/Night Analysis
+            Work Schedule Analysis
           </h3>
         </div>
         <div
@@ -126,17 +133,17 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
             color: 'var(--color-orange)'
           }}
         >
-          06:00-00:00 vs 00:00-06:00
+          {workdayMetrics.days} workdays vs {restdayMetrics.days} rest days
         </div>
       </div>
 
       {/* Metrics Grid */}
       {metrics.map((metric, index) => {
-        const dayVal = dayMetrics[metric.key];
-        const nightVal = nightMetrics[metric.key];
-        const delta = calculateDelta(dayVal, nightVal, metric.decimals);
-        const daySD = dayMetrics.sd;
-        const nightSD = nightMetrics.sd;
+        const workVal = workdayMetrics[metric.key];
+        const restVal = restdayMetrics[metric.key];
+        const delta = calculateDelta(workVal, restVal, metric.decimals);
+        const workSD = workdayMetrics.sd;
+        const restSD = restdayMetrics.sd;
         const isLast = index === metrics.length - 1;
 
         return (
@@ -188,7 +195,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
               )}
             </div>
 
-            {/* Day Column */}
+            {/* Workdays Column */}
             <div
               style={{
                 backgroundColor: 'var(--bg-card-dark)',
@@ -210,7 +217,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
                   marginBottom: '0.5rem'
                 }}
               >
-                Day (06:00-00:00)
+                Workdays
               </div>
               
               <div
@@ -222,7 +229,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
                   fontVariantNumeric: 'tabular-nums'
                 }}
               >
-                {safeFormat(dayVal, metric.decimals)}
+                {safeFormat(workVal, metric.decimals)}
                 <span
                   style={{
                     fontSize: '1.25rem',
@@ -235,7 +242,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
               </div>
 
               {/* SD subtitle for mean */}
-              {metric.key === 'mean' && daySD && (
+              {metric.key === 'mean' && workSD && (
                 <div
                   style={{
                     fontSize: '0.9rem',
@@ -244,7 +251,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
                     color: 'var(--text-tertiary)'
                   }}
                 >
-                  ± {safeFormat(daySD, 0)} SD
+                  ± {safeFormat(workSD, 0)} SD
                 </div>
               )}
 
@@ -259,12 +266,12 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
                     letterSpacing: '0.05em'
                   }}
                 >
-                  {delta.sign}{delta.value} {metric.unit} vs night
+                  {delta.sign}{delta.value} {metric.unit} {getComparisonLabel(metric.key)}
                 </div>
               )}
             </div>
 
-            {/* Night Column */}
+            {/* Rest Days Column */}
             <div
               style={{
                 backgroundColor: 'var(--bg-card-dark)',
@@ -286,7 +293,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
                   marginBottom: '0.5rem'
                 }}
               >
-                Night (00:00-06:00)
+                Rest Days
               </div>
               
               <div
@@ -298,7 +305,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
                   fontVariantNumeric: 'tabular-nums'
                 }}
               >
-                {safeFormat(nightVal, metric.decimals)}
+                {safeFormat(restVal, metric.decimals)}
                 <span
                   style={{
                     fontSize: '1.25rem',
@@ -311,7 +318,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
               </div>
 
               {/* SD subtitle for mean */}
-              {metric.key === 'mean' && nightSD && (
+              {metric.key === 'mean' && restSD && (
                 <div
                   style={{
                     fontSize: '0.9rem',
@@ -320,7 +327,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
                     color: 'var(--text-tertiary)'
                   }}
                 >
-                  ± {safeFormat(nightSD, 0)} SD
+                  ± {safeFormat(restSD, 0)} SD
                 </div>
               )}
 
@@ -334,7 +341,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
                   textTransform: 'uppercase'
                 }}
               >
-                6 hours
+                Non-work days
               </div>
             </div>
           </div>

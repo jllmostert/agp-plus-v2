@@ -3,6 +3,8 @@ import { TrendingUp, TrendingDown, Activity, Zap } from 'lucide-react';
 import Tooltip from './Tooltip';
 import { getMetricTooltip } from '../utils/metricDefinitions';
 import TIRBar from './TIRBar';
+import HypoglycemiaEvents from './HypoglycemiaEvents';
+import WorkScheduleAnalysis from './WorkScheduleAnalysis';
 
 /**
  * MetricsDisplay - Clinical Dashboard Layout
@@ -11,13 +13,16 @@ import TIRBar from './TIRBar';
  * - Left zone (dark): TIR + Mean±SD stacked
  * - Right zone (white): CV + GMI + TDD in row
  * 
+ * Work Schedule Analysis: Workday vs Rest Day comparison (if data available)
+ * 
  * Secondary Grid: All other metrics with reduced visual weight
  * 
+ * @version 3.9.0 - Added Work Schedule Analysis (Sprint S3)
  * @version 3.8.0 - Golden ratio hero layout (Task 6.1)
  * @version 2.2.0 - Reorganized Overview section (Analysis Period + Data Quality)
  *                   Moved GRI to HypoglycemiaEvents component
  */
-export default function MetricsDisplay({ metrics, tddData }) {
+export default function MetricsDisplay({ metrics, tddData, workdayMetrics, restdayMetrics, events }) {
   if (!metrics) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
@@ -317,6 +322,19 @@ export default function MetricsDisplay({ metrics, tddData }) {
           }
         />
       </div>
+
+      {/* HYPOGLYCEMIA EVENTS - Warning Panel */}
+      <HypoglycemiaEvents 
+        events={events} 
+        tbrPercent={metrics?.tbr}
+        gri={metrics?.gri}
+      />
+
+      {/* WORK SCHEDULE ANALYSIS - Workday vs Rest Day Split */}
+      <WorkScheduleAnalysis 
+        workdayMetrics={workdayMetrics}
+        restdayMetrics={restdayMetrics}
+      />
     </>
   );
 }
@@ -391,7 +409,7 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
         {/* Subtitle */}
         {subtitle && (
           <div style={{ 
-            fontSize: compact ? '0.65rem' : '1rem',
+            fontSize: compact ? '0.85rem' : '1.25rem',
             fontWeight: 600,
             color: 'var(--border-tertiary)',
             marginTop: '0.25rem'

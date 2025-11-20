@@ -5,21 +5,20 @@
  * Extracted from AGPGenerator.jsx (Sprint C1 Phase 3)
  * 
  * Handles:
- * - Main charts (AGPChart, MetricsDisplay)
- * - Events (HypoglycemiaEvents)
- * - Split views (DayNightSplit, WorkdaySplit)
+ * - Main charts (AGPChart)
+ * - Metrics (MetricsDisplay - includes HypoglycemiaEvents + WorkScheduleAnalysis)
+ * - Split views (DayNightSplit)
  * - Comparison view
  * 
- * @version 1.0.0
+ * @version 1.2.0 - Moved HypoglycemiaEvents into MetricsDisplay
+ * @version 1.1.0 - Removed duplicate WorkdaySplit (now in MetricsDisplay)
  * @created 2025-11-02
  */
 
 import React from 'react';
 import AGPChart from '../AGPChart';
 import MetricsDisplay from '../MetricsDisplay';
-import HypoglycemiaEvents from '../HypoglycemiaEvents';
 import DayNightSplit from '../DayNightSplit';
-import WorkdaySplit from '../WorkdaySplit';
 import ComparisonView from '../ComparisonView';
 import { usePeriod } from '../../hooks/usePeriod';
 
@@ -32,7 +31,6 @@ const VisualizationContainer = React.memo(function VisualizationContainer({
   tddData,
   
   // Feature toggles
-  workdays,
   dayNightEnabled,
   onDayNightToggle
 }) {
@@ -53,26 +51,20 @@ const VisualizationContainer = React.memo(function VisualizationContainer({
         />
       </section>
 
-      {/* 2. HERO METRICS - TIR, Mean, CV, GMI + All Secondary */}
+      {/* 2. HERO METRICS - TIR, Mean, CV, GMI + All Secondary + HypoglycemiaEvents + WorkSchedule */}
       <section className="section">
         <MetricsDisplay
           metrics={metricsResult.metrics}
           tddData={tddData}
+          workdayMetrics={metricsResult.workdayMetrics}
+          restdayMetrics={metricsResult.restdayMetrics}
+          events={metricsResult.events}
           startDate={startDate}
           endDate={endDate}
         />
       </section>
 
-      {/* 3. HYPOGLYCEMIA EVENTS - Warning Panel */}
-      <section className="section">
-        <HypoglycemiaEvents 
-          events={metricsResult.events} 
-          tbrPercent={metricsResult.metrics?.tbr}
-          gri={metricsResult.metrics?.gri}
-        />
-      </section>
-
-      {/* 4. DAY/NIGHT SPLIT */}
+      {/* 3. DAY/NIGHT SPLIT */}
       <section className="section">
         <DayNightSplit
           dayMetrics={metricsResult.dayMetrics}
@@ -82,20 +74,7 @@ const VisualizationContainer = React.memo(function VisualizationContainer({
         />
       </section>
 
-      {/* 5. WORKDAY SPLIT - Only show when ProTime loaded */}
-      {workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics && (
-        <section className="section">
-          <WorkdaySplit
-            workdayMetrics={metricsResult.workdayMetrics}
-            restdayMetrics={metricsResult.restdayMetrics}
-            workdays={workdays}
-            startDate={startDate}
-            endDate={endDate}
-          />
-        </section>
-      )}
-
-      {/* 6. PERIOD COMPARISON - Last */}
+      {/* 4. PERIOD COMPARISON - Last */}
       {comparisonData && (
         <section className="section">
           <ComparisonView

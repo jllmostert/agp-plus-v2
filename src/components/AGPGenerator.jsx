@@ -1195,7 +1195,6 @@ function AGPGeneratorContent() {
             metricsResult={metricsResult}
             comparisonData={comparisonData}
             tddData={tddData}
-            workdays={workdays}
             dayNightEnabled={dayNightEnabled}
             onDayNightToggle={handleDayNightToggle}
           />
