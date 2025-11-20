@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Activity, Download, ChevronDown, Save, User } from 'lucide-react';
 import { debug } from '../utils/debug.js';
 import { APP_VERSION, APP_FULL_NAME } from '../utils/version.js';
@@ -128,11 +128,8 @@ function AGPGeneratorContent() {
   
   const { startDate, endDate, safeDateRange: periodSafeDateRange, setStartDate, setEndDate } = usePeriod();
   
-  // V3: Selected date range for master dataset filter
-  const [selectedDateRange, setSelectedDateRange] = useState({
-    start: null,
-    end: null
-  });
+  // V3: Date range now managed by PeriodContext (startDate/endDate)
+  // Removed: selectedDateRange useState - was duplicate of PeriodContext state
 
   // ============================================
   // STATE: Optional Features
@@ -239,12 +236,10 @@ function AGPGeneratorContent() {
    * Handle date range changes from DateRangeFilter
    */
   const handleDateRangeChange = (start, end) => {
-    // DEBUG: Log what we received
-    
-    setSelectedDateRange({ start, end });
+    // Update master dataset filter
     masterDataset.setDateRange(start, end);
     
-    // Update period selector dates for consistency
+    // Update period context (single source of truth)
     setStartDate(start);
     setEndDate(end);
   };
@@ -283,7 +278,7 @@ function AGPGeneratorContent() {
    * V3: Auto-select last 14 days when master dataset loads
    */
   useEffect(() => {
-    if (useV3Mode && masterDataset.stats && !startDate && !endDate && !selectedDateRange.start) {
+    if (useV3Mode && masterDataset.stats && !startDate && !endDate) {
       const stats = masterDataset.stats;
       if (stats.dateRange?.end) {
         const end = new Date(stats.dateRange.end);
@@ -1183,7 +1178,7 @@ function AGPGeneratorContent() {
           <section className="section">
             <DateRangeFilter
               datasetRange={masterDataset.stats.dateRange}
-              selectedRange={selectedDateRange}
+              selectedRange={{ start: startDate, end: endDate }}
               onRangeChange={handleDateRangeChange}
             />
           </section>
