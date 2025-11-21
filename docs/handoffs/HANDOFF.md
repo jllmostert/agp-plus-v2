@@ -34,7 +34,9 @@ State Management:
 src/
 ├── components/
 │   ├── AGPGenerator.jsx           # Main orchestrator (1544 lines, 0 useState)
-│   └── panels/PumpSettingsPanel.jsx  # MiniMed 780G settings UI
+│   └── panels/
+│       ├── PumpSettingsPanel.jsx  # MiniMed 780G settings UI
+│       └── SensorHistoryPanel.jsx # Sensor history + seasons management
 ├── contexts/                      # DataContext, PeriodContext, MetricsContext, UIContext
 ├── hooks/                         # useModalState, usePanelNavigation, useImportExport, useUI
 ├── core/
@@ -44,9 +46,10 @@ src/
 │   └── metrics-engine.js          # MAGE, MODD, GRI, TIR calculations
 ├── storage/
 │   ├── db.js                      # IndexedDB setup (v6: includes SEASONS store)
-│   ├── sensorStorage.js           # Async sensor CRUD
+│   ├── sensorStorage.js           # Async sensor CRUD (hard delete)
 │   ├── seasonStorage.js           # Device seasons CRUD (IndexedDB)
 │   ├── pumpSettingsStorage.js     # Pump settings + device history
+│   ├── patientStorage.js          # Patient info with lock support
 │   ├── export.js                  # Full database export
 │   └── import.js                  # Full database import
 └── styles/globals.css             # Brutalist color system (use CSS vars!)
@@ -56,20 +59,29 @@ src/
 
 ## ✅ WHAT WORKS
 
-- ✅ CSV import (Medtronic CareLink)
+- ✅ CSV import (Medtronic CareLink, multi-pump support)
 - ✅ AGP generation (14-day) with dynamic Y-axis
 - ✅ Metrics: TIR, TAR, TBR, CV, GMI, MAGE, MODD, GRI
 - ✅ Smart trend indicators (color-coded deltas)
 - ✅ **MiniMed 780G Settings UI** (auto-detect + manual edit)
 - ✅ **Device History** (archive old pumps/transmitters)
 - ✅ **Device Seasons** (track pump+transmitter combos, editable via UI)
-- ✅ Sensor management (dual storage: IndexedDB + SQLite)
+- ✅ **Patient Info** with lock (prevents CSV overwrite)
+- ✅ Sensor management (hard delete, no tombstones)
 - ✅ **Sensor History** with resizable stats/table splitter
 - ✅ Stock management (batch tracking)
 - ✅ Import/export JSON (backup/restore incl. pump settings)
 - ✅ ProTime PDF parsing
 - ✅ Day profiles (7/14 days toggle)
 - ✅ Print-ready reports
+
+---
+
+## 🔧 RECENT FIXES (v4.4.0)
+
+- **Patient lock persistence**: Lock state survives CSV uploads
+- **Hard delete sensors**: Deleted sensors are completely removed (no more "deleted" labels)
+- **Device seasons**: Stored in IndexedDB, editable via UI
 
 ---
 
@@ -93,6 +105,7 @@ src/
 
 **If you touched**:
 - Storage → Test sensor add/delete/lock
+- Patient info → Test lock toggle + CSV upload
 - Contexts → Test state flows across components
 - Metrics → Run `npm test` (25 unit tests)
 - Charts → Check AGP/day profiles render

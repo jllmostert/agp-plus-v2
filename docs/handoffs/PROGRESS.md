@@ -1,14 +1,23 @@
 # 📊 AGP+ Development Progress
 
-**Current Version**: v4.3.6  
+**Current Version**: v4.4.0  
 **Last Updated**: 2025-11-21  
-**Session**: 45
+**Session**: 48
 
 ---
 
 ## 🎯 CURRENT STATUS
 
-### ✅ Completed (Session 45)
+### ✅ Completed (Session 48)
+
+**Bug Fixes & Cleanup**
+- ✅ Fix: Patient info lock state now persists after CSV upload
+- ✅ Fix: Sensors are now hard deleted (removed completely, not just marked as deleted)
+- ✅ Merged feature/device-era-tracking to main
+- ✅ Cleaned up feature branch
+- ✅ Version bump to 4.4.0
+
+### ✅ Completed (Session 47)
 
 **Device History Management** - NEW FEATURE! 🎉
 - ✅ Device history tracking (archive old pumps/transmitters)
