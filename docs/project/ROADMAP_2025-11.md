@@ -1,8 +1,9 @@
 # AGP+ Roadmap - November 2025 Update
 
 **Created**: 2025-11-20  
-**Version**: v4.3.3  
-**Session**: 43
+**Updated**: 2025-11-21  
+**Version**: v4.3.6  
+**Session**: 46
 
 ---
 
@@ -13,8 +14,9 @@
 - AGPGenerator: 1819 → ~1650 lines
 - State variables: 22 → 13
 
-### Waar staan we nu (20 november)?
+### Waar staan we nu (21 november)?
 - Track 3 Q1: Context API **100% COMPLEET** ✅
+- Track 4 M1: MiniMed 780G Settings UI **100% COMPLEET** ✅
 - AGPGenerator: 1819 → **1544 lines** (-275, -15.1%)
 - State variables: 22 → **0 local** (all in contexts/hooks)
 - Custom hooks: **6 active**
@@ -37,6 +39,20 @@
 
 **Resultaat**: AGPGenerator heeft nu **0 useState calls**
 
+### Track 4: Medical Accuracy - Sprint M1 ✅ 100%
+
+| Feature | Status | Session |
+|---------|--------|---------|
+| PumpSettingsPanel.jsx | ✅ | 44 |
+| pumpSettingsParser.js | ✅ | 44 |
+| pumpSettingsStorage.js | ✅ | 44 |
+| CSV auto-detection | ✅ | 44 |
+| Manual editing | ✅ | 44 |
+| 500/1800 rule calculations | ✅ | 44 |
+| Device History tracking | ✅ | 45 |
+| Archive old devices | ✅ | 45 |
+| Export/Import pump settings | ✅ | 45 |
+
 ### Track 2: Safety & Accessibility - Sprints S1-S3 ✅
 
 | Sprint | Status | Wat |
@@ -45,140 +61,72 @@
 | S2 | ✅ | Backup & restore (symmetric import/export) |
 | S3 | ✅ | Layout consolidation + trend indicators |
 
-### Track 1: Documentation ⏸️ Partial
+### Track 1: Documentation ✅ Mostly Complete
 
 | Item | Status | Wat |
 |------|--------|-----|
 | PROGRESS.md | ✅ | Up-to-date |
-| ARCHITECTURE_OVERVIEW.md | ✅ | Created Session 39 |
-| README.md | ⚠️ | Needs update |
-| PROJECT_BRIEFING.md | ⚠️ | Outdated |
+| HANDOFF.md | ✅ | Updated Session 46 |
+| README.md | ✅ | Updated Session 46 |
+| PROJECT_BRIEFING.md | ✅ | Updated |
 
 ---
 
-## 📋 OPENSTAANDE WERK
+## 📋 OPENSTAAND WERK (OPTIONEEL)
 
 ### Track 2: Safety & Accessibility (Remaining)
 
-**Sprint S4: Advanced Comparison** (~3-4h)
+**Sprint S4: Advanced Comparison** (~3-4h) - MEDIUM PRIORITY
 - [ ] Custom period comparison (user selects 2 periods)
 - [ ] Export comparison reports
 - [ ] Visual diff highlighting
 
 ### Track 3: Code Quality (Remaining)
 
-**Sprint Q2: Composition** (~8-10h) - OPTIONAL
-- [ ] Extract VisualizationContainer sub-components
-- [ ] Create shared grid/card components
-- [ ] Reduce component file sizes
-
-**Sprint Q3: Virtualization** (~2h) - DEFERRED
+**Sprint Q3: Virtualization** (~2h) - LOW PRIORITY
 - [ ] Virtual scrolling for large sensor lists
 - *Not urgent: current performance is fine*
 
-**Sprint Q4: WCAG AAA** (~6h) - OPTIONAL
+**Sprint Q4: WCAG AAA** (~6h) - LOW PRIORITY
 - [ ] Full keyboard navigation audit
 - [ ] Color contrast validation
 - [ ] Screen reader testing
 
-**Sprint Q5: Performance** (~4h) - LOW PRIORITY
-- [ ] React.memo where needed
-- [ ] Error boundaries
-- *Current performance is excellent*
+### Track 4: Medical Accuracy (Remaining)
 
-### Track 4: Medical Accuracy (Not Started)
-
-**Sprint M1: MiniMed 780G Settings UI** (~10-12h) - HIGH VALUE
-- [ ] Settings panel in UI
-- [ ] ISF configuration (per time block)
-- [ ] CR configuration (per time block)
-- [ ] Target glucose (100/110/120 mg/dL)
-- [ ] Active Insulin Time (2-8h)
-- [ ] Save to localStorage/IndexedDB
-
-**Sprint M2: Clinical Validation** (~6-8h)
+**Sprint M2: Clinical Validation** (~6-8h) - OPTIONAL
 - [ ] MAGE validation against reference
 - [ ] MODD validation
 - [ ] TDD statistics verification
 
 ---
 
-## 🎯 AANBEVOLEN PRIORITEIT
+## 📊 EFFORT SUMMARY
 
-### Must Have (High Value, Reasonable Effort)
-1. **Track 4, M1**: MiniMed 780G Settings UI (~10h)
-   - *Praktisch nut voor dagelijks gebruik*
-   - *Reference: minimed_780g_ref.md*
+| Track | Original | Completed | Remaining |
+|-------|----------|-----------|-----------|
+| Track 1: Docs | 5h | 5h | 0h |
+| Track 2: Safety | 15h | 12h | ~3h |
+| Track 3: Quality | 55h | 47h | ~8h |
+| Track 4: Medical | 22h | 12h | ~6h |
+| **Total** | 97h | **76h** | **~17h** |
 
-2. **Track 1**: Documentation update (~2h)
-   - *README.md + PROJECT_BRIEFING.md*
-
-### Nice to Have (Lower Priority)
-3. **Track 2, S4**: Advanced comparison (~3h)
-4. **Track 3, Q2**: Component composition (~8h)
-
-### Can Skip (Already Good Enough)
-- Sprint Q3 (virtualization) - performance is fine
-- Sprint Q4 (WCAG AAA) - already accessible
-- Sprint Q5 (React.memo) - no performance issues
+**Status**: 78% complete, remaining work is all optional/low priority
 
 ---
 
-## 📊 EFFORT VERGELIJKING
+## 🚀 APP IS PRODUCTION READY
 
-### Original Master Plan (15 nov)
-| Track | Uren | Status |
-|-------|------|--------|
-| Track 1: Docs | 5h | ~2h remaining |
-| Track 2: Safety | 15h | **~3h remaining** |
-| Track 3: Quality | 55h | **~14h optional** |
-| Track 4: Medical | 22h | ~18h remaining |
-| **Total** | 97h | **~37h remaining** |
+De app is **volledig functioneel**. Alle core features werken:
+- ✅ CSV import, metrics, visualisaties, export
+- ✅ Sensor tracking, stock management
+- ✅ Day profiles, comparison views
+- ✅ MiniMed 780G settings (auto-detect + manual)
+- ✅ Device history tracking
+- ✅ Full backup/restore
 
-### Realiteit
-- **Voltooid**: ~60h werk
-- **Essentieel remaining**: ~12h (docs + MiniMed settings)
-- **Optioneel remaining**: ~25h
+**Remaining work is enhancement, not necessity.**
 
 ---
 
-## 🚀 VOLGENDE SESSIE OPTIES
-
-### Optie A: MiniMed 780G Settings (Aanbevolen)
-```
-"Start Track 4, Sprint M1: MiniMed 780G Settings UI.
-Lees eerst /mnt/project/minimed_780g_ref.md"
-```
-**Geschatte tijd**: 10-12 uur over 4-5 sessies
-
-### Optie B: Documentation Cleanup
-```
-"Update README.md en PROJECT_BRIEFING.md naar v4.3.3"
-```
-**Geschatte tijd**: 2 uur (1 sessie)
-
-### Optie C: Advanced Comparison
-```
-"Start Track 2, Sprint S4: Custom period comparison"
-```
-**Geschatte tijd**: 3-4 uur (2 sessies)
-
-### Optie D: Gewoon Gebruiken
-De app is **productie-klaar**. Alle core features werken:
-- CSV import, metrics, visualisaties, export
-- Sensor tracking, stock management
-- Day profiles, comparison views
-
----
-
-## 📁 BESTANDEN OM TE ARCHIVEREN
-
-De volgende oude bestanden kunnen gearchiveerd worden:
-- `/docs/project/REFACTOR_MASTER_PLAN.md` → archive
-- `/docs/handoffs/REFACTORING_STATUS_OVERZICHT.md` → archive
-
-Dit document vervangt beide als single source of truth.
-
----
-
-**Conclusie**: De app is in uitstekende staat. Het belangrijkste openstaande werk is de MiniMed 780G Settings UI (Track 4), wat direct praktisch nut heeft voor diabetes management.
+**Last Updated**: 2025-11-21 Session 46

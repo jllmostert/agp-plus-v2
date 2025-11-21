@@ -1,6 +1,6 @@
 # AGP+ Quick Handoff
 
-**v4.3.3** | **Path**: `/Users/jomostert/Documents/Projects/agp-plus` | **Status**: ✅ Production Ready
+**v4.3.6** | **Path**: `/Users/jomostert/Documents/Projects/agp-plus` | **Status**: ✅ Production Ready
 
 ---
 
@@ -32,15 +32,21 @@ State Management:
 **Key Files**:
 ```
 src/
-├── components/AGPGenerator.jsx    # Main orchestrator (1544 lines, 0 useState)
+├── components/
+│   ├── AGPGenerator.jsx           # Main orchestrator (1544 lines, 0 useState)
+│   └── panels/PumpSettingsPanel.jsx  # MiniMed 780G settings UI
 ├── contexts/                      # DataContext, PeriodContext, MetricsContext, UIContext
 ├── hooks/                         # useModalState, usePanelNavigation, useImportExport, useUI
 ├── core/
 │   ├── parsers.js                 # CSV parsing (dynamic columns)
+│   ├── pumpSettingsParser.js      # Pump settings extraction from CSV
 │   └── metrics-engine.js          # MAGE, MODD, GRI, TIR calculations
 ├── storage/
 │   ├── db.js                      # IndexedDB setup
-│   └── sensorStorage.js           # Async sensor CRUD
+│   ├── sensorStorage.js           # Async sensor CRUD
+│   ├── pumpSettingsStorage.js     # Pump settings + device history
+│   ├── export.js                  # Full database export
+│   └── import.js                  # Full database import
 └── styles/globals.css             # Brutalist color system (use CSS vars!)
 ```
 
@@ -52,32 +58,24 @@ src/
 - ✅ AGP generation (14-day) with dynamic Y-axis
 - ✅ Metrics: TIR, TAR, TBR, CV, GMI, MAGE, MODD, GRI
 - ✅ Smart trend indicators (color-coded deltas)
+- ✅ **MiniMed 780G Settings UI** (auto-detect + manual edit)
+- ✅ **Device History** (archive old pumps/transmitters)
 - ✅ Sensor management (dual storage: IndexedDB + SQLite)
 - ✅ Stock management (batch tracking)
-- ✅ Import/export JSON (backup/restore)
+- ✅ Import/export JSON (backup/restore incl. pump settings)
 - ✅ ProTime PDF parsing
 - ✅ Day profiles (7/14 days toggle)
 - ✅ Print-ready reports
 
 ---
 
-## 🎯 ROADMAP (Next Steps)
+## 🎯 REMAINING WORK (Optional)
 
-**Most Valuable Next Features**:
-
-1. **Track 4, M1: MiniMed 780G Settings UI** (~12h)
-   - Display pump settings from CSV
-   - Manual configuration option
-   - localStorage persistence
-   - See: `docs/project/minimed_780g_ref.md`
-
-2. **Track 3, Q3: Table Virtualization** (~3h)
-   - react-window for large sensor lists
-   - Performance improvement >50 sensors
-
-3. **Track 3, Q4: WCAG AAA Compliance** (~9h)
-   - Full accessibility audit
-   - Screen reader improvements
+| Task | Effort | Priority |
+|------|--------|----------|
+| Table virtualization (>50 sensors) | ~3h | Low |
+| WCAG AAA compliance | ~6h | Low |
+| Advanced period comparison | ~4h | Medium |
 
 ---
 
@@ -94,6 +92,8 @@ src/
 - Contexts → Test state flows across components
 - Metrics → Run `npm test` (25 unit tests)
 - Charts → Check AGP/day profiles render
+- Pump settings → Test CSV auto-detect + manual edit
+
 
 ---
 
@@ -117,6 +117,16 @@ const { patientInfo, setPatientInfo } = useUI();
 const sensors = await getAllSensors();
 await addSensor(sensor);
 await deleteSensor(id);
+```
+
+**Pump Settings**:
+```js
+import { getPumpSettings, savePumpSettings } from '../storage/pumpSettingsStorage';
+import { getDeviceHistory, archiveDevice } from '../storage/pumpSettingsStorage';
+
+const settings = getPumpSettings();  // Synchronous (localStorage)
+savePumpSettings(updatedSettings);
+archiveDevice(settings.device, null, 'Replaced for warranty');
 ```
 
 **Styling** (CSS vars ONLY!):
@@ -148,14 +158,13 @@ npx vite --port 3002
 
 ## 📚 KEY DOCUMENTATION
 
-| Tier | Document | Purpose |
-|------|----------|---------|
-| 1 | `PROGRESS.md` | Session log, quick status |
-| 1 | `HANDOFF.md` | This file - quick reference |
-| 2 | `TIER2_SYNTHESIS.md` | Architecture overview |
-| 2 | `DUAL_STORAGE_ANALYSIS.md` | Storage patterns |
-| 3 | `metric_definitions.md` | Glucose metrics formulas |
-| 3 | `minimed_780g_ref.md` | Pump settings reference |
+| Document | Purpose |
+|----------|---------|
+| `PROGRESS.md` | Session log, quick status |
+| `HANDOFF.md` | This file - quick reference |
+| `HANDOFF_COMPREHENSIVE.md` | Full architecture overview |
+| `reference/metric_definitions.md` | Glucose metrics formulas |
+| `reference/minimed_780g_ref.md` | Pump settings reference |
 
 ---
 
@@ -181,6 +190,6 @@ git push origin main
 
 ---
 
-**Quick Handoff v4.3.3** | **Last Updated**: 2025-11-21
+**Quick Handoff v4.3.6** | **Last Updated**: 2025-11-21
 
 **You got this! 🚀**
