@@ -74,6 +74,7 @@ export const patientStorage = {
           cgm: patientData.cgm || '',
           deviceSerial: patientData.deviceSerial || '',
           device: patientData.device || '',
+          isLocked: patientData.isLocked || false,
           updatedAt: new Date().toISOString()
         }
       });
@@ -118,5 +119,27 @@ export const patientStorage = {
   async exists() {
     const info = await this.get();
     return info !== null && info.name !== '';
+  },
+
+  /**
+   * Check if patient info is locked
+   * @returns {Promise<boolean>}
+   */
+  async isLocked() {
+    const info = await this.get();
+    return info?.isLocked === true;
+  },
+
+  /**
+   * Toggle lock state
+   * @param {boolean} locked - New lock state
+   * @returns {Promise<void>}
+   */
+  async setLocked(locked) {
+    const info = await this.get();
+    if (info) {
+      info.isLocked = locked;
+      await this.save(info);
+    }
   }
 };

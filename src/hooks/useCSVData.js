@@ -45,18 +45,23 @@ export function useCSVData() {
         if (metadata) {
           const existingInfo = await patientStorage.get();
           
-          // Only update if fields are empty
-          const updates = {};
-          if (metadata.name && !existingInfo?.name) {
-            updates.name = metadata.name;
-          }
-          if (metadata.deviceSerial && !existingInfo?.cgm) {
-            // Save device serial as CGM info
-            updates.cgm = `MiniMed 780G (SN: ${metadata.deviceSerial})`;
-          }
-          
-          if (Object.keys(updates).length > 0) {
-            await patientStorage.update(updates);
+          // Don't update if patient info is locked
+          if (existingInfo?.isLocked) {
+            console.log('[useCSVData] Patient info is LOCKED - skipping CSV update');
+          } else {
+            // Only update if fields are empty
+            const updates = {};
+            if (metadata.name && !existingInfo?.name) {
+              updates.name = metadata.name;
+            }
+            if (metadata.deviceSerial && !existingInfo?.cgm) {
+              // Save device serial as CGM info
+              updates.cgm = `MiniMed 780G (SN: ${metadata.deviceSerial})`;
+            }
+            
+            if (Object.keys(updates).length > 0) {
+              await patientStorage.update(updates);
+            }
           }
         }
       } catch (metadataErr) {

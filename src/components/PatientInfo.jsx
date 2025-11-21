@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Calendar, Stethoscope, Activity, Save, X } from 'lucide-react';
+import { User, Mail, Calendar, Stethoscope, Activity, Save, X, Lock, Unlock } from 'lucide-react';
 import { patientStorage } from '../utils/patientStorage';
 
 /**
@@ -25,11 +25,13 @@ export default function PatientInfo({ onClose, isModal = false }) {
     physician: '',
     cgm: '',
     deviceSerial: '',
-    device: ''
+    device: '',
+    isLocked: false
   });
   
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
     // Load existing patient info
@@ -38,6 +40,7 @@ export default function PatientInfo({ onClose, isModal = false }) {
         const info = await patientStorage.get();
         if (info) {
           setFormData(info);
+          setIsLocked(info.isLocked === true);
         }
       } catch (err) {
         console.error('Failed to load patient info:', err);
@@ -54,7 +57,7 @@ export default function PatientInfo({ onClose, isModal = false }) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await patientStorage.save(formData);
+      await patientStorage.save({ ...formData, isLocked });
       setSaveSuccess(true);
       setTimeout(() => {
         if (onClose) onClose();
@@ -64,6 +67,17 @@ export default function PatientInfo({ onClose, isModal = false }) {
       alert('Failed to save patient information. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleToggleLock = async () => {
+    const newLockState = !isLocked;
+    setIsLocked(newLockState);
+    setFormData(prev => ({ ...prev, isLocked: newLockState }));
+    try {
+      await patientStorage.setLocked(newLockState);
+    } catch (err) {
+      console.error('Failed to toggle lock:', err);
     }
   };
 
@@ -113,7 +127,30 @@ export default function PatientInfo({ onClose, isModal = false }) {
               Patient Information
             </h2>
           </div>
-          {isModal && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {/* Lock Toggle */}
+            <button
+              onClick={handleToggleLock}
+              title={isLocked ? 'CSV overschrijft niet (klik om te ontgrendelen)' : 'CSV kan overschrijven (klik om te vergrendelen)'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                padding: '0.5rem 0.75rem',
+                background: isLocked ? 'var(--color-green)' : 'transparent',
+                color: isLocked ? 'white' : 'var(--text-primary)',
+                border: '2px solid var(--text-primary)',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                transition: 'all 0.2s'
+              }}
+            >
+              {isLocked ? <Lock style={{ width: '14px', height: '14px' }} /> : <Unlock style={{ width: '14px', height: '14px' }} />}
+              {isLocked ? 'VERGRENDELD' : 'OPEN'}
+            </button>
+            {isModal && (
             <button
               onClick={onClose}
               style={{
@@ -126,7 +163,8 @@ export default function PatientInfo({ onClose, isModal = false }) {
             >
               <X style={{ width: '24px', height: '24px' }} />
             </button>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Form Fields */}
