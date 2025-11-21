@@ -1,46 +1,61 @@
 # AGP+ Progress Log
 
-## Session: 2025-11-21 (Multi-Pump CSV Parser Fix)
-
-### 🎯 STATUS: COMPLETE ✅
-
-### ✅ ALL CHANGES THIS SESSION
-
-**Code Fixes:**
-1. `parsers.js` - Multi-section sensor + pump parsing
-2. `csvSectionParser.js` - Multi-pump alert detection for sensors
-3. TODO markers added for Jan 2026 cleanup
-
-**UI Addition:**
-4. `SensorHistoryPanel.jsx` - Added **#123** button for chronological resequencing
-
-**Documentation:**
-5. `TECH_DEBT.md` - Created cleanup roadmap + JSON/CSV strategy
-6. `HANDOFF.md` - Added TECH_DEBT.md reference + guidance
-7. `PROJECT_BRIEFING.md` - Added MAINTENANCE section
-
-### 📄 KEY INSIGHT DOCUMENTED
-
-After ~30 days (2025-12-21):
-- JSON backup has ALL historical sensor data
-- Fresh CSV exports only have new pump
-- Multi-pump code becomes unnecessary
-- Parser can be simplified
-
-### 🧪 TEST STATUS ✅
-
-- ✅ Glucose data from both pumps
-- ✅ Sensor detection from new pump (21/11/2025)
-- ✅ Rewind/cartridge events
-- [ ] Test #123 resequence button
-
-### 📋 NEW UI ELEMENT
-
-**Sensor History Panel** → **#123 button**
-- Tooltip: "Hernummer sensoren chronologisch (#1 = oudste)"
-- Confirms before action
-- Reorders all sensors by start_date
+## Branch: `feature/device-era-tracking`
 
 ---
-**Server**: http://localhost:3002/ (PID 93216)
-**Last updated**: 2025-11-21 19:55
+
+## Session: 2025-11-21 (Setup)
+
+### ✅ COMPLETED
+
+**Main branch commits:**
+- `0a87c85` - Multi-pump CSV support + tech debt docs
+
+**Branch setup:**
+- Created `feature/device-era-tracking` from main
+- Created `HANDOFF_DEVICE_ERA.md` with full implementation plan
+
+### 🎯 NEXT SESSION: Start Step 1
+
+**Read first**: `HANDOFF_DEVICE_ERA.md`
+
+**Task**: Create `src/core/deviceEras.js`
+
+```javascript
+// Define all device eras with dates
+export const DEVICE_ERAS = [
+  { id: 'era1', start: '2022-03-01', end: '2023-03-20', ... },
+  // etc
+];
+
+// Helper to find era by date
+export function getEraForDate(date) { ... }
+```
+
+### 📋 FULL CHECKLIST
+
+- [x] Plan approved
+- [x] Branch created  
+- [x] Handoff written
+- [ ] **Step 1**: Era configuration (`deviceEras.js`)
+- [ ] **Step 2**: Schema extension (sensor fields)
+- [ ] **Step 3**: Migration script
+- [ ] **Step 4**: Statistics by era
+- [ ] **Step 5**: UI (optional)
+- [ ] Testing
+- [ ] Merge to main
+
+---
+
+## 🖥️ QUICK START
+
+```bash
+cd /Users/jomostert/Documents/Projects/agp-plus
+git status  # Should show: feature/device-era-tracking
+export PATH="/opt/homebrew/bin:$PATH"
+npx vite --port 3001
+```
+
+---
+
+**Last updated**: 2025-11-21 20:10
