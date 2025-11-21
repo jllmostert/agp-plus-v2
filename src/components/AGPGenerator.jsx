@@ -1085,7 +1085,7 @@ function AGPGeneratorContent() {
                           color: 'var(--text-tertiary)',
                           marginTop: '0.25rem'
                         }}>
-                          Laatste meting: {lastReading.date} {lastReading.time.substring(0, 5)}
+                          Laatste meting: {lastReading.date.split('/').reverse().join('/')} {lastReading.time.substring(0, 5)}
                         </div>
                       );
                     }
