@@ -1,12 +1,25 @@
 # 📊 AGP+ Development Progress
 
-**Current Version**: v4.3.3  
+**Current Version**: v4.3.6  
 **Last Updated**: 2025-11-21  
-**Session**: 44
+**Session**: 45
 
 ---
 
 ## 🎯 CURRENT STATUS
+
+### ✅ Completed (Session 45)
+
+**Device History Management** - NEW FEATURE! 🎉
+- ✅ Device history tracking (archive old pumps/transmitters)
+- ✅ Transmitter serial field (manual entry)
+- ✅ Device start dates (when first used)
+- ✅ Archive dialog with notes
+- ✅ Complete import/export support for pump settings
+- ✅ PumpSettingsPanel: Device history section with archive/remove
+- ✅ pumpSettingsStorage: getDeviceHistory, archiveDevice, removeFromHistory
+- ✅ export.js: Include pumpSettings and deviceHistory in backup
+- ✅ import.js: Restore pump settings and device history from backup
 
 ### ✅ Completed (Session 44)
 
@@ -223,6 +236,13 @@
 ## 📅 SESSION HISTORY
 
 ### Recent Sessions
+
+**Session 45** (2025-11-21): Device History Management ✅
+- Added device history tracking for pumps/transmitters
+- Added transmitter serial field and device start dates
+- Archive dialog with notes for retiring devices
+- Complete import/export support for pump settings
+- Version 4.3.6
 
 **Session 44** (2025-11-21): Documentation Sync ✅
 - Updated CHANGELOG with v4.3.2 and v4.3.3
