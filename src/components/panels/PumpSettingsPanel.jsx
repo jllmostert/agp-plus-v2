@@ -192,10 +192,78 @@ export default function PumpSettingsPanel() {
       {/* Device Info */}
       <Section title="APPARAAT">
         <div style={styles.deviceGrid}>
-          <InfoRow label="Model" value={data.device?.model || 'MiniMed 780G'} />
-          <InfoRow label="Serienr" value={data.device?.serial || '-'} />
-          <InfoRow label="Hardware" value={data.device?.hardwareVersion || '-'} />
-          <InfoRow label="Firmware" value={data.device?.firmwareVersion || '-'} />
+          {/* Model - editable */}
+          <div style={styles.infoRow}>
+            <span style={styles.infoLabel}>Model:</span>
+            {editing ? (
+              <input
+                type="text"
+                value={editedSettings?.device?.model || ''}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  device: { ...editedSettings.device, model: e.target.value }
+                })}
+                placeholder="MiniMed 780G"
+                style={styles.inputText}
+              />
+            ) : (
+              <span style={styles.infoValue}>{data.device?.model || 'MiniMed 780G'}</span>
+            )}
+          </div>
+          {/* Serienummer - editable */}
+          <div style={styles.infoRow}>
+            <span style={styles.infoLabel}>Serienr:</span>
+            {editing ? (
+              <input
+                type="text"
+                value={editedSettings?.device?.serial || ''}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  device: { ...editedSettings.device, serial: e.target.value }
+                })}
+                placeholder="bijv. NG4114235H"
+                style={styles.inputText}
+              />
+            ) : (
+              <span style={styles.infoValue}>{data.device?.serial || '-'}</span>
+            )}
+          </div>
+          {/* Hardware - editable */}
+          <div style={styles.infoRow}>
+            <span style={styles.infoLabel}>Hardware:</span>
+            {editing ? (
+              <input
+                type="text"
+                value={editedSettings?.device?.hardwareVersion || ''}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  device: { ...editedSettings.device, hardwareVersion: e.target.value }
+                })}
+                placeholder="bijv. A2.01"
+                style={styles.inputText}
+              />
+            ) : (
+              <span style={styles.infoValue}>{data.device?.hardwareVersion || '-'}</span>
+            )}
+          </div>
+          {/* Firmware - editable */}
+          <div style={styles.infoRow}>
+            <span style={styles.infoLabel}>Firmware:</span>
+            {editing ? (
+              <input
+                type="text"
+                value={editedSettings?.device?.firmwareVersion || ''}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  device: { ...editedSettings.device, firmwareVersion: e.target.value }
+                })}
+                placeholder="bijv. 8.13.2"
+                style={styles.inputText}
+              />
+            ) : (
+              <span style={styles.infoValue}>{data.device?.firmwareVersion || '-'}</span>
+            )}
+          </div>
           {/* Software Version - manual entry (not in CSV) */}
           <div style={styles.infoRow}>
             <span style={styles.infoLabel}>Software:</span>
