@@ -161,6 +161,26 @@ export default function PumpSettingsPanel() {
           <InfoRow label="Serienr" value={data.device?.serial || '-'} />
           <InfoRow label="Hardware" value={data.device?.hardwareVersion || '-'} />
           <InfoRow label="Firmware" value={data.device?.firmwareVersion || '-'} />
+          {/* Software Version - manual entry (not in CSV) */}
+          <div style={styles.infoRow}>
+            <span style={styles.infoLabel}>Software:</span>
+            {editing ? (
+              <input
+                type="text"
+                value={editedSettings?.device?.softwareVersion || ''}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  device: { ...editedSettings.device, softwareVersion: e.target.value }
+                })}
+                placeholder="bijv. 6.7W"
+                style={styles.inputText}
+              />
+            ) : (
+              <span style={styles.infoValue}>
+                {data.device?.softwareVersion || '-'}
+              </span>
+            )}
+          </div>
           {data.device?.transmitter && (
             <InfoRow label="CGM" value={data.device.transmitter} />
           )}
@@ -184,12 +204,48 @@ export default function PumpSettingsPanel() {
               </span>
             )}
           </div>
-          {data.device?.startDate && (
-            <InfoRow 
-              label="In gebruik" 
-              value={`sinds ${new Date(data.device.startDate).toLocaleDateString('nl-NL')}`} 
-            />
-          )}
+          {/* Transmitter Start Date - manual entry */}
+          <div style={styles.infoRow}>
+            <span style={styles.infoLabel}>Transmitter sinds:</span>
+            {editing ? (
+              <input
+                type="date"
+                value={editedSettings?.device?.transmitterStartDate ? editedSettings.device.transmitterStartDate.split('T')[0] : ''}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  device: { ...editedSettings.device, transmitterStartDate: e.target.value ? new Date(e.target.value).toISOString() : null }
+                })}
+                style={styles.inputText}
+              />
+            ) : (
+              <span style={styles.infoValue}>
+                {data.device?.transmitterStartDate 
+                  ? new Date(data.device.transmitterStartDate).toLocaleDateString('nl-NL')
+                  : '-'}
+              </span>
+            )}
+          </div>
+          {/* Device Start Date - manual entry */}
+          <div style={styles.infoRow}>
+            <span style={styles.infoLabel}>Pomp in gebruik:</span>
+            {editing ? (
+              <input
+                type="date"
+                value={editedSettings?.device?.startDate ? editedSettings.device.startDate.split('T')[0] : ''}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  device: { ...editedSettings.device, startDate: e.target.value ? new Date(e.target.value).toISOString() : null }
+                })}
+                style={styles.inputText}
+              />
+            ) : (
+              <span style={styles.infoValue}>
+                {data.device?.startDate 
+                  ? `sinds ${new Date(data.device.startDate).toLocaleDateString('nl-NL')}`
+                  : '-'}
+              </span>
+            )}
+          </div>
         </div>
         
         {/* Archive device button */}
@@ -223,6 +279,9 @@ export default function PumpSettingsPanel() {
                   <span>FW: {device.firmwareVersion || '-'}</span>
                   {device.transmitterSerial && (
                     <span>Transmitter: {device.transmitterSerial}</span>
+                  )}
+                  {device.transmitterStartDate && (
+                    <span>Transmitter sinds: {new Date(device.transmitterStartDate).toLocaleDateString('nl-NL')}</span>
                   )}
                 </div>
                 <div style={styles.historyDates}>
@@ -399,11 +458,11 @@ export default function PumpSettingsPanel() {
       </Section>
 
       {/* Target Glucose */}
-      <Section title="DOELGLUCOSE">
-        {/* SmartGuard Target - most important, not from CSV */}
-        <div style={styles.smartGuardBox}>
-          <div style={styles.smartGuardRow}>
-            <span style={styles.smartGuardLabel}>🎯 SmartGuard Target</span>
+      <Section title="SMARTGUARD & LIMIETEN">
+        {/* Row 1: SmartGuard Target, Autocorrectie, AIT */}
+        <div style={styles.limitsGrid}>
+          <div style={styles.limitBox}>
+            <div style={styles.limitLabel}>🎯 Target</div>
             {editing ? (
               <select
                 value={editedSettings.smartGuardTarget || 100}
@@ -411,60 +470,42 @@ export default function PumpSettingsPanel() {
                   ...editedSettings,
                   smartGuardTarget: parseInt(e.target.value)
                 })}
-                style={styles.selectLarge}
+                style={styles.selectMedium}
               >
-                <option value={100}>100 mg/dL (Agressief)</option>
-                <option value={110}>110 mg/dL (Gemiddeld)</option>
-                <option value={120}>120 mg/dL (Conservatief)</option>
+                <option value={100}>100</option>
+                <option value={110}>110</option>
+                <option value={120}>120</option>
               </select>
             ) : (
-              <span style={styles.smartGuardValue}>{data.smartGuardTarget || 100} mg/dL</span>
+              <div style={styles.limitValue}>{data.smartGuardTarget || 100}</div>
             )}
+            <div style={styles.limitUnit}>mg/dL</div>
           </div>
-          <div style={styles.smartGuardNote}>
-            ⚠️ Handmatig instellen - niet in CSV export
-          </div>
-        </div>
-        
-        {/* BWZ Target (Manual Mode) */}
-        <div style={styles.bwzNote}>BWZ Target (Manual Mode - uit CSV):</div>
-        <div style={styles.targetGrid}>
-          <div style={styles.targetBox}>
-            <div style={styles.targetLabel}>Laag</div>
+          
+          <div style={styles.limitBox}>
+            <div style={styles.limitLabel}>Autocorrectie</div>
             {editing ? (
-              <input
-                type="number"
-                value={editedSettings.targetGlucose?.low || 90}
+              <select
+                value={editedSettings.autocorrection !== false ? 'true' : 'false'}
                 onChange={(e) => setEditedSettings({
                   ...editedSettings,
-                  targetGlucose: { ...editedSettings.targetGlucose, low: parseInt(e.target.value) }
+                  autocorrection: e.target.value === 'true'
                 })}
-                style={styles.inputLarge}
-              />
+                style={styles.selectMedium}
+              >
+                <option value="true">Aan</option>
+                <option value="false">Uit</option>
+              </select>
             ) : (
-              <div style={styles.targetValue}>{data.targetGlucose?.low || 90}</div>
+              <div style={{...styles.limitValue, color: data.autocorrection !== false ? 'var(--color-green)' : 'var(--color-red)'}}>
+                {data.autocorrection !== false ? '✓ Aan' : '✗ Uit'}
+              </div>
             )}
-            <div style={styles.targetUnit}>mg/dL</div>
+            <div style={styles.limitUnit}>&nbsp;</div>
           </div>
-          <div style={styles.targetBox}>
-            <div style={styles.targetLabel}>Hoog</div>
-            {editing ? (
-              <input
-                type="number"
-                value={editedSettings.targetGlucose?.high || 120}
-                onChange={(e) => setEditedSettings({
-                  ...editedSettings,
-                  targetGlucose: { ...editedSettings.targetGlucose, high: parseInt(e.target.value) }
-                })}
-                style={styles.inputLarge}
-              />
-            ) : (
-              <div style={styles.targetValue}>{data.targetGlucose?.high || 120}</div>
-            )}
-            <div style={styles.targetUnit}>mg/dL</div>
-          </div>
-          <div style={styles.targetBox}>
-            <div style={styles.targetLabel}>AIT</div>
+          
+          <div style={styles.limitBox}>
+            <div style={styles.limitLabel}>AIT</div>
             {editing ? (
               <input
                 type="number"
@@ -476,13 +517,70 @@ export default function PumpSettingsPanel() {
                   ...editedSettings,
                   activeInsulinTime: parseFloat(e.target.value)
                 })}
-                style={styles.inputLarge}
+                style={styles.inputMedium}
               />
             ) : (
-              <div style={styles.targetValue}>{data.activeInsulinTime || 2}</div>
+              <div style={styles.limitValue}>{data.activeInsulinTime || 2}</div>
             )}
-            <div style={styles.targetUnit}>uur</div>
+            <div style={styles.limitUnit}>uur</div>
           </div>
+        </div>
+        
+        {/* Row 2: Max Basaal, Max Bolus, BWZ Target */}
+        <div style={styles.limitsGrid}>
+          <div style={styles.limitBox}>
+            <div style={styles.limitLabel}>Max Basaal</div>
+            {editing ? (
+              <input
+                type="number"
+                step="0.1"
+                min="0.1"
+                max="35"
+                value={editedSettings.maxBasalRate || 2.0}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  maxBasalRate: parseFloat(e.target.value)
+                })}
+                style={styles.inputMedium}
+              />
+            ) : (
+              <div style={styles.limitValue}>{(data.maxBasalRate || 2.0).toFixed(2)}</div>
+            )}
+            <div style={styles.limitUnit}>E/H</div>
+          </div>
+          
+          <div style={styles.limitBox}>
+            <div style={styles.limitLabel}>Max Bolus</div>
+            {editing ? (
+              <input
+                type="number"
+                step="0.5"
+                min="0.5"
+                max="75"
+                value={editedSettings.maxBolus || 10}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  maxBolus: parseFloat(e.target.value)
+                })}
+                style={styles.inputMedium}
+              />
+            ) : (
+              <div style={styles.limitValue}>{(data.maxBolus || 10).toFixed(1)}</div>
+            )}
+            <div style={styles.limitUnit}>E</div>
+          </div>
+          
+          <div style={styles.limitBox}>
+            <div style={styles.limitLabel}>BWZ Target</div>
+            <div style={styles.limitValue}>
+              {data.targetGlucose?.low || 90}-{data.targetGlucose?.high || 120}
+            </div>
+            <div style={styles.limitUnit}>mg/dL</div>
+          </div>
+        </div>
+        
+        <div style={styles.smartGuardNote}>
+          ⚠️ Target, Autocorrectie, Limieten: handmatig instellen (niet in CSV)
         </div>
       </Section>
 
@@ -761,6 +859,53 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
     gap: '1rem',
+  },
+  limitsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '0.75rem',
+    marginBottom: '0.75rem',
+  },
+  limitBox: {
+    textAlign: 'center',
+    padding: '0.75rem',
+    border: '2px solid var(--ink)',
+    backgroundColor: 'var(--bg-secondary)',
+  },
+  limitLabel: {
+    fontSize: '0.7rem',
+    fontWeight: 700,
+    color: 'var(--text-secondary)',
+    marginBottom: '0.25rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  limitValue: {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    fontFamily: 'var(--font-mono)',
+  },
+  limitUnit: {
+    fontSize: '0.7rem',
+    color: 'var(--text-secondary)',
+    marginTop: '0.15rem',
+  },
+  inputMedium: {
+    width: '80px',
+    padding: '0.25rem',
+    border: '2px solid var(--ink)',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '1.25rem',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  selectMedium: {
+    padding: '0.25rem',
+    border: '2px solid var(--ink)',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '1.25rem',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   targetBox: {
     textAlign: 'center',

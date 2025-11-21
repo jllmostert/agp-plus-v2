@@ -1075,6 +1075,22 @@ function AGPGeneratorContent() {
                     {activeReadings && <> • <strong>{activeReadings.length.toLocaleString()}</strong> readings</>}
                     {workdays && <> • <strong>{workdays.size}</strong> ProTime workdays</>}
                   </div>
+                  {/* Last glucose reading timestamp */}
+                  {activeReadings && activeReadings.length > 0 && (() => {
+                    const lastReading = activeReadings[activeReadings.length - 1];
+                    if (lastReading?.date && lastReading?.time) {
+                      return (
+                        <div style={{ 
+                          fontSize: '0.75rem',
+                          color: 'var(--text-tertiary)',
+                          marginTop: '0.25rem'
+                        }}>
+                          Laatste meting: {lastReading.date} {lastReading.time.substring(0, 5)}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               ) : (
                 <div style={{ 

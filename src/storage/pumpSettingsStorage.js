@@ -21,9 +21,11 @@ const DEFAULT_SETTINGS = {
     serial: '',
     hardwareVersion: '',
     firmwareVersion: '',
-    transmitter: '',        // Guardian Sensor type (e.g., "Guardian™ 4 Sensor")
-    transmitterSerial: '',  // Transmitter serial number (manual entry)
-    startDate: null,        // When this device was first used
+    softwareVersion: '',     // Software versie (handmatig, niet in CSV)
+    transmitter: '',           // Guardian Sensor type (e.g., "Guardian™ 4 Sensor")
+    transmitterSerial: '',     // Transmitter serial number (manual entry)
+    transmitterStartDate: null, // When this transmitter was first used
+    startDate: null,           // When this pump was first used
   },
   
   // Carb Ratios by time block (g/U)
@@ -43,6 +45,13 @@ const DEFAULT_SETTINGS = {
   // SmartGuard Auto Mode target (100/110/120 mg/dL)
   // This is NOT in CSV - must be set manually!
   smartGuardTarget: 100,  // User's actual Auto Mode target
+  
+  // SmartGuard settings
+  autocorrection: true,   // Autocorrectie Aan/Uit
+  
+  // Safety limits
+  maxBasalRate: 2.0,      // Max basaal (E/H)
+  maxBolus: 10.0,         // Max bolus (E)
   
   // BWZ Target glucose range (mg/dL) - from CSV
   // This is for Manual Mode corrections, NOT SmartGuard
