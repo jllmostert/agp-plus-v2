@@ -7,6 +7,7 @@
 
 import { openDB, STORES, getRecord, putRecord } from './db.js';
 import { VERSION } from '../version.js';
+import { getEraForDate } from '../core/deviceEras.js';
 
 // ============================================================================
 // CONSTANTS
@@ -179,12 +180,11 @@ export async function addSensor(data) {
   
   const maxSeq = storage.sensors.reduce((max, s) => Math.max(max, s.sequence || 0), 0);
   
-  // Auto-assign hardware version based on start date
-  let hw_version = data.hw_version;
-  if (!hw_version && data.start_date) {
-    const startDate = new Date(data.start_date);
-    const cutoffDate = new Date('2025-07-03T00:00:00');
-    hw_version = startDate >= cutoffDate ? 'A2.01' : 'A1.01';
+  // Auto-assign season based on start date
+  let season_id = data.season_id;
+  if (!season_id && data.start_date) {
+    const era = getEraForDate(data.start_date);
+    season_id = era?.id || null;
   }
   
   const sensor = {
@@ -195,7 +195,7 @@ export async function addSensor(data) {
     duration_hours: data.duration_hours || null,
     duration_days: data.duration_days || null,
     lot_number: data.lot_number || null,
-    hw_version: hw_version || null,
+    season_id: season_id,
     notes: data.notes || '',
     is_locked: data.is_locked || false,
     batch_id: data.batch_id || null,

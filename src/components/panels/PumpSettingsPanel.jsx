@@ -27,6 +27,7 @@ import {
   isPumpSettingsLocked,
   togglePumpSettingsLock
 } from '../../storage/pumpSettingsStorage.js';
+import { getDeviceEras } from '../../core/deviceEras.js';
 
 export default function PumpSettingsPanel() {
   const [settings, setSettings] = useState(null);
@@ -96,6 +97,12 @@ export default function PumpSettingsPanel() {
       removeFromHistory(serial);
       loadHistory();
     }
+  };
+
+  // Get seasons linked to a specific pump serial
+  const getSeasonsForPump = (pumpSerial) => {
+    const seasons = getDeviceEras();
+    return seasons.filter(s => s.pump?.serial === pumpSerial);
   };
 
   const handleClear = () => {
@@ -351,6 +358,25 @@ export default function PumpSettingsPanel() {
           </div>
         </div>
         
+        {/* Linked Seasons for current device */}
+        {data.device?.serial && !editing && (() => {
+          const linkedSeasons = getSeasonsForPump(data.device.serial);
+          if (linkedSeasons.length === 0) return null;
+          return (
+            <div style={styles.linkedSeasons}>
+              <span style={styles.linkedSeasonsLabel}>Seizoenen met deze pomp:</span>
+              {linkedSeasons.map(s => (
+                <span key={s.id} style={styles.seasonTag}>
+                  #{s.season} {s.name}
+                  <span style={styles.seasonTagTx}>
+                    TX: {s.transmitter?.serial || '?'}
+                  </span>
+                </span>
+              ))}
+            </div>
+          );
+        })()}
+        
         {/* Archive device button */}
         {data.device?.serial && !editing && (
           <div style={styles.archiveBar}>
@@ -398,6 +424,24 @@ export default function PumpSettingsPanel() {
                 {device.notes && (
                   <div style={styles.historyNotes}>{device.notes}</div>
                 )}
+                {/* Linked Seasons */}
+                {(() => {
+                  const linkedSeasons = getSeasonsForPump(device.serial);
+                  if (linkedSeasons.length === 0) return null;
+                  return (
+                    <div style={styles.linkedSeasons}>
+                      <span style={styles.linkedSeasonsLabel}>Seizoenen:</span>
+                      {linkedSeasons.map(s => (
+                        <span key={s.id} style={styles.seasonTag}>
+                          #{s.season} {s.name}
+                          <span style={styles.seasonTagTx}>
+                            TX: {s.transmitter?.serial || '?'}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
                 <button 
                   style={styles.removeHistoryBtn}
                   onClick={() => handleRemoveFromHistory(device.serial)}
@@ -1143,6 +1187,34 @@ const styles = {
     fontStyle: 'italic',
     color: 'var(--text-secondary)',
     marginTop: '0.5rem',
+  },
+  linkedSeasons: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem',
+    alignItems: 'center',
+    marginTop: '0.75rem',
+    paddingTop: '0.75rem',
+    borderTop: '1px dashed var(--grid-line)',
+  },
+  linkedSeasonsLabel: {
+    fontSize: '0.75rem',
+    color: 'var(--text-secondary)',
+    fontWeight: 'bold',
+  },
+  seasonTag: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '0.25rem 0.5rem',
+    backgroundColor: 'var(--bg-tertiary)',
+    border: '1px solid var(--color-green)',
+    fontSize: '0.75rem',
+    fontFamily: 'monospace',
+  },
+  seasonTagTx: {
+    color: 'var(--text-secondary)',
+    fontSize: '0.65rem',
   },
   removeHistoryBtn: {
     position: 'absolute',

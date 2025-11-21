@@ -14,7 +14,7 @@
  */
 
 const DB_NAME = 'agp-plus-db';
-const DB_VERSION = 5;  // Increment for sensorData keyPath fix
+const DB_VERSION = 6;  // v6: Add SEASONS store
 
 // Store names
 export const STORES = {
@@ -24,7 +24,8 @@ export const STORES = {
   SENSOR_EVENTS: 'sensorEvents',         // NEW v3.0
   CARTRIDGE_EVENTS: 'cartridgeEvents',   // NEW v3.0
   MASTER_DATASET: 'masterDataset',       // NEW v3.0
-  SENSOR_DATA: 'sensorData'              // NEW v3.6
+  SENSOR_DATA: 'sensorData',             // NEW v3.6
+  SEASONS: 'seasons'                     // NEW v4.4 - Device era tracking
 };
 
 /**
@@ -91,6 +92,14 @@ export function openDB() {
         console.log('[db.js] Upgrading SENSOR_DATA store to add keyPath');
         db.deleteObjectStore(STORES.SENSOR_DATA);
         db.createObjectStore(STORES.SENSOR_DATA, { keyPath: 'id' });
+      }
+      
+      // === v4.4 SEASONS STORE ===
+      if (!db.objectStoreNames.contains(STORES.SEASONS)) {
+        const seasonStore = db.createObjectStore(STORES.SEASONS, { keyPath: 'id' });
+        seasonStore.createIndex('season', 'season', { unique: true });
+        seasonStore.createIndex('start', 'start', { unique: false });
+        console.log('[db.js] Created SEASONS store');
       }
     };
   });

@@ -8,9 +8,20 @@
  * Replaces: 1237-line V3 implementation
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import * as sensorStorage from '../../storage/sensorStorage.js';
 import * as stockStorage from '../../storage/stockStorage.js';
+import { 
+  DEVICE_ERAS, 
+  getEraForDate, 
+  groupSensorsByEra, 
+  groupSensorsByPump, 
+  groupSensorsByTransmitter,
+  getAllSeasonsAsync,
+  addSeason,
+  updateSeason,
+  deleteSeason
+} from '../../core/deviceEras.js';
 
 export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
   // State
@@ -18,6 +29,26 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
   const [batches, setBatches] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [statsExpanded, setStatsExpanded] = useState(false);
+  const [eraStatsExpanded, setEraStatsExpanded] = useState(false);
+  
+  // Resizable splitter state
+  const [statsPanelHeight, setStatsPanelHeight] = useState(250); // pixels
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
+  const MIN_STATS_HEIGHT = 100;
+  const MIN_TABLE_HEIGHT = 200;
+  
+  // Season management state
+  const [seasons, setSeasons] = useState([]);
+  const [seasonManageExpanded, setSeasonManageExpanded] = useState(false);
+  const [editingSeason, setEditingSeason] = useState(null);
+  const [newSeason, setNewSeason] = useState({
+    name: '',
+    start: '',
+    end: '',
+    pump: { serial: '', name: '', hw_version: '', fw_version: '' },
+    transmitter: { serial: '', number: '' }
+  });
   
   // Filters
   const [filters, setFilters] = useState({
@@ -38,6 +69,10 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
         const sensorsData = await sensorStorage.getAllSensors();
         setSensors(sensorsData);
         setBatches(stockStorage.getAllBatches()); // stockStorage is still sync
+        
+        // Load seasons from IndexedDB
+        const seasonsData = await getAllSeasonsAsync();
+        setSeasons(seasonsData);
       })();
     }
   }, [isOpen, refreshKey]);
@@ -153,9 +188,46 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
           year: parseInt(year),
           ...calculateStats(sensors)
         }))
-        .sort((a, b) => b.year - a.year) // Newest year first
+        .sort((a, b) => b.year - a.year),
+      byEra: seasons.map(era => {
+        const eraSensors = groupSensorsByEra(endedSensors)[era.id] || [];
+        return {
+          id: era.id,
+          season: era.season,
+          name: era.name,
+          pump: era.pump.serial,
+          transmitter: era.transmitter.serial || '?',
+          start: era.start,
+          end: era.end,
+          ...calculateStats(eraSensors)
+        };
+      }).filter(e => e.count > 0),
+      byPump: Object.entries(groupSensorsByPump(endedSensors))
+        .map(([serial, sensors]) => {
+          const era = seasons.find(e => e.pump.serial === serial);
+          return {
+            serial,
+            number: era?.pump.number || '?',
+            name: era?.pump.name || `Pomp #${era?.pump.number || '?'}`,
+            fw: era?.pump.fw_version || '?',
+            ...calculateStats(sensors)
+          };
+        })
+        .filter(p => p.serial !== 'unknown')
+        .sort((a, b) => (a.number || 0) - (b.number || 0)),
+      byTransmitter: Object.entries(groupSensorsByTransmitter(endedSensors))
+        .map(([serial, sensors]) => {
+          const era = seasons.find(e => e.transmitter.serial === serial);
+          return {
+            serial,
+            number: era?.transmitter.number || '?',
+            ...calculateStats(sensors)
+          };
+        })
+        .filter(t => t.serial !== 'unknown')
+        .sort((a, b) => (a.number || 0) - (b.number || 0))
     };
-  }, [sensors]);
+  }, [sensors, seasons]);
 
   // Handlers
   const handleToggleLock = async (sensorId) => {
@@ -309,6 +381,115 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
     }
   };
 
+  // === SEASON MANAGEMENT HANDLERS ===
+  
+  const handleAddSeason = async () => {
+    if (!newSeason.name || !newSeason.start) {
+      alert('Naam en startdatum zijn verplicht');
+      return;
+    }
+    
+    try {
+      await addSeason({
+        name: newSeason.name,
+        start: new Date(newSeason.start).toISOString(),
+        end: newSeason.end ? new Date(newSeason.end).toISOString() : null,
+        pump: {
+          serial: newSeason.pump.serial,
+          name: newSeason.pump.name || newSeason.name,
+          hw_version: newSeason.pump.hw_version || 'A2.01',
+          fw_version: newSeason.pump.fw_version || ''
+        },
+        transmitter: {
+          serial: newSeason.transmitter.serial || null,
+          number: parseInt(newSeason.transmitter.number) || null
+        }
+      });
+      
+      setNewSeason({
+        name: '',
+        start: '',
+        end: '',
+        pump: { serial: '', name: '', hw_version: '', fw_version: '' },
+        transmitter: { serial: '', number: '' }
+      });
+      setRefreshKey(prev => prev + 1);
+    } catch (err) {
+      alert(`❌ Fout bij toevoegen: ${err.message}`);
+    }
+  };
+  
+  const handleUpdateSeason = async (id) => {
+    if (!editingSeason) return;
+    
+    try {
+      await updateSeason(id, {
+        name: editingSeason.name,
+        start: editingSeason.start,
+        end: editingSeason.end,
+        pump: editingSeason.pump,
+        transmitter: editingSeason.transmitter
+      });
+      
+      setEditingSeason(null);
+      setRefreshKey(prev => prev + 1);
+    } catch (err) {
+      alert(`❌ Fout bij updaten: ${err.message}`);
+    }
+  };
+  
+  const handleDeleteSeason = async (id, name) => {
+    if (!confirm(`Seizoen "${name}" verwijderen?\n\nDit kan niet ongedaan worden.`)) {
+      return;
+    }
+    
+    try {
+      await deleteSeason(id);
+      setRefreshKey(prev => prev + 1);
+    } catch (err) {
+      alert(`❌ Fout bij verwijderen: ${err.message}`);
+    }
+  };
+
+  // === RESIZABLE SPLITTER HANDLERS ===
+  
+  const handleMouseDown = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+  
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging || !containerRef.current) return;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const headerHeight = 80; // approximate header + filters height
+    const newHeight = e.clientY - containerRect.top - headerHeight;
+    const maxHeight = containerRect.height - headerHeight - MIN_TABLE_HEIGHT;
+    
+    setStatsPanelHeight(Math.max(MIN_STATS_HEIGHT, Math.min(newHeight, maxHeight)));
+  }, [isDragging]);
+  
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+  
+  // Attach/detach mouse listeners
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'ns-resize';
+      document.body.style.userSelect = 'none';
+    }
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
   if (!isOpen) return null;
 
   return (
@@ -324,7 +505,9 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
       justifyContent: 'center',
       zIndex: 1000
     }}>
-      <div style={{
+      <div 
+        ref={containerRef}
+        style={{
         backgroundColor: 'var(--paper)',
         width: '95%',
         height: '95%',
@@ -448,11 +631,14 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
           )}
         </div>
 
-        {/* Enhanced Statistics */}
+        {/* Enhanced Statistics - Resizable */}
         <div style={{
           padding: '20px',
-          borderBottom: '3px solid var(--ink)',
-          backgroundColor: 'var(--bg-tertiary)'
+          backgroundColor: 'var(--bg-tertiary)',
+          height: `${statsPanelHeight}px`,
+          minHeight: `${MIN_STATS_HEIGHT}px`,
+          overflow: 'auto',
+          flexShrink: 0
         }}>
           <div style={{ 
             display: 'flex', 
@@ -516,10 +702,294 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
               </div>
             ))}
           </div>
+          
+          {/* Device Era Stats */}
+          {stats.byEra.length > 0 && (
+            <div style={{ marginTop: '15px' }}>
+              <button
+                onClick={() => setEraStatsExpanded(!eraStatsExpanded)}
+                style={{
+                  width: '100%',
+                  padding: '10px 15px',
+                  border: '2px solid var(--ink)',
+                  backgroundColor: eraStatsExpanded ? 'var(--ink)' : 'var(--paper)',
+                  color: eraStatsExpanded ? 'var(--paper)' : 'var(--ink)',
+                  cursor: 'pointer',
+                  fontFamily: 'monospace',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  textAlign: 'left',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <span>{eraStatsExpanded ? '▼' : '▶'} SEIZOEN STATISTIEKEN</span>
+                <span style={{ fontSize: '10px', opacity: 0.8 }}>
+                  {stats.byEra.length} seizoenen · {stats.byPump.length} pompen · {stats.byTransmitter.length} transmitters
+                </span>
+              </button>
+              
+              {eraStatsExpanded && (
+                <div style={{ padding: '15px', border: '2px solid var(--ink)', borderTop: 'none', backgroundColor: 'var(--bg-secondary)' }}>
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      PER SEIZOEN
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+                      {stats.byEra.map(era => (
+                        <div key={era.id} style={{ padding: '12px', border: '2px solid var(--ink)', backgroundColor: 'var(--paper)' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '12px' }}>
+                            {era.name} seizoen #{era.season} (n={era.count})
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                            {new Date(era.start).toLocaleDateString('nl-NL', { month: 'short', year: 'numeric' })} – {era.end ? new Date(era.end).toLocaleDateString('nl-NL', { month: 'short', year: 'numeric' }) : 'heden'} · TX: {era.transmitter}
+                          </div>
+                          <div style={{ fontSize: '11px', lineHeight: '1.5' }}>
+                            Ø {era.avg_duration}d · ≥6d: {era.pct_6days}% · ≥6.8d: {era.pct_6_8days}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      PER POMP
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                      {stats.byPump.map(pump => (
+                        <div key={pump.serial} style={{ padding: '12px', border: '2px solid var(--color-green)', backgroundColor: 'var(--paper)' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '6px', fontSize: '12px', color: 'var(--color-green)' }}>
+                            {pump.name} <span style={{ fontWeight: 'normal', color: 'var(--text-secondary)' }}>(n={pump.count})</span>
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                            {pump.serial} · FW {pump.fw}
+                          </div>
+                          <div style={{ fontSize: '11px' }}>
+                            Ø {pump.avg_duration}d · ≥6d: {pump.pct_6days}% · ≥6.8d: {pump.pct_6_8days}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      PER TRANSMITTER
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                      {stats.byTransmitter.map(tx => (
+                        <div key={tx.serial} style={{ padding: '12px', border: '2px solid var(--color-yellow)', backgroundColor: 'var(--paper)' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '6px', fontSize: '12px', color: 'var(--color-yellow)' }}>
+                            TX #{tx.number} <span style={{ fontWeight: 'normal', color: 'var(--text-secondary)' }}>(n={tx.count})</span>
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                            {tx.serial}
+                          </div>
+                          <div style={{ fontSize: '11px' }}>
+                            Ø {tx.avg_duration}d · ≥6d: {tx.pct_6days}% · ≥6.8d: {tx.pct_6_8days}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Season Management UI */}
+          <div style={{ marginTop: '15px' }}>
+            <button
+              onClick={() => setSeasonManageExpanded(!seasonManageExpanded)}
+              style={{
+                width: '100%',
+                padding: '10px 15px',
+                border: '2px solid var(--color-green)',
+                backgroundColor: seasonManageExpanded ? 'var(--color-green)' : 'var(--paper)',
+                color: seasonManageExpanded ? 'var(--paper)' : 'var(--color-green)',
+                cursor: 'pointer',
+                fontFamily: 'monospace',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                textAlign: 'left'
+              }}
+            >
+              {seasonManageExpanded ? '▼' : '▶'} SEIZOENEN BEHEREN ({seasons.length})
+            </button>
+            
+            {seasonManageExpanded && (
+              <div style={{ padding: '15px', border: '2px solid var(--color-green)', borderTop: 'none', backgroundColor: 'var(--bg-secondary)' }}>
+                {/* Existing Seasons List */}
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    BESTAANDE SEIZOENEN
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {seasons.map(season => (
+                      <div key={season.id} style={{ 
+                        padding: '10px', 
+                        border: '2px solid var(--ink)', 
+                        backgroundColor: editingSeason?.id === season.id ? 'var(--bg-tertiary)' : 'var(--paper)',
+                        display: 'grid',
+                        gridTemplateColumns: editingSeason?.id === season.id ? '1fr' : '1fr auto',
+                        gap: '10px',
+                        alignItems: 'center'
+                      }}>
+                        {editingSeason?.id === season.id ? (
+                          /* Edit Mode */
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                            <input
+                              type="text"
+                              value={editingSeason.name}
+                              onChange={(e) => setEditingSeason({...editingSeason, name: e.target.value})}
+                              placeholder="Naam"
+                              style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                            />
+                            <input
+                              type="datetime-local"
+                              value={editingSeason.start?.slice(0, 16) || ''}
+                              onChange={(e) => setEditingSeason({...editingSeason, start: e.target.value ? new Date(e.target.value).toISOString() : ''})}
+                              style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                            />
+                            <input
+                              type="datetime-local"
+                              value={editingSeason.end?.slice(0, 16) || ''}
+                              onChange={(e) => setEditingSeason({...editingSeason, end: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                              style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                            />
+                            <input
+                              type="text"
+                              value={editingSeason.pump?.serial || ''}
+                              onChange={(e) => setEditingSeason({...editingSeason, pump: {...editingSeason.pump, serial: e.target.value}})}
+                              placeholder="Pomp S/N"
+                              style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                            />
+                            <input
+                              type="text"
+                              value={editingSeason.pump?.fw_version || ''}
+                              onChange={(e) => setEditingSeason({...editingSeason, pump: {...editingSeason.pump, fw_version: e.target.value}})}
+                              placeholder="Pomp FW"
+                              style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                            />
+                            <input
+                              type="text"
+                              value={editingSeason.transmitter?.serial || ''}
+                              onChange={(e) => setEditingSeason({...editingSeason, transmitter: {...editingSeason.transmitter, serial: e.target.value}})}
+                              placeholder="TX S/N"
+                              style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                            />
+                            <div style={{ gridColumn: 'span 3', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                              <button onClick={() => handleUpdateSeason(season.id)} style={{ padding: '6px 12px', border: '2px solid var(--color-green)', backgroundColor: 'var(--color-green)', color: 'var(--paper)', fontFamily: 'monospace', fontWeight: 'bold', cursor: 'pointer' }}>OPSLAAN</button>
+                              <button onClick={() => setEditingSeason(null)} style={{ padding: '6px 12px', border: '2px solid var(--ink)', backgroundColor: 'var(--paper)', color: 'var(--ink)', fontFamily: 'monospace', cursor: 'pointer' }}>ANNULEER</button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* View Mode */
+                          <>
+                            <div style={{ fontSize: '11px' }}>
+                              <strong>#{season.season} {season.name}</strong>
+                              <span style={{ color: 'var(--text-secondary)', marginLeft: '10px' }}>
+                                {new Date(season.start).toLocaleDateString('nl-NL')} – {season.end ? new Date(season.end).toLocaleDateString('nl-NL') : 'heden'}
+                              </span>
+                              <span style={{ color: 'var(--text-secondary)', marginLeft: '10px' }}>
+                                Pomp: {season.pump?.serial || '?'} · TX: {season.transmitter?.serial || '?'}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button onClick={() => setEditingSeason({...season})} style={{ padding: '4px 8px', border: '1px solid var(--ink)', backgroundColor: 'var(--paper)', fontSize: '10px', cursor: 'pointer', fontFamily: 'monospace' }}>EDIT</button>
+                              <button onClick={() => handleDeleteSeason(season.id, season.name)} style={{ padding: '4px 8px', border: '1px solid var(--color-red)', color: 'var(--color-red)', backgroundColor: 'var(--paper)', fontSize: '10px', cursor: 'pointer', fontFamily: 'monospace' }}>DEL</button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Add New Season Form */}
+                <div>
+                  <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    NIEUW SEIZOEN TOEVOEGEN
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', padding: '10px', border: '2px dashed var(--ink)', backgroundColor: 'var(--paper)' }}>
+                    <input
+                      type="text"
+                      value={newSeason.name}
+                      onChange={(e) => setNewSeason({...newSeason, name: e.target.value})}
+                      placeholder="Naam (bijv. Tulp)"
+                      style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                    />
+                    <input
+                      type="datetime-local"
+                      value={newSeason.start}
+                      onChange={(e) => setNewSeason({...newSeason, start: e.target.value})}
+                      style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                    />
+                    <input
+                      type="datetime-local"
+                      value={newSeason.end}
+                      onChange={(e) => setNewSeason({...newSeason, end: e.target.value})}
+                      placeholder="Eind (leeg = actief)"
+                      style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                    />
+                    <input
+                      type="text"
+                      value={newSeason.pump.serial}
+                      onChange={(e) => setNewSeason({...newSeason, pump: {...newSeason.pump, serial: e.target.value}})}
+                      placeholder="Pomp S/N"
+                      style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                    />
+                    <input
+                      type="text"
+                      value={newSeason.pump.fw_version}
+                      onChange={(e) => setNewSeason({...newSeason, pump: {...newSeason.pump, fw_version: e.target.value}})}
+                      placeholder="Pomp FW"
+                      style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                    />
+                    <input
+                      type="text"
+                      value={newSeason.transmitter.serial}
+                      onChange={(e) => setNewSeason({...newSeason, transmitter: {...newSeason.transmitter, serial: e.target.value}})}
+                      placeholder="TX S/N"
+                      style={{ padding: '6px', border: '1px solid var(--ink)', fontFamily: 'monospace', fontSize: '11px' }}
+                    />
+                    <div style={{ gridColumn: 'span 3', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button onClick={handleAddSeason} style={{ padding: '8px 16px', border: '2px solid var(--color-green)', backgroundColor: 'var(--color-green)', color: 'var(--paper)', fontFamily: 'monospace', fontWeight: 'bold', cursor: 'pointer' }}>+ TOEVOEGEN</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Resizable Drag Handle */}
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            height: '8px',
+            backgroundColor: isDragging ? 'var(--color-green)' : 'var(--ink)',
+            cursor: 'ns-resize',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            transition: 'background-color 0.15s ease'
+          }}
+        >
+          <div style={{
+            width: '60px',
+            height: '4px',
+            backgroundColor: 'var(--paper)',
+            borderRadius: '2px',
+            opacity: 0.6
+          }} />
         </div>
 
         {/* Table */}
-        <div style={{ flex: 1, overflow: 'auto' }}>
+        <div style={{ flex: 1, overflow: 'auto', minHeight: `${MIN_TABLE_HEIGHT}px` }}>
           <table style={{
             width: '100%',
             borderCollapse: 'collapse',
@@ -545,7 +1015,7 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
                   DUUR
                 </th>
                 <th style={{ padding: '12px', textAlign: 'left', borderRight: '2px solid var(--paper)' }}>
-                  HW
+                  SEIZOEN
                 </th>
                 <th style={{ padding: '12px', textAlign: 'left', borderRight: '2px solid var(--paper)' }}>
                   BATCH
@@ -613,9 +1083,15 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
                     })()}
                   </td>
                   
-                  {/* HW Version */}
-                  <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)' }}>
-                    {sensor.hw_version || '-'}
+                  {/* Seizoen */}
+                  <td style={{ padding: '10px 12px', borderRight: '1px solid var(--grid-line)', color: 'var(--ink)', fontSize: '11px' }}>
+                    {(() => {
+                      const era = getEraForDate(sensor.start_date);
+                      if (era) {
+                        return `${era.name} #${era.season}`;
+                      }
+                      return '-';
+                    })()}
                   </td>
                   
                   {/* Batch Assignment */}

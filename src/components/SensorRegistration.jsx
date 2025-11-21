@@ -190,7 +190,6 @@ export default function SensorRegistration({ isOpen, onClose }) {
           : null,
         notes: `CSV auto-detected (${candidate.confidence.toUpperCase()}, score: ${candidate.score}/100)`,
         lot_number: null,
-        hw_version: null,
         is_locked: false,
         batch_id: null
       };

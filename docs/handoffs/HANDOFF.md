@@ -1,6 +1,6 @@
 # AGP+ Quick Handoff
 
-**v4.3.6** | **Path**: `/Users/jomostert/Documents/Projects/agp-plus` | **Status**: ✅ Production Ready
+**v4.4.0** | **Path**: `/Users/jomostert/Documents/Projects/agp-plus` | **Status**: ✅ Production Ready
 
 ---
 
@@ -40,10 +40,12 @@ src/
 ├── core/
 │   ├── parsers.js                 # CSV parsing (dynamic columns)
 │   ├── pumpSettingsParser.js      # Pump settings extraction from CSV
+│   ├── deviceEras.js              # Device seasons/eras (loads from IndexedDB)
 │   └── metrics-engine.js          # MAGE, MODD, GRI, TIR calculations
 ├── storage/
-│   ├── db.js                      # IndexedDB setup
+│   ├── db.js                      # IndexedDB setup (v6: includes SEASONS store)
 │   ├── sensorStorage.js           # Async sensor CRUD
+│   ├── seasonStorage.js           # Device seasons CRUD (IndexedDB)
 │   ├── pumpSettingsStorage.js     # Pump settings + device history
 │   ├── export.js                  # Full database export
 │   └── import.js                  # Full database import
@@ -60,7 +62,9 @@ src/
 - ✅ Smart trend indicators (color-coded deltas)
 - ✅ **MiniMed 780G Settings UI** (auto-detect + manual edit)
 - ✅ **Device History** (archive old pumps/transmitters)
+- ✅ **Device Seasons** (track pump+transmitter combos, editable via UI)
 - ✅ Sensor management (dual storage: IndexedDB + SQLite)
+- ✅ **Sensor History** with resizable stats/table splitter
 - ✅ Stock management (batch tracking)
 - ✅ Import/export JSON (backup/restore incl. pump settings)
 - ✅ ProTime PDF parsing
@@ -193,6 +197,6 @@ git push origin main
 
 ---
 
-**Quick Handoff v4.3.7** | **Last Updated**: 2025-11-21
+**Quick Handoff v4.4.0** | **Last Updated**: 2025-11-21
 
 **You got this! 🚀**

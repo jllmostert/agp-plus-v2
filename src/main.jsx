@@ -29,6 +29,9 @@ import {
   isIndexedDBAvailable 
 } from './storage/deletedSensorsDB.js';
 
+// Import device era initialization
+import { initDeviceEras } from './core/deviceEras.js';
+
 /**
  * AGP+ Main Application Entry Point
  * 
@@ -64,6 +67,11 @@ import {
     } else {
       console.warn('[main] IndexedDB not available, using localStorage fallback');
     }
+    
+    // 4. Initialize device eras from IndexedDB
+    console.log('[main] Initializing device eras...');
+    await initDeviceEras();
+    console.log('[main] Device eras initialized successfully');
   } catch (err) {
     console.error('[main] Tombstone store initialization failed:', err);
     // Non-critical error - app will still work with localStorage fallback

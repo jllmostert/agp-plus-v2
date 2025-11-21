@@ -4,58 +4,82 @@
 
 ---
 
-## Session: 2025-11-21 (Setup)
+## Session: 2025-11-21 (continued)
 
-### ✅ COMPLETED
+### ✅ COMPLETED - Seizoenen naar IndexedDB
 
-**Main branch commits:**
-- `0a87c85` - Multi-pump CSV support + tech debt docs
+**Stap 1: db.js - SEASONS store** ✓
+- Versie 6 met nieuwe SEASONS object store
+- Index op season nummer en start datum
 
-**Branch setup:**
-- Created `feature/device-era-tracking` from main
-- Created `HANDOFF_DEVICE_ERA.md` with full implementation plan
+**Stap 2: seasonStorage.js** ✓
+- Nieuw bestand met volledige CRUD functionaliteit
+- Automatische seeding van default seizoenen bij eerste gebruik
+- Cache systeem voor sync access
 
-### 🎯 NEXT SESSION: Start Step 1
+**Stap 3: deviceEras.js** ✓
+- Laadt nu uit IndexedDB via seasonStorage.js
+- Fallback naar hardcoded defaults indien storage faalt
+- Async CRUD functies: addSeason, updateSeason, deleteSeason
 
-**Read first**: `HANDOFF_DEVICE_ERA.md`
+**Stap 4: UI voor seizoen beheer** ✓
+- Nieuwe collapsible sectie "SEIZOENEN BEHEREN" in SensorHistoryPanel
+- Lijst van alle seizoenen met inline edit/delete
+- Formulier voor nieuw seizoen toevoegen
+- Velden: naam, start/eind datum, pomp S/N, pomp FW, transmitter S/N
 
-**Task**: Create `src/core/deviceEras.js`
+**Stap 5: App initialization** ✓
+- `initDeviceEras()` toegevoegd aan main.jsx startup
+- Seizoenen worden geladen uit IndexedDB bij app start
 
-```javascript
-// Define all device eras with dates
-export const DEVICE_ERAS = [
-  { id: 'era1', start: '2022-03-01', end: '2023-03-20', ... },
-  // etc
-];
+### ✅ COMPLETED - Resizable Splitter
 
-// Helper to find era by date
-export function getEraForDate(date) { ... }
+**Draggable scheiding tussen stats en tabel** ✓
+- Stats panel heeft nu vaste hoogte (default 250px)
+- Drag handle tussen stats en tabel
+- Beide secties zijn scrollable
+- Min hoogte stats: 100px, min hoogte tabel: 200px
+- Visuele feedback tijdens drag (groene kleur)
+
+### ✅ COMPLETED - Seizoenen koppeling aan Pompgeschiedenis
+
+**Seizoenen getoond in PumpSettingsPanel** ✓
+- Bij huidige apparaat: toont alle seizoenen met deze pomp
+- Bij gearchiveerde apparaten: toont gekoppelde seizoenen
+- Elk seizoen toont: #nummer, naam, transmitter S/N
+- Visuele styling met groene border en tags
+
+### 📋 FILES CHANGED
+
+```
+src/storage/db.js                             # MODIFIED - v6 SEASONS store
+src/storage/seasonStorage.js                  # NEW - CRUD + seed
+src/core/deviceEras.js                        # MODIFIED - loads from storage
+src/components/panels/SensorHistoryPanel.jsx  # MODIFIED - management UI + resizable splitter
+src/components/panels/PumpSettingsPanel.jsx   # MODIFIED - shows linked seasons
+src/main.jsx                                  # MODIFIED - init on startup
+src/version.js                                # MODIFIED - v4.4.0
 ```
 
-### 📋 FULL CHECKLIST
+### 🎯 REMAINING
 
-- [x] Plan approved
-- [x] Branch created  
-- [x] Handoff written
-- [ ] **Step 1**: Era configuration (`deviceEras.js`)
-- [ ] **Step 2**: Schema extension (sensor fields)
-- [ ] **Step 3**: Migration script
-- [ ] **Step 4**: Statistics by era
-- [ ] **Step 5**: UI (optional)
-- [ ] Testing
-- [ ] Merge to main
+- [x] Testen in browser ✓
+- [x] Edge cases checken ✓
+- [x] Version bump naar 4.4.0 ✓
+- [ ] Merge naar main
 
 ---
 
-## 🖥️ QUICK START
+## 🖥️ SERVER
 
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
-git status  # Should show: feature/device-era-tracking
 export PATH="/opt/homebrew/bin:$PATH"
 npx vite --port 3001
 ```
 
+**Currently**: http://localhost:3002/
+
 ---
 
-**Last updated**: 2025-11-21 20:10
+**Last updated**: 2025-11-21 21:42

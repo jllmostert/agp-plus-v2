@@ -1082,7 +1082,7 @@ function AGPGeneratorContent() {
                       return (
                         <div style={{ 
                           fontSize: '0.75rem',
-                          color: 'var(--text-tertiary)',
+                          color: 'var(--text-secondary)',
                           marginTop: '0.25rem'
                         }}>
                           Laatste meting: {lastReading.date.split('/').reverse().join('/')} {lastReading.time.substring(0, 5)}
