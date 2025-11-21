@@ -90,6 +90,7 @@ const DEFAULT_SETTINGS = {
     lastUpdated: null,
     source: 'default',   // 'default', 'csv', 'manual'
     csvDate: null,
+    isLocked: false,     // When true, CSV import won't overwrite settings
   },
 };
 
@@ -154,6 +155,34 @@ export function clearPumpSettings() {
     return true;
   } catch (error) {
     console.error('[PumpSettings] Error clearing settings:', error);
+    return false;
+  }
+}
+
+/**
+ * Check if pump settings are locked (won't be overwritten by CSV)
+ * @returns {boolean}
+ */
+export function isPumpSettingsLocked() {
+  const settings = getPumpSettings();
+  return settings?.meta?.isLocked === true;
+}
+
+/**
+ * Toggle the lock state of pump settings
+ * @param {boolean} locked - Whether to lock (true) or unlock (false)
+ * @returns {boolean} Success
+ */
+export function togglePumpSettingsLock(locked) {
+  try {
+    const settings = getPumpSettings();
+    settings.meta.isLocked = locked;
+    settings.meta.lastUpdated = new Date().toISOString();
+    savePumpSettings(settings);
+    console.log(`[PumpSettings] Settings ${locked ? 'LOCKED' : 'UNLOCKED'}`);
+    return true;
+  } catch (error) {
+    console.error('[PumpSettings] Error toggling lock:', error);
     return false;
   }
 }

@@ -340,11 +340,29 @@ function calculateDailyBasal(basalProfile) {
 /**
  * Merge parsed settings with existing settings
  * Only overwrites fields that have actual data
+ * RESPECTS LOCK: If existing settings are locked, only TDD is updated
  */
 export function mergePumpSettings(existing, parsed) {
   const merged = { ...existing };
 
-  // Device info - always update from CSV
+  // Check if settings are locked - only update calculated TDD values
+  if (existing?.meta?.isLocked) {
+    console.log('[PumpSettingsParser] Settings are LOCKED - only updating TDD calculations');
+    if (parsed.calculated?.tdd) {
+      merged.calculated = { 
+        ...merged.calculated, 
+        tdd: parsed.calculated.tdd,
+        tddBolus: parsed.calculated.tddBolus,
+        tddBasal: parsed.calculated.tddBasal,
+        recommended: parsed.calculated.recommended,
+      };
+    }
+    merged.meta.lastUpdated = new Date().toISOString();
+    merged.meta.csvDate = parsed.meta?.csvDate || merged.meta.csvDate;
+    return merged;
+  }
+
+  // Device info - always update from CSV (unless locked)
   if (parsed.device?.model) merged.device = { ...merged.device, ...parsed.device };
 
   // CR - update if we found blocks

@@ -23,7 +23,9 @@ import {
   clearPumpSettings,
   getDeviceHistory,
   archiveDevice,
-  removeFromHistory
+  removeFromHistory,
+  isPumpSettingsLocked,
+  togglePumpSettingsLock
 } from '../../storage/pumpSettingsStorage.js';
 
 export default function PumpSettingsPanel() {
@@ -33,6 +35,7 @@ export default function PumpSettingsPanel() {
   const [deviceHistory, setDeviceHistory] = useState([]);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [archiveNotes, setArchiveNotes] = useState('');
+  const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -43,6 +46,7 @@ export default function PumpSettingsPanel() {
     const loaded = getPumpSettings();
     setSettings(loaded);
     setEditedSettings(loaded);
+    setIsLocked(loaded?.meta?.isLocked === true);
   };
 
   const loadHistory = () => {
@@ -101,6 +105,12 @@ export default function PumpSettingsPanel() {
     }
   };
 
+  const handleToggleLock = () => {
+    const newLockState = !isLocked;
+    togglePumpSettingsLock(newLockState);
+    setIsLocked(newLockState);
+  };
+
   if (!settings) {
     return (
       <div style={styles.container}>
@@ -118,6 +128,19 @@ export default function PumpSettingsPanel() {
       <div style={styles.header}>
         <h2 style={styles.title}>⚙️ POMP INSTELLINGEN</h2>
         <div style={styles.headerButtons}>
+          {/* Lock Toggle */}
+          <button 
+            style={{
+              ...styles.lockButton,
+              backgroundColor: isLocked ? 'var(--color-green)' : 'var(--paper)',
+              color: isLocked ? 'white' : 'var(--ink)'
+            }} 
+            onClick={handleToggleLock}
+            title={isLocked ? 'CSV overschrijft niet (klik om te ontgrendelen)' : 'CSV kan overschrijven (klik om te vergrendelen)'}
+          >
+            {isLocked ? '🔒 VERGRENDELD' : '🔓 OPEN'}
+          </button>
+          
           {!editing ? (
             <>
               <button style={styles.editButton} onClick={() => setEditing(true)}>
@@ -150,6 +173,18 @@ export default function PumpSettingsPanel() {
         {data.meta?.lastUpdated && (
           <span style={styles.lastUpdated}>
             (laatst bijgewerkt: {new Date(data.meta.lastUpdated).toLocaleDateString('nl-NL')})
+          </span>
+        )}
+        {isLocked && (
+          <span style={{ 
+            marginLeft: 'auto', 
+            color: 'var(--color-green)', 
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem'
+          }}>
+            🔒 CSV overschrijft niet
           </span>
         )}
       </div>
@@ -684,6 +719,14 @@ const styles = {
   headerButtons: {
     display: 'flex',
     gap: '0.5rem',
+  },
+  lockButton: {
+    padding: '0.5rem 1rem',
+    border: '2px solid var(--ink)',
+    fontFamily: 'var(--font-mono)',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
   },
   editButton: {
     padding: '0.5rem 1rem',
