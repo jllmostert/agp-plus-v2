@@ -582,19 +582,26 @@ export async function uploadCSVToV3(csvText) {
     if (metadata && Object.keys(metadata).length > 0) {
       const { patientStorage } = await import('../utils/patientStorage.js');
       
-      // Save metadata (merge with existing DOB if present)
+      // Check if patient info is locked - don't overwrite if locked
       const existingInfo = await patientStorage.get();
-      await patientStorage.save({
-        name: metadata.name || existingInfo?.name || '',
-        dob: existingInfo?.dob || '', // Preserve existing DOB (user-entered)
-        cgm: metadata.cgm || existingInfo?.cgm || '',
-        physician: existingInfo?.physician || '', // Preserve physician (user-entered)
-        email: existingInfo?.email || '', // Preserve email (user-entered)
-        deviceSerial: metadata.deviceSerial || existingInfo?.deviceSerial || '',
-        device: metadata.device || existingInfo?.device || ''
-      });
       
-      debug.log('[uploadCSVToV3] Patient metadata saved:', metadata);
+      if (existingInfo?.isLocked) {
+        debug.log('[uploadCSVToV3] Patient info is LOCKED - skipping CSV update');
+      } else {
+        // Save metadata (merge with existing user-entered fields)
+        await patientStorage.save({
+          name: metadata.name || existingInfo?.name || '',
+          dob: existingInfo?.dob || '', // Preserve existing DOB (user-entered)
+          cgm: metadata.cgm || existingInfo?.cgm || '',
+          physician: existingInfo?.physician || '', // Preserve physician (user-entered)
+          email: existingInfo?.email || '', // Preserve email (user-entered)
+          deviceSerial: metadata.deviceSerial || existingInfo?.deviceSerial || '',
+          device: metadata.device || existingInfo?.device || '',
+          isLocked: existingInfo?.isLocked || false // Preserve lock state!
+        });
+        
+        debug.log('[uploadCSVToV3] Patient metadata saved:', metadata);
+      }
     }
   } catch (err) {
     // Non-fatal: metadata extraction failure shouldn't block upload
