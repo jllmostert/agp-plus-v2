@@ -1,8 +1,11 @@
 #!/bin/bash
-# AGP+ v3.6.0 - Quick Start Script
+# AGP+ Quick Start Script
 # Usage: ./start.sh
 
-echo "🚀 Starting AGP+ v3.6.0..."
+# Get version from package.json
+VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+
+echo "🚀 Starting AGP+ v${VERSION}..."
 echo ""
 
 # Kill any existing processes on port 3001
