@@ -149,10 +149,10 @@ function WorkdayRow({ label, sublabel, workday, restday, unit, format, workdaySD
         </div>
         {workdaySD != null && (
           <div style={{ 
-            fontSize: '1.15rem',
-            fontWeight: 600,
+            fontSize: '1.4rem',
+            fontWeight: 700,
             marginTop: '0.75rem',
-            color: 'var(--text-tertiary)'
+            color: 'var(--text-secondary)'
           }}>
             ± {safeFormat(workdaySD, 0)} SD
           </div>
@@ -217,10 +217,10 @@ function WorkdayRow({ label, sublabel, workday, restday, unit, format, workdaySD
         </div>
         {restdaySD != null && (
           <div style={{ 
-            fontSize: '1.15rem',
-            fontWeight: 600,
+            fontSize: '1.4rem',
+            fontWeight: 700,
             marginTop: '0.75rem',
-            color: 'var(--text-tertiary)'
+            color: 'var(--color-gray-light)'
           }}>
             ± {safeFormat(restdaySD, 0)} SD
           </div>

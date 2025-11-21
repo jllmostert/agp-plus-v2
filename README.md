@@ -2,8 +2,8 @@
 
 **Professional diabetes data analysis tool following ADA/ATTD clinical guidelines**
 
-**Current Version:** v4.3.0 (Phase 1 Refactoring Complete)  
-**Status:** ✅ Production-ready with complete import/export, validated metrics, and improved architecture  
+**Current Version:** v4.3.6 (Context API Refactoring Complete + MiniMed 780G Settings)  
+**Status:** ✅ Production-ready with complete import/export, validated metrics, pump settings display, and brutalist design  
 **Live URL:** 🌐 https://agp.jenana.eu (GitHub Pages deployment)
 
 ---

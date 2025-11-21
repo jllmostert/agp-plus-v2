@@ -6,6 +6,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.3.6 - SD Readability Enhancement] - 2025-11-21
+
+### 🎯 Session 46: UI Polish
+**Duration**: ~20 minutes  
+**Status**: ✅ Complete
+
+#### UI Readability Improvements
+**SD (Standard Deviation) Display - Major Enhancement**:
+- ✅ Increased font-size: 0.9rem → 1.4rem (now ~56% of main value size vs previous ~36%)
+- ✅ Increased font-weight: 600 → 700 (bold)
+- ✅ Fixed color contrast using CSS variables only (no hardcoded colors):
+  - Light backgrounds: `var(--text-secondary)`
+  - Dark backgrounds: `var(--color-gray-light)`
+- ✅ Applied consistently across all comparison components:
+  - DayNightSplit (day/night columns)
+  - WorkScheduleAnalysis (work/rest columns)
+  - WorkdaySplit (workday/restday columns)
+  - ComparisonView (current/prev columns)
+  - MetricsDisplay (PrimaryMetricCard subtitle)
+
+**Rationale**: SD is a critical clinical metric for glucose variability. Previous styling made it appear as a minor footnote rather than essential data.
+
+---
+
 ## [v4.3.5 - Device Info & Readability Fix] - 2025-11-21
 
 ### 🎯 Session 45: Bug Fixes & UI Polish

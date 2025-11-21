@@ -409,9 +409,9 @@ function PrimaryMetricCard({ icon: Icon, label, value, unit, subtitle, status = 
         {/* Subtitle */}
         {subtitle && (
           <div style={{ 
-            fontSize: compact ? '0.85rem' : '1.25rem',
-            fontWeight: 600,
-            color: 'var(--border-tertiary)',
+            fontSize: compact ? '1.2rem' : '1.4rem',
+            fontWeight: 700,
+            color: 'var(--text-secondary)',
             marginTop: '0.25rem'
           }}>
             {subtitle}

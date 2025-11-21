@@ -281,10 +281,10 @@ export default function ComparisonView({
               {metric.key === 'mean' && currentSD && (
                 <div
                   style={{
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
+                    fontSize: '1.4rem',
+                    fontWeight: 700,
                     marginTop: '0.5rem',
-                    color: 'var(--text-tertiary)'
+                    color: 'var(--text-secondary)'
                   }}
                 >
                   ± {safeFormat(currentSD, 0)} SD
@@ -357,10 +357,10 @@ export default function ComparisonView({
               {metric.key === 'mean' && prevSD && (
                 <div
                   style={{
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
+                    fontSize: '1.4rem',
+                    fontWeight: 700,
                     marginTop: '0.5rem',
-                    color: 'var(--text-tertiary)'
+                    color: 'var(--color-gray-light)'
                   }}
                 >
                   ± {safeFormat(prevSD, 0)} SD

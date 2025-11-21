@@ -251,10 +251,10 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
               {metric.key === 'mean' && daySD && (
                 <div
                   style={{
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
+                    fontSize: '1.4rem',
+                    fontWeight: 700,
                     marginTop: '0.5rem',
-                    color: 'var(--text-tertiary)'
+                    color: 'var(--text-secondary)'
                   }}
                 >
                   ± {safeFormat(daySD, 0)} SD
@@ -327,10 +327,10 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
               {metric.key === 'mean' && nightSD && (
                 <div
                   style={{
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
+                    fontSize: '1.4rem',
+                    fontWeight: 700,
                     marginTop: '0.5rem',
-                    color: 'var(--text-tertiary)'
+                    color: 'var(--color-gray-light)'
                   }}
                 >
                   ± {safeFormat(nightSD, 0)} SD

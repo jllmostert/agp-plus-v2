@@ -258,10 +258,10 @@ export default function WorkScheduleAnalysis({ workdayMetrics, restdayMetrics })
               {metric.key === 'mean' && workSD && (
                 <div
                   style={{
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
+                    fontSize: '1.4rem',
+                    fontWeight: 700,
                     marginTop: '0.5rem',
-                    color: 'var(--text-tertiary)'
+                    color: 'var(--text-secondary)'
                   }}
                 >
                   ± {safeFormat(workSD, 0)} SD
@@ -334,10 +334,10 @@ export default function WorkScheduleAnalysis({ workdayMetrics, restdayMetrics })
               {metric.key === 'mean' && restSD && (
                 <div
                   style={{
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
+                    fontSize: '1.4rem',
+                    fontWeight: 700,
                     marginTop: '0.5rem',
-                    color: 'var(--text-tertiary)'
+                    color: 'var(--color-gray-light)'
                   }}
                 >
                   ± {safeFormat(restSD, 0)} SD
