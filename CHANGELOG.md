@@ -6,6 +6,42 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.3.7 - Enhanced Pump Settings] - 2025-11-21
+
+### 🎯 Session 47: Pump Settings & UX Improvements
+**Duration**: ~1 hour  
+**Status**: ✅ Complete
+
+#### New Features
+**Analysis Header Enhancement**:
+- ✅ Added "Laatste meting" timestamp showing most recent glucose reading
+- ✅ Format: date + time (e.g., "21/11/2025 11:45")
+
+**Pump Settings - SMARTGUARD & LIMIETEN Section** (new 2x3 grid):
+- ✅ SmartGuard Target (100/110/120 mg/dL dropdown)
+- ✅ Autocorrectie (Aan/Uit toggle) - color coded green/red
+- ✅ AIT (Active Insulin Time)
+- ✅ Max Basaal (E/H)
+- ✅ Max Bolus (E)
+- ✅ BWZ Target range (read-only display)
+- ✅ Warning note for manual-only settings
+
+**Pump Settings - Device Info Enhancements**:
+- ✅ Software version field (manual entry, not in CSV) - e.g., "6.7W"
+- ✅ Pump start date now editable via date picker
+- ✅ Transmitter start date field with date picker
+- ✅ All dates stored as ISO strings
+
+**Developer Experience**:
+- ✅ `start.sh` now reads version dynamically from package.json
+
+#### UI Improvements
+- ✅ Clean grid layout for SmartGuard settings (brutalist style)
+- ✅ Consistent input sizing (inputMedium, selectMedium styles)
+- ✅ Proper label hierarchy with uppercase headers
+
+---
+
 ## [v4.3.6 - SD Readability Enhancement] - 2025-11-21
 
 ### 🎯 Session 46: UI Polish

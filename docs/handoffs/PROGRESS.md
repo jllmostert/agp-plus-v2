@@ -237,12 +237,27 @@
 
 ### Recent Sessions
 
+**Session 47** (2025-11-21): Enhanced Pump Settings ✅
+- Added "Laatste meting" timestamp to analysis header
+- New SMARTGUARD & LIMIETEN section with 2x3 grid
+- Added: Autocorrectie, Max Basaal, Max Bolus fields
+- Added: Software version (manual entry)
+- Editable pump/transmitter start dates with date pickers
+- Dynamic version in start.sh from package.json
+- Version 4.3.7
+
+**Session 46** (2025-11-21): SD Readability Enhancement ✅
+- Increased SD font-size: 0.9rem → 1.4rem
+- Fixed color contrast for dark/light backgrounds
+- Applied consistently across all comparison components
+- Version 4.3.6
+
 **Session 45** (2025-11-21): Device History Management ✅
 - Added device history tracking for pumps/transmitters
 - Added transmitter serial field and device start dates
 - Archive dialog with notes for retiring devices
 - Complete import/export support for pump settings
-- Version 4.3.6
+- Version 4.3.5
 
 **Session 44** (2025-11-21): Documentation Sync ✅
 - Updated CHANGELOG with v4.3.2 and v4.3.3
@@ -307,12 +322,12 @@
 
 ## 🚀 NEXT STEPS
 
-### Immediate (Session 45+)
-**Option A: MiniMed 780G Settings UI** (Track 4, M1 - ~12h)
-- Most valuable remaining medical feature
-- Display pump settings from CSV
-- Manual configuration option
-- See: `docs/project/minimed_780g_ref.md`
+### Immediate (Session 48+)
+**Option A: MiniMed 780G Settings - Final Polish** (Track 4, M1 - ~4h remaining)
+- ✅ Core UI complete (device info, CR, ISF, target, AIT, basal)
+- ✅ SmartGuard & Limieten section complete
+- 🔄 Optional: Alarm settings display (Hoog/Laag-alarmen)
+- 🔄 Optional: CSV auto-detection of max basaal/bolus
 
 **Option B: Table Virtualization** (Track 3, Q3 - ~3h)
 - react-window for large sensor lists

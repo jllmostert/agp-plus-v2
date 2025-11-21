@@ -1,7 +1,7 @@
 ---
 tier: 2
 status: active
-last_updated: 2025-11-15
+last_updated: 2025-11-21
 purpose: Strategic project overview - architecture, standards, structure, philosophy
 ---
 
@@ -11,7 +11,7 @@ purpose: Strategic project overview - architecture, standards, structure, philos
 **Type**: Medical Data Visualization Web Application  
 **Owner**: Jo Mostert  
 **Document Tier**: 2 (Strategic Overview)  
-**Last Updated**: 2025-11-15
+**Last Updated**: 2025-11-21
 
 ---
 
@@ -316,10 +316,12 @@ AGP+ uses **three storage layers** because each has different strengths:
 
 ### Component Architecture Philosophy
 
-**Current State** (v4.3.0):
-- Main component: `AGPGenerator.jsx` (1667 lines, down from 1803)
-- Custom hooks extract state management (Phase 1 refactoring)
-- Panel-based UI (IMPORT, DAGPROFIELEN, SENSOREN, EXPORT)
+**Current State** (v4.3.7):
+- Main component: `AGPGenerator.jsx` (1544 lines, down from 1819)
+- Zero local useState - all state in Context layers (Data, Period, Metrics, UI)
+- 6 custom hooks for clean state management
+- Panel-based UI (IMPORT, DAGPROFIELEN, SENSOREN, INSTELLINGEN, EXPORT)
+- MiniMed 780G Settings UI with device tracking, SmartGuard settings, CR/ISF/basal profiles
 
 **Design Principles**:
 1. **Separation of Concerns**: Pure calculation engines (core/) separate from React (components/)
@@ -327,10 +329,12 @@ AGP+ uses **three storage layers** because each has different strengths:
 3. **Progressive Enhancement**: Start simple, refactor when pain points emerge
 4. **No Premature Optimization**: God components acceptable until they cause real problems
 
-**Future Philosophy** (Optional Phases):
-- Phase 2: Context API for cross-cutting concerns (patient info, settings)
-- Phase 3: Component composition for better testability
-- Only refactor when complexity becomes unmanageable, not for ideological purity
+**Context API Architecture** (Completed v4.3.3):
+- DataContext: master dataset, CSV parsing, date filtering
+- PeriodContext: date range selection, comparison periods
+- MetricsContext: calculated metrics, TDD data
+- UIContext: panel state, modals, patient info
+- Zero useState in main component - all state centralized
 
 ---
 
@@ -463,6 +467,19 @@ test(metrics): Add MAGE calculation unit tests
 ## 🗺️ ROADMAP & EVOLUTION
 
 ### Completed Major Work
+
+**MiniMed 780G Settings UI** (v4.3.7) ✅
+- Device info display (model, serial, HW/FW/SW versions)
+- SmartGuard & Limieten section (target, autocorrectie, AIT, max basaal/bolus)
+- CR/ISF time blocks with edit capability
+- Basal profile display
+- Device history tracking with archive functionality
+
+**Context API Migration** (v4.3.3) ✅
+- 4 context layers (Data, Period, Metrics, UI)
+- 6 custom hooks for clean API
+- AGPGenerator: 1544 lines (down from 1819)
+- Zero local useState in main component
 
 **Phase 1: State Management Hooks** (v4.3.0) ✅
 - Extracted 19 state variables into 3 custom hooks
@@ -679,8 +696,8 @@ open http://localhost:3001
 ---
 
 **Document Type**: Strategic Project Overview (Tier 2)  
-**Document Version**: 3.0  
-**Last Updated**: 2025-11-15  
+**Document Version**: 3.1  
+**Last Updated**: 2025-11-21  
 **Next Review**: When project structure fundamentally changes (not for feature updates)
 
 **Referenced From**: 
