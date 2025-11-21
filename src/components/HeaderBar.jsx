@@ -14,7 +14,8 @@ export default function HeaderBar({ activePanel, onPanelChange }) {
     { id: 'import', label: 'IMPORT', shortcut: 'Ctrl+1' },
     { id: 'dagprofielen', label: 'DAGPROFIELEN', shortcut: 'Ctrl+2' },
     { id: 'sensoren', label: 'SENSOREN', shortcut: 'Ctrl+3' },
-    { id: 'export', label: 'EXPORT', shortcut: 'Ctrl+4' }
+    { id: 'export', label: 'EXPORT', shortcut: 'Ctrl+4' },
+    { id: 'settings', label: 'INSTELLINGEN', shortcut: 'Ctrl+5' }
   ];
 
   return (

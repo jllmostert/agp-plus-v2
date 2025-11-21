@@ -28,10 +28,10 @@ export function usePanelNavigation() {
   // Keyboard shortcuts handler
   useEffect(() => {
     const handleKeyPress = (e) => {
-      // Ctrl+1/2/3/4: Switch panels
-      if (e.ctrlKey && ['1', '2', '3', '4'].includes(e.key)) {
+      // Ctrl+1/2/3/4/5: Switch panels
+      if (e.ctrlKey && ['1', '2', '3', '4', '5'].includes(e.key)) {
         e.preventDefault();
-        const panels = ['import', 'dagprofielen', 'sensoren', 'export'];
+        const panels = ['import', 'dagprofielen', 'sensoren', 'export', 'settings'];
         const panelIndex = parseInt(e.key) - 1;
         setActivePanel(panels[panelIndex]);
         console.log(`[Keyboard] Switched to panel: ${panels[panelIndex]}`);

@@ -1,6 +1,6 @@
 # AGP+ Quick Handoff
 
-**v4.3.0** | **Path**: `/Users/jomostert/Documents/Projects/agp-plus` | **Status**: ✅ Production Ready
+**v4.3.3** | **Path**: `/Users/jomostert/Documents/Projects/agp-plus` | **Status**: ✅ Production Ready
 
 ---
 
@@ -16,27 +16,32 @@ Open: http://localhost:3001
 
 ---
 
-## 📂 CRITICAL FILES
+## 📊 ARCHITECTURE SUMMARY
+
+**Context API: Complete** (0 useState in AGPGenerator)
 
 ```
+State Management:
+├── DataContext      → Data loading, master dataset
+├── PeriodContext    → Date range selection
+├── MetricsContext   → Calculated metrics, comparisons
+├── UIContext        → Patient info, workdays, toasts, dialogs
+└── Custom Hooks (6) → Modal, navigation, import/export
+```
+
+**Key Files**:
+```
 src/
-├── components/AGPGenerator.jsx    # Main app (1667 lines)
-├── hooks/                         # ⭐ NEW: useModalState, usePanelNavigation, useImportExport
+├── components/AGPGenerator.jsx    # Main orchestrator (1544 lines, 0 useState)
+├── contexts/                      # DataContext, PeriodContext, MetricsContext, UIContext
+├── hooks/                         # useModalState, usePanelNavigation, useImportExport, useUI
 ├── core/
-│   ├── parsers.js                 # CSV parsing (dynamic columns!)
-│   └── metrics-engine.js          # MAGE, MODD, GRI, TIR, etc.
+│   ├── parsers.js                 # CSV parsing (dynamic columns)
+│   └── metrics-engine.js          # MAGE, MODD, GRI, TIR calculations
 ├── storage/
 │   ├── db.js                      # IndexedDB setup
 │   └── sensorStorage.js           # Async sensor CRUD
-└── styles/globals.css             # Brutalist colors (use CSS vars!)
-
-docs/project/
-├── minimed_780g_ref.md           # Pump settings reference
-└── metric_definitions.md         # Metric formulas
-
-docs/handoffs/
-├── REFACTOR_MASTER_PLAN.md       # 97h plan to v5.0
-└── PROGRESS.md                    # Session log
+└── styles/globals.css             # Brutalist color system (use CSS vars!)
 ```
 
 ---
@@ -44,8 +49,9 @@ docs/handoffs/
 ## ✅ WHAT WORKS
 
 - ✅ CSV import (Medtronic CareLink)
-- ✅ AGP generation (14-day)
+- ✅ AGP generation (14-day) with dynamic Y-axis
 - ✅ Metrics: TIR, TAR, TBR, CV, GMI, MAGE, MODD, GRI
+- ✅ Smart trend indicators (color-coded deltas)
 - ✅ Sensor management (dual storage: IndexedDB + SQLite)
 - ✅ Stock management (batch tracking)
 - ✅ Import/export JSON (backup/restore)
@@ -55,19 +61,70 @@ docs/handoffs/
 
 ---
 
+## 🎯 ROADMAP (Next Steps)
+
+**Most Valuable Next Features**:
+
+1. **Track 4, M1: MiniMed 780G Settings UI** (~12h)
+   - Display pump settings from CSV
+   - Manual configuration option
+   - localStorage persistence
+   - See: `docs/project/minimed_780g_ref.md`
+
+2. **Track 3, Q3: Table Virtualization** (~3h)
+   - react-window for large sensor lists
+   - Performance improvement >50 sensors
+
+3. **Track 3, Q4: WCAG AAA Compliance** (~9h)
+   - Full accessibility audit
+   - Screen reader improvements
+
+---
+
 ## ⚠️ TEST AFTER CHANGES
 
 **Critical Flow** (5 min):
 1. Import CSV → Metrics calculate
 2. Navigate panels (Ctrl+1/2/3/4)
-3. Open modals → Close modals
+3. Check trend indicators (↑↓ colors)
 4. Import JSON → Export JSON
 
 **If you touched**:
 - Storage → Test sensor add/delete/lock
-- Hooks → Test modal/panel state
-- Parser → Test CSV import with real data
+- Contexts → Test state flows across components
+- Metrics → Run `npm test` (25 unit tests)
 - Charts → Check AGP/day profiles render
+
+---
+
+## 💻 CODE PATTERNS
+
+**Context Usage**:
+```js
+import { useDataContext } from '../contexts/DataContext';
+import { usePeriodContext } from '../contexts/PeriodContext';
+import { useMetricsContext } from '../contexts/MetricsContext';
+import { useUI } from '../hooks/useUI';
+
+const { masterData, isLoading } = useDataContext();
+const { startDate, endDate, setStartDate } = usePeriodContext();
+const { metrics, comparison } = useMetricsContext();
+const { patientInfo, setPatientInfo } = useUI();
+```
+
+**Storage** (ALL ASYNC!):
+```js
+const sensors = await getAllSensors();
+await addSensor(sensor);
+await deleteSensor(id);
+```
+
+**Styling** (CSS vars ONLY!):
+```css
+background: var(--paper);    /* Never #FFFEF9 */
+color: var(--ink);           /* Never #0A0A0A */
+border: 3px solid var(--ink);
+```
 
 ---
 
@@ -83,119 +140,32 @@ npx vite --port 3002
 → Check console for `[useImportExport]` logs  
 → Validate JSON structure
 
-**Sensor duplicates**
-→ Check localStorage: `agp-deleted-sensors`  
-→ Should not happen (deduplication works)
-
-**Performance lag**
-→ Open React DevTools Profiler  
-→ AGPGenerator still large (1667 lines)  
-→ Solution: Context API (Track 3, Q1)
+**Metrics not updating**
+→ Check MetricsContext recalculation
+→ Verify PeriodContext date range
 
 ---
 
-## 💻 CODE PATTERNS
+## 📚 KEY DOCUMENTATION
 
-**Custom Hooks** (NEW!)
-```js
-const modals = useModalState();
-const panels = usePanelNavigation();
-const importExport = useImportExport();
-
-// State
-modals.patientInfoOpen
-importExport.isImporting
-
-// Methods
-modals.openModal('patientInfo')
-await importExport.executeImport()
-```
-
-**Storage** (ALL ASYNC!)
-```js
-const sensors = await getAllSensors();
-await addSensor(sensor);
-await deleteSensor(id);
-```
-
-**Styling** (CSS vars ONLY!)
-```css
-background: var(--paper);  /* Never #FFFEF9 */
-color: var(--ink);         /* Never #0A0A0A */
-border: 3px solid var(--ink);
-```
-
-**Parser** (Dynamic columns!)
-```js
-// ✅ GOOD
-const glucose = getColumn(headers, row, 'Sensor Glucose (mg/dL)');
-
-// ❌ BAD (old hardcoded way)
-const glucose = row[5]; // NEVER DO THIS!
-```
+| Tier | Document | Purpose |
+|------|----------|---------|
+| 1 | `PROGRESS.md` | Session log, quick status |
+| 1 | `HANDOFF.md` | This file - quick reference |
+| 2 | `TIER2_SYNTHESIS.md` | Architecture overview |
+| 2 | `DUAL_STORAGE_ANALYSIS.md` | Storage patterns |
+| 3 | `metric_definitions.md` | Glucose metrics formulas |
+| 3 | `minimed_780g_ref.md` | Pump settings reference |
 
 ---
 
-## 🎯 QUICK TASKS
-
-**Add modal**: useModalState → ModalManager.jsx → Button  
-**Add panel**: New component → AGPGenerator switch → Nav button  
-**Add metric**: metrics-engine.js → Add test → Display in AGPPanel  
-**Fix bug**: Console logs → React DevTools → Surgical edit
-
----
-
-## 📋 NEXT STEPS (Pick One)
-
-**A. Continue Refactoring** (Recommended)
-→ Track 3, Sprint Q1: Context API (20h)  
-→ See `docs/handoffs/REFACTOR_MASTER_PLAN.md`
-
-**B. Quick Feature**
-→ Check feature request → Implement → Test → Update PROGRESS.md
-
-**C. Debug Issue**
-→ Reproduce → Console logs → Fix → Test → Commit
-
----
-
-## 🚨 RED FLAGS
-
-**STOP if you see**:
-- AGPGenerator.jsx growing (should shrink!)
-- Hardcoded colors (use CSS vars)
-- Hardcoded CSV indices (use getColumn)
-- Synchronous sensor calls (all async now!)
-- Duplicate sensors (check deduplication)
-
----
-
-## 📚 DOCS (When You Need Them)
-
-**Architecture**: `docs/analysis/TIER2_SYNTHESIS.md`  
-**Medical**: `docs/project/minimed_780g_ref.md`, `metric_definitions.md`  
-**Storage**: `docs/analysis/DUAL_STORAGE_ANALYSIS.md`  
-**Refactoring**: `docs/handoffs/REFACTOR_MASTER_PLAN.md` (97h to v5.0)
-
----
-
-## ✨ RECENT WINS
-
-- ✅ Phase 1 refactoring complete (3 hooks extracted)
-- ✅ 330 lines removed from AGPGenerator
-- ✅ All tests passing (25/25)
-- ✅ Performance excellent (9-89ms)
-- ✅ Zero known bugs
-
----
-
-## 🔧 COMMIT PATTERN
+## 🔧 GIT WORKFLOW
 
 ```bash
 # After changes
 git add .
-git commit -m "feat(sprint-x): what you did"
-git push origin develop
+git commit -m "feat(component): what you did"
+git push origin main
 
 # Update PROGRESS.md with session summary
 ```
@@ -206,12 +176,11 @@ git push origin develop
 
 **Start**: "Check PROGRESS.md, let's work on [task]"  
 **End**: "Update PROGRESS.md, create session summary"  
-**Stuck**: Ask me to read relevant code/docs
-
-**Token management**: Work in 30-60 min chunks, ask me to summarize if needed
+**Stuck**: Ask me to read relevant code/docs  
+**Token management**: Work in 30-60 min chunks
 
 ---
 
-**Quick Handoff v1.0** | **Last Updated**: 2025-11-15
+**Quick Handoff v4.3.3** | **Last Updated**: 2025-11-21
 
 **You got this! 🚀**

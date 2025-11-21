@@ -16,6 +16,8 @@ import useUI from '../hooks/useUI';
 import { parseProTime } from '../core/parsers';
 import { downloadHTML } from '../core/html-exporter';
 import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
+import { parsePumpSettings, mergePumpSettings } from '../core/pumpSettingsParser';
+import { getPumpSettings, savePumpSettings } from '../storage/pumpSettingsStorage';
 
 // UI Components
 import { MigrationBanner } from './MigrationBanner';
@@ -35,6 +37,7 @@ import SensorHistoryPanel from './panels/SensorHistoryPanel';
 import StockPanel from './panels/StockPanel';
 import DayProfilesPanel from './panels/DayProfilesPanel';
 import DevToolsPanel from './panels/DevToolsPanel';
+import PumpSettingsPanel from './panels/PumpSettingsPanel';
 
 /**
  * AGPGenerator - Main application container
@@ -327,6 +330,17 @@ function AGPGeneratorContent() {
         setV3UploadError(null); // Clear previous errors
         const { uploadCSVToV3 } = await import('../storage/masterDatasetStorage');
         const result = await uploadCSVToV3(text);
+        
+        // Parse and save pump settings from CSV (always, regardless of batch confirmation)
+        try {
+          const parsedSettings = parsePumpSettings(text);
+          const existingSettings = getPumpSettings();
+          const mergedSettings = mergePumpSettings(existingSettings, parsedSettings);
+          savePumpSettings(mergedSettings);
+          console.log('[CSV Upload] Pump settings updated from CSV');
+        } catch (settingsErr) {
+          console.warn('[CSV Upload] Failed to parse pump settings:', settingsErr);
+        }
         
         // Check if upload needs user confirmation for batch assignments
         if (result.needsConfirmation) {
@@ -1167,6 +1181,10 @@ function AGPGeneratorContent() {
               dayProfiles={dayProfiles}
               patientInfo={patientInfo}
             />
+          )}
+          
+          {navigation.activePanel === 'settings' && (
+            <PumpSettingsPanel />
           )}
         </div>
         

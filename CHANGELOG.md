@@ -6,6 +6,105 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.3.4 - MiniMed 780G Settings UI] - 2025-11-21
+
+### 🎯 Session 44: Track 4, M1 - Pump Settings Feature
+**Duration**: ~3 hours  
+**Status**: ✅ Feature Complete (integration ready)
+
+#### New Feature: Pump Settings Panel
+**Files Created**:
+- `src/components/panels/PumpSettingsPanel.jsx` (595 lines)
+- `src/core/pumpSettingsParser.js` (344 lines)
+- `src/storage/pumpSettingsStorage.js` (194 lines)
+
+**Capabilities**:
+- ✅ Auto-detect pump settings from CareLink CSV uploads
+- ✅ Display device info (model, serial, firmware)
+- ✅ Display Carb Ratios (CR) by time block
+- ✅ Display Insulin Sensitivity Factors (ISF)
+- ✅ Display Target Glucose range
+- ✅ Display Active Insulin Time (AIT)
+- ✅ Display Basal Profile
+- ✅ Calculate TDD with 500/1800 rule comparison
+- ✅ Manual editing with localStorage persistence
+- ✅ Brutalist grid design matching app style
+
+**Integration**:
+- ✅ Integrated in AGPGenerator (renders as panel)
+- ✅ Auto-parses settings on CSV import
+- ✅ Merges settings from multiple CSV files
+- ✅ Settings persist in localStorage
+
+**Reference**: See `docs/project/minimed_780g_ref.md` for medical context
+
+---
+
+## [v4.3.3 - UIContext Cleanup Complete] - 2025-11-20
+
+### 🎯 Session 43: Zero useState in AGPGenerator
+**Duration**: ~45 minutes  
+**Commits**: e68e4bd, 00bfdd2
+
+#### Context API Refactoring - COMPLETE! 🎉
+**Summary**: Removed the last remaining useState call from AGPGenerator, completing the Context API migration. The main component now has **zero local state** - all state management is handled by contexts and custom hooks.
+
+#### Changes
+- ✅ Removed `selectedDateRange` useState (using PeriodContext directly)
+- ✅ AGPGenerator now has **0 local useState calls**
+- ✅ Removed unused `useState` import
+- ✅ Version synchronized to v4.3.3
+
+#### Architecture Achievement
+**Final State Management**:
+- **4 Context Layers**: DataContext, PeriodContext, MetricsContext, UIContext
+- **6 Custom Hooks**: useModalState, usePanelNavigation, useImportExport, useMasterDataset, useMetrics, useUI
+- **0 Local State**: AGPGenerator is now a pure orchestration component
+
+#### Metrics
+- **AGPGenerator.jsx**: 1544 lines (down from 1819 pre-refactor)
+- **Total Reduction**: 275 lines (-15.1%)
+- **State Complexity**: From 22 local states → 0
+
+---
+
+## [v4.3.2 - Smart Trend Indicators] - 2025-11-20
+
+### 🎯 Session 42: Sprint S3 Layout Consolidation + Trend Indicators
+**Duration**: ~2 hours  
+**Commits**: 2fa93de, e68e4bd
+
+#### Sprint S3: Layout Consolidation
+**Goal**: Standardize all comparison sections to consistent grid-style layout
+
+**Completed**:
+- ✅ **Day/Night Analysis** → Rewritten to 3-column grid (label | day | night)
+- ✅ **Period Comparison** → Rewritten to 3-column grid + GMI row added
+- ✅ **Work Schedule Analysis** → New component with brutalist grid design
+- ✅ **HypoglycemiaEvents** → Moved into MetricsDisplay (consolidated)
+- ✅ **VisualizationContainer** → Simplified (removed duplicate WorkdaySplit)
+
+#### Quick Win: Smart Trend Indicators
+**Feature**: Color-coded delta indicators showing whether changes are good or bad
+
+| Metric | Higher is... | Lower is... |
+|--------|--------------|-------------|
+| TIR | ✅ Good (green ↑) | ❌ Bad (red ↓) |
+| Mean | ❌ Bad (red ↑) | ✅ Good (green ↓) |
+| CV | ❌ Bad (red ↑) | ✅ Good (green ↓) |
+| GMI | ❌ Bad (red ↑) | ✅ Good (green ↓) |
+
+**Applied to**: ComparisonView, WorkScheduleAnalysis, DayNightSplit
+
+#### Files Changed (9 files)
+- `MetricsDisplay.jsx` - Added events prop, integrated HypoglycemiaEvents
+- `VisualizationContainer.jsx` - Simplified layout
+- `DayNightSplit.jsx` - Rewritten to grid-style
+- `ComparisonView.jsx` - Rewritten to grid-style + GMI row
+- `WorkScheduleAnalysis.jsx` - **NEW** brutalist grid component
+
+---
+
 ## [v4.3.1 - Version Display & Export Timestamps] - 2025-11-16
 
 ### 🐛 Bug Fixes & Improvements

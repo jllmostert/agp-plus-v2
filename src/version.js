@@ -3,9 +3,9 @@
  * Single source of truth for application version
  */
 
-export const VERSION = '4.3.3';
-export const VERSION_DATE = '2025-11-20';
-export const VERSION_NAME = 'Smart Trend Indicators';
+export const VERSION = '4.3.4';
+export const VERSION_DATE = '2025-11-21';
+export const VERSION_NAME = 'MiniMed 780G Settings UI';
 
 export default {
   VERSION,

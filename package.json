@@ -1,7 +1,7 @@
 {
   "name": "agp-plus",
-  "version": "4.3.3",
-  "description": "AGP+ v4.3.1 - Ambulatory Glucose Profile with Stock Management",
+  "version": "4.3.4",
+  "description": "AGP+ v4.3.4 - Ambulatory Glucose Profile with MiniMed 780G Settings",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3001",
