@@ -13,6 +13,7 @@
  */
 
 import { debug } from '../utils/debug.js';
+import { findAllSensorSections, findColumnIndices } from './parsers.js';
 
 /**
  * Detect section boundaries in CSV
@@ -212,11 +213,65 @@ export function parseCareLinkSections(csvText) {
   const boundaries = detectSections(csvText);
   
   // Parse sections
-  const alerts = parseSection1(csvText, boundaries);
+  let alerts = parseSection1(csvText, boundaries);
   const glucose = parseSection3(csvText, boundaries);
   
-  // Extract metadata (reuse existing logic from parsers.js)
+  // === MULTI-PUMP SUPPORT ===
+  // TODO: Remove after Jan 2026 when old pump (NG4114235H) data expires from CSV exports
+  // See TECH_DEBT.md for cleanup instructions
+  // Check for additional pump sections (after pump replacement)
+  const pumpSections = findAllSensorSections(csvText, 'Pump');
   const lines = csvText.split('\n');
+  
+  if (pumpSections.length > 1) {
+    debug.log(`[CSV Parser] Multi-pump: ${pumpSections.length} pump sections found`);
+    
+    // Parse additional pump sections for alerts (skip first, already parsed)
+    for (let s = 1; s < pumpSections.length; s++) {
+      const section = pumpSections[s];
+      const sectionLines = lines.slice(section.startLine, section.endLine + 1);
+      
+      // Build column mapping for this section
+      const headerParts = section.headerRow.split(';');
+      const columnMapping = {
+        index: 0,
+        date: 1,
+        time: 2,
+        alert: headerParts.indexOf('Alert'),
+        sensorGlucose: headerParts.indexOf('Sensor Glucose (mg/dL)')
+      };
+      
+      debug.log(`[CSV Parser] Parsing pump section ${section.serial}, alert col: ${columnMapping.alert}`);
+      
+      // Parse alerts from this section
+      for (let i = 1; i < sectionLines.length; i++) {
+        const line = sectionLines[i]?.trim();
+        if (!line) continue;
+        
+        const parts = line.split(';');
+        if (parts.length < 3) continue;
+        
+        const date = parts[columnMapping.date]?.trim();
+        const time = parts[columnMapping.time]?.trim();
+        const alert = columnMapping.alert >= 0 ? parts[columnMapping.alert]?.trim() : null;
+        
+        if (date && time && alert) {
+          const timestamp = parseCareLinkDateTime(date, time);
+          alerts.push({
+            index: parts[columnMapping.index],
+            timestamp,
+            alert,
+            glucose: null
+          });
+        }
+      }
+    }
+    
+    debug.log(`[CSV Parser] Total alerts after multi-pump merge: ${alerts.length}`);
+  }
+  
+  // Extract metadata (reuse existing logic from parsers.js)
+  // Note: 'lines' already declared above for multi-pump support
   const metadata = {
     name: null,
     device: null,

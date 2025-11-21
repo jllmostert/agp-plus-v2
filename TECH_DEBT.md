@@ -1,0 +1,157 @@
+# AGP+ Technical Debt & Future Cleanup
+
+**Created**: 2025-11-21  
+**Context**: Multi-pump CSV parser fixes (pump replacement NG4114235H → NG4231472H)  
+**Review Date**: 2026-01-15 (when old pump data is no longer in exports)
+
+---
+
+## 🎯 OVERVIEW
+
+On 21/11/2025, a pump replacement caused CSV exports to contain **two pumps** with different column structures. We added "duct tape" fixes to handle this. Once CareLink exports only contain the new pump data (~4-6 weeks), these can be simplified.
+
+---
+
+## 🔧 CLEANUP ITEMS
+
+### 1. Remove Multi-Pump Parsing Logic
+
+**Files affected:**
+- `src/core/parsers.js`
+- `src/core/csvSectionParser.js`
+
+**What to remove:**
+
+```javascript
+// parsers.js - lines ~680-780
+// Remove entire "=== MULTI-PUMP SUPPORT ===" blocks:
+// - Sensor section loop (s = 1; s < sensorSections.length)
+// - Pump section loop for events
+
+// csvSectionParser.js - lines ~218-268
+// Remove entire multi-pump alert parsing block
+```
+
+**When safe to remove:**
+- When CSV exports no longer contain NG4114235H data
+- Estimated: January 2026 (6 weeks after pump change)
+- Test: Upload fresh CSV, check if only 1 pump section detected
+
+**Risk if removed too early:**
+- Historical data from old pump would be lost on re-import
+- But: Data already in JSON backup is safe
+
+---
+
+### 2. Consolidate Duplicate Parsers
+
+**Problem:**
+Two separate parsing systems exist that do similar things:
+1. `parseCSV()` in `parsers.js` - Used for main glucose data
+2. `parseCareLinkSections()` in `csvSectionParser.js` - Used for sensor detection
+
+**Why this is bad:**
+- Fixes need to be applied to BOTH parsers
+- Different column detection logic (prone to drift)
+- Confusing for maintenance
+
+**Recommended fix:**
+```
+Option A: Merge into single parser
+- parseCSV() returns { data, alerts, glucose, metadata }
+- Remove csvSectionParser.js entirely
+- Update SensorRegistration.jsx to use parseCSV()
+
+Option B: Shared column detection
+- Extract findColumnIndices() as shared utility
+- Both parsers use same detection logic
+- Keep separate for different use cases
+```
+
+**Effort estimate:** ~4 hours for Option A, ~2 hours for Option B
+
+**Priority:** Medium (not urgent, but reduces maintenance burden)
+
+---
+
+### 3. Simplify Section Detection
+
+**Current state:**
+- `detectSections()` in csvSectionParser.js counts sections 1-3
+- `findAllSensorSections()` in parsers.js finds by type ('Sensor'/'Pump')
+- Overlap and potential inconsistency
+
+**Future state:**
+- Single `findSections(csvText)` function
+- Returns all sections with type, serial, boundaries
+- Used by both parseCSV and sensor detection
+
+**Location for shared code:** `src/core/csvUtils.js` (new file)
+
+---
+
+## 📅 CLEANUP TIMELINE
+
+| Date | Action |
+|------|--------|
+| 2025-12-15 | Check if old pump still in exports |
+| 2025-12-21 | **~30 days post pump change**: JSON has all historical data, CSV only new pump |
+| 2026-01-15 | If clean, remove multi-pump code |
+| 2026-02-01 | Consolidate parsers (Option A or B) |
+| 2026-02-15 | Final cleanup, update tests |
+
+### Key Insight: JSON + Clean CSV Strategy
+
+After ~30 days (around 2025-12-21):
+- **JSON backup** contains ALL historical sensor data (both pumps)
+- **Fresh CSV exports** only contain new pump (NG4231472H)
+- Multi-pump parsing code becomes unnecessary
+- Can simplify back to single-pump parser
+
+---
+
+## ⚠️ BEFORE REMOVING ANY CODE
+
+1. **Export full JSON backup** (includes all historical data)
+2. **Test with fresh CSV** (only new pump data)
+3. **Verify sensor history** still intact after code removal
+4. **Git tag** before cleanup: `git tag pre-parser-cleanup`
+
+---
+
+## 🧪 TEST CASES FOR CLEANUP
+
+After removing multi-pump code, verify:
+
+```
+□ Fresh CSV imports correctly (glucose, boluses, alerts)
+□ Sensor detection finds new sensors
+□ Rewind events detected
+□ No console errors about missing sections
+□ Historical data in JSON still loads
+□ Metrics calculate correctly
+```
+
+---
+
+## 📝 CODE MARKERS
+
+Search for these comments to find cleanup locations:
+
+```javascript
+// === MULTI-PUMP SUPPORT ===
+// TODO: Remove after old pump data expires
+```
+
+---
+
+## 💡 LESSONS LEARNED
+
+1. **Hardware changes can break CSV structure** - Column positions aren't guaranteed
+2. **Separate parsers = separate fixes** - Consolidation prevents this
+3. **Dynamic column detection is essential** - Never hardcode column indices
+4. **Document temporary fixes** - This file exists for that reason
+
+---
+
+**Last updated**: 2025-11-21

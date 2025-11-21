@@ -256,6 +256,61 @@ export const parseSection2 = (text) => {
 };
 
 /**
+ * Find all sensor data sections in a multi-pump CSV export
+ * 
+ * CareLink exports can contain multiple pumps, each with their own sensor section.
+ * Each section has its own header row with potentially different column positions.
+ * 
+ * Section dividers look like: "-------;MiniMed 780G MMT-1886;Sensor;NG4114235H;-------"
+ * 
+ * @param {string} text - Raw CSV text content
+ * @returns {Array} Array of {startLine, endLine, serial, headerRow} for each sensor section
+ */
+export const findAllSensorSections = (text, sectionType = 'Sensor') => {
+  const lines = text.split('\n');
+  const sections = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Look for section dividers: "-------;...;Sensor;SERIAL;-------" or "-------;...;Pump;SERIAL;-------"
+    // sectionType can be 'Sensor' or 'Pump'
+    if (line.includes(sectionType) && line.startsWith('-----') && !line.includes('Aggregated')) {
+      const parts = line.split(';');
+      // Extract serial number (usually 4th part)
+      const serial = parts[3]?.trim() || 'Unknown';
+      
+      // Header row is the next line
+      const headerLine = i + 1;
+      if (headerLine >= lines.length) continue;
+      
+      const headerRow = lines[headerLine];
+      if (!headerRow.includes('Date') || !headerRow.includes('Time')) continue;
+      
+      // Find end of section (next divider or EOF)
+      let endLine = lines.length - 1;
+      for (let j = headerLine + 1; j < lines.length; j++) {
+        if (lines[j].startsWith('-----')) {
+          endLine = j - 1;
+          break;
+        }
+      }
+      
+      sections.push({
+        startLine: headerLine,
+        endLine,
+        serial,
+        headerRow
+      });
+      
+      console.log(`[Parser] Found ${sectionType} section: ${serial} (lines ${headerLine}-${endLine})`);
+    }
+  }
+  
+  return sections;
+};
+
+/**
  * Detect CSV format version and structure
  * Dynamically identifies header lines, device type, and format version
  * 
@@ -614,6 +669,121 @@ export const parseCSV = (text) => {
     // Parse Section 2 (auto insulin data)
     const section2 = parseSection2(text);
     
+    // === MULTI-PUMP SUPPORT ===
+    // TODO: Remove after Jan 2026 when old pump (NG4114235H) data expires from CSV exports
+    // See TECH_DEBT.md for cleanup instructions
+    // Check if there are multiple sensor sections (e.g., after pump replacement)
+    // Each section may have different column indices due to firmware changes
+    const sensorSections = findAllSensorSections(text);
+    
+    if (sensorSections.length > 1) {
+      console.log(`[Parser] Multi-pump CSV detected: ${sensorSections.length} sensor sections`);
+      
+      // Parse additional sections (skip first, already parsed above)
+      for (let s = 1; s < sensorSections.length; s++) {
+        const section = sensorSections[s];
+        const sectionColumnMap = findColumnIndices(section.headerRow);
+        
+        if (!sectionColumnMap) {
+          console.warn(`[Parser] Skipping section ${section.serial}: invalid header`);
+          continue;
+        }
+        
+        console.log(`[Parser] Parsing additional section: ${section.serial}`);
+        
+        // Parse this section's data
+        for (let i = section.startLine + 1; i <= section.endLine; i++) {
+          const line = lines[i];
+          if (!line || !line.trim()) continue;
+          
+          const parts = line.split(';');
+          if (parts.length < 10) continue;
+          
+          // Get glucose using THIS section's column map
+          const glucoseIdx = sectionColumnMap['Sensor Glucose (mg/dL)'];
+          const glucose = glucoseIdx !== undefined ? utils.parseDecimal(parts[glucoseIdx]) : NaN;
+          
+          if (isNaN(glucose) || glucose < 20 || glucose > 600) continue;
+          
+          const dateIdx = sectionColumnMap['Date'];
+          const timeIdx = sectionColumnMap['Time'];
+          
+          data.push({
+            date: parts[dateIdx]?.trim(),
+            time: parts[timeIdx]?.trim(),
+            glucose,
+            bolus: 0,
+            bg: null,
+            carbs: 0,
+            rewind: false,
+            alert: null
+          });
+          validRows++;
+        }
+      }
+      
+      console.log(`[Parser] Multi-pump sensor merge complete: ${data.length} total readings`);
+    }
+    
+    // === MULTI-PUMP SUPPORT: PUMP SECTIONS (rewind, alerts, boluses) ===
+    // TODO: Remove after Jan 2026 when old pump data expires. See TECH_DEBT.md
+    const pumpSections = findAllSensorSections(text, 'Pump');
+    
+    if (pumpSections.length > 1) {
+      console.log(`[Parser] Multi-pump CSV: ${pumpSections.length} pump sections found`);
+      
+      // Parse additional pump sections (skip first, already parsed above)
+      for (let s = 1; s < pumpSections.length; s++) {
+        const section = pumpSections[s];
+        const sectionColumnMap = findColumnIndices(section.headerRow);
+        
+        if (!sectionColumnMap) {
+          console.warn(`[Parser] Skipping pump section ${section.serial}: invalid header`);
+          continue;
+        }
+        
+        console.log(`[Parser] Parsing pump section: ${section.serial}`);
+        let pumpEvents = 0;
+        
+        // Parse this section's events (rewind, alerts, boluses)
+        for (let i = section.startLine + 1; i <= section.endLine; i++) {
+          const line = lines[i];
+          if (!line || !line.trim()) continue;
+          
+          const parts = line.split(';');
+          if (parts.length < 10) continue;
+          
+          const dateIdx = sectionColumnMap['Date'];
+          const timeIdx = sectionColumnMap['Time'];
+          const rewindIdx = sectionColumnMap['Rewind'];
+          const alertIdx = sectionColumnMap['Alert'] ?? sectionColumnMap['Alarm'];
+          const bolusIdx = sectionColumnMap['Bolus Volume Delivered (U)'];
+          
+          const hasRewind = rewindIdx !== undefined && parts[rewindIdx]?.trim() === 'Rewind';
+          const alert = alertIdx !== undefined ? parts[alertIdx]?.trim() : null;
+          const hasSensorAlert = alert && (alert.includes('SENSOR') || alert.includes('Sensor'));
+          const bolus = bolusIdx !== undefined ? utils.parseDecimal(parts[bolusIdx]) : 0;
+          
+          // Only add events (not glucose - that comes from sensor section)
+          if (hasRewind || hasSensorAlert || bolus > 0) {
+            data.push({
+              date: parts[dateIdx]?.trim(),
+              time: parts[timeIdx]?.trim(),
+              glucose: null,
+              bolus: bolus || 0,
+              bg: null,
+              carbs: 0,
+              rewind: hasRewind,
+              alert: alert
+            });
+            pumpEvents++;
+          }
+        }
+        
+        console.log(`[Parser] Pump section ${section.serial}: ${pumpEvents} events added`);
+      }
+    }
+
     return {
       data,       // Main glucose/event data (Section 3)
       section1,   // Meal boluses for TDD (NEW in v3.1)

@@ -163,8 +163,11 @@ npx vite --port 3002
 | `PROGRESS.md` | Session log, quick status |
 | `HANDOFF.md` | This file - quick reference |
 | `HANDOFF_COMPREHENSIVE.md` | Full architecture overview |
+| `TECH_DEBT.md` | **⚠️ Future cleanup tasks** - patches to revisit/rewrite |
 | `reference/metric_definitions.md` | Glucose metrics formulas |
 | `reference/minimed_780g_ref.md` | Pump settings reference |
+
+> **💡 Before patching:** Check `TECH_DEBT.md` first - maybe it's better to fix properly now than add another patch. Review monthly for items ready to clean up.
 
 ---
 
@@ -190,6 +193,6 @@ git push origin main
 
 ---
 
-**Quick Handoff v4.3.6** | **Last Updated**: 2025-11-21
+**Quick Handoff v4.3.7** | **Last Updated**: 2025-11-21
 
 **You got this! 🚀**

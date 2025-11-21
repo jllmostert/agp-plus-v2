@@ -379,6 +379,17 @@ export default function SensorHistoryPanel({ isOpen, onClose, onOpenStock }) {
               IMPORT JSON
               <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
             </label>
+            <button onClick={handleResequence} style={{
+              padding: '10px 20px',
+              border: '2px solid var(--ink)',
+              backgroundColor: 'var(--paper)',
+              color: 'var(--ink)',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontWeight: 'bold'
+            }} title="Hernummer sensoren chronologisch (#1 = oudste)">
+              #123
+            </button>
             <button onClick={onClose} style={{
               padding: '10px 20px',
               border: '2px solid var(--ink)',

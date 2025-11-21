@@ -665,6 +665,22 @@ npx vite --port 3001
 
 ---
 
+## 🔧 MAINTENANCE & TECHNICAL DEBT
+
+**Technical Debt Tracking**: `TECH_DEBT.md` (project root)
+
+This document tracks:
+- Temporary patches that need proper fixes later
+- Parser consolidation plans (parseCSV vs parseCareLinkSections)
+- Code cleanup timelines (e.g., multi-pump support after Jan 2026)
+- Lessons learned from hardware/CSV format changes
+
+**Review Cadence**: Monthly (or when adding new patches)
+
+**Philosophy**: Quick patches are acceptable for urgent fixes, but must be documented in TECH_DEBT.md with a cleanup timeline. Prefer proper fixes when time allows.
+
+---
+
 ## 📞 PROJECT METADATA
 
 **Project Name**: AGP+ (Ambulatory Glucose Profile Plus)  
