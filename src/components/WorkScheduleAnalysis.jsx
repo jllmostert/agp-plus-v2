@@ -140,7 +140,7 @@ export default function WorkScheduleAnalysis({ workdayMetrics, restdayMetrics })
         </div>
         <div
           style={{
-            fontSize: '0.75rem',
+            fontSize: '0.875rem',
             fontWeight: 600,
             letterSpacing: '0.05em',
             color: 'var(--color-orange)'
@@ -184,7 +184,7 @@ export default function WorkScheduleAnalysis({ workdayMetrics, restdayMetrics })
               <Tooltip text={metric.tooltip ? getMetricTooltip(metric.tooltip) : ''}>
                 <div
                   style={{
-                    fontSize: '0.75rem',
+                    fontSize: '0.875rem',
                     fontWeight: 700,
                     letterSpacing: '0.15em',
                     textTransform: 'uppercase',
@@ -197,7 +197,7 @@ export default function WorkScheduleAnalysis({ workdayMetrics, restdayMetrics })
               {metric.subtitle && (
                 <div
                   style={{
-                    fontSize: '0.8rem',
+                    fontSize: '0.875rem',
                     fontWeight: 700,
                     marginTop: '0.25rem',
                     opacity: 0.7
@@ -222,7 +222,7 @@ export default function WorkScheduleAnalysis({ workdayMetrics, restdayMetrics })
             >
               <div
                 style={{
-                  fontSize: '0.8rem',
+                  fontSize: '0.9rem',
                   fontWeight: 700,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
@@ -298,7 +298,7 @@ export default function WorkScheduleAnalysis({ workdayMetrics, restdayMetrics })
             >
               <div
                 style={{
-                  fontSize: '0.8rem',
+                  fontSize: '0.9rem',
                   fontWeight: 700,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
@@ -346,7 +346,7 @@ export default function WorkScheduleAnalysis({ workdayMetrics, restdayMetrics })
 
               <div
                 style={{
-                  fontSize: '0.8rem',
+                  fontSize: '0.875rem',
                   fontWeight: 700,
                   marginTop: '0.75rem',
                   color: 'var(--text-tertiary)',
