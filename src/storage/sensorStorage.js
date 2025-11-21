@@ -228,15 +228,25 @@ export async function updateSensor(id, updates) {
 export async function deleteSensor(id) {
   const storage = await getStorage();
   
-  if (storage.deleted.some(d => d.sensor_id === id)) {
-    return { success: false, error: 'Already deleted' };
-  }
-  storage.deleted.push({
-    sensor_id: id,
-    deleted_at: new Date().toISOString()
-  });
+  // HARD DELETE: Remove sensor from sensors array entirely
+  const sensorIndex = storage.sensors.findIndex(s => s.id === id);
   
-  saveStorage(storage);
+  if (sensorIndex === -1) {
+    return { success: false, error: 'Sensor not found' };
+  }
+  
+  // Remove from sensors array
+  storage.sensors.splice(sensorIndex, 1);
+  
+  // Also remove from deleted list if it was there (cleanup)
+  const deletedIndex = storage.deleted.findIndex(d => d.sensor_id === id);
+  if (deletedIndex !== -1) {
+    storage.deleted.splice(deletedIndex, 1);
+  }
+  
+  await saveStorage(storage);
+  console.log('[sensorStorage] Hard deleted sensor:', id);
+  
   return { success: true };
 }
 
