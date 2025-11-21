@@ -3,9 +3,9 @@
  * Single source of truth for application version
  */
 
-export const VERSION = '4.3.4';
+export const VERSION = '4.3.5';
 export const VERSION_DATE = '2025-11-21';
-export const VERSION_NAME = 'MiniMed 780G Settings UI';
+export const VERSION_NAME = 'Device Info & Readability Fix';
 
 export default {
   VERSION,

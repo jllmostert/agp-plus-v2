@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
     serial: '',
     hardwareVersion: '',
     firmwareVersion: '',
+    transmitter: '',  // Guardian Sensor info
   },
   
   // Carb Ratios by time block (g/U)
@@ -35,7 +36,12 @@ const DEFAULT_SETTINGS = {
     { startTime: '00:00', factor: 50 },
   ],
   
-  // Target glucose range (mg/dL)
+  // SmartGuard Auto Mode target (100/110/120 mg/dL)
+  // This is NOT in CSV - must be set manually!
+  smartGuardTarget: 100,  // User's actual Auto Mode target
+  
+  // BWZ Target glucose range (mg/dL) - from CSV
+  // This is for Manual Mode corrections, NOT SmartGuard
   targetGlucose: {
     low: 90,
     high: 120,

@@ -190,8 +190,8 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
               {metric.subtitle && (
                 <div
                   style={{
-                    fontSize: '0.65rem',
-                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
                     marginTop: '0.25rem',
                     opacity: 0.7
                   }}
@@ -265,8 +265,8 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
               {delta && !delta.isNeutral && (
                 <div
                   style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
                     marginTop: '0.75rem',
                     color: getTrendColor(metric.key, delta),
                     letterSpacing: '0.05em'
@@ -291,7 +291,7 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
             >
               <div
                 style={{
-                  fontSize: '0.65rem',
+                  fontSize: '0.8rem',
                   fontWeight: 700,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
@@ -339,8 +339,8 @@ export default function DayNightSplit({ dayMetrics, nightMetrics }) {
 
               <div
                 style={{
-                  fontSize: '0.65rem',
-                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
                   marginTop: '0.75rem',
                   color: 'var(--text-tertiary)',
                   letterSpacing: '0.05em',

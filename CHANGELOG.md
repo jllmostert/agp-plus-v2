@@ -6,6 +6,40 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.3.5 - Device Info & Readability Fix] - 2025-11-21
+
+### 🎯 Session 45: Bug Fixes & UI Polish
+**Duration**: ~1 hour  
+**Status**: ✅ Complete
+
+#### Bug Fixes
+**Pump Settings Device Parser**:
+- ✅ Fixed device info parsing for CareLink CSV format
+- ✅ Now correctly extracts: Model (MiniMed 780G MMT-1886), Serial (NG4114235H), Hardware (A2.01), Firmware (8.13.2)
+- ✅ Added CGM/Transmitter info (Guardian™ 4 Sensor)
+
+**SmartGuard Target Clarification**:
+- ✅ Added separate `smartGuardTarget` field (100/110/120 mg/dL)
+- ✅ Clear UI distinction: SmartGuard Target (manually set) vs BWZ Target (from CSV)
+- ✅ Warning message: "Handmatig instellen - niet in CSV export"
+- ℹ️ SmartGuard Auto Mode target is NOT in CareLink CSV exports
+
+#### UI Readability Improvements
+**DayNightSplit.jsx**:
+- ✅ Column headers: 0.65rem → 0.8rem, fontWeight 700
+- ✅ Delta text: 0.75rem → 0.9rem, fontWeight 700
+- ✅ Improved visibility for colored trend indicators
+
+**WorkScheduleAnalysis.jsx**:
+- ✅ Same readability improvements as DayNightSplit
+- ✅ Headers and delta text now more legible
+
+**ComparisonView.jsx**:
+- ✅ Same readability improvements applied
+- ✅ Consistent styling across all comparison components
+
+---
+
 ## [v4.3.4 - MiniMed 780G Settings UI] - 2025-11-21
 
 ### 🎯 Session 44: Track 4, M1 - Pump Settings Feature

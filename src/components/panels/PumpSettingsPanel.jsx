@@ -119,6 +119,9 @@ export default function PumpSettingsPanel() {
           <InfoRow label="Serienr" value={data.device?.serial || '-'} />
           <InfoRow label="Hardware" value={data.device?.hardwareVersion || '-'} />
           <InfoRow label="Firmware" value={data.device?.firmwareVersion || '-'} />
+          {data.device?.transmitter && (
+            <InfoRow label="CGM" value={data.device.transmitter} />
+          )}
         </div>
       </Section>
 
@@ -238,6 +241,34 @@ export default function PumpSettingsPanel() {
 
       {/* Target Glucose */}
       <Section title="DOELGLUCOSE">
+        {/* SmartGuard Target - most important, not from CSV */}
+        <div style={styles.smartGuardBox}>
+          <div style={styles.smartGuardRow}>
+            <span style={styles.smartGuardLabel}>🎯 SmartGuard Target</span>
+            {editing ? (
+              <select
+                value={editedSettings.smartGuardTarget || 100}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  smartGuardTarget: parseInt(e.target.value)
+                })}
+                style={styles.selectLarge}
+              >
+                <option value={100}>100 mg/dL (Agressief)</option>
+                <option value={110}>110 mg/dL (Gemiddeld)</option>
+                <option value={120}>120 mg/dL (Conservatief)</option>
+              </select>
+            ) : (
+              <span style={styles.smartGuardValue}>{data.smartGuardTarget || 100} mg/dL</span>
+            )}
+          </div>
+          <div style={styles.smartGuardNote}>
+            ⚠️ Handmatig instellen - niet in CSV export
+          </div>
+        </div>
+        
+        {/* BWZ Target (Manual Mode) */}
+        <div style={styles.bwzNote}>BWZ Target (Manual Mode - uit CSV):</div>
         <div style={styles.targetGrid}>
           <div style={styles.targetBox}>
             <div style={styles.targetLabel}>Laag</div>
@@ -590,5 +621,46 @@ const styles = {
     fontSize: '0.75rem',
     color: 'var(--text-secondary)',
     marginTop: '0.25rem',
+  },
+  smartGuardBox: {
+    backgroundColor: 'var(--ink)',
+    color: 'var(--paper)',
+    padding: '1rem',
+    marginBottom: '1rem',
+  },
+  smartGuardRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  smartGuardLabel: {
+    fontSize: '1rem',
+    fontWeight: 'bold',
+  },
+  smartGuardValue: {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    color: 'var(--color-green)',
+  },
+  smartGuardNote: {
+    fontSize: '0.75rem',
+    opacity: 0.7,
+    marginTop: '0.5rem',
+  },
+  selectLarge: {
+    padding: '0.5rem',
+    border: '2px solid var(--paper)',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '1rem',
+    fontWeight: 'bold',
+    backgroundColor: 'var(--paper)',
+    color: 'var(--ink)',
+  },
+  bwzNote: {
+    fontSize: '0.8rem',
+    color: 'var(--text-secondary)',
+    marginBottom: '0.5rem',
+    fontStyle: 'italic',
   },
 };

@@ -168,6 +168,11 @@ export function parsePumpSettings(csvContent) {
 
 /**
  * Parse device info from CSV header lines
+ * 
+ * CareLink CSV format (first lines):
+ * Line 0: Last Name;First Name;...;Device;MiniMed 780G MMT-1886;Hardware Version;A2.01;Firmware Version;8.13.2
+ * Line 1: "Mostert";"Jo";...;"Serial Number";NG4114235H;Software Version;
+ * Line 2: Patient DOB;;;;;;CGM;Guardian™ 4 Sensor
  */
 function parseDeviceInfo(lines) {
   const device = {
@@ -175,26 +180,55 @@ function parseDeviceInfo(lines) {
     serial: '',
     hardwareVersion: '',
     firmwareVersion: '',
+    transmitter: '',
   };
 
-  // First few lines contain device info
-  const header = lines.slice(0, 10).join(';');
-  
-  // Model
-  const modelMatch = header.match(/MiniMed\s+780G\s+MMT-\d+/i);
-  if (modelMatch) device.model = modelMatch[0];
+  // Parse first 5 lines looking for key;value patterns
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    const line = lines[i];
+    const parts = line.split(';').map(p => p.replace(/^"|"$/g, '').trim());
+    
+    for (let j = 0; j < parts.length - 1; j++) {
+      const key = parts[j].toLowerCase();
+      const value = parts[j + 1];
+      
+      if (!value || value === '') continue;
+      
+      // Device model (e.g., "MiniMed 780G MMT-1886")
+      if (key === 'device' && value.includes('MiniMed')) {
+        device.model = value;
+      }
+      // Serial number
+      else if (key === 'serial number' && value.match(/^[A-Z0-9]+$/)) {
+        device.serial = value;
+      }
+      // Hardware version
+      else if (key === 'hardware version') {
+        device.hardwareVersion = value;
+      }
+      // Firmware version  
+      else if (key === 'firmware version') {
+        device.firmwareVersion = value;
+      }
+      // CGM/Transmitter
+      else if (key === 'cgm' && value.includes('Sensor')) {
+        device.transmitter = value;
+      }
+    }
+  }
 
-  // Serial
-  const serialMatch = header.match(/Serial Number[";,]+([A-Z0-9]+)/i);
-  if (serialMatch) device.serial = serialMatch[1];
-
-  // Hardware version
-  const hwMatch = header.match(/Hardware Version[";,]+([A-Z0-9.]+)/i);
-  if (hwMatch) device.hardwareVersion = hwMatch[1];
-
-  // Firmware version
-  const fwMatch = header.match(/Firmware Version[";,]+([0-9.]+)/i);
-  if (fwMatch) device.firmwareVersion = fwMatch[1];
+  // Also check line 4/5 for pump serial in format "-------;MiniMed...;Pump;SERIAL;-------"
+  for (let i = 3; i < Math.min(lines.length, 7); i++) {
+    const line = lines[i];
+    if (line.includes('-------') && line.includes('Pump')) {
+      const parts = line.split(';');
+      for (let j = 0; j < parts.length; j++) {
+        if (parts[j] === 'Pump' && parts[j + 1] && parts[j + 1].match(/^[A-Z0-9]+[A-Z]$/)) {
+          device.serial = parts[j + 1];
+        }
+      }
+    }
+  }
 
   return device;
 }
