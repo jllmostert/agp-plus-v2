@@ -20,16 +20,23 @@ import {
   savePumpSettings, 
   updatePumpSettings,
   calculateRecommendedSettings,
-  clearPumpSettings 
+  clearPumpSettings,
+  getDeviceHistory,
+  archiveDevice,
+  removeFromHistory
 } from '../../storage/pumpSettingsStorage.js';
 
 export default function PumpSettingsPanel() {
   const [settings, setSettings] = useState(null);
   const [editing, setEditing] = useState(false);
   const [editedSettings, setEditedSettings] = useState(null);
+  const [deviceHistory, setDeviceHistory] = useState([]);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [archiveNotes, setArchiveNotes] = useState('');
 
   useEffect(() => {
     loadSettings();
+    loadHistory();
   }, []);
 
   const loadSettings = () => {
@@ -38,8 +45,17 @@ export default function PumpSettingsPanel() {
     setEditedSettings(loaded);
   };
 
+  const loadHistory = () => {
+    const history = getDeviceHistory();
+    setDeviceHistory(history);
+  };
+
   const handleSave = () => {
     if (editedSettings) {
+      // Set start date if this is a new device
+      if (!editedSettings.device.startDate && editedSettings.device.serial) {
+        editedSettings.device.startDate = new Date().toISOString();
+      }
       editedSettings.meta.source = 'manual';
       savePumpSettings(editedSettings);
       setSettings(editedSettings);
@@ -50,6 +66,32 @@ export default function PumpSettingsPanel() {
   const handleCancel = () => {
     setEditedSettings(settings);
     setEditing(false);
+  };
+
+  const handleArchiveDevice = () => {
+    if (!settings?.device?.serial) {
+      alert('Geen apparaat om te archiveren (serienummer ontbreekt)');
+      return;
+    }
+    
+    // Archive current device
+    const success = archiveDevice(settings.device, new Date().toISOString(), archiveNotes);
+    if (success) {
+      // Clear current device settings
+      clearPumpSettings();
+      loadSettings();
+      loadHistory();
+      setShowArchiveDialog(false);
+      setArchiveNotes('');
+      alert('Apparaat gearchiveerd! Je kunt nu een nieuwe pomp configureren.');
+    }
+  };
+
+  const handleRemoveFromHistory = (serial) => {
+    if (confirm(`Weet je zeker dat je apparaat ${serial} uit de geschiedenis wilt verwijderen?`)) {
+      removeFromHistory(serial);
+      loadHistory();
+    }
   };
 
   const handleClear = () => {
@@ -122,8 +164,125 @@ export default function PumpSettingsPanel() {
           {data.device?.transmitter && (
             <InfoRow label="CGM" value={data.device.transmitter} />
           )}
+          {/* Transmitter Serial - manual entry */}
+          <div style={styles.infoRow}>
+            <span style={styles.infoLabel}>Transmitter:</span>
+            {editing ? (
+              <input
+                type="text"
+                value={editedSettings?.device?.transmitterSerial || ''}
+                onChange={(e) => setEditedSettings({
+                  ...editedSettings,
+                  device: { ...editedSettings.device, transmitterSerial: e.target.value }
+                })}
+                placeholder="Serienummer transmitter"
+                style={styles.inputText}
+              />
+            ) : (
+              <span style={styles.infoValue}>
+                {data.device?.transmitterSerial || '-'}
+              </span>
+            )}
+          </div>
+          {data.device?.startDate && (
+            <InfoRow 
+              label="In gebruik" 
+              value={`sinds ${new Date(data.device.startDate).toLocaleDateString('nl-NL')}`} 
+            />
+          )}
         </div>
+        
+        {/* Archive device button */}
+        {data.device?.serial && !editing && (
+          <div style={styles.archiveBar}>
+            <button 
+              style={styles.archiveButton}
+              onClick={() => setShowArchiveDialog(true)}
+            >
+              📦 ARCHIVEER APPARAAT
+            </button>
+            <span style={styles.archiveHint}>
+              Gebruik dit voordat je een nieuwe pomp/transmitter gaat gebruiken
+            </span>
+          </div>
+        )}
       </Section>
+
+      {/* Device History */}
+      {deviceHistory.length > 0 && (
+        <Section title="APPARAAT GESCHIEDENIS" collapsed>
+          <div style={styles.historyList}>
+            {deviceHistory.map((device, i) => (
+              <div key={i} style={styles.historyItem}>
+                <div style={styles.historyHeader}>
+                  <strong>{device.model || 'MiniMed 780G'}</strong>
+                  <span style={styles.historySerial}>{device.serial}</span>
+                </div>
+                <div style={styles.historyDetails}>
+                  <span>HW: {device.hardwareVersion || '-'}</span>
+                  <span>FW: {device.firmwareVersion || '-'}</span>
+                  {device.transmitterSerial && (
+                    <span>Transmitter: {device.transmitterSerial}</span>
+                  )}
+                </div>
+                <div style={styles.historyDates}>
+                  {device.startDate && (
+                    <span>Van: {new Date(device.startDate).toLocaleDateString('nl-NL')}</span>
+                  )}
+                  {device.endDate && (
+                    <span>Tot: {new Date(device.endDate).toLocaleDateString('nl-NL')}</span>
+                  )}
+                </div>
+                {device.notes && (
+                  <div style={styles.historyNotes}>{device.notes}</div>
+                )}
+                <button 
+                  style={styles.removeHistoryBtn}
+                  onClick={() => handleRemoveFromHistory(device.serial)}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Archive Dialog */}
+      {showArchiveDialog && (
+        <div style={styles.dialogOverlay}>
+          <div style={styles.dialog}>
+            <h3 style={styles.dialogTitle}>📦 Apparaat Archiveren</h3>
+            <p style={styles.dialogText}>
+              Je gaat dit apparaat archiveren:<br/>
+              <strong>{data.device?.model}</strong> ({data.device?.serial})
+            </p>
+            <div style={styles.dialogField}>
+              <label>Notities (optioneel):</label>
+              <textarea
+                value={archiveNotes}
+                onChange={(e) => setArchiveNotes(e.target.value)}
+                placeholder="Bijv. 'Teruggestuurd voor vervanging'"
+                style={styles.dialogTextarea}
+              />
+            </div>
+            <div style={styles.dialogButtons}>
+              <button 
+                style={styles.dialogCancel}
+                onClick={() => setShowArchiveDialog(false)}
+              >
+                ANNULEREN
+              </button>
+              <button 
+                style={styles.dialogConfirm}
+                onClick={handleArchiveDevice}
+              >
+                ARCHIVEREN
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TDD & Recommendations */}
       <Section title="TDD & AANBEVELINGEN">
@@ -662,5 +821,144 @@ const styles = {
     color: 'var(--text-secondary)',
     marginBottom: '0.5rem',
     fontStyle: 'italic',
+  },
+  inputText: {
+    flex: 1,
+    padding: '0.25rem 0.5rem',
+    border: '2px solid var(--ink)',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '0.9rem',
+  },
+  archiveBar: {
+    marginTop: '1rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid var(--grid-line)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  archiveButton: {
+    padding: '0.5rem 1rem',
+    backgroundColor: 'var(--color-orange)',
+    color: 'white',
+    border: '2px solid var(--color-orange)',
+    fontFamily: 'var(--font-mono)',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  archiveHint: {
+    fontSize: '0.75rem',
+    color: 'var(--text-secondary)',
+    fontStyle: 'italic',
+  },
+  historyList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+  },
+  historyItem: {
+    padding: '0.75rem',
+    border: '2px solid var(--grid-line)',
+    position: 'relative',
+  },
+  historyHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: '0.5rem',
+  },
+  historySerial: {
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--text-secondary)',
+  },
+  historyDetails: {
+    display: 'flex',
+    gap: '1rem',
+    fontSize: '0.8rem',
+    color: 'var(--text-secondary)',
+  },
+  historyDates: {
+    display: 'flex',
+    gap: '1rem',
+    fontSize: '0.8rem',
+    marginTop: '0.25rem',
+  },
+  historyNotes: {
+    fontSize: '0.8rem',
+    fontStyle: 'italic',
+    color: 'var(--text-secondary)',
+    marginTop: '0.5rem',
+  },
+  removeHistoryBtn: {
+    position: 'absolute',
+    top: '0.5rem',
+    right: '0.5rem',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: 'var(--color-red)',
+    fontSize: '1rem',
+  },
+  dialogOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  dialog: {
+    backgroundColor: 'var(--paper)',
+    padding: '1.5rem',
+    border: '3px solid var(--ink)',
+    maxWidth: '400px',
+    width: '90%',
+  },
+  dialogTitle: {
+    margin: '0 0 1rem 0',
+    fontSize: '1.25rem',
+  },
+  dialogText: {
+    marginBottom: '1rem',
+    lineHeight: 1.5,
+  },
+  dialogField: {
+    marginBottom: '1rem',
+  },
+  dialogTextarea: {
+    width: '100%',
+    minHeight: '80px',
+    padding: '0.5rem',
+    border: '2px solid var(--ink)',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '0.9rem',
+    marginTop: '0.5rem',
+    resize: 'vertical',
+  },
+  dialogButtons: {
+    display: 'flex',
+    gap: '0.75rem',
+    justifyContent: 'flex-end',
+  },
+  dialogCancel: {
+    padding: '0.5rem 1rem',
+    backgroundColor: 'transparent',
+    color: 'var(--ink)',
+    border: '2px solid var(--ink)',
+    fontFamily: 'var(--font-mono)',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  dialogConfirm: {
+    padding: '0.5rem 1rem',
+    backgroundColor: 'var(--color-orange)',
+    color: 'white',
+    border: '2px solid var(--color-orange)',
+    fontFamily: 'var(--font-mono)',
+    fontWeight: 'bold',
+    cursor: 'pointer',
   },
 };

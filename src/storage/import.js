@@ -8,6 +8,7 @@ import { appendReadingsToMaster } from './masterDatasetStorage';
 import { addSensor } from './sensorStorage';
 import { storeCartridgeChange } from './eventStorage';
 import { addBatch, assignSensorToBatch } from './stockStorage';
+import { savePumpSettings, importDeviceData } from './pumpSettingsStorage';
 
 /**
  * Import master dataset from JSON file
@@ -17,7 +18,7 @@ import { addBatch, assignSensorToBatch } from './stockStorage';
  */
 export async function importMasterDataset(file, onProgress = null) {
   const startTime = Date.now();
-  const stages = ['months', 'sensors', 'cartridges', 'workdays', 'patientInfo', 'stockBatches', 'stockAssignments'];
+  const stages = ['months', 'sensors', 'cartridges', 'workdays', 'patientInfo', 'stockBatches', 'stockAssignments', 'pumpSettings'];
   const totalStages = stages.length;
   
   const stats = {
@@ -28,7 +29,9 @@ export async function importMasterDataset(file, onProgress = null) {
     workdaysImported: 0,
     patientInfoImported: false,
     stockBatchesImported: 0,
-    stockAssignmentsImported: 0
+    stockAssignmentsImported: 0,
+    pumpSettingsImported: false,
+    deviceHistoryImported: 0
   };
   const errors = [];
   
@@ -211,6 +214,33 @@ export async function importMasterDataset(file, onProgress = null) {
     }
     reportProgress(6, 'stock assignments');
     
+    // Step 11: Import pump settings
+    console.log('[importMasterDataset] Importing pump settings...');
+    if (data.pumpSettings) {
+      try {
+        savePumpSettings(data.pumpSettings);
+        stats.pumpSettingsImported = true;
+        console.log('[importMasterDataset] Pump settings imported');
+      } catch (err) {
+        errors.push(`Failed to import pump settings: ${err.message}`);
+        console.error('[importMasterDataset] Pump settings import error:', err);
+      }
+    }
+    
+    // Step 12: Import device history
+    console.log('[importMasterDataset] Importing device history...');
+    if (data.deviceHistory && Array.isArray(data.deviceHistory)) {
+      try {
+        importDeviceData({ deviceHistory: data.deviceHistory });
+        stats.deviceHistoryImported = data.deviceHistory.length;
+        console.log(`[importMasterDataset] Imported ${data.deviceHistory.length} device history records`);
+      } catch (err) {
+        errors.push(`Failed to import device history: ${err.message}`);
+        console.error('[importMasterDataset] Device history import error:', err);
+      }
+    }
+    reportProgress(7, 'pump settings');
+    
     const duration = Date.now() - startTime;
     
     return {
@@ -292,6 +322,14 @@ export async function validateImportFile(file) {
       errors.push('Invalid stockAssignments field (must be array)');
     }
     
+    if (data.pumpSettings !== undefined && typeof data.pumpSettings !== 'object') {
+      errors.push('Invalid pumpSettings field (must be object)');
+    }
+    
+    if (data.deviceHistory !== undefined && !Array.isArray(data.deviceHistory)) {
+      errors.push('Invalid deviceHistory field (must be array)');
+    }
+    
     // Step 5: Count what will be imported
     const summary = {
       months: data.months?.length || 0,
@@ -301,7 +339,9 @@ export async function validateImportFile(file) {
       workdays: data.workdays?.length || 0,
       hasPatientInfo: !!data.patientInfo,
       stockBatches: data.stockBatches?.length || 0,
-      stockAssignments: data.stockAssignments?.length || 0
+      stockAssignments: data.stockAssignments?.length || 0,
+      hasPumpSettings: !!data.pumpSettings?.device?.serial,
+      deviceHistory: data.deviceHistory?.length || 0
     };
     
     return {

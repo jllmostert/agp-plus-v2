@@ -9,6 +9,7 @@ import { getAllMonthBuckets } from './masterDatasetStorage';
 import { getAllSensors } from './sensorStorage';
 import { getCartridgeHistory } from './eventStorage';
 import { getAllBatches, getAllAssignments } from './stockStorage';
+import { getPumpSettings, getDeviceHistory } from './pumpSettingsStorage';
 import { APP_VERSION, APP_FULL_NAME } from '../utils/version';
 
 /**
@@ -44,6 +45,10 @@ export async function exportMasterDataset() {
     const stockBatches = getAllBatches();
     const stockAssignments = getAllAssignments();
     
+    // Fetch pump settings and device history
+    const pumpSettings = getPumpSettings();
+    const deviceHistory = getDeviceHistory();
+    
     // Calculate total readings
     const totalReadings = months.reduce((sum, month) => {
       return sum + (month.readings?.length || 0);
@@ -61,14 +66,18 @@ export async function exportMasterDataset() {
       totalWorkdays: workdays.length,
       totalStockBatches: stockBatches.length,
       totalStockAssignments: stockAssignments.length,
+      totalDeviceHistory: deviceHistory.length,
       hasPatientInfo: !!patientInfo,
+      hasPumpSettings: !!pumpSettings?.device?.serial,
       months,
       sensors,
       cartridges,
       workdays,
       patientInfo,
       stockBatches,
-      stockAssignments
+      stockAssignments,
+      pumpSettings,
+      deviceHistory
     };
     
     

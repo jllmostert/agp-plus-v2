@@ -3,11 +3,13 @@
  * 
  * Manages MiniMed 780G pump settings storage and retrieval.
  * Settings can be auto-detected from CSV or manually configured.
+ * Supports device history for tracking pump/transmitter changes.
  * 
  * @module storage/pumpSettingsStorage
  */
 
 const STORAGE_KEY = 'agp-pump-settings';
+const DEVICE_HISTORY_KEY = 'agp-device-history';
 
 /**
  * Default pump settings structure
@@ -19,7 +21,9 @@ const DEFAULT_SETTINGS = {
     serial: '',
     hardwareVersion: '',
     firmwareVersion: '',
-    transmitter: '',  // Guardian Sensor info
+    transmitter: '',        // Guardian Sensor type (e.g., "Guardian™ 4 Sensor")
+    transmitterSerial: '',  // Transmitter serial number (manual entry)
+    startDate: null,        // When this device was first used
   },
   
   // Carb Ratios by time block (g/U)
@@ -194,6 +198,138 @@ function deepMerge(target, source) {
     }
   }
   return result;
+}
+
+// ============================================================================
+// DEVICE HISTORY MANAGEMENT
+// ============================================================================
+
+/**
+ * Get device history from storage
+ * @returns {Array} Array of historical device records
+ */
+export function getDeviceHistory() {
+  try {
+    const stored = localStorage.getItem(DEVICE_HISTORY_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error('[DeviceHistory] Error loading history:', error);
+  }
+  return [];
+}
+
+/**
+ * Archive current device to history
+ * Call this before switching to a new pump/transmitter
+ * @param {Object} device - Device object to archive
+ * @param {string} endDate - When device was retired (ISO string)
+ * @param {string} notes - Optional notes (e.g., "Returned for replacement")
+ * @returns {boolean} Success
+ */
+export function archiveDevice(device, endDate = null, notes = '') {
+  if (!device || !device.serial) {
+    console.warn('[DeviceHistory] Cannot archive device without serial');
+    return false;
+  }
+  
+  try {
+    const history = getDeviceHistory();
+    
+    // Check if device already archived
+    const existing = history.find(d => d.serial === device.serial);
+    if (existing) {
+      // Update existing entry
+      existing.endDate = endDate || new Date().toISOString();
+      existing.notes = notes || existing.notes;
+      localStorage.setItem(DEVICE_HISTORY_KEY, JSON.stringify(history));
+      console.log('[DeviceHistory] Updated existing device:', device.serial);
+      return true;
+    }
+    
+    // Add new historical entry
+    const archived = {
+      ...device,
+      endDate: endDate || new Date().toISOString(),
+      archivedAt: new Date().toISOString(),
+      notes,
+    };
+    
+    history.push(archived);
+    localStorage.setItem(DEVICE_HISTORY_KEY, JSON.stringify(history));
+    console.log('[DeviceHistory] Archived device:', device.serial);
+    return true;
+  } catch (error) {
+    console.error('[DeviceHistory] Error archiving device:', error);
+    return false;
+  }
+}
+
+/**
+ * Remove device from history
+ * @param {string} serial - Device serial to remove
+ * @returns {boolean} Success
+ */
+export function removeFromHistory(serial) {
+  try {
+    const history = getDeviceHistory();
+    const filtered = history.filter(d => d.serial !== serial);
+    localStorage.setItem(DEVICE_HISTORY_KEY, JSON.stringify(filtered));
+    console.log('[DeviceHistory] Removed device:', serial);
+    return true;
+  } catch (error) {
+    console.error('[DeviceHistory] Error removing device:', error);
+    return false;
+  }
+}
+
+/**
+ * Export device history for backup
+ * @returns {Object} Export data including current settings and history
+ */
+export function exportDeviceData() {
+  return {
+    currentSettings: getPumpSettings(),
+    deviceHistory: getDeviceHistory(),
+    exportedAt: new Date().toISOString(),
+    version: '1.0',
+  };
+}
+
+/**
+ * Import device data from backup
+ * @param {Object} data - Exported data object
+ * @returns {boolean} Success
+ */
+export function importDeviceData(data) {
+  try {
+    if (data.currentSettings) {
+      savePumpSettings(data.currentSettings);
+    }
+    if (data.deviceHistory && Array.isArray(data.deviceHistory)) {
+      localStorage.setItem(DEVICE_HISTORY_KEY, JSON.stringify(data.deviceHistory));
+    }
+    console.log('[DeviceHistory] Imported device data');
+    return true;
+  } catch (error) {
+    console.error('[DeviceHistory] Error importing data:', error);
+    return false;
+  }
+}
+
+/**
+ * Clear device history
+ */
+export function clearDeviceHistory() {
+  try {
+    localStorage.removeItem(DEVICE_HISTORY_KEY);
+    console.log('[DeviceHistory] History cleared');
+    return true;
+  } catch (error) {
+    console.error('[DeviceHistory] Error clearing history:', error);
+    return false;
+  }
 }
 
 export { DEFAULT_SETTINGS };
