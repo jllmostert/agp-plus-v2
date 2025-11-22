@@ -154,4 +154,127 @@ Search for these comments to find cleanup locations:
 
 ---
 
-**Last updated**: 2025-11-21
+## 🧹 CODE HYGIENE (Added 2025-11-22)
+
+### 4. Console Statement Cleanup
+
+**Problem:**
+502 `console.log/warn/error` statements across the codebase. Too many for production.
+
+**Files with most console statements:**
+- `src/storage/masterDatasetStorage.js`
+- `src/core/parsers.js`
+- `src/storage/sensorStorage.js`
+- `src/components/AGPGenerator.jsx`
+
+**Fix options:**
+```
+Option A: Remove all non-error console statements
+Option B: Convert to debug.js utility (already exists)
+Option C: Add DEBUG flag: if (import.meta.env.DEV) console.log(...)
+```
+
+**Command to find them:**
+```bash
+grep -rn "console.log\|console.warn" src --include="*.js" --include="*.jsx"
+```
+
+**Effort estimate:** ~2 hours  
+**Priority:** Low (cosmetic, but professional)
+
+---
+
+### 5. Consolidate IndexedDB Databases
+
+**Problem:**
+Two separate IndexedDB databases exist:
+- `agp-plus-db` (6 stores) - Main app data
+- `agp-user-actions` (1 store) - Deleted sensor tombstones
+
+**Why this is bad:**
+- Extra database initialization on every app start
+- Sync logic between them (`syncIndexedDBToLocalStorage`)
+- Potential for drift/inconsistency
+- Unnecessary complexity
+
+**Fix:**
+1. Add `DELETED_SENSORS` store to `agp-plus-db` (bump to v7)
+2. Migrate data from `agp-user-actions` on upgrade
+3. Remove `deletedSensorsDB.js` (424 lines)
+4. Update `sensorStorage.js` to use new store
+5. Simplify `main.jsx` startup sequence
+
+**Files affected:**
+- `src/storage/db.js` (add store)
+- `src/storage/deletedSensorsDB.js` (DELETE)
+- `src/storage/sensorStorage.js` (update imports)
+- `src/main.jsx` (remove migration code)
+
+**Effort estimate:** ~4 hours  
+**Priority:** Medium (reduces complexity, improves reliability)
+
+---
+
+### 6. Split Large Components
+
+**Problem:**
+Several components exceed 1000 lines, making them hard to maintain:
+
+| File | Lines | Recommendation |
+|------|-------|----------------|
+| `AGPGenerator.jsx` | 1,579 | Extract render sections to sub-components |
+| `PumpSettingsPanel.jsx` | 1,292 | Split into PumpInfo, CRGrid, ISFGrid, etc. |
+| `SensorHistoryPanel.jsx` | 1,163 | Split into SensorTable, SensorStats, etc. |
+
+**Pattern to follow:**
+```
+panels/
+├── SensorHistoryPanel/
+│   ├── index.jsx           # Main component
+│   ├── SensorTable.jsx     # Table rendering
+│   ├── SensorStats.jsx     # Statistics display
+│   └── SensorFilters.jsx   # Filter controls
+```
+
+**Effort estimate:** ~6 hours total  
+**Priority:** Low (code works, just harder to maintain)
+
+---
+
+### 7. Storage Layer Simplification
+
+**Problem:**
+Three-layer storage with sync complexity:
+- SQLite (historical sensors, read-only)
+- IndexedDB (active data)
+- localStorage (cache)
+
+**Current risks:**
+- localStorage.clear() breaks deleted sensor tracking
+- Sync race conditions possible
+- Different cleanup intervals (30/90 days)
+
+**Long-term fix:**
+- Move fully to IndexedDB
+- Drop localStorage cache layer
+- Keep SQLite only for truly historical data
+
+**Effort estimate:** ~8 hours  
+**Priority:** Low (works now, but fragile edge cases exist)  
+**See also:** `docs/archive/DUAL_STORAGE_ANALYSIS.md`
+
+---
+
+## ✅ COMPLETED CLEANUP
+
+### ~~Dead Code Removal~~ (2025-11-22) ✓
+
+**Deleted files:**
+- `src/components/panels/SensorHistoryPanel.OLD.jsx` (1,237 lines)
+- `src/components/SensorHistoryModal.jsx.backup`
+
+**Lines removed:** ~1,300
+
+---
+
+**Last updated**: 2025-11-22
