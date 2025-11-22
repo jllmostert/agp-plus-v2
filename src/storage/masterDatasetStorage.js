@@ -12,6 +12,9 @@
  * - rebuildSortedCache(): Flatten all buckets into sorted array
  * - loadOrRebuildCache(): Get cache (rebuild if needed)
  * - invalidateCache(): Mark cache as dirty
+ * 
+ * v4.4.1: ProTime, TDD, BG, and cleanup functions extracted to separate modules
+ *         Re-exported here for backwards compatibility
  */
 
 import { 
@@ -23,6 +26,32 @@ import {
   deleteRecord
 } from './db.js';
 import { debug } from '../utils/debug.js';
+
+// Re-export from extracted modules (backwards compatibility)
+export { 
+  saveProTimeData, 
+  loadProTimeData, 
+  deleteProTimeData,
+  deleteProTimeDataInRange 
+} from './protimeStorage.js';
+
+export { 
+  saveTDDData,
+  loadTDDData, 
+  deleteTDDData 
+} from './tddStorage.js';
+
+export {
+  deleteGlucoseDataInRange,
+  cleanupRecords
+} from './dataCleanup.js';
+
+export {
+  addBGReadings,
+  getAllBGReadings,
+  getBGReadingsInRange,
+  getBGReadingsForDate
+} from './bgReadingsStorage.js';
 
 /**
  * Generate month key from Date
@@ -262,76 +291,8 @@ export async function getMasterDatasetStats() {
   };
 }
 
-/**
- * Save ProTime workdays to settings (V3)
- * @param {Set} workdaySet - Set of date strings (YYYY/MM/DD format)
- */
-export async function saveProTimeData(workdaySet) {
-  if (!workdaySet || workdaySet.size === 0) {
-    return;
-  }
-
-  // Convert Set to Array for storage
-  const workdayArray = Array.from(workdaySet);
-  
-  await putRecord(STORES.SETTINGS, {
-    key: 'protime_workdays',
-    workdays: workdayArray,
-    lastUpdated: Date.now()
-  });
-}
-
-/**
- * Load ProTime workdays from settings (V3)
- * @returns {Set|null} Set of date strings or null if not found
- */
-export async function loadProTimeData() {
-  const record = await getRecord(STORES.SETTINGS, 'protime_workdays');
-  
-  if (!record || !record.workdays) {
-    return null;
-  }
-  
-  // Convert Array back to Set
-  return new Set(record.workdays);
-}
-
-/**
- * Delete ProTime workdays from settings (V3)
- * Removes all stored ProTime data
- */
-export async function deleteProTimeData() {
-  const { deleteRecord } = await import('./db.js');
-  await deleteRecord(STORES.SETTINGS, 'protime_workdays');
-}
-
-/**
- * Load TDD (Total Daily Dose) data from settings (V3)
- * @returns {Object|null} {tddByDay, tddStats, validation} or null if not found
- */
-export async function loadTDDData() {
-  const record = await getRecord(STORES.SETTINGS, 'tdd_data');
-  
-  if (!record || !record.tddByDay) {
-    return null;
-  }
-  
-  return {
-    tddByDay: record.tddByDay,
-    tddStats: record.tddStats,
-    validation: record.validation,
-    lastUpdated: record.lastUpdated
-  };
-}
-
-/**
- * Delete TDD data from settings (V3)
- * Removes all stored TDD data
- */
-export async function deleteTDDData() {
-  const { deleteRecord } = await import('./db.js');
-  await deleteRecord(STORES.SETTINGS, 'tdd_data');
-}
+// ProTime and TDD functions moved to protimeStorage.js and tddStorage.js
+// Re-exported above for backwards compatibility
 
 /**
  * Detect device events from CSV readings (NO storage)
@@ -655,6 +616,32 @@ export async function uploadCSVToV3(csvText) {
     debug.warn('[uploadCSVToV3] Skipping TDD calculation (missing Section 1 or 2)');
   }
   
+  // Extract and store BG readings (fingerprick/meter measurements)
+  try {
+    const bgReadings = readings
+      .filter(r => r.bg && r.bg > 0)
+      .map(r => {
+        const [year, month, day] = r.date.split('/').map(Number);
+        const [hour, minute, second] = r.time.split(':').map(Number);
+        const timestamp = new Date(year, month - 1, day, hour, minute, second);
+        
+        return {
+          timestamp,
+          value: r.bg,
+          source: 'meter', // CSV BG readings are from meter/fingerprick
+          sourceFile: 'csv-upload'
+        };
+      });
+    
+    if (bgReadings.length > 0) {
+      const { addBGReadings } = await import('./bgReadingsStorage.js');
+      const result = await addBGReadings(bgReadings);
+      debug.log(`[uploadCSVToV3] BG readings: ${result.added} added, ${result.duplicates} duplicates`);
+    }
+  } catch (err) {
+    debug.warn('[uploadCSVToV3] BG readings extraction failed (non-fatal):', err);
+  }
+  
   // Transform readings to add timestamp field (required by storage layer)
   const readingsWithTimestamps = readings.map((reading, index) => {
     // Parse date/time into timestamp Date object
@@ -828,97 +815,8 @@ export async function completeCSVUploadWithAssignments(detectedEvents, confirmed
 }
 
 
-/**
- * DELETE GLUCOSE DATA IN DATE RANGE
- * 
- * Removes glucose readings within specified date range from all month buckets.
- * Handles bucket cleanup (deletes empty buckets) and cache invalidation.
- * 
- * @param {Date} startDate - Start of deletion range (inclusive)
- * @param {Date} endDate - End of deletion range (inclusive)
- * @returns {Promise<number>} Count of readings deleted
- */
-export async function deleteGlucoseDataInRange(startDate, endDate) {
-
-  const startTime = startDate.getTime();
-  const endTime = endDate.getTime();
-  
-  // Load all month buckets
-  const buckets = await getAllRecords(STORES.READING_BUCKETS);
-  let totalDeleted = 0;
-  
-  for (const bucket of buckets) {
-    // Filter out readings in range
-    const originalCount = bucket.readings.length;
-    bucket.readings = bucket.readings.filter(r => {
-      const ts = new Date(r.timestamp).getTime();
-      return ts < startTime || ts > endTime;
-    });
-    
-    const deleted = originalCount - bucket.readings.length;
-    totalDeleted += deleted;
-    
-    if (deleted > 0) {
-    }
-    
-    // Update bucket metadata
-    bucket.count = bucket.readings.length;
-    if (bucket.count > 0) {
-      bucket.dateRange = {
-        min: bucket.readings[0].timestamp,
-        max: bucket.readings[bucket.readings.length - 1].timestamp
-      };
-      bucket.lastUpdated = new Date();
-      await putRecord(STORES.READING_BUCKETS, bucket);
-    } else {
-      // Bucket empty - delete it
-      await deleteRecord(STORES.READING_BUCKETS, bucket.monthKey);
-    }
-  }
-  
-  // Invalidate cache
-  await invalidateCache();
-  
-  return totalDeleted;
-}
-
-/**
- * DELETE PROTIME WORKDAYS IN DATE RANGE
- * 
- * Removes ProTime workday entries within specified date range.
- * Updates IndexedDB storage accordingly.
- * 
- * @param {Date} startDate - Start of deletion range (inclusive)
- * @param {Date} endDate - End of deletion range (inclusive)
- * @returns {Promise<number>} Count of workdays deleted
- */
-export async function deleteProTimeDataInRange(startDate, endDate) {
-
-  const workdaySet = await loadProTimeData();
-  if (!workdaySet) {
-    return 0;
-  }
-  
-  let deleted = 0;
-  for (const dateStr of workdaySet) {
-    const [year, month, day] = dateStr.split('/').map(Number);
-    const date = new Date(year, month - 1, day);
-    
-    if (date >= startDate && date <= endDate) {
-      workdaySet.delete(dateStr);
-      deleted++;
-    }
-  }
-  
-  // Save updated set
-  if (workdaySet.size > 0) {
-    await saveProTimeData(workdaySet);
-  } else {
-    await deleteProTimeData();
-  }
-  
-  return deleted;
-}
+// Delete and cleanup functions moved to dataCleanup.js
+// Re-exported above for backwards compatibility
 
 
 /**
@@ -960,65 +858,5 @@ export async function getSensorBatchSuggestions() {
   }
 }
 
-/**
- * CLEANUP RECORDS
- * 
- * Delete data based on cleanup type:
- * - 'all-in': Delete readings, cartridges, ProTime. Keep patient, sensors, stock
- * - Date-based: Delete data within specified date range
- * 
- * @param {Object} options - Cleanup options
- * @param {string} options.type - 'all-in' or date-based
- * @param {Date} options.startDate - Start date for date-based cleanup
- * @param {Date} options.endDate - End date for date-based cleanup
- * @param {boolean} options.includeCartridges - Include cartridge events
- * @returns {Promise<Object>} Result object with success status
- */
-export async function cleanupRecords(options) {
-  try {
-    const db = await openDB();
-    
-    if (options.type === 'all-in') {
-      debug.log('[cleanupRecords] ALL-IN: Deleting readings, cartridges. Keeping patient, sensors, stock');
-      
-      // Delete glucose readings from IndexedDB
-      const tx = db.transaction([STORES.READING_BUCKETS], 'readwrite');
-      await tx.objectStore(STORES.READING_BUCKETS).clear();
-      await tx.done;
-      
-      // Clear cartridge events from IndexedDB
-      const { clearCartridgeChanges } = await import('./cartridgeStorage.js');
-      await clearCartridgeChanges();
-      
-      // ProTime data is in localStorage, handle separately
-      await deleteProTimeData();
-      
-      // DO NOT clear localStorage sensors/stock - we're keeping those!
-      
-      // Invalidate cache
-      await invalidateCache();
-      
-      debug.log('[cleanupRecords] ALL-IN complete - kept sensors & stock');
-      
-      return {
-        success: true,
-        deletedCount: 'ALL',
-        message: 'Readings, cartridges, ProTime deleted (kept patient, sensors, stock)'
-      };
-    }
-    
-    // Date-based cleanup (not implemented yet - placeholder)
-    debug.warn('[cleanupRecords] Date-based cleanup not yet implemented');
-    return {
-      success: false,
-      error: 'Date-based cleanup not yet implemented'
-    };
-    
-  } catch (err) {
-    console.error('[cleanupRecords] Error:', err);
-    return {
-      success: false,
-      error: err.message
-    };
-  }
-}
+// cleanupRecords moved to dataCleanup.js
+// Re-exported above for backwards compatibility

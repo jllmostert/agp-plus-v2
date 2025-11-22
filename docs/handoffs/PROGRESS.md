@@ -1,5 +1,40 @@
 # AGP+ Development Progress
 
+## Session 2025-11-22 (7) - Storage Extraction + BG Readings Feature
+
+### Plan
+1. [x] Extract protimeStorage.js (~30 min)
+2. [x] Extract tddStorage.js (~20 min)
+3. [x] Extract dataCleanup.js (~45 min)
+4. [x] Add bgReadingsStorage.js for fingerprick BG readings (new feature)
+5. [x] Update masterDatasetStorage to use new modules
+
+### BG Readings Feature
+- CSV already parses `BG Reading (mg/dL)` into `bg` field
+- Need to store these separately for day profiles display
+- Source: fingerprick measurements (manual input or meter)
+
+### Progress Log
+- [x] Step 1: Create protimeStorage.js (97 lines)
+- [x] Step 2: Create tddStorage.js (60 lines)
+- [x] Step 3: Create bgReadingsStorage.js (184 lines)
+- [x] Step 4: Create dataCleanup.js (161 lines)
+- [x] Step 5: Update masterDatasetStorage imports (re-exports for backwards compat)
+- [x] Step 6: Build check ✅ PASSING
+- [x] Step 7: Commit
+
+### Results
+| File | Lines | Notes |
+|------|-------|-------|
+| protimeStorage.js | 97 | ProTime workday data |
+| tddStorage.js | 60 | Total Daily Dose storage |
+| bgReadingsStorage.js | 184 | NEW: Fingerprick BG readings |
+| dataCleanup.js | 161 | Date range deletion utilities |
+| **Total extracted** | **502** | |
+| masterDatasetStorage.js | 863 | Was 1024, now focused on glucose data |
+
+---
+
 ## Session 2025-11-22 (6) - Fresh Architecture Analysis
 
 ### Work Done
