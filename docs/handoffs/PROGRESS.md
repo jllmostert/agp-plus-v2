@@ -6,9 +6,35 @@
 - [x] Fase 1: Architectural Scan ✅ DONE
 - [x] Fase 2: Quick Wins ✅ DONE
 - [x] Fase 2b: Handler Extraction ✅ DONE
-- [ ] Fase 3: Further AGPGenerator cleanup (optional, to reach <400 lines)
+- [x] Fase 3: Further AGPGenerator cleanup ✅ DONE
 - [ ] Fase 4: sensorStorage Refactor (optional)
 - [ ] Fase 5: metrics-engine Refactor (optional)
+
+---
+
+### Fase 3: AGPGenerator Cleanup ✅ COMPLETE
+
+**Goal**: Further reduce AGPGenerator.jsx size
+
+**Results:**
+| Bestand | Voor | Na | Verandering |
+|---------|------|-----|-------------|
+| AGPGenerator.jsx | 701 | **632** | **-69 lijnen** |
+| PanelRouter.jsx | 0 | **86** | nieuw bestand |
+| useDataManagement.js | 522 | **530** | +8 (contexts now consumed internally) |
+
+**Changes Made:**
+1. Extracted `PanelRouter.jsx` - handles panel switching logic
+2. Refactored `useDataManagement` to consume contexts directly (no more large deps object)
+
+**Total Reduction (all phases):**
+| Metric | Value |
+|--------|-------|
+| Original | 1558 lijnen |
+| Final | **632 lijnen** |
+| Reduction | **-926 lijnen (-60%)** |
+
+**Build Status:** ✅ Passing
 
 ---
 
