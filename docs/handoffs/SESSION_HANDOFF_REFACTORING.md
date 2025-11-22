@@ -60,9 +60,9 @@ Analyseer de "big three" en documenteer spaghetti-niveau.
 
 ### Target Files
 ```
-src/components/AGPGenerator.jsx    (~1600 lijnen)
-src/core/metrics-engine.js         (~500 lijnen)  
-src/storage/sensorStorage.js       (~500 lijnen)
+src/components/AGPGenerator.jsx    (~632 lijnen, was ~1600 - already reduced!)
+src/core/metrics-engine.js         (~701 lijnen)  
+src/storage/sensorStorage.js       (~462 lijnen - clean V4 implementation ✅)
 ```
 
 ### Per File Evalueren
@@ -168,34 +168,33 @@ src/components/
 
 ---
 
-## 📋 FASE 4: sensorStorage.js Refactor (3-4 uur)
+## 📋 FASE 4: sensorStorage.js Refactor ~~(3-4 uur)~~ ✅ ALREADY DONE
 
-### Doel
-Disentangle storage logic into clean modules.
+> **Status**: This refactor was already completed. sensorStorage.js is now a clean V4 implementation.
 
-### Identificeer Clusters
-```
-1. IndexedDB access
-2. Merge/deduplication logic
-3. Lock state management
-4. Sensor detection from CSV
-5. Import/export helpers
-```
+### Current State (2025-11-22)
+- **Lines**: 462 (was ~500)
+- **Spaghetti Index**: 2/5 (clean!)
+- **Storage**: IndexedDB only (no localStorage)
+- **Delete**: Hard delete (no tombstones)
+- **Merge**: Simple append (skip duplicates)
+- **Detection**: Lives in `parsers.js`, not storage
 
-### Proposed Structure
+### ~~Proposed Structure~~ NOT NEEDED
 ```
-src/storage/
-├── sensorStorage.js          # Façade API (thin)
-├── sensorIndexedDB.js        # Low-level IndexedDB ops
-├── sensorMergeEngine.js      # Pure merge functions
-└── sensorDetectionEngine.js  # Pure detection functions
+# These files were never needed because sensorStorage.js is already clean:
+# ├── sensorIndexedDB.js        # Low-level IndexedDB ops  → Already in sensorStorage.js
+# ├── sensorMergeEngine.js      # Pure merge functions     → importJSON is simple
+# └── sensorDetectionEngine.js  # Pure detection functions → Lives in parsers.js
 ```
 
-### Process
-1. Extract pure merge logic eerst (geen side effects)
-2. Split I/O into isolated files
-3. Keep façade API in sensorStorage.js
-4. Tangled? → Rewrite clean version
+### What Was Done Instead
+- V4 Clean Implementation (single file, clean API)
+- Hard delete instead of tombstones
+- deviceEras integration for hardware versions
+- Season auto-assignment on sensor add
+
+**No action needed for this phase.**
 
 ---
 
@@ -311,9 +310,9 @@ Na elke fase, update `docs/handoffs/PROGRESS.md`:
 ## 🎯 SUCCESS CRITERIA
 
 Na alle fases:
-- [ ] AGPGenerator.jsx: < 400 lijnen, orchestration only
-- [ ] sensorStorage.js: clean separation, façade pattern
-- [ ] metrics-engine.js: optioneel gesplit in modules
+- [ ] AGPGenerator.jsx: < 400 lijnen, orchestration only (currently 632 - partial progress)
+- [x] sensorStorage.js: clean separation, façade pattern ✅ DONE (462 lines, clean V4)
+- [ ] metrics-engine.js: optioneel gesplit in modules (currently 701 lines)
 - [ ] Alle metric berekeningen bit-identiek
 - [ ] Build succesvol
 - [ ] Geen UI regressions
