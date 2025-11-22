@@ -27,14 +27,8 @@ import ModalManager from './containers/ModalManager';
 import VisualizationContainer from './containers/VisualizationContainer';
 import { DateRangeFilter } from './DateRangeFilter';
 
-// Panel Components
-import ImportPanel from './panels/ImportPanel';
-import ExportPanel from './panels/ExportPanel';
-import SensorHistoryPanel from './panels/SensorHistoryPanel';
-import StockPanel from './panels/StockPanel';
-import DayProfilesPanel from './panels/DayProfilesPanel';
-
-import PumpSettingsPanel from './panels/PumpSettingsPanel';
+// Panel Router (handles panel switching)
+import PanelRouter from './PanelRouter';
 
 /**
  * AGPGenerator - Main application container
@@ -408,55 +402,27 @@ function AGPGeneratorContent() {
           onPanelChange={handlePanelChange}
         />
         
-        {/* Phase B: Panel Routing */}
-        <div className="main-content" style={{ 
-          padding: '1rem 2rem'
-        }}>
-          
-          {navigation.activePanel === 'import' && (
-            <ImportPanel
-              onCSVLoad={handleCSVLoad}
-              onProTimeLoad={handleProTimeLoad}
-              onProTimeDelete={handleProTimeDelete}
-              onImportDatabase={handleDatabaseImport}
-              onSensorRegistrationOpen={() => modals.setSensorRegistrationOpen(true)}
-            />
-          )}
-          
-          {navigation.activePanel === 'dagprofielen' && (
-            <DayProfilesPanel
-              isOpen={true}
-              onClose={() => navigation.setActivePanel('import')}
-              dayProfiles={dayProfiles}
-              patientInfo={patientInfo}
-              numDays={numDaysProfile}
-              onNumDaysChange={setNumDaysProfile}
-            />
-          )}
-          
-          {navigation.activePanel === 'sensoren' && (
-            <SensorHistoryPanel 
-              isOpen={true}
-              onClose={() => navigation.setActivePanel('import')}
-              onOpenStock={() => modals.setShowStockModal(true)}
-            />
-          )}
-          
-          {navigation.activePanel === 'export' && (
-            <ExportPanel
-              onExportHTML={handleExportHTML}
-              onExportDayProfiles={handleExportDayProfiles}
-              onExportDatabase={handleExportDatabase}
-              onImportDatabase={handleDatabaseImport}
-              dayProfiles={dayProfiles}
-              patientInfo={patientInfo}
-            />
-          )}
-          
-          {navigation.activePanel === 'settings' && (
-            <PumpSettingsPanel />
-          )}
-        </div>
+        {/* Phase B: Panel Routing - Extracted to PanelRouter component */}
+        <PanelRouter
+          activePanel={navigation.activePanel}
+          onNavigateToImport={() => navigation.setActivePanel('import')}
+          onOpenStockModal={() => modals.setShowStockModal(true)}
+          onOpenSensorRegistration={() => modals.setSensorRegistrationOpen(true)}
+          // Import Panel
+          onCSVLoad={handleCSVLoad}
+          onProTimeLoad={handleProTimeLoad}
+          onProTimeDelete={handleProTimeDelete}
+          onImportDatabase={handleDatabaseImport}
+          // Day Profiles Panel
+          dayProfiles={dayProfiles}
+          patientInfo={patientInfo}
+          numDays={numDaysProfile}
+          onNumDaysChange={setNumDaysProfile}
+          // Export Panel
+          onExportHTML={handleExportHTML}
+          onExportDayProfiles={handleExportDayProfiles}
+          onExportDatabase={handleExportDatabase}
+        />
         
         {/* V3 Migration Banner - Auto-detects and triggers migration */}
         <MigrationBanner />
