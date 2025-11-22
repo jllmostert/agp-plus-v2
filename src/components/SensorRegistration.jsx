@@ -93,11 +93,9 @@ export default function SensorRegistration({ isOpen, onClose }) {
       // Step 3: Detect sensor changes (includes clustering, gap detection, and matching)
       addDebugLog('Detecting sensor changes...');
       const detectionResult = detectSensorChanges(alerts, glucose);
-      console.log('[SensorRegistration] Detection result:', detectionResult);
       addDebugLog('Raw detection result:', detectionResult);
       
       const matches = detectionResult.candidates || [];
-      console.log('[SensorRegistration] Extracted candidates:', matches);
       addDebugLog(`Identified ${matches.length} sensor change candidates`, matches);
       addDebugLog('Detection summary:', detectionResult.summary);
       

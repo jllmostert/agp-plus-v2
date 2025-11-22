@@ -44,34 +44,21 @@ import { initDeviceEras } from './core/deviceEras.js';
 (async () => {
   try {
     if (isIndexedDBAvailable()) {
-      console.log('[main] Initializing tombstone store (IndexedDB)...');
-      
       // 1. Migrate any legacy localStorage deleted sensors to IndexedDB
       const legacyDeleted = JSON.parse(localStorage.getItem('agp-deleted-sensors') || '[]');
-      const migration = await migrateLocalStorageToIndexedDB(legacyDeleted);
-      
-      if (migration.migrated > 0) {
-        console.log('[main] Migrated', migration.migrated, 'deleted sensors to IndexedDB');
-      }
+      await migrateLocalStorageToIndexedDB(legacyDeleted);
       
       // 2. Cleanup old tombstones (>90 days)
-      const cleanup = await cleanupOldDeletedSensorsDB();
-      if (cleanup.removed > 0) {
-        console.log('[main] Cleaned up', cleanup.removed, 'expired tombstones');
-      }
+      await cleanupOldDeletedSensorsDB();
       
       // 3. Sync IndexedDB to localStorage cache
       await syncIndexedDBToLocalStorage();
-      
-      console.log('[main] Tombstone store initialized successfully');
     } else {
       console.warn('[main] IndexedDB not available, using localStorage fallback');
     }
     
     // 4. Initialize device eras from IndexedDB
-    console.log('[main] Initializing device eras...');
     await initDeviceEras();
-    console.log('[main] Device eras initialized successfully');
   } catch (err) {
     console.error('[main] Tombstone store initialization failed:', err);
     // Non-critical error - app will still work with localStorage fallback

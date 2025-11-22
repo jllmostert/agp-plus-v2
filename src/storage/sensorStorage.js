@@ -77,17 +77,6 @@ export function calculateStatus(sensor, deletedList = []) {
     const days = hours / 24;
     const status = days > 7.5 ? 'overdue' : 'active';
     
-    // DEBUG for sensor #222
-    if (sensor.id === 'sensor_1762231226000') {
-      console.log('[calculateStatus] Sensor #222:', {
-        id: sensor.id,
-        start_date: sensor.start_date,
-        end_date: sensor.end_date,
-        days_running: days.toFixed(2),
-        status: status
-      });
-    }
-    
     return status;
   }
   
@@ -245,7 +234,6 @@ export async function deleteSensor(id) {
   }
   
   await saveStorage(storage);
-  console.log('[sensorStorage] Hard deleted sensor:', id);
   
   return { success: true };
 }
@@ -381,7 +369,6 @@ export async function importJSON(data) {
       
       // Skip if lot_number already exists (duplicate stock)
       if (batch.lot_number && existingLotNumbers.has(batch.lot_number)) {
-        console.log(`[importJSON] Skipping duplicate batch with lot_number: ${batch.lot_number}`);
         batchesSkipped++;
         return false;
       }

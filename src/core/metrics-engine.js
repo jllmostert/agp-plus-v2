@@ -501,7 +501,7 @@ export const calculateMetrics = (data, startDate, endDate, filterDates = null, t
   if (perfDuration > 1000) {
     console.warn(`[Metrics] Calculation took ${perfDuration}ms (target: <1000ms for 90-day data)`);
   } else {
-    console.log(`[Metrics] Calculation completed in ${perfDuration}ms`);
+
   }
 
   return {

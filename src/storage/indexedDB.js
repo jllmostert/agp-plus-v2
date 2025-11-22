@@ -16,6 +16,8 @@
 // CONSTANTS
 // ============================================================================
 
+import { debug } from '../utils/debug.js';
+
 const DB_NAME = 'agp-plus-db';
 const DB_VERSION = 1;
 const STORE_NAME = 'sensors';
@@ -38,13 +40,13 @@ export function initDB() {
       return;
     }
 
-    console.log('[IndexedDB] Opening database...');
+    debug.log('[IndexedDB] Opening database...');
     
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     // Handle upgrade needed (first time or version change)
     request.onupgradeneeded = (event) => {
-      console.log('[IndexedDB] Upgrade needed, creating schema...');
+      debug.log('[IndexedDB] Upgrade needed, creating schema...');
       
       const db = event.target.result;
 
@@ -60,13 +62,13 @@ export function initDB() {
         objectStore.createIndex('start_date', 'start_date', { unique: false });
         objectStore.createIndex('status', 'status', { unique: false });
 
-        console.log('[IndexedDB] Object store + indexes created');
+        debug.log('[IndexedDB] Object store + indexes created');
       }
     };
 
     request.onsuccess = (event) => {
       const db = event.target.result;
-      console.log('[IndexedDB] Database opened successfully');
+      debug.log('[IndexedDB] Database opened successfully');
       resolve(db);
     };
 
@@ -76,7 +78,7 @@ export function initDB() {
     };
 
     request.onblocked = () => {
-      console.warn('[IndexedDB] Database open blocked (close other tabs?)');
+      debug.warn('[IndexedDB] Database open blocked (close other tabs?)');
       reject(new Error('Database open blocked - close other tabs'));
     };
   });
@@ -133,10 +135,10 @@ export async function saveSensors(sensors) {
     });
 
     transaction.oncomplete = () => {
-      console.log(`[IndexedDB] Batch save complete: ${successCount} saved, ${errorCount} errors`);
+      debug.log(`[IndexedDB] Batch save complete: ${successCount} saved, ${errorCount} errors`);
       
       if (errorCount > 0) {
-        console.warn('[IndexedDB] Some sensors failed to save:', errors);
+        debug.warn('[IndexedDB] Some sensors failed to save:', errors);
       }
 
       resolve({ 
@@ -169,7 +171,7 @@ export async function deleteSensor(id) {
     const request = store.delete(id);
 
     request.onsuccess = () => {
-      console.log(`[IndexedDB] Deleted sensor: ${id}`);
+      debug.log(`[IndexedDB] Deleted sensor: ${id}`);
       resolve(true);
     };
 
@@ -195,7 +197,7 @@ export async function clearAll() {
     const request = store.clear();
 
     request.onsuccess = () => {
-      console.log('[IndexedDB] All sensors cleared');
+      debug.log('[IndexedDB] All sensors cleared');
       resolve(true);
     };
 
@@ -226,7 +228,7 @@ export async function getAllSensors() {
 
     request.onsuccess = (event) => {
       const sensors = event.target.result;
-      console.log(`[IndexedDB] Retrieved ${sensors.length} sensors`);
+      debug.log(`[IndexedDB] Retrieved ${sensors.length} sensors`);
       resolve(sensors);
     };
 
@@ -256,9 +258,9 @@ export async function getSensorById(id) {
       const sensor = event.target.result;
       
       if (sensor) {
-        console.log(`[IndexedDB] Found sensor: ${id}`);
+        debug.log(`[IndexedDB] Found sensor: ${id}`);
       } else {
-        console.log(`[IndexedDB] Sensor not found: ${id}`);
+        debug.log(`[IndexedDB] Sensor not found: ${id}`);
       }
       
       resolve(sensor || null);
@@ -291,9 +293,9 @@ export async function getSensorBySensorId(sensorId) {
       const sensor = event.target.result;
       
       if (sensor) {
-        console.log(`[IndexedDB] Found sensor by sensor_id: ${sensorId}`);
+        debug.log(`[IndexedDB] Found sensor by sensor_id: ${sensorId}`);
       } else {
-        console.log(`[IndexedDB] Sensor not found by sensor_id: ${sensorId}`);
+        debug.log(`[IndexedDB] Sensor not found by sensor_id: ${sensorId}`);
       }
       
       resolve(sensor || null);
@@ -332,7 +334,7 @@ export async function getStats() {
         storeName: STORE_NAME
       };
 
-      console.log('[IndexedDB] Stats:', stats);
+      debug.log('[IndexedDB] Stats:', stats);
       resolve(stats);
     };
 
@@ -350,7 +352,7 @@ export async function getStats() {
  */
 export async function checkQuota() {
   if (!navigator.storage || !navigator.storage.estimate) {
-    console.warn('[IndexedDB] Storage quota API not supported');
+    debug.warn('[IndexedDB] Storage quota API not supported');
     return null;
   }
 
@@ -368,7 +370,7 @@ export async function checkQuota() {
       availableMB: ((estimate.quota - estimate.usage) / 1024 / 1024).toFixed(2)
     };
 
-    console.log('[IndexedDB] Quota:', quota);
+    debug.log('[IndexedDB] Quota:', quota);
     return quota;
     
   } catch (err) {
@@ -388,7 +390,7 @@ export async function validateImportSize(dataSize) {
   
   if (!quota) {
     // Can't check quota, allow import (with warning)
-    console.warn('[IndexedDB] Cannot validate import size (quota API unavailable)');
+    debug.warn('[IndexedDB] Cannot validate import size (quota API unavailable)');
     return { valid: true, warning: 'Quota check unavailable' };
   }
 
@@ -402,7 +404,7 @@ export async function validateImportSize(dataSize) {
     };
   }
 
-  console.log(`[IndexedDB] Import size OK: ${dataSizeMB}MB / ${quota.availableMB}MB available`);
+  debug.log(`[IndexedDB] Import size OK: ${dataSizeMB}MB / ${quota.availableMB}MB available`);
   
   return { valid: true, quota };
 }
@@ -428,13 +430,13 @@ export function isSupported() {
  */
 export function deleteDatabase() {
   return new Promise((resolve, reject) => {
-    console.warn('[IndexedDB] Deleting entire database!');
+    debug.warn('[IndexedDB] Deleting entire database!');
 
     
     const request = indexedDB.deleteDatabase(DB_NAME);
 
     request.onsuccess = () => {
-      console.log('[IndexedDB] Database deleted successfully');
+      debug.log('[IndexedDB] Database deleted successfully');
       resolve(true);
     };
 
@@ -444,7 +446,7 @@ export function deleteDatabase() {
     };
 
     request.onblocked = () => {
-      console.warn('[IndexedDB] Database deletion blocked (close other tabs)');
+      debug.warn('[IndexedDB] Database deletion blocked (close other tabs)');
       reject(new Error('Database deletion blocked'));
     };
   });

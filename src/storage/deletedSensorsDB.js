@@ -19,6 +19,8 @@ const DB_NAME = 'agp-user-actions';
 const DB_VERSION = 1;
 const STORE_NAME = 'deleted_sensors';
 
+import { debug } from '../utils/debug.js';
+
 /**
  * Open IndexedDB connection
  * Creates database and object store if they don't exist
@@ -48,7 +50,7 @@ export function openDeletedSensorsDB() {
         // Create index on deleted_at for cleanup queries
         objectStore.createIndex('deleted_at', 'deleted_at', { unique: false });
         
-        console.log('[deletedSensorsDB] Created deleted_sensors object store');
+        debug.log('[deletedSensorsDB] Created deleted_sensors object store');
       }
     };
   });
@@ -79,7 +81,7 @@ export async function addDeletedSensorToDB(sensorId) {
     
     return new Promise((resolve, reject) => {
       request.onsuccess = () => {
-        console.log('[deletedSensorsDB] Added sensor to IndexedDB:', sensorId);
+        debug.log('[deletedSensorsDB] Added sensor to IndexedDB:', sensorId);
         resolve();
       };
       
@@ -118,7 +120,7 @@ export async function getDeletedSensorsFromDB() {
         const sensors = request.result;
         const sensorIds = sensors.map(s => s.sensor_id);
         
-        console.log('[deletedSensorsDB] Loaded from IndexedDB:', {
+        debug.log('[deletedSensorsDB] Loaded from IndexedDB:', {
           count: sensorIds.length,
           sensors: sensorIds
         });
@@ -167,7 +169,7 @@ export async function getDeletedSensorsWithTimestamps() {
           deletedAt: new Date(s.deleted_at).getTime() // Convert ISO to timestamp
         }));
         
-        console.log('[deletedSensorsDB] Loaded with timestamps:', {
+        debug.log('[deletedSensorsDB] Loaded with timestamps:', {
           count: formatted.length
         });
         
@@ -301,7 +303,7 @@ export async function cleanupOldDeletedSensorsDB() {
         db.close();
         
         if (removed > 0) {
-          console.log('[deletedSensorsDB] Cleanup complete:', { removed, remaining });
+          debug.log('[deletedSensorsDB] Cleanup complete:', { removed, remaining });
         }
         
         resolve({ removed, remaining, originalCount: removed + remaining });
@@ -383,7 +385,7 @@ export async function migrateLocalStorageToIndexedDB(localStorageDeletedSensors)
         db.close();
         
         if (migrated > 0) {
-          console.log('[deletedSensorsDB] Migration complete:', { migrated, total: localStorageDeletedSensors.length });
+          debug.log('[deletedSensorsDB] Migration complete:', { migrated, total: localStorageDeletedSensors.length });
         }
         
         // Get final count
@@ -415,7 +417,7 @@ export async function syncIndexedDBToLocalStorage() {
     // Update localStorage cache
     localStorage.setItem('agp-deleted-sensors', JSON.stringify(deletedSensors));
     
-    console.log('[deletedSensorsDB] Synced IndexedDB to localStorage:', {
+    debug.log('[deletedSensorsDB] Synced IndexedDB to localStorage:', {
       count: deletedSensors.length
     });
   } catch (err) {

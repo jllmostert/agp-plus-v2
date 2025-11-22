@@ -47,7 +47,7 @@ export function useCSVData() {
           
           // Don't update if patient info is locked
           if (existingInfo?.isLocked) {
-            console.log('[useCSVData] Patient info is LOCKED - skipping CSV update');
+
           } else {
             // Only update if fields are empty
             const updates = {};

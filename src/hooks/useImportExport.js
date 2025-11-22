@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { debug } from '../utils/debug.js';
 
 /**
  * Import/Export orchestration
@@ -58,7 +59,7 @@ export function useImportExport() {
   const validateFile = async (file) => {
     setIsValidating(true);
     try {
-      console.log('[useImportExport] Validating file:', file.name);
+      debug.log('[useImportExport] Validating file:', file.name);
       
       // Import validation utility
       const { validateImportFile } = await import('../storage/import');
@@ -95,13 +96,13 @@ export function useImportExport() {
 
     setIsImporting(true);
     try {
-      console.log('[useImportExport] Starting import...');
-      console.log('[useImportExport] Merge strategy:', importMergeStrategy);
-      console.log('[useImportExport] Create backup:', createBackupBeforeImport);
+      debug.log('[useImportExport] Starting import...');
+      debug.log('[useImportExport] Merge strategy:', importMergeStrategy);
+      debug.log('[useImportExport] Create backup:', createBackupBeforeImport);
       
       // Create backup before import if enabled
       if (createBackupBeforeImport) {
-        console.log('[useImportExport] Creating backup before import...');
+        debug.log('[useImportExport] Creating backup before import...');
         
         try {
           // Export current database
@@ -131,7 +132,7 @@ export function useImportExport() {
             timestamp: Date.now() 
           });
           
-          console.log('[useImportExport] Backup created:', backupFilename);
+          debug.log('[useImportExport] Backup created:', backupFilename);
           
           // Small delay to ensure download starts
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -151,57 +152,57 @@ export function useImportExport() {
             throw new Error('Import cancelled: Backup creation failed');
           }
           
-          console.log('[useImportExport] User chose to continue without backup');
+          debug.log('[useImportExport] User chose to continue without backup');
         }
       }
       
       // If replace mode, clear existing data first
       if (importMergeStrategy === 'replace') {
-        console.log('[useImportExport] Replace mode: Clearing existing data...');
+        debug.log('[useImportExport] Replace mode: Clearing existing data...');
         
         // Clear glucose readings from IndexedDB
         const { cleanupRecords } = await import('../storage/masterDatasetStorage');
         await cleanupRecords({ type: 'all-in' }); // Clears readings, cartridges, ProTime
-        console.log('[useImportExport] Cleared glucose readings');
+        debug.log('[useImportExport] Cleared glucose readings');
         
         // Clear sensors
         const { clearAllSensors } = await import('../storage/sensorStorage');
         await clearAllSensors();
-        console.log('[useImportExport] Cleared sensors');
+        debug.log('[useImportExport] Cleared sensors');
         
         // Clear events (cartridges and sensor changes)
         localStorage.removeItem('agp-device-events');
-        console.log('[useImportExport] Cleared device events');
+        debug.log('[useImportExport] Cleared device events');
         
         // Clear workdays
         const { deleteProTimeData } = await import('../storage/masterDatasetStorage');
         await deleteProTimeData();
-        console.log('[useImportExport] Cleared workdays');
+        debug.log('[useImportExport] Cleared workdays');
         
         // Clear patient info
         const { patientStorage } = await import('../utils/patientStorage');
         await patientStorage.clear();
-        console.log('[useImportExport] Cleared patient info');
+        debug.log('[useImportExport] Cleared patient info');
         
         // Clear stock management (batches and assignments)
         localStorage.removeItem('agp-stock-batches');
         localStorage.removeItem('agp-stock-assignments');
-        console.log('[useImportExport] Cleared stock data');
+        debug.log('[useImportExport] Cleared stock data');
         
-        console.log('[useImportExport] All existing data cleared');
+        debug.log('[useImportExport] All existing data cleared');
       }
       
       // Execute import with progress tracking
-      console.log('[useImportExport] Calling importMasterDataset...');
+      debug.log('[useImportExport] Calling importMasterDataset...');
       const { importMasterDataset } = await import('../storage/import');
       const result = await importMasterDataset(
         pendingImportFile,
         (progress) => {
-          console.log('[useImportExport] Import progress:', progress);
+          debug.log('[useImportExport] Import progress:', progress);
           setImportProgress(progress);
         }
       );
-      console.log('[useImportExport] Import result:', result);
+      debug.log('[useImportExport] Import result:', result);
       
       // Update state
       setLastImportInfo(result);
@@ -231,7 +232,7 @@ export function useImportExport() {
    * Cancel pending import
    */
   const cancelImport = () => {
-    console.log('[useImportExport] Import cancelled');
+    debug.log('[useImportExport] Import cancelled');
     setPendingImportFile(null);
     setImportValidation(null);
     setImportProgress({
@@ -248,13 +249,13 @@ export function useImportExport() {
    */
   const handleExport = async () => {
     try {
-      console.log('[useImportExport] Exporting data...');
+      debug.log('[useImportExport] Exporting data...');
       
       // Use the exportAndDownload utility
       const { exportAndDownload } = await import('../storage/export');
       const result = await exportAndDownload();
       
-      console.log('[useImportExport] Export result:', result);
+      debug.log('[useImportExport] Export result:', result);
       return result;
       
     } catch (error) {
@@ -270,7 +271,7 @@ export function useImportExport() {
    * Reset all import/export state
    */
   const resetState = () => {
-    console.log('[useImportExport] Resetting state');
+    debug.log('[useImportExport] Resetting state');
     setImportValidation(null);
     setIsValidating(false);
     setIsImporting(false);

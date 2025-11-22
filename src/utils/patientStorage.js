@@ -136,11 +136,8 @@ export const patientStorage = {
    * @returns {Promise<void>}
    */
   async setLocked(locked) {
-    console.log('[patientStorage] setLocked called with:', locked);
     const info = await this.get() || {};
-    console.log('[patientStorage] Current info before update:', info);
     info.isLocked = locked;
     await this.save(info);
-    console.log('[patientStorage] Saved with isLocked:', locked);
   }
 };

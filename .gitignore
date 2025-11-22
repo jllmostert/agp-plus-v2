@@ -48,3 +48,4 @@ src/components/CloudSync.jsx
 src/utils/githubSync.js
 src/utils/smartImport.js
 docs/ARCHITECTURE_DIAGRAMS.md
+test-data/databases/*.json

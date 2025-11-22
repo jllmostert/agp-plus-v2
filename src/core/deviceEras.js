@@ -67,7 +67,7 @@ export async function initDeviceEras() {
   try {
     seasonsCache = await seasonStorage.initSeasons();
     initialized = true;
-    console.log('[deviceEras] Initialized from storage:', seasonsCache.length, 'seasons');
+
   } catch (error) {
     console.error('[deviceEras] Failed to load from storage, using fallback:', error);
     seasonsCache = FALLBACK_SEASONS;

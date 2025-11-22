@@ -53,7 +53,7 @@ export function addImportEvent(importEvent) {
   
   localStorage.setItem(IMPORT_HISTORY_KEY, JSON.stringify(trimmed));
   
-  console.log('[importHistory] Added event:', event);
+
   return event;
 }
 
@@ -124,6 +124,6 @@ export function clearImportHistory() {
   const history = getImportHistory();
   const count = history.length;
   localStorage.removeItem(IMPORT_HISTORY_KEY);
-  console.log(`[importHistory] Cleared ${count} entries`);
+
   return count;
 }

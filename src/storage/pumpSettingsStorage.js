@@ -126,7 +126,6 @@ export function savePumpSettings(settings) {
       },
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-    console.log('[PumpSettings] Settings saved:', toSave.meta.source);
     return true;
   } catch (error) {
     console.error('[PumpSettings] Error saving settings:', error);
@@ -151,7 +150,6 @@ export function updatePumpSettings(updates) {
 export function clearPumpSettings() {
   try {
     localStorage.removeItem(STORAGE_KEY);
-    console.log('[PumpSettings] Settings cleared');
     return true;
   } catch (error) {
     console.error('[PumpSettings] Error clearing settings:', error);
@@ -179,7 +177,6 @@ export function togglePumpSettingsLock(locked) {
     settings.meta.isLocked = locked;
     settings.meta.lastUpdated = new Date().toISOString();
     savePumpSettings(settings);
-    console.log(`[PumpSettings] Settings ${locked ? 'LOCKED' : 'UNLOCKED'}`);
     return true;
   } catch (error) {
     console.error('[PumpSettings] Error toggling lock:', error);
@@ -282,7 +279,6 @@ export function archiveDevice(device, endDate = null, notes = '') {
       existing.endDate = endDate || new Date().toISOString();
       existing.notes = notes || existing.notes;
       localStorage.setItem(DEVICE_HISTORY_KEY, JSON.stringify(history));
-      console.log('[DeviceHistory] Updated existing device:', device.serial);
       return true;
     }
     
@@ -296,7 +292,6 @@ export function archiveDevice(device, endDate = null, notes = '') {
     
     history.push(archived);
     localStorage.setItem(DEVICE_HISTORY_KEY, JSON.stringify(history));
-    console.log('[DeviceHistory] Archived device:', device.serial);
     return true;
   } catch (error) {
     console.error('[DeviceHistory] Error archiving device:', error);
@@ -314,7 +309,6 @@ export function removeFromHistory(serial) {
     const history = getDeviceHistory();
     const filtered = history.filter(d => d.serial !== serial);
     localStorage.setItem(DEVICE_HISTORY_KEY, JSON.stringify(filtered));
-    console.log('[DeviceHistory] Removed device:', serial);
     return true;
   } catch (error) {
     console.error('[DeviceHistory] Error removing device:', error);
@@ -348,7 +342,6 @@ export function importDeviceData(data) {
     if (data.deviceHistory && Array.isArray(data.deviceHistory)) {
       localStorage.setItem(DEVICE_HISTORY_KEY, JSON.stringify(data.deviceHistory));
     }
-    console.log('[DeviceHistory] Imported device data');
     return true;
   } catch (error) {
     console.error('[DeviceHistory] Error importing data:', error);
@@ -362,7 +355,6 @@ export function importDeviceData(data) {
 export function clearDeviceHistory() {
   try {
     localStorage.removeItem(DEVICE_HISTORY_KEY);
-    console.log('[DeviceHistory] History cleared');
     return true;
   } catch (error) {
     console.error('[DeviceHistory] Error clearing history:', error);

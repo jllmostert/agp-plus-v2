@@ -209,7 +209,7 @@ function ImportPanel({
             }));
             
             if (file.name.endsWith('.csv')) {
-              console.log(`[ImportPanel] Processing CSV ${i + 1}/${files.length}:`, file.name);
+
               const text = await file.text();
               await onCSVLoad(text);
             }
@@ -280,7 +280,7 @@ function ImportPanel({
                   percentage: Math.round(((i + 1) / files.length) * 100)
                 }));
                 
-                console.log(`[ImportPanel] Processing PDF ${i + 1}/${files.length}:`, file.name);
+
               }
               
               const text = await extractTextFromMultiplePDFs(files);

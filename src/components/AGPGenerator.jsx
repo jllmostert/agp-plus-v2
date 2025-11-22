@@ -337,14 +337,14 @@ function AGPGeneratorContent() {
           const existingSettings = getPumpSettings();
           const mergedSettings = mergePumpSettings(existingSettings, parsedSettings);
           savePumpSettings(mergedSettings);
-          console.log('[CSV Upload] Pump settings updated from CSV');
+          debug.log('[CSV Upload] Pump settings updated from CSV');
         } catch (settingsErr) {
           console.warn('[CSV Upload] Failed to parse pump settings:', settingsErr);
         }
         
         // Check if upload needs user confirmation for batch assignments
         if (result.needsConfirmation) {
-          console.log('[CSV Upload] Found batch matches, awaiting user confirmation');
+          debug.log('[CSV Upload] Found batch matches, awaiting user confirmation');
           // Store for completion after user confirms
           setPendingUpload({
             detectedEvents: result.detectedEvents,
@@ -355,7 +355,7 @@ function AGPGeneratorContent() {
         }
         
         // No confirmation needed - refresh normally
-        console.log('[CSV Upload] No batch matches, sensors stored immediately');
+        debug.log('[CSV Upload] No batch matches, sensors stored immediately');
         masterDataset.refresh();
         
         // Show success toast
@@ -394,7 +394,7 @@ function AGPGeneratorContent() {
         ...newWorkdayDates      // New workdays from this import
       ]);
       
-      console.log(`[ProTime] Imported ${newWorkdayDates.size} new workdays, total now: ${workdaySet.size}`);
+      debug.log(`[ProTime] Imported ${newWorkdayDates.size} new workdays, total now: ${workdaySet.size}`);
       
       loadWorkdays(workdaySet);
       
@@ -462,7 +462,7 @@ function AGPGeneratorContent() {
     try {
       // NEW: Check if this is part of a two-phase upload
       if (pendingUpload) {
-        console.log('[Batch Assignment] Completing two-phase upload with assignments');
+        debug.log('[Batch Assignment] Completing two-phase upload with assignments');
         const { completeCSVUploadWithAssignments } = await import('../storage/masterDatasetStorage');
         
         await completeCSVUploadWithAssignments(
@@ -473,7 +473,7 @@ function AGPGeneratorContent() {
         setPendingUpload(null); // Clear pending state
         masterDataset.refresh(); // Refresh UI with new sensors
         
-        console.log(`[Batch Assignment] Upload complete: ${assignments.length} sensors assigned`);
+        debug.log(`[Batch Assignment] Upload complete: ${assignments.length} sensors assigned`);
         
         // Show success toast
         showToast(`✅ CSV geüpload! ${assignments.length} sensors toegewezen`, 3000);
@@ -485,7 +485,7 @@ function AGPGeneratorContent() {
           await assignSensorToBatch(sensorId, batchId, 'auto');
         }
         
-        console.log(`[Batch Assignment] Assigned ${assignments.length} sensors`);
+        debug.log(`[Batch Assignment] Assigned ${assignments.length} sensors`);
       }
       
       setBatchAssignmentDialog({ open: false, suggestions: [] });
@@ -502,7 +502,7 @@ function AGPGeneratorContent() {
   const handleBatchAssignmentCancel = () => {
     // If canceling during two-phase upload, still need to complete storage
     if (pendingUpload) {
-      console.log('[Batch Assignment] User canceled, storing sensors without assignments');
+      debug.log('[Batch Assignment] User canceled, storing sensors without assignments');
       
       // Complete upload without assignments (async but don't await - fire and forget)
       (async () => {
@@ -583,7 +583,7 @@ function AGPGeneratorContent() {
       });
       
       if (result.success) {
-        console.log(`[AGPGenerator] AGP HTML exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
+        debug.log(`[AGPGenerator] AGP HTML exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
       }
     } catch (error) {
       console.error('[AGPGenerator] Error exporting AGP HTML:', error);
@@ -727,7 +727,7 @@ function AGPGeneratorContent() {
         const backupText = importExport.lastBackupFile 
           ? `\n💾 Backup: ${importExport.lastBackupFile.filename}` 
           : '';
-        console.log(
+        debug.log(
           `✅ Import Complete!\n\n` +
           `${strategyText}${backupText}\n\n` +
           `📊 Months: ${stats.monthsImported}\n` +
@@ -751,7 +751,7 @@ function AGPGeneratorContent() {
           strategy: importExport.importMergeStrategy,
           stats: stats
         });
-        console.log('[AGPGenerator] Import event tracked in history');
+        debug.log('[AGPGenerator] Import event tracked in history');
         
         // Refresh data
         masterDataset.refresh();
@@ -1175,7 +1175,7 @@ function AGPGeneratorContent() {
                   try {
                     const result = await downloadDayProfilesHTML(dayProfiles, patientInfo);
                     if (result.success) {
-                      console.log(`[AGPGenerator] Day Profiles exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
+                      debug.log(`[AGPGenerator] Day Profiles exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
                     }
                   } catch (error) {
                     console.error('[AGPGenerator] Error exporting day profiles:', error);

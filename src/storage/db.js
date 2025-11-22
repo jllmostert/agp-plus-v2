@@ -89,7 +89,7 @@ export function openDB() {
       } else if (oldVersion < 5) {
         // v5: Add keyPath to existing SENSOR_DATA store
         // Must delete and recreate to change keyPath
-        console.log('[db.js] Upgrading SENSOR_DATA store to add keyPath');
+
         db.deleteObjectStore(STORES.SENSOR_DATA);
         db.createObjectStore(STORES.SENSOR_DATA, { keyPath: 'id' });
       }
@@ -99,7 +99,7 @@ export function openDB() {
         const seasonStore = db.createObjectStore(STORES.SEASONS, { keyPath: 'id' });
         seasonStore.createIndex('season', 'season', { unique: true });
         seasonStore.createIndex('start', 'start', { unique: false });
-        console.log('[db.js] Created SEASONS store');
+
       }
     };
   });

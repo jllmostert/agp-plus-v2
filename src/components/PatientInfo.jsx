@@ -38,11 +38,9 @@ export default function PatientInfo({ onClose, isModal = false }) {
     const loadPatientInfo = async () => {
       try {
         const info = await patientStorage.get();
-        console.log('[PatientInfo] Loaded from storage:', info);
         if (info) {
           setFormData(info);
           setIsLocked(info.isLocked === true);
-          console.log('[PatientInfo] isLocked set to:', info.isLocked === true);
         }
       } catch (err) {
         console.error('Failed to load patient info:', err);
@@ -74,12 +72,10 @@ export default function PatientInfo({ onClose, isModal = false }) {
 
   const handleToggleLock = async () => {
     const newLockState = !isLocked;
-    console.log('[PatientInfo] Toggling lock to:', newLockState);
     setIsLocked(newLockState);
     setFormData(prev => ({ ...prev, isLocked: newLockState }));
     try {
       await patientStorage.setLocked(newLockState);
-      console.log('[PatientInfo] Lock state saved successfully');
     } catch (err) {
       console.error('Failed to toggle lock:', err);
     }

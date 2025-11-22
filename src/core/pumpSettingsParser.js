@@ -156,12 +156,7 @@ export function parsePumpSettings(csvContent) {
     }
   }
 
-  console.log('[PumpSettingsParser] Parsed settings:', {
-    crBlocks: settings.carbRatios.length,
-    isfBlocks: settings.insulinSensitivity.length,
-    basalBlocks: settings.basalProfile.length,
-    tdd: settings.calculated.tdd,
-  });
+
 
   return settings;
 }
@@ -347,7 +342,7 @@ export function mergePumpSettings(existing, parsed) {
 
   // Check if settings are locked - only update calculated TDD values
   if (existing?.meta?.isLocked) {
-    console.log('[PumpSettingsParser] Settings are LOCKED - only updating TDD calculations');
+
     if (parsed.calculated?.tdd) {
       merged.calculated = { 
         ...merged.calculated, 

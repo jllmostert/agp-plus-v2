@@ -121,7 +121,7 @@ export async function importStock(file, options = {}) {
     
     // REPLACE MODE: Clear existing stock before import
     if (!mergeMode) {
-      console.log('[importStock] Replace mode: clearing existing stock');
+
       clearAllBatches();
     }
     

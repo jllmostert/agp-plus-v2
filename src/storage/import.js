@@ -4,6 +4,7 @@
  * V3.8.0 - Database Import Phase
  */
 
+import { debug } from '../utils/debug.js';
 import { appendReadingsToMaster } from './masterDatasetStorage';
 import { addSensor } from './sensorStorage';
 import { storeCartridgeChange } from './eventStorage';
@@ -109,7 +110,7 @@ export async function importMasterDataset(file, onProgress = null) {
     }
     
     // Step 5: Import sensors to localStorage (recent) and IndexedDB (historical)
-    console.log('[importMasterDataset] Importing sensors...');
+    debug.log('[importMasterDataset] Importing sensors...');
     if (data.sensors && Array.isArray(data.sensors)) {
       for (const sensor of data.sensors) {
         try {
@@ -120,12 +121,12 @@ export async function importMasterDataset(file, onProgress = null) {
           console.error('[importMasterDataset] Sensor import error:', err);
         }
       }
-      console.log(`[importMasterDataset] Imported ${stats.sensorsImported} sensors`);
+      debug.log(`[importMasterDataset] Imported ${stats.sensorsImported} sensors`);
     }
     reportProgress(1, 'sensors');
     
     // Step 6: Import cartridges to IndexedDB
-    console.log('[importMasterDataset] Importing cartridges...');
+    debug.log('[importMasterDataset] Importing cartridges...');
     if (data.cartridges && Array.isArray(data.cartridges)) {
       for (const cartridge of data.cartridges) {
         try {
@@ -145,19 +146,19 @@ export async function importMasterDataset(file, onProgress = null) {
           }
         }
       }
-      console.log(`[importMasterDataset] Imported ${stats.cartridgesImported} cartridges`);
+      debug.log(`[importMasterDataset] Imported ${stats.cartridgesImported} cartridges`);
     }
     reportProgress(2, 'cartridges');
     
     // Step 7: Import ProTime workdays to V3 storage (IndexedDB)
-    console.log('[importMasterDataset] Importing workdays...');
+    debug.log('[importMasterDataset] Importing workdays...');
     if (data.workdays && Array.isArray(data.workdays)) {
       try {
         const { saveProTimeData } = await import('./masterDatasetStorage');
         const workdaySet = new Set(data.workdays);
         await saveProTimeData(workdaySet);
         stats.workdaysImported = data.workdays.length;
-        console.log(`[importMasterDataset] Imported ${stats.workdaysImported} workdays to IndexedDB`);
+        debug.log(`[importMasterDataset] Imported ${stats.workdaysImported} workdays to IndexedDB`);
         
         // Also save to localStorage for V2 compatibility
         localStorage.setItem('workday-dates', JSON.stringify(data.workdays));
@@ -169,12 +170,12 @@ export async function importMasterDataset(file, onProgress = null) {
     reportProgress(3, 'workdays');
     
     // Step 8: Import patient info to localStorage
-    console.log('[importMasterDataset] Importing patient info...');
+    debug.log('[importMasterDataset] Importing patient info...');
     if (data.patientInfo) {
       try {
         localStorage.setItem('patient-info', JSON.stringify(data.patientInfo));
         stats.patientInfoImported = true;
-        console.log('[importMasterDataset] Patient info imported');
+        debug.log('[importMasterDataset] Patient info imported');
       } catch (err) {
         errors.push(`Failed to import patient info: ${err.message}`);
         console.error('[importMasterDataset] Patient info import error:', err);
@@ -183,7 +184,7 @@ export async function importMasterDataset(file, onProgress = null) {
     reportProgress(4, 'patient info');
     
     // Step 9: Import stock batches
-    console.log('[importMasterDataset] Importing stock batches...');
+    debug.log('[importMasterDataset] Importing stock batches...');
     if (data.stockBatches && Array.isArray(data.stockBatches)) {
       for (const batch of data.stockBatches) {
         try {
@@ -194,12 +195,12 @@ export async function importMasterDataset(file, onProgress = null) {
           console.error('[importMasterDataset] Stock batch import error:', err);
         }
       }
-      console.log(`[importMasterDataset] Imported ${stats.stockBatchesImported} stock batches`);
+      debug.log(`[importMasterDataset] Imported ${stats.stockBatchesImported} stock batches`);
     }
     reportProgress(5, 'stock batches');
     
     // Step 10: Import stock assignments
-    console.log('[importMasterDataset] Importing stock assignments...');
+    debug.log('[importMasterDataset] Importing stock assignments...');
     if (data.stockAssignments && Array.isArray(data.stockAssignments)) {
       for (const assignment of data.stockAssignments) {
         try {
@@ -210,17 +211,17 @@ export async function importMasterDataset(file, onProgress = null) {
           console.error('[importMasterDataset] Stock assignment import error:', err);
         }
       }
-      console.log(`[importMasterDataset] Imported ${stats.stockAssignmentsImported} stock assignments`);
+      debug.log(`[importMasterDataset] Imported ${stats.stockAssignmentsImported} stock assignments`);
     }
     reportProgress(6, 'stock assignments');
     
     // Step 11: Import pump settings
-    console.log('[importMasterDataset] Importing pump settings...');
+    debug.log('[importMasterDataset] Importing pump settings...');
     if (data.pumpSettings) {
       try {
         savePumpSettings(data.pumpSettings);
         stats.pumpSettingsImported = true;
-        console.log('[importMasterDataset] Pump settings imported');
+        debug.log('[importMasterDataset] Pump settings imported');
       } catch (err) {
         errors.push(`Failed to import pump settings: ${err.message}`);
         console.error('[importMasterDataset] Pump settings import error:', err);
@@ -228,12 +229,12 @@ export async function importMasterDataset(file, onProgress = null) {
     }
     
     // Step 12: Import device history
-    console.log('[importMasterDataset] Importing device history...');
+    debug.log('[importMasterDataset] Importing device history...');
     if (data.deviceHistory && Array.isArray(data.deviceHistory)) {
       try {
         importDeviceData({ deviceHistory: data.deviceHistory });
         stats.deviceHistoryImported = data.deviceHistory.length;
-        console.log(`[importMasterDataset] Imported ${data.deviceHistory.length} device history records`);
+        debug.log(`[importMasterDataset] Imported ${data.deviceHistory.length} device history records`);
       } catch (err) {
         errors.push(`Failed to import device history: ${err.message}`);
         console.error('[importMasterDataset] Device history import error:', err);

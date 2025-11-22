@@ -303,7 +303,7 @@ export const findAllSensorSections = (text, sectionType = 'Sensor') => {
         headerRow
       });
       
-      console.log(`[Parser] Found ${sectionType} section: ${serial} (lines ${headerLine}-${endLine})`);
+      debug.log(`[Parser] Found ${sectionType} section: ${serial} (lines ${headerLine}-${endLine})`);
     }
   }
   
@@ -337,7 +337,7 @@ export const detectCSVFormat = (text) => {
   const lines = text.split('\n');
   
   if (lines.length < 7) {
-    console.warn('[CSV Format] File too short for detection');
+    debug.warn('[CSV Format] File too short for detection');
     return null;
   }
   
@@ -464,7 +464,7 @@ export const findColumnIndices = (headerRow) => {
   // Check important columns (warn but continue)
   const missingImportant = importantColumns.filter(col => !(col in columnMap));
   if (missingImportant.length > 0) {
-    console.warn(
+    debug.warn(
       `[Parser] WARNING: Missing important columns: ${missingImportant.join(', ')}\n` +
       `Some features may be limited (insulin data, carb tracking, or alerts).`
     );
@@ -482,7 +482,7 @@ export const findColumnIndices = (headerRow) => {
   // Log successful validation
   const totalColumns = Object.keys(columnMap).length;
   const missingTotal = missingRequired.length + missingImportant.length + missingOptional.length;
-  console.log(
+  debug.log(
     `[Parser] Column validation complete: ${totalColumns} columns found, ` +
     `${missingTotal} optional/important columns missing`
   );
@@ -512,11 +512,11 @@ export const parseCSV = (text) => {
     }
     
     // Log format detection results
-    console.log(`[CSV Format] Detected: ${format.device} (${format.serial})`);
-    console.log(`[CSV Format] Version: ${format.version}, Header at line: ${format.headerRowIndex}`);
+    debug.log(`[CSV Format] Detected: ${format.device} (${format.serial})`);
+    debug.log(`[CSV Format] Version: ${format.version}, Header at line: ${format.headerRowIndex}`);
     
     if (format.confidence === 'low') {
-      console.warn('[CSV Format] Low confidence detection - file may not parse correctly');
+      debug.warn('[CSV Format] Low confidence detection - file may not parse correctly');
     }
     
     // Check minimum line count (using detected header position)
@@ -656,7 +656,7 @@ export const parseCSV = (text) => {
     
     // Warn about out-of-bounds glucose readings
     if (outOfBoundsCount > 0) {
-      console.warn(`[Parser] Skipped ${outOfBoundsCount} out-of-bounds glucose readings (<20 or >600 mg/dL)`);
+      debug.warn(`[Parser] Skipped ${outOfBoundsCount} out-of-bounds glucose readings (<20 or >600 mg/dL)`);
     }
     
     // Warn if coverage is low
@@ -677,7 +677,7 @@ export const parseCSV = (text) => {
     const sensorSections = findAllSensorSections(text);
     
     if (sensorSections.length > 1) {
-      console.log(`[Parser] Multi-pump CSV detected: ${sensorSections.length} sensor sections`);
+      debug.log(`[Parser] Multi-pump CSV detected: ${sensorSections.length} sensor sections`);
       
       // Parse additional sections (skip first, already parsed above)
       for (let s = 1; s < sensorSections.length; s++) {
@@ -685,11 +685,11 @@ export const parseCSV = (text) => {
         const sectionColumnMap = findColumnIndices(section.headerRow);
         
         if (!sectionColumnMap) {
-          console.warn(`[Parser] Skipping section ${section.serial}: invalid header`);
+          debug.warn(`[Parser] Skipping section ${section.serial}: invalid header`);
           continue;
         }
         
-        console.log(`[Parser] Parsing additional section: ${section.serial}`);
+        debug.log(`[Parser] Parsing additional section: ${section.serial}`);
         
         // Parse this section's data
         for (let i = section.startLine + 1; i <= section.endLine; i++) {
@@ -722,7 +722,7 @@ export const parseCSV = (text) => {
         }
       }
       
-      console.log(`[Parser] Multi-pump sensor merge complete: ${data.length} total readings`);
+      debug.log(`[Parser] Multi-pump sensor merge complete: ${data.length} total readings`);
     }
     
     // === MULTI-PUMP SUPPORT: PUMP SECTIONS (rewind, alerts, boluses) ===
@@ -730,7 +730,7 @@ export const parseCSV = (text) => {
     const pumpSections = findAllSensorSections(text, 'Pump');
     
     if (pumpSections.length > 1) {
-      console.log(`[Parser] Multi-pump CSV: ${pumpSections.length} pump sections found`);
+      debug.log(`[Parser] Multi-pump CSV: ${pumpSections.length} pump sections found`);
       
       // Parse additional pump sections (skip first, already parsed above)
       for (let s = 1; s < pumpSections.length; s++) {
@@ -738,11 +738,11 @@ export const parseCSV = (text) => {
         const sectionColumnMap = findColumnIndices(section.headerRow);
         
         if (!sectionColumnMap) {
-          console.warn(`[Parser] Skipping pump section ${section.serial}: invalid header`);
+          debug.warn(`[Parser] Skipping pump section ${section.serial}: invalid header`);
           continue;
         }
         
-        console.log(`[Parser] Parsing pump section: ${section.serial}`);
+        debug.log(`[Parser] Parsing pump section: ${section.serial}`);
         let pumpEvents = 0;
         
         // Parse this section's events (rewind, alerts, boluses)
@@ -780,7 +780,7 @@ export const parseCSV = (text) => {
           }
         }
         
-        console.log(`[Parser] Pump section ${section.serial}: ${pumpEvents} events added`);
+        debug.log(`[Parser] Pump section ${section.serial}: ${pumpEvents} events added`);
       }
     }
 

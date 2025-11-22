@@ -111,15 +111,15 @@ export async function initSeasons() {
   const existing = await getAllRecords(STORES.SEASONS);
   
   if (!existing || existing.length === 0) {
-    console.log('[seasonStorage] Seeding default seasons...');
+
     for (const season of DEFAULT_SEASONS) {
       await putRecord(STORES.SEASONS, season);
     }
     seasonsCache = [...DEFAULT_SEASONS];
-    console.log(`[seasonStorage] Seeded ${DEFAULT_SEASONS.length} seasons`);
+
   } else {
     seasonsCache = existing.sort((a, b) => a.season - b.season);
-    console.log(`[seasonStorage] Loaded ${existing.length} seasons from storage`);
+
   }
   
   return seasonsCache;

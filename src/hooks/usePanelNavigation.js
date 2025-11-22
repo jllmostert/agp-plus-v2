@@ -34,31 +34,23 @@ export function usePanelNavigation() {
         const panels = ['import', 'dagprofielen', 'sensoren', 'export', 'settings'];
         const panelIndex = parseInt(e.key) - 1;
         setActivePanel(panels[panelIndex]);
-        console.log(`[Keyboard] Switched to panel: ${panels[panelIndex]}`);
       }
       
       // Ctrl+Shift+D: Toggle DevTools
       if (e.ctrlKey && e.shiftKey && e.key === 'D') {
         e.preventDefault();
-        setShowDevTools(prev => {
-          console.log(`[Keyboard] DevTools: ${!prev}`);
-          return !prev;
-        });
+        setShowDevTools(prev => !prev);
       }
       
       // Escape: Close DevTools (only if DevTools is open)
       if (e.key === 'Escape' && showDevTools) {
         setShowDevTools(false);
-        console.log('[Keyboard] DevTools closed via Escape');
       }
       
       // Ctrl+K: Show/hide keyboard shortcuts modal
       if (e.ctrlKey && e.key === 'k') {
         e.preventDefault();
-        setShowShortcuts(prev => {
-          console.log(`[Keyboard] Shortcuts modal: ${!prev}`);
-          return !prev;
-        });
+        setShowShortcuts(prev => !prev);
       }
     };
 

@@ -14,8 +14,6 @@ import { downloadDayProfilesHTML } from '../../core/day-profiles-exporter';
 
 export default function DayProfilesPanel({ isOpen, onClose, dayProfiles, patientInfo = null, numDays = 7, onNumDaysChange }) {
   if (!isOpen) return null;
-  
-  console.log('[DayProfilesPanel] Rendering with:', { numDays, profilesCount: dayProfiles?.length });
 
   return (
     <div 
@@ -74,7 +72,6 @@ export default function DayProfilesPanel({ isOpen, onClose, dayProfiles, patient
           <button
             onClick={() => {
               const newNumDays = numDays === 7 ? 14 : 7;
-              console.log('[DayProfilesPanel] Toggle clicked:', { from: numDays, to: newNumDays });
               onNumDaysChange?.(newNumDays);
             }}
             style={{

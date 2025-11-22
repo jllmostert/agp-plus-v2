@@ -53,7 +53,7 @@ export function addExportEvent(exportEvent) {
   
   localStorage.setItem(EXPORT_HISTORY_KEY, JSON.stringify(trimmed));
   
-  console.log('[exportHistory] Added event:', event);
+
   return event;
 }
 
@@ -158,6 +158,6 @@ export function clearExportHistory() {
   const history = getExportHistory();
   const count = history.length;
   localStorage.removeItem(EXPORT_HISTORY_KEY);
-  console.log(`[exportHistory] Cleared ${count} entries`);
+
   return count;
 }
