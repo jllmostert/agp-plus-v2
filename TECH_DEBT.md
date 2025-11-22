@@ -208,27 +208,26 @@ panels/
 
 ---
 
-### 7. Storage Layer Simplification
+### 7. Storage Layer Simplification 🔄 IN PROGRESS
 
-**Problem:**
-Three-layer storage with sync complexity:
-- SQLite (historical sensors, read-only)
-- IndexedDB (active data)
-- localStorage (cache)
+**Analysis completed**: 2025-11-22  
+**See**: `docs/STORAGE_ARCHITECTURE_ANALYSIS.md`
 
-**Current risks:**
-- ~~localStorage.clear() breaks deleted sensor tracking~~ (fixed: tombstones removed)
-- Sync race conditions possible
-- Different cleanup intervals (30/90 days)
+**Confirmed issues:**
+1. `eventStorage.js` stores `sensorChanges` in localStorage → **NEVER READ** (dead code)
+2. IndexedDB stores `sensorEvents` and `cartridgeEvents` → **CREATED BUT UNUSED**
+3. `patient-info` and `workday-dates` duplicated in localStorage AND IndexedDB
+4. SQLite files deprecated (no longer used)
+5. DebugPanel references dead localStorage keys
 
-**Long-term fix:**
-- Move fully to IndexedDB
-- Drop localStorage cache layer
-- Keep SQLite only for truly historical data
+**Cleanup plan** (see `docs/SESSION_HANDOFF_STORAGE_CLEANUP.md`):
+- Fase 1: Remove dead code (storeSensorChange, unused stores, SQLite, DebugPanel)
+- Fase 2: Rename eventStorage → cartridgeStorage, migrate to IndexedDB
+- Fase 3: Fix patient-info/workdays duplication
 
-**Effort estimate:** ~8 hours  
-**Priority:** Low (works now, but fragile edge cases exist)  
-**See also:** `docs/archive/DUAL_STORAGE_ANALYSIS.md`
+**Effort estimate:** ~4 hours  
+**Priority:** Medium (dead code accumulating, duplication risk)  
+**Status:** Ready to execute
 
 ---
 
@@ -258,4 +257,4 @@ Removed 15 debug console.log statements from production code.
 
 ---
 
-**Last updated**: 2025-11-22
+**Last updated**: 2025-11-22 (storage analysis complete)
