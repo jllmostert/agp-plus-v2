@@ -1,75 +1,67 @@
 # AGP+ Development Progress
 
-## Session 2025-11-22 - Storage Architecture Analysis
+## Session 2025-11-22 (2) - Storage Layer Cleanup
 
-### Completed
-- [x] Full localStorage audit (13 keys identified)
-- [x] Full IndexedDB audit (8 stores, 2 dead)
-- [x] Data flow analysis (eventStorage.js)
-- [x] Created `docs/STORAGE_ARCHITECTURE_ANALYSIS.md`
-- [x] Created `docs/SESSION_HANDOFF_STORAGE_CLEANUP.md`
-
-### Key Findings
-1. **Dead code**: `storeSensorChange` writes to localStorage but is never read
-2. **Dead IndexedDB stores**: `sensorEvents` and `cartridgeEvents` created but unused
-3. **Duplicate data**: patient-info and workday-dates exist in both localStorage and IndexedDB
-4. **SQLite deprecated**: No longer used, files can be removed
-5. **DebugPanel deprecated**: References dead localStorage keys
-
-### Files Created
-- `docs/STORAGE_ARCHITECTURE_ANALYSIS.md` (315 lines)
-- `docs/handoffs/SESSION_HANDOFF_STORAGE_CLEANUP.md` (234 lines)
-- `docs/handoffs/SESSION_HANDOFF_REFACTORING.md` (327 lines)
-- `docs/handoffs/PROGRESS.md` (this file)
-
-### Next Session Tasks
-
-**Track A: Storage Cleanup** (do first)  
-See `SESSION_HANDOFF_STORAGE_CLEANUP.md`
-- Fase 1: Dead Code Verwijderen (30 min)
-- Fase 2: eventStorage → cartridgeStorage (1 uur)
-- Fase 3: localStorage Cleanup (2 uur)
-
-**Track B: Code Health & Refactoring** (after Track A)  
-See `SESSION_HANDOFF_REFACTORING.md`
-- Fase 1: Architectural Scan
-- Fase 2: Quick Wins
-- Fase 3-5: Big File Refactors
+### Overall Status
+- [x] Fase 1: Dead Code Verwijderen ✅ DONE
+- [ ] Fase 2: Cartridge Storage IndexedDB Migration ← NEXT
+- [ ] Fase 3: localStorage Cleanup
 
 ---
 
-## Session [NEXT] - Storage Layer Cleanup
+### Fase 1: Dead Code ✅ COMPLETE
 
-### Status
-- [ ] Fase 1: Dead Code Verwijderen
-- [ ] Fase 2: eventStorage → cartridgeStorage  
-- [ ] Fase 3: localStorage Cleanup
+**Files Deleted (7):**
+- src/utils/sqliteParser.js
+- src/storage/sensorImport.js
+- src/components/SensorImport.jsx
+- src/components/DebugPanel.jsx
+- src/components/devtools/DebugPanel.jsx
+- src/components/devtools/SensorSQLiteImport.jsx
+- src/components/panels/DevToolsPanel.jsx
 
-### Fase 1 Progress
-- [ ] storeSensorChange calls verwijderd
-- [ ] sensorChanges uit eventStorage verwijderd
-- [ ] Ongebruikte IndexedDB stores verwijderd
-- [ ] SQLite files verwijderd
-- [ ] DebugPanel files verwijderd
-- [ ] Build succesvol
+**Files Modified (4):**
+- src/storage/db.js (v7, removed dead stores)
+- src/storage/eventStorage.js (removed sensorChanges)
+- src/storage/masterDatasetStorage.js (removed storeSensorChange)
+- src/components/AGPGenerator.jsx (removed DevToolsPanel)
 
-### Fase 2 Progress
-- [ ] eventStorage.js renamed naar cartridgeStorage.js
-- [ ] Functies hernoemd
-- [ ] Gemigreerd naar IndexedDB
-- [ ] Consumers updated
-- [ ] Day profiles werken nog
+**Stats:** -1,914 lines, build passing, committed.
 
-### Fase 3 Progress
+---
+
+### Fase 2: Cartridge Storage Migration
+
+**Handoff:** `docs/handoffs/SESSION_HANDOFF_CARTRIDGE_MIGRATION.md`
+
+**Stappen:**
+- [ ] Stap 0: Rollback tag created
+- [ ] Stap 1: cartridgeStorage.js created
+- [ ] Stap 2: cleanup-engine.js updated
+- [ ] Stap 3: day-profile-engine.js updated
+- [ ] Stap 4: Storage files updated (export, import, masterDataset)
+- [ ] Stap 5: Components updated (AGPGenerator, DataManagement)
+- [ ] Stap 6: Migration hook added
+- [ ] Stap 7: eventStorage.js deleted, build passing
+- [ ] Stap 8: Committed & pushed
+
+**Issues:**
+(none yet)
+
+---
+
+### Fase 3: localStorage Cleanup (after Fase 2)
+
 - [ ] Patient info duplicatie gefixt
 - [ ] Workdays duplicatie gefixt
 - [ ] Dead localStorage keys verwijderd
 
-### Files Deleted
-(te vullen)
+---
 
-### Files Modified
-(te vullen)
+## Previous Sessions
 
-### Issues Encountered
-(te vullen)
+### Session 2025-11-22 (1) - Storage Architecture Analysis
+- Full localStorage audit (13 keys)
+- Full IndexedDB audit (8 stores, 2 dead)
+- Created STORAGE_ARCHITECTURE_ANALYSIS.md
+- Created handoff documents
