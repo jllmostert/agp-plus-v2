@@ -7,16 +7,12 @@ import { useModalState } from '../hooks/useModalState';
 import { usePanelNavigation } from '../hooks/usePanelNavigation';
 import { useImportExport } from '../hooks/useImportExport';
 import { useData } from '../hooks/useData';
+import { useDataManagement } from '../hooks/useDataManagement';
 import { PeriodProvider, usePeriod } from '../contexts/PeriodContext.jsx';
 import { MetricsProvider, useMetricsContext } from '../contexts/MetricsContext.jsx';
 import useUI from '../hooks/useUI';
 
-// Core utilities
-import { parseProTime } from '../core/parsers';
-import { downloadHTML } from '../core/html-exporter';
-import { downloadDayProfilesHTML } from '../core/day-profiles-exporter';
-import { parsePumpSettings, mergePumpSettings } from '../core/pumpSettingsParser';
-import { getPumpSettings, savePumpSettings } from '../storage/pumpSettingsStorage';
+// Note: Core utilities (parsers, exporters, pump settings) moved to useDataManagement hook
 
 // UI Components
 import { MigrationBanner } from './MigrationBanner';
@@ -151,6 +147,47 @@ function AGPGeneratorContent() {
   // Import/Export orchestration (extracted to custom hook)
   const importExport = useImportExport();
   
+  // Get metrics from context (for data management handlers)
+  const { metricsResult, comparisonData, dayProfiles, tddData } = useMetricsContext();
+  
+  // Data Management handlers (extracted to custom hook)
+  const dataManagement = useDataManagement({
+    // From DataContext
+    masterDataset,
+    useV3Mode,
+    loadCSV,
+    setV3UploadError,
+    csvData,
+    dateRange,
+    // From UIContext
+    showToast,
+    setPendingUpload,
+    pendingUpload,
+    setBatchAssignmentDialog,
+    loadWorkdays,
+    clearWorkdays,
+    workdays,
+    setPatientInfo,
+    patientInfo,
+    // From PeriodContext
+    startDate,
+    endDate,
+    setStartDate,
+    setEndDate,
+    // From uploadStorage
+    activeUploadId,
+    updateProTimeData,
+    saveUpload,
+    // From other hooks
+    modals,
+    importExport,
+    // From MetricsContext
+    metricsResult,
+    comparisonData,
+    tddData,
+    dayProfiles,
+  });
+  
   // Note: All UI state (dayNightEnabled, patientInfo, loadToast, dialogs, etc.) now comes from UIContext
   // Note: tddByDay now comes from DataContext
 
@@ -198,11 +235,9 @@ function AGPGeneratorContent() {
 
   // ============================================
   // CALCULATED DATA: Metrics & Comparison
-  // Note: Now provided by MetricsContext
+  // Note: metricsResult, comparisonData, dayProfiles, tddData 
+  //       now destructured above for useDataManagement hook
   // ============================================
-  
-  // Get all metrics from context (calculated in MetricsProvider)
-  const { metricsResult, comparisonData, dayProfiles, tddData } = useMetricsContext();
   
   // V3: Convert active filtered range for day profiles
   // This is the FILTERED range (e.g., "last 14 days"), not full dataset
@@ -234,26 +269,9 @@ function AGPGeneratorContent() {
 
   // ============================================
   // EVENT HANDLERS: Date Range Filter (V3)
+  // Note: handleDateRangeChange moved to useDataManagement hook
+  // Note: handlePanelChange defined below with other local handlers
   // ============================================
-  
-  /**
-   * Handle date range changes from DateRangeFilter
-   */
-  const handleDateRangeChange = (start, end) => {
-    // Update master dataset filter
-    masterDataset.setDateRange(start, end);
-    
-    // Update period context (single source of truth)
-    setStartDate(start);
-    setEndDate(end);
-  };
-  
-  /**
-   * Handle panel navigation changes (Phase B)
-   */
-  const handlePanelChange = (panelId) => {
-    navigation.setActivePanel(panelId);
-  };
 
   // ============================================
   // EVENT HANDLERS: File Upload
@@ -321,216 +339,35 @@ function AGPGeneratorContent() {
     }
   }, [useV3Mode, workdays]);
 
-  /**
-   * Handle CSV file upload
-   */
-  const handleCSVLoad = async (text) => {
-    if (useV3Mode) {
-      // V3: Direct upload to IndexedDB with two-phase batch assignment
-      try {
-        setV3UploadError(null); // Clear previous errors
-        const { uploadCSVToV3 } = await import('../storage/masterDatasetStorage');
-        const result = await uploadCSVToV3(text);
-        
-        // Parse and save pump settings from CSV (always, regardless of batch confirmation)
-        try {
-          const parsedSettings = parsePumpSettings(text);
-          const existingSettings = getPumpSettings();
-          const mergedSettings = mergePumpSettings(existingSettings, parsedSettings);
-          savePumpSettings(mergedSettings);
-          debug.log('[CSV Upload] Pump settings updated from CSV');
-        } catch (settingsErr) {
-          console.warn('[CSV Upload] Failed to parse pump settings:', settingsErr);
-        }
-        
-        // Check if upload needs user confirmation for batch assignments
-        if (result.needsConfirmation) {
-          debug.log('[CSV Upload] Found batch matches, awaiting user confirmation');
-          // Store for completion after user confirms
-          setPendingUpload({
-            detectedEvents: result.detectedEvents,
-            suggestions: result.suggestions
-          });
-          setBatchAssignmentDialog({ open: true, suggestions: result.suggestions });
-          return; // Don't refresh yet - wait for user confirmation
-        }
-        
-        // No confirmation needed - refresh normally
-        debug.log('[CSV Upload] No batch matches, sensors stored immediately');
-        masterDataset.refresh();
-        
-        // Show success toast
-        showToast(`✅ CSV geüpload!`, 3000);
-        
-      } catch (err) {
-        console.error('[CSV Upload] V3 upload failed:', err);
-        setV3UploadError(err.message);
-      }
-    } else {
-      // V2: Original flow (localStorage)
-      loadCSV(text);
-    }
-    
-    // Reset period selection when new CSV is loaded
-    setStartDate(null);
-    setEndDate(null);
-  };
-
-  /**
-   * Handle ProTime data import (PDF text or JSON) - async!
-   * Supports multiple imports - merges workdays instead of replacing
-   */
-  const handleProTimeLoad = async (text) => {
-    try {
-      const newWorkdayDates = parseProTime(text);
-      
-      if (!newWorkdayDates || newWorkdayDates.size === 0) {
-        console.error('No workdays found in ProTime data');
-        return;
-      }
-
-      // ✅ MERGE with existing workdays instead of replacing!
-      const workdaySet = new Set([
-        ...(workdays || []),    // Existing workdays (if any)
-        ...newWorkdayDates      // New workdays from this import
-      ]);
-      
-      debug.log(`[ProTime] Imported ${newWorkdayDates.size} new workdays, total now: ${workdaySet.size}`);
-      
-      loadWorkdays(workdaySet);
-      
-      // V3 mode: Save to master dataset settings
-      if (useV3Mode) {
-        try {
-          const { saveProTimeData } = await import('../storage/masterDatasetStorage');
-          await saveProTimeData(workdaySet);
-        } catch (err) {
-          console.error('[ProTime] Failed to save to V3:', err);
-        }
-      }
-      // V2 mode: Save to active upload
-      else if (activeUploadId) {
-        try {
-          await updateProTimeData(activeUploadId, workdaySet);
-        } catch (err) {
-          console.error('[ProTime] Failed to save to V2 upload:', err);
-        }
-      }
-      
-    } catch (err) {
-      console.error('ProTime parsing failed:', err);
-    }
-  };
-
-  /**
-   * Handle ProTime data deletion - async!
-   */
-  const handleProTimeDelete = async () => {
-    try {
-      // Clear workdays from state
-      clearWorkdays();
-      
-      // V3 mode: Delete from master dataset settings
-      if (useV3Mode) {
-        try {
-          const { deleteProTimeData } = await import('../storage/masterDatasetStorage');
-          await deleteProTimeData();
-        } catch (err) {
-          console.error('[ProTime] Failed to delete from V3:', err);
-          throw err;
-        }
-      }
-      // V2 mode: Clear from active upload
-      else if (activeUploadId) {
-        try {
-          await updateProTimeData(activeUploadId, null);
-        } catch (err) {
-          console.error('[ProTime] Failed to delete from V2 upload:', err);
-          throw err;
-        }
-      }
-      
-    } catch (err) {
-      console.error('ProTime deletion failed:', err);
-      throw err; // Re-throw so modal can show error
-    }
-  };
-
-  /**
-   * Handle batch assignment confirmation
-   */
-  const handleBatchAssignmentConfirm = async (assignments) => {
-    try {
-      // NEW: Check if this is part of a two-phase upload
-      if (pendingUpload) {
-        debug.log('[Batch Assignment] Completing two-phase upload with assignments');
-        const { completeCSVUploadWithAssignments } = await import('../storage/masterDatasetStorage');
-        
-        await completeCSVUploadWithAssignments(
-          pendingUpload.detectedEvents,
-          assignments
-        );
-        
-        setPendingUpload(null); // Clear pending state
-        masterDataset.refresh(); // Refresh UI with new sensors
-        
-        debug.log(`[Batch Assignment] Upload complete: ${assignments.length} sensors assigned`);
-        
-        // Show success toast
-        showToast(`✅ CSV geüpload! ${assignments.length} sensors toegewezen`, 3000);
-      } else {
-        // OLD: Legacy path for manual assignments (post-upload)
-        const { assignSensorToBatch } = await import('../storage/stockStorage');
-        
-        for (const { sensorId, batchId } of assignments) {
-          await assignSensorToBatch(sensorId, batchId, 'auto');
-        }
-        
-        debug.log(`[Batch Assignment] Assigned ${assignments.length} sensors`);
-      }
-      
-      setBatchAssignmentDialog({ open: false, suggestions: [] });
-      
-    } catch (err) {
-      console.error('[Batch Assignment] Failed:', err);
-      alert(`Fout bij toewijzen: ${err.message}`);
-    }
-  };
-
-  /**
-   * Handle batch assignment cancellation
-   */
-  const handleBatchAssignmentCancel = () => {
-    // If canceling during two-phase upload, still need to complete storage
-    if (pendingUpload) {
-      debug.log('[Batch Assignment] User canceled, storing sensors without assignments');
-      
-      // Complete upload without assignments (async but don't await - fire and forget)
-      (async () => {
-        try {
-          const { completeCSVUploadWithAssignments } = await import('../storage/masterDatasetStorage');
-          await completeCSVUploadWithAssignments(pendingUpload.detectedEvents, []); // Empty assignments
-          setPendingUpload(null);
-          masterDataset.refresh();
-        } catch (err) {
-          console.error('[Batch Assignment] Failed to complete upload after cancel:', err);
-        }
-      })();
-    }
-    
-    setBatchAssignmentDialog({ open: false, suggestions: [] });
-  };
+  // ============================================
+  // EVENT HANDLERS: From useDataManagement hook
+  // ============================================
+  
+  const {
+    handleCSVLoad,
+    handleProTimeLoad,
+    handleProTimeDelete,
+    handleBatchAssignmentConfirm,
+    handleBatchAssignmentCancel,
+    handleDataManagementDelete,
+    handleExportHTML,
+    handleExportDayProfiles,
+    handleExportDatabase,
+    handleDatabaseImport,
+    handleImportConfirm,
+    handleSaveUpload,
+    handleDateRangeChange,
+  } = dataManagement;
 
   // ============================================
-  // EVENT HANDLERS: Period Selection
+  // EVENT HANDLERS: Local utilities (not in hook)
   // ============================================
 
   /**
-   * Handle period selection change
+   * Handle panel navigation changes
    */
-  const handlePeriodChange = (newStartDate, newEndDate) => {
-    setStartDate(newStartDate);
-    setEndDate(newEndDate);
+  const handlePanelChange = (panelId) => {
+    navigation.setActivePanel(panelId);
   };
 
   /**
@@ -540,265 +377,6 @@ function AGPGeneratorContent() {
     setDayNightEnabled(!dayNightEnabled);
   };
 
-  /**
-   * Handle HTML export (async to track export history)
-   */
-  const handleExportHTML = async () => {
-    if (!metricsResult || !startDate || !endDate) return;
-    
-    // Format dates to YYYY/MM/DD
-    const formatDate = (date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}/${month}/${day}`;
-    };
-    
-    try {
-      const result = await downloadHTML({
-        metrics: metricsResult.metrics,
-        agpData: metricsResult.agp,
-        events: metricsResult.events,
-        tddData: tddData, // Add TDD statistics
-        startDate: formatDate(startDate),
-        endDate: formatDate(endDate),
-        // ALWAYS include day/night metrics in export (independent of UI toggle)
-        dayNightMetrics: {
-          day: metricsResult.dayMetrics,
-          night: metricsResult.nightMetrics
-        },
-        workdaySplit: workdays && metricsResult.workdayMetrics && metricsResult.restdayMetrics ? {
-          workday: metricsResult.workdayMetrics,
-          restday: metricsResult.restdayMetrics,
-          workdayCount: metricsResult.workdayMetrics.days,
-          restdayCount: metricsResult.restdayMetrics.days
-        } : null,
-        comparison: comparisonData ? {
-          current: metricsResult.metrics,
-          previous: comparisonData.comparison,
-          comparisonAGP: comparisonData.comparisonAGP,
-          prevStart: formatDate(new Date(comparisonData.prevStart)),
-          prevEnd: formatDate(new Date(comparisonData.prevEnd))
-        } : null,
-        patientInfo: patientInfo // Add patient info to export
-      });
-      
-      if (result.success) {
-        debug.log(`[AGPGenerator] AGP HTML exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
-      }
-    } catch (error) {
-      console.error('[AGPGenerator] Error exporting AGP HTML:', error);
-      alert('Export failed. Check console for details.');
-    }
-  };
-
-  // ============================================
-  // EVENT HANDLERS: Upload Storage
-  // ============================================
-
-  /**
-   * Save current upload to storage (async!)
-   */
-  const handleSaveUpload = async () => {
-    if (!csvData || !dateRange) {
-      alert('No data to save. Load CSV first.');
-      return;
-    }
-
-    try {
-      await saveUpload({
-        csvData,
-        dateRange,
-        proTimeData: workdays
-      });
-      alert('✅ Upload saved successfully!');
-    } catch (err) {
-      alert(`Failed to save: ${err.message}`);
-    }
-  };
-
-  /**
-   * Handle data management deletion
-   * Deletes selected data types within specified date range
-   * Refreshes V3 dataset and workdays after deletion
-   */
-  const handleDataManagementDelete = async (deleteConfig) => {
-    debug.log('[AGPGenerator] 🗑️ DELETE FUNCTION CALLED!', deleteConfig);
-    
-    const { dateRange, deleteTypes } = deleteConfig;
-    
-
-    try {
-      let deletedCounts = {
-        glucose: 0,
-        proTime: 0,
-        cartridge: 0
-      };
-      
-      // Delete glucose readings
-      if (deleteTypes.glucose) {
-        const { deleteGlucoseDataInRange } = await import('../storage/masterDatasetStorage');
-        deletedCounts.glucose = await deleteGlucoseDataInRange(dateRange.start, dateRange.end);
-      }
-      
-      // Delete ProTime workdays
-      if (deleteTypes.proTime) {
-        const { deleteProTimeDataInRange } = await import('../storage/masterDatasetStorage');
-        deletedCounts.proTime = await deleteProTimeDataInRange(dateRange.start, dateRange.end);
-        
-        // Reload workdays state from storage
-        const { loadProTimeData } = await import('../storage/masterDatasetStorage');
-        const newWorkdays = await loadProTimeData();
-        loadWorkdays(newWorkdays || new Set());
-      }
-      
-      // Delete cartridge events
-      if (deleteTypes.cartridge) {
-        const { deleteCartridgeChangesInRange } = await import('../storage/cartridgeStorage');
-        deletedCounts.cartridge = await deleteCartridgeChangesInRange(dateRange.start, dateRange.end);
-      }
-      
-      // Force reload V3 data to update UI
-      masterDataset.refresh();
-      
-      return deletedCounts;
-      
-    } catch (err) {
-      debug.error('[DataManagement] ❌ Delete failed:', err);
-      throw err;
-    }
-  };
-
-  /**
-   * Handle database import from JSON file
-   * Opens file picker, validates file, shows confirmation modal
-   * Now uses useImportExport hook
-   */
-  const handleDatabaseImport = async () => {
-    // Create file input
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      try {
-        // Open modal and start validation
-        modals.setDataImportModalOpen(true);
-        
-        // Validate file using hook
-        await importExport.validateFile(file);
-        
-      } catch (err) {
-        console.error('Validation failed:', err);
-      }
-    };
-    
-    input.click();
-  };
-
-  /**
-   * Confirm and execute import after validation
-   * Now uses useImportExport hook
-   */
-  const handleImportConfirm = async () => {
-    if (!importExport.pendingImportFile) return;
-    
-    try {
-      // Close modal
-      modals.setDataImportModalOpen(false);
-      
-      // Execute import using hook
-      const result = await importExport.executeImport();
-      
-      if (result.success) {
-        // Show success toast
-        const stats = result.stats;
-        const totalRecords = stats.readingsImported + stats.sensorsImported + 
-                            stats.cartridgesImported + stats.workdaysImported +
-                            stats.stockBatchesImported + stats.stockAssignmentsImported;
-        showToast(`✅ Import geslaagd! ${totalRecords} records toegevoegd`, 4000);
-        
-        // Show detailed stats in console
-        const strategyText = importExport.importMergeStrategy === 'replace' 
-          ? '🔄 Strategy: Replace (cleared existing data)' 
-          : '➕ Strategy: Append (added to existing data)';
-        const backupText = importExport.lastBackupFile 
-          ? `\n💾 Backup: ${importExport.lastBackupFile.filename}` 
-          : '';
-        debug.log(
-          `✅ Import Complete!\n\n` +
-          `${strategyText}${backupText}\n\n` +
-          `📊 Months: ${stats.monthsImported}\n` +
-          `📈 Readings: ${stats.readingsImported}\n` +
-          `📍 Sensors: ${stats.sensorsImported}\n` +
-          `💉 Cartridges: ${stats.cartridgesImported}\n` +
-          (stats.workdaysImported > 0 ? `📅 Workdays: ${stats.workdaysImported}\n` : '') +
-          (stats.patientInfoImported ? `👤 Patient Info: Yes\n` : '') +
-          (stats.stockBatchesImported > 0 ? `📦 Batches: ${stats.stockBatchesImported}\n` : '') +
-          (stats.stockAssignmentsImported > 0 ? `🔗 Assignments: ${stats.stockAssignmentsImported}\n` : '') +
-          `\n⏱️ Duration: ${(result.duration / 1000).toFixed(1)}s`
-        );
-        
-        // Track import in history
-        const { addImportEvent } = await import('../storage/importHistory');
-        
-        addImportEvent({
-          filename: importExport.pendingImportFile?.name || 'unknown',
-          recordCount: totalRecords,
-          duration: result.duration,
-          strategy: importExport.importMergeStrategy,
-          stats: stats
-        });
-        debug.log('[AGPGenerator] Import event tracked in history');
-        
-        // Refresh data
-        masterDataset.refresh();
-        
-        // Reload workdays if imported
-        if (stats.workdaysImported > 0) {
-          const { loadProTimeData } = await import('../storage/masterDatasetStorage');
-          const newWorkdays = await loadProTimeData();
-          loadWorkdays(newWorkdays || new Set());
-        }
-        
-        // Reload patient info if imported
-        if (stats.patientInfoImported) {
-          const { patientStorage } = await import('../utils/patientStorage');
-          const info = await patientStorage.get();
-          setPatientInfo(info);
-        }
-        
-      } else {
-        // Show error
-        const errorMsg = result.errors?.join('\n') || 'Unknown error';
-        alert(`❌ Import Failed:\n\n${errorMsg}`);
-      }
-      
-    } catch (err) {
-      console.error('Import failed:', err);
-      
-      // If we created a backup, offer to restore it
-      if (importExport.lastBackupFile) {
-        const errorMessage = 
-          `❌ Import Failed\n\n` +
-          `Error: ${err.message}\n\n` +
-          `🔄 A backup was created before import:\n` +
-          `${importExport.lastBackupFile.filename}\n\n` +
-          `The backup file should be in your Downloads folder.\n` +
-          `You can restore it by:\n` +
-          `1. Close this message\n` +
-          `2. Click EXPORT → Import Database\n` +
-          `3. Select the backup file`;
-        
-        alert(errorMessage);
-      } else {
-        alert(`❌ Import Failed:\n\n${err.message}`);
-      }
-    }
-  };
 
   // ============================================
   // RENDER: Main UI
@@ -867,29 +445,8 @@ function AGPGeneratorContent() {
           {navigation.activePanel === 'export' && (
             <ExportPanel
               onExportHTML={handleExportHTML}
-              onExportDayProfiles={async () => {
-                if (dayProfiles && dayProfiles.length > 0) {
-                  try {
-                    const result = await downloadDayProfilesHTML(dayProfiles, patientInfo);
-                    if (result.success) {
-                      debug.log(`[AGPGenerator] Day Profiles exported: ${result.filename} (${(result.fileSize / 1024).toFixed(1)} KB)`);
-                    }
-                  } catch (error) {
-                    console.error('[AGPGenerator] Error exporting day profiles:', error);
-                    alert('Export failed. Check console for details.');
-                  }
-                } else {
-                  alert('No day profiles available');
-                }
-              }}
-              onExportDatabase={async () => {
-                const result = await importExport.handleExport();
-                if (result.success) {
-                  alert(`✅ Exported ${result.recordCount} readings to ${result.filename}`);
-                } else {
-                  alert(`❌ Export failed: ${result.error}`);
-                }
-              }}
+              onExportDayProfiles={handleExportDayProfiles}
+              onExportDatabase={handleExportDatabase}
               onImportDatabase={handleDatabaseImport}
               dayProfiles={dayProfiles}
               patientInfo={patientInfo}

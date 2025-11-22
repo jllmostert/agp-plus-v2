@@ -1,17 +1,45 @@
 # AGP+ Development Progress
 
-## Session 2025-11-22 (3) - Code Health & Refactoring
+## Session 2025-11-22 (4) - Code Health & Refactoring (Continued)
 
 ### Overall Status
 - [x] Fase 1: Architectural Scan ✅ DONE
 - [x] Fase 2: Quick Wins ✅ DONE
-- [ ] Fase 3: AGPGenerator Handler Extraction ← NEXT (optional)
+- [x] Fase 2b: Handler Extraction ✅ DONE
+- [ ] Fase 3: Further AGPGenerator cleanup (optional, to reach <400 lines)
 - [ ] Fase 4: sensorStorage Refactor (optional)
 - [ ] Fase 5: metrics-engine Refactor (optional)
 
 ---
 
-### Fase 2: Quick Wins ✅ COMPLETE
+### Fase 2b: Handler Extraction ✅ COMPLETE
+
+**Goal**: Extract event handlers from AGPGenerator to custom hook
+
+**Results:**
+| Bestand | Voor | Na | Verandering |
+|---------|------|-----|-------------|
+| AGPGenerator.jsx | 1144 | **701** | **-443 lijnen (-39%)** |
+| useDataManagement.js | 0 | **522** | nieuw bestand |
+
+**New File Created:**
+- `src/hooks/useDataManagement.js` (522 lines) - All data management handlers
+
+**Handlers Extracted:**
+- `handleCSVLoad` - CSV file upload
+- `handleProTimeLoad` / `handleProTimeDelete` - ProTime workday management
+- `handleBatchAssignmentConfirm` / `handleBatchAssignmentCancel` - Batch workflow
+- `handleDataManagementDelete` - Data deletion
+- `handleExportHTML` / `handleExportDayProfiles` / `handleExportDatabase` - Export
+- `handleDatabaseImport` / `handleImportConfirm` - Import
+- `handleSaveUpload` - V2 storage
+- `handleDateRangeChange` - Date range filter
+
+**Build Status:** ✅ Passing
+
+---
+
+### Fase 2: Quick Wins (Previous Session) ✅ COMPLETE
 
 **Goal**: Extract header/footer from AGPGenerator.jsx
 
