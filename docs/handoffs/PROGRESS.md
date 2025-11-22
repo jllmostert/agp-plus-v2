@@ -1,5 +1,34 @@
 # AGP+ Development Progress
 
+## Session 2025-11-22 (3) - Code Health & Refactoring
+
+### Overall Status
+- [x] Fase 1: Architectural Scan ✅ DONE
+- [ ] Fase 2: Quick Wins ← NEXT
+- [ ] Fase 3: AGPGenerator Refactor
+- [ ] Fase 4: sensorStorage Refactor (optional)
+- [ ] Fase 5: metrics-engine Refactor (optional)
+
+---
+
+### Fase 1: Architectural Scan ✅ COMPLETE
+
+**Output:** `docs/handoffs/AGP_REFAC_NOTES.md`
+
+**Files Analyzed:**
+| File | Lines | Spaghetti | Verdict |
+|------|-------|-----------|---------|
+| AGPGenerator.jsx | 1558 | 3/5 | Needs header/footer extraction + handler hook |
+| metrics-engine.js | 701 | 2/5 | Clean, optional split only |
+| sensorStorage.js | 494 | 2/5 | Minor cleanup only |
+
+**Key Findings:**
+- AGPGenerator has ~280 lines of inline header JSX
+- metrics-engine.js is well-organized, leave as-is
+- sensorStorage.js has dead `batches` references
+
+---
+
 ## Session 2025-11-22 (2) - Storage Layer Cleanup
 
 ### Overall Status
