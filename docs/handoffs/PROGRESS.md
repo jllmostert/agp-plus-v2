@@ -36,7 +36,30 @@
 - Recovery options prevent panic
 - Error logging provides audit trail
 
-### Next: Fase 2 (csvUploadEngine.js extraction)
+---
+
+## Session 2025-11-22 (9b) - Fase 2: CSV Upload Engine Cleanup
+
+### Discovery
+Fase 2 was partially done in a previous session:
+- csvUploadEngine.js existed locally (573 lines) but wasn't committed
+- masterDatasetStorage.js had re-exports BUT still contained the old code
+- Result: **Build was broken** (orphaned function bodies = invalid JS)
+
+### Fix Applied
+- Removed ~550 lines of dead code from masterDatasetStorage.js
+- Properly committed csvUploadEngine.js
+
+### Results
+| File | Before | After | Change |
+|------|--------|-------|--------|
+| masterDatasetStorage.js | 902 | 354 | **-548 lines (-61%)** |
+| csvUploadEngine.js | (uncommitted) | 573 | Now in git |
+
+### Build: ✅ PASSING
+### Committed: `3200d94`
+
+### Next: Fase 3 (SensorHistoryPanel split)
 See SESSION_HANDOFF_ARCHITECTURE.md
 
 ---
