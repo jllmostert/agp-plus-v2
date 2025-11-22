@@ -24,22 +24,19 @@ export async function exportMasterDataset() {
     const sensors = await getAllSensors(); // FIXED: getAllSensors is now async!
     const cartridges = await getCartridgeHistory();
     
-    // Fetch ProTime workday data from V3 storage (IndexedDB)
+    // Fetch ProTime workday data from IndexedDB
     let workdays = [];
     try {
       const { loadProTimeData } = await import('./masterDatasetStorage');
       const workdaySet = await loadProTimeData();
       workdays = workdaySet ? Array.from(workdaySet) : [];
     } catch (err) {
-      console.warn('[export] Failed to load ProTime from IndexedDB, trying localStorage fallback:', err);
-      // Fallback to localStorage for V2 compatibility
-      const workdaysRaw = localStorage.getItem('workday-dates');
-      workdays = workdaysRaw ? JSON.parse(workdaysRaw) : [];
+      console.warn('[export] Failed to load ProTime data:', err);
     }
     
-    // Fetch patient info from localStorage
-    const patientInfoRaw = localStorage.getItem('patient-info');
-    const patientInfo = patientInfoRaw ? JSON.parse(patientInfoRaw) : null;
+    // Fetch patient info from IndexedDB (via patientStorage)
+    const { patientStorage } = await import('../utils/patientStorage.js');
+    const patientInfo = await patientStorage.get();
     
     // Fetch stock batches and assignments
     const stockBatches = getAllBatches();

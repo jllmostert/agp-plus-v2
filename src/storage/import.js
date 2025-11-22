@@ -132,7 +132,7 @@ export async function importMasterDataset(file, onProgress = null) {
         try {
           // Convert back to function parameters
           const timestamp = new Date(cartridge.timestamp);
-          await storeCartridgeChange(
+          await addCartridgeChange(
             timestamp, 
             cartridge.alarmText || 'Rewind',
             cartridge.sourceFile || 'imported-data.json'
@@ -150,7 +150,7 @@ export async function importMasterDataset(file, onProgress = null) {
     }
     reportProgress(2, 'cartridges');
     
-    // Step 7: Import ProTime workdays to V3 storage (IndexedDB)
+    // Step 7: Import ProTime workdays to IndexedDB
     debug.log('[importMasterDataset] Importing workdays...');
     if (data.workdays && Array.isArray(data.workdays)) {
       try {
@@ -159,9 +159,7 @@ export async function importMasterDataset(file, onProgress = null) {
         await saveProTimeData(workdaySet);
         stats.workdaysImported = data.workdays.length;
         debug.log(`[importMasterDataset] Imported ${stats.workdaysImported} workdays to IndexedDB`);
-        
-        // Also save to localStorage for V2 compatibility
-        localStorage.setItem('workday-dates', JSON.stringify(data.workdays));
+        // V2 localStorage compatibility removed in v4.5.0
       } catch (err) {
         errors.push(`Failed to import workdays: ${err.message}`);
         console.error('[importMasterDataset] Workdays import error:', err);
@@ -169,13 +167,14 @@ export async function importMasterDataset(file, onProgress = null) {
     }
     reportProgress(3, 'workdays');
     
-    // Step 8: Import patient info to localStorage
+    // Step 8: Import patient info to IndexedDB (via patientStorage)
     debug.log('[importMasterDataset] Importing patient info...');
     if (data.patientInfo) {
       try {
-        localStorage.setItem('patient-info', JSON.stringify(data.patientInfo));
+        const { patientStorage } = await import('../utils/patientStorage.js');
+        await patientStorage.save(data.patientInfo);
         stats.patientInfoImported = true;
-        debug.log('[importMasterDataset] Patient info imported');
+        debug.log('[importMasterDataset] Patient info imported to IndexedDB');
       } catch (err) {
         errors.push(`Failed to import patient info: ${err.message}`);
         console.error('[importMasterDataset] Patient info import error:', err);

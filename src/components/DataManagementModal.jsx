@@ -443,10 +443,11 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
                     debug.log('[DataManagementModal] Stock cleared:', batches.length, 'batches');
                   }
                   
-                  // Delete patient info if selected
+                  // Delete patient info if selected (via IndexedDB patientStorage)
                   if (allInPatient) {
-                    localStorage.removeItem('agp-patient-info');
-                    debug.log('[DataManagementModal] Patient info cleared');
+                    const { patientStorage } = await import('../utils/patientStorage.js');
+                    await patientStorage.clear();
+                    debug.log('[DataManagementModal] Patient info cleared from IndexedDB');
                   }
                   
                   const summary = [

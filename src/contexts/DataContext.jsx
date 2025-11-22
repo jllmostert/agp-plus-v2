@@ -83,6 +83,58 @@ export function DataProvider({ children }) {
     runMigration();
   }, []); // Run once on mount
   
+  // One-time migration: patient info from localStorage to IndexedDB (v4.5.0)
+  // TODO: Remove after v4.6 when all users have migrated
+  useEffect(() => {
+    const migratePatientInfo = async () => {
+      try {
+        const oldData = localStorage.getItem('patient-info');
+        if (!oldData) return;
+        
+        const { patientStorage } = await import('../utils/patientStorage.js');
+        const existing = await patientStorage.get();
+        
+        // Only migrate if IndexedDB is empty
+        if (!existing || !existing.name) {
+          const parsed = JSON.parse(oldData);
+          await patientStorage.save(parsed);
+          console.log('[DataContext] Migrated patient info from localStorage to IndexedDB');
+        }
+        
+        localStorage.removeItem('patient-info');
+      } catch (err) {
+        console.error('[DataContext] Patient info migration failed:', err);
+      }
+    };
+    migratePatientInfo();
+  }, []); // Run once on mount
+  
+  // One-time migration: workdays from localStorage to IndexedDB (v4.5.0)
+  // TODO: Remove after v4.6 when all users have migrated
+  useEffect(() => {
+    const migrateWorkdays = async () => {
+      try {
+        const oldData = localStorage.getItem('workday-dates');
+        if (!oldData) return;
+        
+        const { loadProTimeData, saveProTimeData } = await import('../storage/masterDatasetStorage.js');
+        const existing = await loadProTimeData();
+        
+        // Only migrate if IndexedDB is empty
+        if (!existing || existing.size === 0) {
+          const parsed = JSON.parse(oldData);
+          await saveProTimeData(new Set(parsed));
+          console.log('[DataContext] Migrated workdays from localStorage to IndexedDB');
+        }
+        
+        localStorage.removeItem('workday-dates');
+      } catch (err) {
+        console.error('[DataContext] Workdays migration failed:', err);
+      }
+    };
+    migrateWorkdays();
+  }, []); // Run once on mount
+  
   // ============================================
   // COMPUTED: Active Data Source
   // ============================================
