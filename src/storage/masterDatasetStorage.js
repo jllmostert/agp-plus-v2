@@ -473,12 +473,12 @@ async function findBatchSuggestionsForSensors(detectedEvents) {
  * @param {Array} detectedEvents.cartridgeEvents - Cartridge change events
  */
 async function storeSensors(detectedEvents) {
-  const { storeCartridgeChange } = await import('./eventStorage.js');
+  const { addCartridgeChange } = await import('./cartridgeStorage.js');
   
   // Store cartridge changes
   for (const event of detectedEvents.cartridgeEvents) {
     try {
-      await storeCartridgeChange(event.timestamp, 'Rewind', 'CSV Upload');
+      await addCartridgeChange(event.timestamp, 'Rewind', 'CSV Upload');
     } catch (err) {
       if (!err.message.includes('duplicate')) {
         console.warn('[storeSensors] Failed to store cartridge event:', err);
@@ -502,10 +502,10 @@ async function detectAndStoreEvents(readings) {
  * Called on page load if no events exist in localStorage
  */
 export async function initEventsFromMasterDataset() {
-  const { hasEvents } = await import('./eventStorage.js');
+  const { hasCartridgeChanges } = await import('./cartridgeStorage.js');
   
   // Check if events already exist
-  if (hasEvents()) {
+  if (await hasCartridgeChanges()) {
     return;
   }
   
@@ -986,9 +986,9 @@ export async function cleanupRecords(options) {
       await tx.objectStore(STORES.READING_BUCKETS).clear();
       await tx.done;
       
-      // Clear cartridge events from localStorage
-      const { clearEvents } = await import('./eventStorage.js');
-      clearEvents();
+      // Clear cartridge events from IndexedDB
+      const { clearCartridgeChanges } = await import('./cartridgeStorage.js');
+      await clearCartridgeChanges();
       
       // ProTime data is in localStorage, handle separately
       await deleteProTimeData();

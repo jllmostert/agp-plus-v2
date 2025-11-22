@@ -653,7 +653,7 @@ function AGPGeneratorContent() {
       
       // Delete cartridge events
       if (deleteTypes.cartridge) {
-        const { deleteCartridgeChangesInRange } = await import('../storage/eventStorage');
+        const { deleteCartridgeChangesInRange } = await import('../storage/cartridgeStorage');
         deletedCounts.cartridge = await deleteCartridgeChangesInRange(dateRange.start, dateRange.end);
       }
       

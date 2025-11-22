@@ -7,7 +7,7 @@
 
 import { getAllMonthBuckets } from './masterDatasetStorage';
 import { getAllSensors } from './sensorStorage';
-import { getCartridgeHistory } from './eventStorage';
+import { getCartridgeHistory } from './cartridgeStorage';
 import { getAllBatches, getAllAssignments } from './stockStorage';
 import { getPumpSettings, getDeviceHistory } from './pumpSettingsStorage';
 import { APP_VERSION, APP_FULL_NAME } from '../utils/version';

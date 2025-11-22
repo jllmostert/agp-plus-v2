@@ -35,18 +35,18 @@
 **Handoff:** `docs/handoffs/SESSION_HANDOFF_CARTRIDGE_MIGRATION.md`
 
 **Stappen:**
-- [ ] Stap 0: Rollback tag created
-- [ ] Stap 1: cartridgeStorage.js created
-- [ ] Stap 2: cleanup-engine.js updated
-- [ ] Stap 3: day-profile-engine.js updated
-- [ ] Stap 4: Storage files updated (export, import, masterDataset)
-- [ ] Stap 5: Components updated (AGPGenerator, DataManagement)
-- [ ] Stap 6: Migration hook added
-- [ ] Stap 7: eventStorage.js deleted, build passing
-- [ ] Stap 8: Committed & pushed
+- [x] Stap 0: Rollback tag created (v4.4.0-pre-cartridge-migration)
+- [x] Stap 1: cartridgeStorage.js created (208 lines, IndexedDB backend)
+- [x] Stap 2: cleanup-engine.js updated (async conversion)
+- [x] Stap 3: day-profile-engine.js updated (async functions)
+- [x] Stap 4: Storage files updated (export, import, masterDataset)
+- [x] Stap 5: Components updated (AGPGenerator, DataManagement)
+- [x] Stap 6: Migration hook added (DataContext.jsx)
+- [x] Stap 7: eventStorage.js deleted, build passing ✅
+- [x] Stap 8: Committed & pushed
 
 **Issues:**
-(none yet)
+(none)
 
 ---
 

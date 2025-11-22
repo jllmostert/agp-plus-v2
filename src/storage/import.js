@@ -7,7 +7,7 @@
 import { debug } from '../utils/debug.js';
 import { appendReadingsToMaster } from './masterDatasetStorage';
 import { addSensor } from './sensorStorage';
-import { storeCartridgeChange } from './eventStorage';
+import { addCartridgeChange } from './cartridgeStorage';
 import { addBatch, assignSensorToBatch } from './stockStorage';
 import { savePumpSettings, importDeviceData } from './pumpSettingsStorage';
 

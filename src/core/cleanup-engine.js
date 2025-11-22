@@ -24,7 +24,7 @@ import {
   deleteRecord
 } from '../storage/db.js';
 import { invalidateCache } from '../storage/masterDatasetStorage.js';
-import { getAllEvents, storeEvents } from '../storage/eventStorage.js';
+import { getAllCartridgeChanges, saveAllCartridgeChanges } from '../storage/cartridgeStorage.js';
 
 /**
  * Parse date to midnight (start of day)
@@ -107,12 +107,12 @@ export async function calculateAffectedData(startDate, endDate) {
     }
   }
   
-  // Count cartridge events in range
-  const events = getAllEvents();
+  // Count cartridge events in range (now async)
+  const cartridgeChanges = await getAllCartridgeChanges();
   let cartridgeCount = 0;
   
-  if (events && events.cartridgeChanges) {
-    cartridgeCount = events.cartridgeChanges.filter(e => {
+  if (cartridgeChanges && cartridgeChanges.length > 0) {
+    cartridgeCount = cartridgeChanges.filter(e => {
       const eventDate = new Date(e.timestamp);
       return eventDate >= start && eventDate <= end;
     }).length;
@@ -196,30 +196,30 @@ async function deleteGlucoseReadings(startDate, endDate) {
  * 
  * @param {Date} startDate 
  * @param {Date} endDate 
- * @returns {number} Count of deleted events
+ * @returns {Promise<number>} Count of deleted events
  */
-function deleteCartridgeEvents(startDate, endDate) {
+async function deleteCartridgeEvents(startDate, endDate) {
   const start = toMidnight(startDate);
   const end = toEndOfDay(endDate);
   
-  const events = getAllEvents();
+  const cartridgeChanges = await getAllCartridgeChanges();
   
-  if (!events || !events.cartridgeChanges) {
+  if (!cartridgeChanges || cartridgeChanges.length === 0) {
     return 0;
   }
   
-  const originalCount = events.cartridgeChanges.length;
+  const originalCount = cartridgeChanges.length;
   
-  // Filter OUT cartridge events within date range
-  events.cartridgeChanges = events.cartridgeChanges.filter(e => {
+  // Filter OUT cartridge events within date range (keep everything else)
+  const filtered = cartridgeChanges.filter(e => {
     const eventDate = new Date(e.timestamp);
     return eventDate < start || eventDate > end;
   });
   
-  const deletedCount = originalCount - events.cartridgeChanges.length;
+  const deletedCount = originalCount - filtered.length;
   
   // Save updated events
-  storeEvents(events);
+  await saveAllCartridgeChanges(filtered);
   
   return deletedCount;
 }
@@ -250,9 +250,9 @@ export async function executeCleanup(startDate, endDate, options = {}) {
     summary.readingsDeleted = readingResult.deletedCount;
     summary.errors.push(...readingResult.errors);
     
-    // 2. Optionally delete cartridge events
+    // 2. Optionally delete cartridge events (now async)
     if (includeCartridges) {
-      summary.cartridgesDeleted = deleteCartridgeEvents(startDate, endDate);
+      summary.cartridgesDeleted = await deleteCartridgeEvents(startDate, endDate);
     }
     
     // 3. Invalidate cache (will rebuild on next access)

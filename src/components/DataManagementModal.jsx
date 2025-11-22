@@ -83,7 +83,7 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
     if (deleteCartridge) {
       // Load cartridge events from IndexedDB
       try {
-        const { getCartridgeHistory } = await import('../storage/eventStorage');
+        const { getCartridgeHistory } = await import('../storage/cartridgeStorage');
         const cartridges = await getCartridgeHistory();
         counts.cartridgeCount = cartridges ? cartridges.length : 0;
       } catch (err) {

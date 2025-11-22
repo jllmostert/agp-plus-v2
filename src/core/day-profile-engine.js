@@ -11,7 +11,7 @@
  */
 
 import { CONFIG, utils, calculateMetrics, detectEvents } from './metrics-engine.js';
-import { getEventsForDate } from '../storage/eventStorage.js';
+import { getCartridgeChangesForDate } from '../storage/cartridgeStorage.js';
 
 /**
  * Get the last N days from the dataset
@@ -24,7 +24,7 @@ import { getEventsForDate } from '../storage/eventStorage.js';
  * V3 Note: Now returns last N days regardless of completeness.
  * This allows day profiles to work with filtered datasets (e.g., "Last 14D" filter).
  */
-export function getLastSevenDays(data, csvCreatedDate, sensors = [], numDays = 7) {
+export async function getLastSevenDays(data, csvCreatedDate, sensors = [], numDays = 7) {
   if (!data || data.length === 0) return [];
   
   // Find all unique days in the dataset
@@ -40,10 +40,11 @@ export function getLastSevenDays(data, csvCreatedDate, sensors = [], numDays = 7
   
   if (sortedDates.length === 0) return [];
   
-  // Generate profile for each day (pass sensors)
-  const profiles = sortedDates.map(date => getDayProfile(data, date, sensors)).filter(p => p !== null);
+  // Generate profile for each day (pass sensors) - now async
+  const profilePromises = sortedDates.map(date => getDayProfile(data, date, sensors));
+  const profiles = await Promise.all(profilePromises);
   
-  return profiles;
+  return profiles.filter(p => p !== null);
 }
 
 /**
@@ -51,9 +52,9 @@ export function getLastSevenDays(data, csvCreatedDate, sensors = [], numDays = 7
  * @param {Array} data - Full glucose data array
  * @param {string} date - Date in YYYY/MM/DD format
  * @param {Array} sensors - Sensor array (pre-loaded) - optional
- * @returns {Object} Day profile with metrics, curve, events, badges
+ * @returns {Promise<Object|null>} Day profile with metrics, curve, events, badges
  */
-export function getDayProfile(data, date, sensors = []) {
+export async function getDayProfile(data, date, sensors = []) {
   // Filter data for this day
   const dayData = data.filter(row => row.date === date);
   
@@ -71,9 +72,9 @@ export function getDayProfile(data, date, sensors = []) {
   // Detect sensor changes (pass sensors and full dataset to detect cross-day gaps)
   const sensorChanges = detectSensorChanges(data, date, sensors);
   
-  // Get cartridge changes from stored events (v3.7 fix)
-  const storedEvents = getEventsForDate(date);
-  const cartridgeChanges = storedEvents.cartridgeChanges.map(event => ({
+  // Get cartridge changes from IndexedDB (v4.5 migration)
+  const storedCartridgeChanges = await getCartridgeChangesForDate(date);
+  const cartridgeChanges = storedCartridgeChanges.map(event => ({
     timestamp: new Date(event.timestamp),
     minuteOfDay: new Date(event.timestamp).getHours() * 60 + new Date(event.timestamp).getMinutes()
   }));

@@ -66,6 +66,23 @@ export function DataProvider({ children }) {
     loadTDD();
   }, [uploadStorage.activeUploadId]);
   
+  // One-time migration: cartridge events from localStorage to IndexedDB (v4.5.0)
+  // TODO: Remove after v4.6 when all users have migrated
+  useEffect(() => {
+    const runMigration = async () => {
+      try {
+        const { migrateFromLocalStorage } = await import('../storage/cartridgeStorage');
+        const result = await migrateFromLocalStorage();
+        if (result.migrated) {
+          console.log(`[DataContext] Migrated ${result.count} cartridge changes to IndexedDB`);
+        }
+      } catch (err) {
+        console.error('[DataContext] Cartridge migration failed:', err);
+      }
+    };
+    runMigration();
+  }, []); // Run once on mount
+  
   // ============================================
   // COMPUTED: Active Data Source
   // ============================================
