@@ -1,10 +1,10 @@
-# AGP+ Quick Handoff
+# AGP+ Session Handoff
 
-**v4.4.0** | **Path**: `/Users/jomostert/Documents/Projects/agp-plus` | **Status**: ✅ Production Ready
+**v4.4.0** | **Path**: `/Users/jomostert/Documents/Projects/agp-plus`
 
 ---
 
-## 🚀 START SERVER (30 SECONDS)
+## 🚀 START SERVER
 
 ```bash
 cd /Users/jomostert/Documents/Projects/agp-plus
@@ -16,101 +16,89 @@ Open: http://localhost:3001
 
 ---
 
-## 📊 ARCHITECTURE SUMMARY
-
-**Context API: Complete** (0 useState in AGPGenerator)
+## ⚠️ CRITICAL CONSTRAINTS
 
 ```
-State Management:
+1. UPDATE PROGRESS.md FREQUENTLY (every major step)
+2. TOKEN-ZUINIG: grep/head instead of full file reads
+3. CRASH PREVENTION: commit + push regularly
+4. BACKWARDS COMPATIBILITY: JSON database must always load correctly
+5. NEW SENSOR COMPLEXITY: Multi-column parsing active (don't break!)
+```
+
+**Multi-pump note**: Since Nov 2025, CSV parsing handles different column structures for old vs new pumps. This code is temporary (Jan 2026 cleanup planned) but CRITICAL - don't touch parsers.js without understanding the context.
+
+---
+
+## 📊 ARCHITECTURE (Clean!)
+
+**State Management** - Context API complete, 0 useState in AGPGenerator:
+```
 ├── DataContext      → Data loading, master dataset
-├── PeriodContext    → Date range selection
+├── PeriodContext    → Date range selection  
 ├── MetricsContext   → Calculated metrics, comparisons
-├── UIContext        → Patient info, workdays, toasts, dialogs
-└── Custom Hooks (6) → Modal, navigation, import/export
+├── UIContext        → Patient info, workdays, toasts
+└── Custom Hooks (6) → Modal, navigation, import/export, data management
 ```
 
 **Key Files**:
 ```
 src/
-├── components/
-│   ├── AGPGenerator.jsx           # Main orchestrator (1544 lines, 0 useState)
-│   └── panels/
-│       ├── PumpSettingsPanel.jsx  # MiniMed 780G settings UI
-│       └── SensorHistoryPanel.jsx # Sensor history + seasons management
-├── contexts/                      # DataContext, PeriodContext, MetricsContext, UIContext
-├── hooks/                         # useModalState, usePanelNavigation, useImportExport, useUI
+├── components/AGPGenerator.jsx    # Orchestrator (632 lines)
+├── contexts/                      # All state management
+├── hooks/useDataManagement.js     # Handlers (530 lines)
 ├── core/
-│   ├── parsers.js                 # CSV parsing (dynamic columns)
-│   ├── pumpSettingsParser.js      # Pump settings extraction from CSV
-│   ├── deviceEras.js              # Device seasons/eras (loads from IndexedDB)
-│   └── metrics-engine.js          # MAGE, MODD, GRI, TIR calculations
+│   ├── parsers.js                 # CSV parsing (DON'T TOUCH!)
+│   ├── deviceEras.js              # Seasons (IndexedDB-backed)
+│   └── metrics-engine.js          # MAGE, MODD, TIR etc
 ├── storage/
-│   ├── db.js                      # IndexedDB setup (v6: includes SEASONS store)
-│   ├── sensorStorage.js           # Async sensor CRUD (hard delete)
-│   ├── seasonStorage.js           # Device seasons CRUD (IndexedDB)
-│   ├── pumpSettingsStorage.js     # Pump settings + device history
-│   ├── patientStorage.js          # Patient info with lock support
-│   ├── export.js                  # Full database export
-│   └── import.js                  # Full database import
-└── styles/globals.css             # Brutalist color system (use CSS vars!)
+│   ├── db.js                      # IndexedDB (v6)
+│   ├── sensorStorage.js           # Clean V4 (IndexedDB only)
+│   ├── seasonStorage.js           # Device seasons
+│   └── pumpSettingsStorage.js     # Pump + device history
+└── styles/globals.css             # Use CSS vars only!
 ```
 
 ---
 
 ## ✅ WHAT WORKS
 
-- ✅ CSV import (Medtronic CareLink, multi-pump support)
-- ✅ AGP generation (14-day) with dynamic Y-axis
-- ✅ Metrics: TIR, TAR, TBR, CV, GMI, MAGE, MODD, GRI
-- ✅ Smart trend indicators (color-coded deltas)
-- ✅ **MiniMed 780G Settings UI** (auto-detect + manual edit)
-- ✅ **Device History** (archive old pumps/transmitters)
-- ✅ **Device Seasons** (track pump+transmitter combos, editable via UI)
-- ✅ **Patient Info** with lock (prevents CSV overwrite)
-- ✅ Sensor management (hard delete, no tombstones)
-- ✅ **Sensor History** with resizable stats/table splitter
-- ✅ Stock management (batch tracking)
-- ✅ Import/export JSON (backup/restore incl. pump settings)
-- ✅ ProTime PDF parsing
-- ✅ Day profiles (7/14 days toggle)
-- ✅ Print-ready reports
+- CSV import (Medtronic CareLink, multi-pump)
+- AGP generation (14-day) + metrics (TIR/TAR/TBR, CV, GMI, MAGE, MODD)
+- Device seasons (editable, IndexedDB)
+- Patient info with lock
+- Sensor management (hard delete)
+- Stock/batch tracking
+- Import/export JSON
+- Print-ready reports
 
 ---
 
-## 🔧 RECENT FIXES (v4.4.0)
+## 🔧 WORKFLOW
 
-- **Patient lock persistence**: Lock state survives CSV uploads
-- **Hard delete sensors**: Deleted sensors are completely removed (no more "deleted" labels)
-- **Device seasons**: Stored in IndexedDB, editable via UI
+```bash
+# After changes
+git add . && git commit -m "type(scope): message" && git push origin main
+
+# Build check
+npx vite build
+
+# Kill stuck server
+lsof -ti:3001 | xargs kill -9
+```
+
+**Git convention**: `feat|fix|refactor|docs|chore(component): description`
 
 ---
 
-## 🎯 REMAINING WORK (Optional)
+## 📚 REFERENCE DOCS
 
-| Task | Effort | Priority |
-|------|--------|----------|
-| Table virtualization (>50 sensors) | ~3h | Low |
-| WCAG AAA compliance | ~6h | Low |
-| Advanced period comparison | ~4h | Medium |
-
----
-
-## ⚠️ TEST AFTER CHANGES
-
-**Critical Flow** (5 min):
-1. Import CSV → Metrics calculate
-2. Navigate panels (Ctrl+1/2/3/4)
-3. Check trend indicators (↑↓ colors)
-4. Import JSON → Export JSON
-
-**If you touched**:
-- Storage → Test sensor add/delete/lock
-- Patient info → Test lock toggle + CSV upload
-- Contexts → Test state flows across components
-- Metrics → Run `npm test` (25 unit tests)
-- Charts → Check AGP/day profiles render
-- Pump settings → Test CSV auto-detect + manual edit
-
+| Doc | Location | Purpose |
+|-----|----------|---------|
+| Progress | `docs/handoffs/PROGRESS.md` | Session log - UPDATE THIS! |
+| Metrics | `metric_definitions.md` (project root) | Formula reference |
+| Pump ref | `minimed_780g_ref.md` (project root) | MiniMed 780G settings |
+| Tech debt | `TECH_DEBT.md` | Future cleanup items |
 
 ---
 
@@ -119,97 +107,34 @@ src/
 **Context Usage**:
 ```js
 import { useDataContext } from '../contexts/DataContext';
-import { usePeriodContext } from '../contexts/PeriodContext';
-import { useMetricsContext } from '../contexts/MetricsContext';
 import { useUI } from '../hooks/useUI';
-
-const { masterData, isLoading } = useDataContext();
-const { startDate, endDate, setStartDate } = usePeriodContext();
-const { metrics, comparison } = useMetricsContext();
-const { patientInfo, setPatientInfo } = useUI();
+const { masterData } = useDataContext();
+const { patientInfo } = useUI();
 ```
 
 **Storage** (ALL ASYNC!):
 ```js
+import { getAllSensors, addSensor } from '../storage/sensorStorage';
 const sensors = await getAllSensors();
-await addSensor(sensor);
-await deleteSensor(id);
 ```
 
-**Pump Settings**:
-```js
-import { getPumpSettings, savePumpSettings } from '../storage/pumpSettingsStorage';
-import { getDeviceHistory, archiveDevice } from '../storage/pumpSettingsStorage';
-
-const settings = getPumpSettings();  // Synchronous (localStorage)
-savePumpSettings(updatedSettings);
-archiveDevice(settings.device, null, 'Replaced for warranty');
-```
-
-**Styling** (CSS vars ONLY!):
+**Styling** (CSS vars ONLY):
 ```css
-background: var(--paper);    /* Never #FFFEF9 */
-color: var(--ink);           /* Never #0A0A0A */
+background: var(--paper);
+color: var(--ink);
 border: 3px solid var(--ink);
 ```
 
 ---
 
-## 🐛 COMMON ISSUES
+## 🎯 REMAINING OPTIONAL WORK
 
-**Server won't start**
-```bash
-lsof -ti:3001 | xargs kill -9
-npx vite --port 3002
-```
-
-**Import fails**
-→ Check console for `[useImportExport]` logs  
-→ Validate JSON structure
-
-**Metrics not updating**
-→ Check MetricsContext recalculation
-→ Verify PeriodContext date range
+| Task | Effort | Notes |
+|------|--------|-------|
+| Table virtualization | 3h | >50 sensors performance |
+| WCAG AAA compliance | 6h | Accessibility |
+| metrics-engine split | 2h | Optional organization |
 
 ---
 
-## 📚 KEY DOCUMENTATION
-
-| Document | Purpose |
-|----------|---------|
-| `PROGRESS.md` | Session log, quick status |
-| `HANDOFF.md` | This file - quick reference |
-| `HANDOFF_COMPREHENSIVE.md` | Full architecture overview |
-| `TECH_DEBT.md` | **⚠️ Future cleanup tasks** - patches to revisit/rewrite |
-| `reference/metric_definitions.md` | Glucose metrics formulas |
-| `reference/minimed_780g_ref.md` | Pump settings reference |
-
-> **💡 Before patching:** Check `TECH_DEBT.md` first - maybe it's better to fix properly now than add another patch. Review monthly for items ready to clean up.
-
----
-
-## 🔧 GIT WORKFLOW
-
-```bash
-# After changes
-git add .
-git commit -m "feat(component): what you did"
-git push origin main
-
-# Update PROGRESS.md with session summary
-```
-
----
-
-## 💡 WORKING WITH CLAUDE
-
-**Start**: "Check PROGRESS.md, let's work on [task]"  
-**End**: "Update PROGRESS.md, create session summary"  
-**Stuck**: Ask me to read relevant code/docs  
-**Token management**: Work in 30-60 min chunks
-
----
-
-**Quick Handoff v4.4.0** | **Last Updated**: 2025-11-21
-
-**You got this! 🚀**
+**Last Updated**: 2025-11-22 | **You got this! 🚀**

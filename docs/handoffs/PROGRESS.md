@@ -1,5 +1,29 @@
 # AGP+ Development Progress
 
+## Session 2025-11-22 (5) - Handoff Cleanup & Documentation
+
+### Work Done
+- [x] sensorStorage.js cleanup: removed hardcoded date `2025-07-03`
+- [x] Now uses `getEraForDate()` from deviceEras.js for hw_version assignment
+- [x] Verified: no more `batches` references in sensorStorage.js
+- [x] Updated SESSION_HANDOFF_REFACTORING.md with current reality
+- [x] Marked Fase 4 (sensorStorage refactor) as already done - code is clean V4
+- [x] Archived completed handoffs
+
+### Key Finding
+The sensorStorage.js "V2/V3 refactor plan" from SESSION_HANDOFF_REFACTORING.md was **already completed** in a previous session. Current state:
+- 462 lines (was ~500)
+- Clean V4 implementation (IndexedDB only)
+- No localStorage, no tombstones, no SQLite
+- Hard delete, simple append import
+
+### Commits
+- `f2cede1` - refactor(storage): use deviceEras for hardware version assignment
+- `ebdc13d` - chore: remove temporary cleanup progress file
+- `1603160` - docs: update refactoring handoff with current status
+
+---
+
 ## Session 2025-11-22 (4) - Code Health & Refactoring (Continued)
 
 ### Overall Status

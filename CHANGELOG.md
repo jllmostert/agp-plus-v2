@@ -6,6 +6,50 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [v4.4.0 - Device Seasons] - 2025-11-21
+
+### 🎯 Major Release: Device Seasons & Storage Cleanup
+**Sessions**: 47-52  
+**Status**: ✅ Production Ready
+
+#### New Features
+**Device Seasons System**:
+- ✅ Track pump + transmitter combinations over time ("seasons")
+- ✅ Seasons stored in IndexedDB (persistent, editable)
+- ✅ Editable via UI in Sensor History panel
+- ✅ Auto-assign season to new sensors based on start date
+- ✅ Human-friendly names (Tulp, Lavendel, Zonnebloem)
+
+**Sensor Management Improvements**:
+- ✅ Hard delete (no more tombstones/soft delete)
+- ✅ Patient info lock persistence across CSV uploads
+- ✅ Resizable stats/table splitter in Sensor History
+
+#### Storage Layer Cleanup
+**Dead Code Removed** (~2000 lines):
+- Deleted: sqliteParser.js, sensorImport.js, DebugPanel.jsx, DevToolsPanel.jsx
+- Removed unused IndexedDB stores (sensorEvents, cartridgeEvents)
+
+**Cartridge Storage Migration**:
+- Migrated from localStorage to IndexedDB
+- eventStorage.js → cartridgeStorage.js (complete rewrite)
+
+**localStorage Consolidation**:
+- Patient info: now IndexedDB only (removed localStorage duplicate)
+- Workdays: now IndexedDB only (removed localStorage duplicate)
+
+#### Code Quality
+**sensorStorage.js** - Clean V4 Implementation:
+- IndexedDB only (no localStorage)
+- Hardware version assignment via deviceEras.js (no hardcoded dates)
+- 462 lines, well-organized
+
+**AGPGenerator.jsx** - Reduced 60%:
+- From ~1600 to 632 lines
+- Extracted: AppHeader, AppFooter, PanelRouter, useDataManagement
+
+---
+
 ## [v4.3.7 - Enhanced Pump Settings] - 2025-11-21
 
 ### 🎯 Session 47: Pump Settings & UX Improvements
