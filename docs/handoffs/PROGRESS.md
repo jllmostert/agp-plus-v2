@@ -1,5 +1,42 @@
 # AGP+ Development Progress
 
+## Session 2025-11-22 (6) - Fresh Architecture Analysis
+
+### Work Done
+- [x] Re-ran full architectural scan on 9 key files
+- [x] Created fresh AGP_REFAC_NOTES.md with current state
+- [x] Database architecture sanity check completed
+- [x] Identified masterDatasetStorage as "god module" (1024 lines, 9+ responsibilities)
+- [x] Proposed Phase 1 and Phase 2 refactor plans
+
+### Key Findings
+
+**Clean Files (no action needed)**:
+| File | Lines | Spaghetti Index |
+|------|-------|-----------------|
+| AGPGenerator.jsx | 632 | 1/5 |
+| useModalState.js | 77 | 0/5 |
+| usePanelNavigation.js | 85 | 0/5 |
+| useImportExport.js | 318 | 1/5 |
+| sensorStorage.js | 462 | 1/5 |
+| stockStorage.js | 282 | 1/5 |
+
+**Needs Work**:
+| File | Lines | Issue |
+|------|-------|-------|
+| masterDatasetStorage.js | 1024 | God module - 9+ responsibilities |
+| metrics-engine.js | 701 | Optional split |
+| day-profile-engine.js | 449 | Complex but justified |
+
+### Quick Win Candidates
+1. Extract ProTimeStorage (~30 min)
+2. Extract TDDStorage (~20 min)
+
+### Awaiting Confirmation
+- Ready to implement quick wins if approved
+
+---
+
 ## Session 2025-11-22 (5) - Handoff Cleanup & Documentation
 
 ### Work Done
