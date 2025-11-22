@@ -141,46 +141,11 @@ function AGPGeneratorContent() {
   // Import/Export orchestration (extracted to custom hook)
   const importExport = useImportExport();
   
-  // Get metrics from context (for data management handlers)
+  // Get metrics from context (for visualization)
   const { metricsResult, comparisonData, dayProfiles, tddData } = useMetricsContext();
   
-  // Data Management handlers (extracted to custom hook)
-  const dataManagement = useDataManagement({
-    // From DataContext
-    masterDataset,
-    useV3Mode,
-    loadCSV,
-    setV3UploadError,
-    csvData,
-    dateRange,
-    // From UIContext
-    showToast,
-    setPendingUpload,
-    pendingUpload,
-    setBatchAssignmentDialog,
-    loadWorkdays,
-    clearWorkdays,
-    workdays,
-    setPatientInfo,
-    patientInfo,
-    // From PeriodContext
-    startDate,
-    endDate,
-    setStartDate,
-    setEndDate,
-    // From uploadStorage
-    activeUploadId,
-    updateProTimeData,
-    saveUpload,
-    // From other hooks
-    modals,
-    importExport,
-    // From MetricsContext
-    metricsResult,
-    comparisonData,
-    tddData,
-    dayProfiles,
-  });
+  // Data Management handlers (now consumes contexts internally)
+  const dataManagement = useDataManagement({ modals, importExport });
   
   // Note: All UI state (dayNightEnabled, patientInfo, loadToast, dialogs, etc.) now comes from UIContext
   // Note: tddByDay now comes from DataContext

@@ -1,6 +1,12 @@
 import { useCallback } from 'react';
 import { debug } from '../utils/debug.js';
 
+// Import contexts directly
+import useUI from './useUI';
+import { useData } from './useData';
+import { usePeriod } from '../contexts/PeriodContext.jsx';
+import { useMetricsContext } from '../contexts/MetricsContext.jsx';
+
 /**
  * Data Management Hook
  * 
@@ -12,18 +18,20 @@ import { debug } from '../utils/debug.js';
  * - HTML export
  * 
  * Extracted from AGPGenerator.jsx to reduce component size.
- * Part of Phase 2 (Code Health) refactoring.
+ * Now consumes contexts directly for cleaner usage.
  * 
- * @param {Object} deps - Dependencies from contexts and other hooks
+ * @param {Object} options - Only hooks that can't be consumed via context
+ * @param {Object} options.modals - Modal state from useModalState
+ * @param {Object} options.importExport - Import/export state from useImportExport
  */
-export function useDataManagement(deps) {
+export function useDataManagement({ modals, importExport }) {
+  // ============================================
+  // CONSUME CONTEXTS DIRECTLY
+  // ============================================
+  
+  // UI Context
+  const ui = useUI();
   const {
-    // From DataContext
-    masterDataset,
-    useV3Mode,
-    loadCSV,
-    setV3UploadError,
-    // From UIContext
     showToast,
     setPendingUpload,
     pendingUpload,
@@ -32,28 +40,28 @@ export function useDataManagement(deps) {
     clearWorkdays,
     workdays,
     setPatientInfo,
-    // From PeriodContext
-    startDate,
-    endDate,
-    setStartDate,
-    setEndDate,
-    // From uploadStorage
-    activeUploadId,
-    updateProTimeData,
-    saveUpload,
-    // From other hooks
-    modals,
-    importExport,
-    // From MetricsContext
-    metricsResult,
-    comparisonData,
-    tddData,
-    dayProfiles,
     patientInfo,
-    // From local state
+  } = ui;
+  
+  // Data Context
+  const data = useData();
+  const {
+    masterDataset,
+    useV3Mode,
+    loadCSV,
+    setV3UploadError,
     csvData,
     dateRange,
-  } = deps;
+    uploadStorage,
+  } = data;
+  
+  const { activeUploadId, updateProTimeData, saveUpload } = uploadStorage;
+  
+  // Period Context
+  const { startDate, endDate, setStartDate, setEndDate } = usePeriod();
+  
+  // Metrics Context
+  const { metricsResult, comparisonData, tddData, dayProfiles } = useMetricsContext();
 
   // ============================================
   // CSV UPLOAD
