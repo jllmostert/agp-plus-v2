@@ -386,17 +386,16 @@ export async function resequenceSensors() {
 
 /**
  * Update hardware versions for all sensors based on start_date
- * Sensors from 2025-07-03 onwards get A2.01, earlier ones get A1.01
+ * Uses deviceEras to determine correct hw_version per season
  */
 export async function updateHardwareVersions() {
   const storage = await getStorage();
-  const cutoffDate = new Date('2025-07-03T00:00:00');
   let updated = 0;
   
   storage.sensors.forEach(sensor => {
     if (sensor.start_date) {
-      const startDate = new Date(sensor.start_date);
-      const newVersion = startDate >= cutoffDate ? 'A2.01' : 'A1.01';
+      const era = getEraForDate(sensor.start_date);
+      const newVersion = era?.pump?.hw_version || 'A1.01';
       
       if (sensor.hw_version !== newVersion) {
         sensor.hw_version = newVersion;
