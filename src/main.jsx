@@ -21,14 +21,6 @@ function updateDocumentMeta() {
   }
 }
 
-// Import tombstone store initialization
-import { 
-  migrateLocalStorageToIndexedDB, 
-  syncIndexedDBToLocalStorage,
-  cleanupOldDeletedSensorsDB,
-  isIndexedDBAvailable 
-} from './storage/deletedSensorsDB.js';
-
 // Import device era initialization
 import { initDeviceEras } from './core/deviceEras.js';
 
@@ -40,28 +32,12 @@ import { initDeviceEras } from './core/deviceEras.js';
  * Includes IndexedDB tombstone store initialization for deleted sensors tracking.
  */
 
-// Initialize IndexedDB tombstone store
+// Initialize device eras on startup
 (async () => {
   try {
-    if (isIndexedDBAvailable()) {
-      // 1. Migrate any legacy localStorage deleted sensors to IndexedDB
-      const legacyDeleted = JSON.parse(localStorage.getItem('agp-deleted-sensors') || '[]');
-      await migrateLocalStorageToIndexedDB(legacyDeleted);
-      
-      // 2. Cleanup old tombstones (>90 days)
-      await cleanupOldDeletedSensorsDB();
-      
-      // 3. Sync IndexedDB to localStorage cache
-      await syncIndexedDBToLocalStorage();
-    } else {
-      console.warn('[main] IndexedDB not available, using localStorage fallback');
-    }
-    
-    // 4. Initialize device eras from IndexedDB
     await initDeviceEras();
   } catch (err) {
-    console.error('[main] Tombstone store initialization failed:', err);
-    // Non-critical error - app will still work with localStorage fallback
+    console.error('[main] Device eras initialization failed:', err);
   }
 })();
 

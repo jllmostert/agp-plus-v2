@@ -58,15 +58,10 @@ async function initStorage() {
  * Do NOT store status. Always calculate fresh.
  * 
  * @param {Object} sensor - Sensor with start_date and end_date
- * @param {Array} deletedList - Optional array of deleted sensor records
- * @returns {string} - 'active' | 'overdue' | 'success' | 'short' | 'failed' | 'deleted'
+ * @returns {string} - 'active' | 'overdue' | 'success' | 'short' | 'failed'
  */
-export function calculateStatus(sensor, deletedList = []) {
+export function calculateStatus(sensor) {
   if (!sensor || !sensor.start_date) return 'unknown';
-  
-  // Check if deleted
-  const isDeleted = deletedList.some(d => d.sensor_id === sensor.id);
-  if (isDeleted) return 'deleted';
   
   const now = new Date();
   const start = new Date(sensor.start_date);
@@ -93,10 +88,9 @@ export function calculateStatus(sensor, deletedList = []) {
 /**
  * Get status with UI metadata
  * @param {Object} sensor - Sensor object
- * @param {Array} deletedList - Optional array of deleted sensor records
  */
-export function getStatusInfo(sensor, deletedList = []) {
-  const status = calculateStatus(sensor, deletedList);
+export function getStatusInfo(sensor) {
+  const status = calculateStatus(sensor);
   
   const info = {
     active: { label: 'Active', colorVar: '--color-yellow' },
@@ -104,7 +98,6 @@ export function getStatusInfo(sensor, deletedList = []) {
     success: { label: 'Success', colorVar: '--color-green' },
     short: { label: 'Short', colorVar: '--color-orange' },
     failed: { label: 'Failed', colorVar: '--color-red' },
-    deleted: { label: 'Deleted', colorVar: '--ink' },
     unknown: { label: 'Unknown', colorVar: '--ink' }
   };
   
@@ -122,7 +115,7 @@ export async function getAllSensors() {
   const storage = await getStorage();
   return storage.sensors.map(sensor => ({
     ...sensor,
-    statusInfo: getStatusInfo(sensor, storage.deleted)
+    statusInfo: getStatusInfo(sensor)
   }));
 }
 
@@ -133,7 +126,7 @@ export async function getSensorById(id) {
   
   return {
     ...sensor,
-    statusInfo: getStatusInfo(sensor, storage.deleted)
+    statusInfo: getStatusInfo(sensor)
   };
 }
 
@@ -227,24 +220,6 @@ export async function deleteSensor(id) {
   // Remove from sensors array
   storage.sensors.splice(sensorIndex, 1);
   
-  // Also remove from deleted list if it was there (cleanup)
-  const deletedIndex = storage.deleted.findIndex(d => d.sensor_id === id);
-  if (deletedIndex !== -1) {
-    storage.deleted.splice(deletedIndex, 1);
-  }
-  
-  await saveStorage(storage);
-  
-  return { success: true };
-}
-
-export async function restoreSensor(id) {
-  const storage = await getStorage();
-  const index = storage.deleted.findIndex(d => d.sensor_id === id);
-  
-  if (index === -1) return { success: false, error: 'Not in deleted list' };
-  
-  storage.deleted.splice(index, 1);
   await saveStorage(storage);
   
   return { success: true };
@@ -498,7 +473,6 @@ export default {
   addSensor,
   updateSensor,
   deleteSensor,
-  restoreSensor,
   clearAllSensors,
   
   // Lock
