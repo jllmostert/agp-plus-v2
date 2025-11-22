@@ -4,10 +4,31 @@
 
 ### Overall Status
 - [x] Fase 1: Architectural Scan ✅ DONE
-- [ ] Fase 2: Quick Wins ← NEXT
-- [ ] Fase 3: AGPGenerator Refactor
+- [x] Fase 2: Quick Wins ✅ DONE
+- [ ] Fase 3: AGPGenerator Handler Extraction ← NEXT (optional)
 - [ ] Fase 4: sensorStorage Refactor (optional)
 - [ ] Fase 5: metrics-engine Refactor (optional)
+
+---
+
+### Fase 2: Quick Wins ✅ COMPLETE
+
+**Goal**: Extract header/footer from AGPGenerator.jsx
+
+**Results:**
+| Bestand | Voor | Na | Verandering |
+|---------|------|-----|-------------|
+| AGPGenerator.jsx | 1478 | 1144 | **-334 lijnen (-23%)** |
+
+**Files Created:**
+- `src/components/AppHeader.jsx` (361 lines) - App branding, patient info, dataset status
+- `src/components/AppFooter.jsx` (48 lines) - Scientific citations, ADA link
+
+**Cleanup:**
+- Removed unused imports: `User`, `APP_VERSION`, `APP_FULL_NAME` from AGPGenerator
+- Previous quick wins (EmptyCSVState, batches references) were already done
+
+**Build:** ✅ Passing
 
 ---
 

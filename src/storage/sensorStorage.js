@@ -312,13 +312,10 @@ export async function importJSON(data) {
     
     const storage = await getStorage();
     const existingSensorIds = new Set(storage.sensors.map(s => s.id));
-    const existingBatchIds = new Set(storage.batches?.map(b => b.batch_id) || []);
     
     // Count what we're importing
     let sensorsAdded = 0;
     let sensorsSkipped = 0;
-    let batchesAdded = 0;
-    let batchesSkipped = 0;
     
     // Filter sensors (skip duplicates)
     const newSensors = data.sensors.filter(sensor => {
@@ -330,34 +327,11 @@ export async function importJSON(data) {
       return true;
     });
     
-    // Filter batches (skip duplicates by lot_number OR batch_id)
-    const existingLotNumbers = new Set(
-      storage.batches?.map(b => b.lot_number).filter(Boolean) || []
-    );
-    
-    const newBatches = (data.batches || []).filter(batch => {
-      // Skip if batch_id already exists
-      if (batch.batch_id && existingBatchIds.has(batch.batch_id)) {
-        batchesSkipped++;
-        return false;
-      }
-      
-      // Skip if lot_number already exists (duplicate stock)
-      if (batch.lot_number && existingLotNumbers.has(batch.lot_number)) {
-        batchesSkipped++;
-        return false;
-      }
-      
-      batchesAdded++;
-      return true;
-    });
-    
     // Merge data (append instead of replace)
     const mergedData = {
       ...storage,
       version: data.version,
       sensors: [...storage.sensors, ...newSensors],
-      batches: [...(storage.batches || []), ...newBatches],
       deleted: storage.deleted // Keep existing deleted list
     };
     
@@ -367,10 +341,7 @@ export async function importJSON(data) {
       success: true,
       summary: {
         sensorsAdded,
-        sensorsSkipped,
-        batchesAdded,
-        batchesSkipped,
-        batchesImported: batchesAdded
+        sensorsSkipped
       }
     };
   } catch (error) {
@@ -454,8 +425,7 @@ export async function getStorageInfo() {
     version: storage.version,
     last_updated: storage.last_updated,
     ...stats,
-    deleted_count: storage.deleted.length,
-    batch_count: storage.batches.length
+    deleted_count: storage.deleted.length
   };
 }
 

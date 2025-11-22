@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Activity, Download, ChevronDown, Save, User } from 'lucide-react';
+import { Activity, Download, ChevronDown, Save } from 'lucide-react';
 import { debug } from '../utils/debug.js';
-import { APP_VERSION, APP_FULL_NAME } from '../utils/version.js';
 
 // Custom hooks
 import { useModalState } from '../hooks/useModalState';
@@ -23,6 +22,8 @@ import { getPumpSettings, savePumpSettings } from '../storage/pumpSettingsStorag
 import { MigrationBanner } from './MigrationBanner';
 import DataImportModal from './DataImportModal';
 import HeaderBar from './HeaderBar';
+import AppHeader from './AppHeader';
+import AppFooter from './AppFooter';
 import KeyboardHelp from './KeyboardHelp';
 
 // Container Components
@@ -809,323 +810,19 @@ function AGPGeneratorContent() {
       
       <div className="app-container">
         
-        {/* Migration Notice (if applicable) */}
-        {migrationStatus && (
-          <div style={{
-            padding: '1rem',
-            marginBottom: '1rem',
-            background: 'var(--color-green)',
-            color: 'var(--color-black)',
-            fontWeight: 600,
-            borderRadius: '4px',
-            textAlign: 'center'
-          }}>
-            ✅ {migrationStatus} - Now using IndexedDB for unlimited storage!
-          </div>
-        )}
-
-        {/* Load Success Toast */}
-        {loadToast && (
-          <div style={{
-            padding: '1rem',
-            marginBottom: '1rem',
-            background: 'var(--color-green)',
-            color: 'var(--color-black)',
-            fontWeight: 700,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            border: '3px solid var(--color-black)',
-            animation: 'slideDown 200ms ease-out'
-          }}>
-            {loadToast}
-          </div>
-        )}
-        
-        {/* OLD HEADER - Keep visible, has patient info + cleanup + stats */}
-        {(
-        <header className="section">
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1.618fr', // Golden ratio
-            border: '3px solid var(--ink)',
-            overflow: 'hidden'
-          }}>
-            {/* LEFT: Sidebar - Ink background */}
-            <div style={{
-              background: 'var(--ink)',
-              color: 'var(--paper)',
-              padding: '2rem',
-              borderRight: '3px solid var(--ink)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.5rem'
-            }}>
-              {/* Version + Title */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div>
-                  <h1 style={{ 
-                    letterSpacing: '0.2em', 
-                    fontWeight: 700, 
-                    fontSize: '1.75rem',
-                    marginBottom: '0.25rem',
-                    color: 'var(--paper)'
-                  }}>
-                    AGP+
-                  </h1>
-                  <div style={{ 
-                    fontSize: '0.875rem', 
-                    color: 'var(--paper)',
-                    fontWeight: 600,
-                    opacity: 0.9
-                  }}>
-                    v{APP_VERSION}
-                  </div>
-                </div>
-              </div>
-
-              {/* Patient Button - Compact */}
-              <button
-                onClick={() => modals.setPatientInfoOpen(true)}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  background: 'var(--color-green)',
-                  border: '2px solid var(--paper)',
-                  color: 'var(--paper)',
-                  cursor: 'pointer',
-                  fontSize: '0.625rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'var(--paper)';
-                  e.target.style.color = 'var(--color-green)';
-                  e.target.style.borderColor = 'var(--color-green)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'var(--color-green)';
-                  e.target.style.color = 'var(--paper)';
-                  e.target.style.borderColor = 'var(--paper)';
-                }}
-              >
-                <User size={12} />
-                PATIËNT
-              </button>
-
-              {/* Patient Info Display */}
-              {patientInfo && patientInfo.name && (
-                <div style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--paper)',
-                  opacity: 0.8,
-                  lineHeight: 1.6
-                }}>
-                  <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
-                    {patientInfo.name}
-                  </div>
-                  {patientInfo.dob && (
-                    <div>DOB: {new Date(patientInfo.dob).toLocaleDateString('nl-NL')}</div>
-                  )}
-                  {patientInfo.cgm && (
-                    <div>CGM: {patientInfo.cgm}</div>
-                  )}
-                  {patientInfo.deviceSerial && (
-                    <div>SN: {patientInfo.deviceSerial}</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* RIGHT: Main info area - Paper background */}
-            <div style={{
-              background: 'var(--paper)',
-              color: 'var(--ink)',
-              padding: '2rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0' // No gap, divider handles spacing
-            }}>
-              {/* Top Section: Dataset overview + Cleanup button */}
-              <div style={{ 
-                paddingBottom: '1.5rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start'
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--text-secondary)',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    marginBottom: '0.5rem'
-                  }}>
-                    Dataset
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    marginBottom: '0.5rem'
-                  }}>
-                    {/* Status light */}
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      border: '3px solid var(--ink)',
-                      background: dataStatus.lightColor === 'green' 
-                        ? 'var(--color-green)' 
-                        : dataStatus.lightColor === 'yellow' 
-                        ? 'var(--color-yellow)' 
-                        : 'var(--color-red)',
-                      flexShrink: 0
-                    }} />
-                    <div style={{ 
-                      fontWeight: 700, 
-                      fontSize: '1.125rem',
-                      letterSpacing: '0.05em' 
-                    }}>
-                      {dataStatus.hasData ? (
-                        <>{dataStatus.readingCount.toLocaleString()} READINGS</>
-                      ) : (
-                        <>NO DATA</>
-                      )}
-                    </div>
-                  </div>
-                  {dataStatus.hasData && (
-                    <div style={{ 
-                      fontSize: '0.875rem',
-                      color: 'var(--text-secondary)',
-                      letterSpacing: '0.05em',
-                      paddingLeft: '32px'
-                    }}>
-                      {dataStatus.dateRangeFormatted}
-                    </div>
-                  )}
-                </div>
-                
-                {/* CLEANUP button */}
-                <button
-                  onClick={() => {
-                    debug.log('[AGPGenerator] 🗑️ CLEANUP button clicked!');
-                    debug.log('[AGPGenerator] dataStatus.hasData:', dataStatus.hasData);
-                    modals.setDataManagementOpen(true);
-                  }}
-                  disabled={!dataStatus.hasData}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    border: '3px solid var(--ink)',
-                    background: dataStatus.hasData ? 'var(--color-red)' : 'transparent',
-                    color: dataStatus.hasData ? 'var(--color-white)' : 'var(--text-secondary)',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    cursor: dataStatus.hasData ? 'pointer' : 'not-allowed',
-                    opacity: dataStatus.hasData ? 1 : 0.4,
-                    whiteSpace: 'nowrap'
-                  }}
-                  title={!dataStatus.hasData ? "Load data first" : "Clean up database"}
-                >
-                  🗑️ CLEANUP
-                </button>
-              </div>
-
-              {/* Divider - Double line */}
-              <div style={{
-                borderTop: '3px solid var(--ink)',
-                borderBottom: '3px solid var(--ink)',
-                height: '2px',
-                margin: '0'
-              }} />
-
-              {/* Bottom Section: Analysis period */}
-              {startDate && endDate ? (
-                <div style={{ paddingTop: '1.5rem' }}>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--text-secondary)',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    marginBottom: '0.5rem'
-                  }}>
-                    Analysis
-                  </div>
-                  <div style={{ 
-                    fontWeight: 700,
-                    fontSize: '1rem',
-                    letterSpacing: '0.05em',
-                    marginBottom: '0.5rem'
-                  }}>
-                    {startDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    <span style={{ color: 'var(--color-orange)', margin: '0 0.5rem' }}>→</span>
-                    {endDate.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  </div>
-                  <div style={{ 
-                    fontSize: '0.875rem',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    <strong>{Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1}</strong> dagen
-                    {activeReadings && <> • <strong>{activeReadings.length.toLocaleString()}</strong> readings</>}
-                    {workdays && <> • <strong>{workdays.size}</strong> ProTime workdays</>}
-                  </div>
-                  {/* Last glucose reading timestamp */}
-                  {activeReadings && activeReadings.length > 0 && (() => {
-                    const lastReading = activeReadings[activeReadings.length - 1];
-                    if (lastReading?.date && lastReading?.time) {
-                      return (
-                        <div style={{ 
-                          fontSize: '0.75rem',
-                          color: 'var(--text-secondary)',
-                          marginTop: '0.25rem'
-                        }}>
-                          Laatste meting: {lastReading.date.split('/').reverse().join('/')} {lastReading.time.substring(0, 5)}
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              ) : (
-                <div style={{ 
-                  paddingTop: '1.5rem',
-                  fontSize: '0.875rem',
-                  color: 'var(--text-secondary)',
-                  fontStyle: 'italic'
-                }}>
-                  No analysis period selected
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Data Status Warning (Red/Yellow) - Below header when needed */}
-          {dataStatus.actionRequired && (
-            <div style={{
-              padding: '0.75rem',
-              marginTop: '1rem',
-              background: dataStatus.lightColor === 'red' 
-                ? 'var(--color-red)' 
-                : 'var(--color-yellow)',
-              border: '3px solid var(--color-black)',
-              color: 'var(--color-black)',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              letterSpacing: '0.05em',
-              textAlign: 'center'
-            }}>
-              ⚠️ {dataStatus.message}
-            </div>
-          )}
-        </header>
-        )}
-        {/* END OLD HEADER */}
+        {/* App Header - Extracted component */}
+        <AppHeader
+          migrationStatus={migrationStatus}
+          loadToast={loadToast}
+          patientInfo={patientInfo}
+          onPatientInfoOpen={() => modals.setPatientInfoOpen(true)}
+          onDataManagementOpen={() => modals.setDataManagementOpen(true)}
+          dataStatus={dataStatus}
+          startDate={startDate}
+          endDate={endDate}
+          activeReadings={activeReadings}
+          workdays={workdays}
+        />
         
         {/* Phase B: Main Navigation - After old header */}
         <HeaderBar 
@@ -1370,37 +1067,7 @@ function AGPGeneratorContent() {
 
 
         {/* Footer */}
-        <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
-          <p>
-            {APP_FULL_NAME} | Built for Medtronic CareLink CSV exports
-          </p>
-          <p className="mt-2">
-            Following{' '}
-            <a 
-              href="https://diabetesjournals.org/care/issue/48/Supplement_1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 underline"
-            >
-              ADA Standards of Care in Diabetes—2025
-            </a>
-          </p>
-          
-          {/* Scientific methodology note */}
-          <p className="mt-4 text-xs" style={{ 
-            maxWidth: '800px', 
-            margin: '1rem auto 0',
-            color: 'var(--text-tertiary)',
-            lineHeight: '1.6'
-          }}>
-            <strong>Methodologische verwijzing:</strong> Alle berekeningen volgen de ATTD Consensus on CGM Metrics 
-            (Battelino et al., <em>Diabetes Care</em> 2019;42(8):1593-1603), aangevuld met de GMI-formule 
-            (Beck et al., <em>Diabetes Care</em> 2019;42(4):659-666), MAGE-definitie 
-            (Service et al., <em>Diabetes</em> 1970;19(9):644-655) en MODD-definitie 
-            (Molnar et al., <em>Diabetologia</em> 1972;8:342-348). 
-            Drempelwaarden (70-180 mg/dL) conform ADA/ATTD richtlijnen 2023.
-          </p>
-        </footer>
+        <AppFooter />
         
         {/* Keyboard Shortcuts Legend (Phase F1.2) */}
         <div style={{
@@ -1473,86 +1140,5 @@ export default function AGPGenerator() {
         <AGPGeneratorContent />
       </MetricsProvider>
     </PeriodProvider>
-  );
-}
-
-/**
- * EmptyCSVState - Message shown when no CSV is loaded
- */
-function EmptyCSVState() {
-  return (
-    <div className="text-center py-16">
-      <div className="max-w-md mx-auto">
-        <div className="mb-6">
-          <Activity className="w-16 h-16 text-gray-600 mx-auto" />
-        </div>
-        
-        <h2 className="text-2xl font-semibold text-gray-300 mb-4">
-          Welcome to AGP+ v3.9.1
-        </h2>
-        
-        <p className="text-gray-400 mb-6">
-          Get started by uploading your Medtronic CareLink CSV export above.
-        </p>
-
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 text-left">
-          <h3 className="font-semibold text-gray-200 mb-3">
-            How to export from CareLink:
-          </h3>
-          <ol className="text-sm text-gray-400 space-y-2 list-decimal list-inside">
-            <li>Log in to CareLink at carelink.minimed.eu</li>
-            <li>Go to "Reports" → "Device Data"</li>
-            <li>Select date range (minimum 14 days recommended)</li>
-            <li>Click "Export" → "CSV"</li>
-            <li>Upload the downloaded file above</li>
-          </ol>
-        </div>
-
-        <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4 text-left">
-          <p className="text-sm text-blue-300">
-            <strong>💡 Tip:</strong> For best results, export at least 14 days of data. 
-            The tool will automatically compare periods if you export 30 or 90 days.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * EmptyPeriodState - Message shown when CSV loaded but no period selected
- */
-function EmptyPeriodState() {
-  return (
-    <div className="text-center py-12">
-      <div className="max-w-md mx-auto">
-        <h3 className="text-xl font-semibold text-gray-300 mb-3">
-          Select an Analysis Period
-        </h3>
-        
-        <p className="text-gray-400 mb-4">
-          Choose a time period above to view your glucose metrics and AGP analysis.
-        </p>
-
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-left">
-          <p className="text-sm text-gray-400">
-            <strong className="text-gray-300">Available options:</strong>
-          </p>
-          <ul className="text-sm text-gray-400 mt-2 space-y-1 list-disc list-inside">
-            <li><strong>14 days:</strong> Minimum recommended period</li>
-            <li><strong>30 days:</strong> Standard monthly analysis</li>
-            <li><strong>90 days:</strong> Quarterly review</li>
-            <li><strong>Custom:</strong> Any date range within your data</li>
-          </ul>
-        </div>
-
-        <div className="mt-4 bg-blue-900/20 border border-blue-700 rounded-lg p-3">
-          <p className="text-xs text-blue-300">
-            💡 Selecting 14, 30, or 90 days will automatically enable period comparison 
-            if you have enough historical data.
-          </p>
-        </div>
-      </div>
-    </div>
   );
 }
