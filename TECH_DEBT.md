@@ -167,34 +167,18 @@ Removed 15 debug console.log statements from production code.
 
 ---
 
-### 5. Consolidate IndexedDB Databases
+### ~~5. Consolidate IndexedDB Databases~~ (2025-11-22) ✓
 
-**Problem:**
-Two separate IndexedDB databases exist:
-- `agp-plus-db` (6 stores) - Main app data
-- `agp-user-actions` (1 store) - Deleted sensor tombstones
+**Resolved by removing tombstone system entirely.**
 
-**Why this is bad:**
-- Extra database initialization on every app start
-- Sync logic between them (`syncIndexedDBToLocalStorage`)
-- Potential for drift/inconsistency
-- Unnecessary complexity
+Hard delete (v4.4.0) made tombstones obsolete:
+- Deleted `deletedSensorsDB.js` (426 lines)
+- Deleted `migrateSensors.js` (487 lines)
+- Deleted `migrations/` folder (666 lines)
+- Simplified `main.jsx` startup
+- Removed unused `restoreSensor()` and 'deleted' status
 
-**Fix:**
-1. Add `DELETED_SENSORS` store to `agp-plus-db` (bump to v7)
-2. Migrate data from `agp-user-actions` on upgrade
-3. Remove `deletedSensorsDB.js` (424 lines)
-4. Update `sensorStorage.js` to use new store
-5. Simplify `main.jsx` startup sequence
-
-**Files affected:**
-- `src/storage/db.js` (add store)
-- `src/storage/deletedSensorsDB.js` (DELETE)
-- `src/storage/sensorStorage.js` (update imports)
-- `src/main.jsx` (remove migration code)
-
-**Effort estimate:** ~4 hours  
-**Priority:** Medium (reduces complexity, improves reliability)
+Now only one IndexedDB: `agp-plus-db`
 
 ---
 
@@ -233,7 +217,7 @@ Three-layer storage with sync complexity:
 - localStorage (cache)
 
 **Current risks:**
-- localStorage.clear() breaks deleted sensor tracking
+- ~~localStorage.clear() breaks deleted sensor tracking~~ (fixed: tombstones removed)
 - Sync race conditions possible
 - Different cleanup intervals (30/90 days)
 
@@ -250,11 +234,25 @@ Three-layer storage with sync complexity:
 
 ## ✅ COMPLETED CLEANUP
 
+### ~~Storage Layer Cleanup~~ (2025-11-22) ✓
+
+**Deleted files:**
+- `src/storage/deletedSensorsDB.js` (426 lines)
+- `src/storage/migrateSensors.js` (487 lines)
+- `src/storage/migrations/` folder (666 lines)
+
+**Lines removed:** ~1,579
+
+### ~~Console Statement Cleanup~~ (2025-11-22) ✓
+
+Removed 15 debug console.log statements from production code.
+
 ### ~~Dead Code Removal~~ (2025-11-22) ✓
 
 **Deleted files:**
 - `src/components/panels/SensorHistoryPanel.OLD.jsx` (1,237 lines)
 - `src/components/SensorHistoryModal.jsx.backup`
+- Old migration JSON/DB files from public/ and docs/
 
 **Lines removed:** ~1,300
 
