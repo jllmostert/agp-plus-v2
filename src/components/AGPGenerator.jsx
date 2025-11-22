@@ -36,7 +36,7 @@ import ExportPanel from './panels/ExportPanel';
 import SensorHistoryPanel from './panels/SensorHistoryPanel';
 import StockPanel from './panels/StockPanel';
 import DayProfilesPanel from './panels/DayProfilesPanel';
-import DevToolsPanel from './panels/DevToolsPanel';
+
 import PumpSettingsPanel from './panels/PumpSettingsPanel';
 
 /**
@@ -1229,26 +1229,6 @@ function AGPGeneratorContent() {
           />
         )}
 
-        {/* Phase B: DevTools Overlay (if enabled) */}
-        {navigation.showDevTools && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            right: 0,
-            width: '400px',
-            height: '100vh',
-            background: 'var(--bg-primary)',
-            border: '3px solid var(--border-primary)',
-            borderRight: 'none',
-            zIndex: 99999,
-            overflow: 'auto'
-          }}>
-            <DevToolsPanel 
-              onClose={() => navigation.setShowDevTools(false)} 
-              onSensorRegistrationOpen={() => modals.setSensorRegistrationOpen(true)}
-            />
-          </div>
-        )}
 
         {/* Modal Manager - All modals rendered via portals */}
         <ModalManager

@@ -1,8 +1,11 @@
 /**
  * EVENT STORAGE MODULE
  * 
- * Manages device events (sensor changes, cartridge changes) in localStorage.
+ * Manages cartridge change events in localStorage.
  * Events are detected once during CSV processing and cached for fast lookups.
+ * 
+ * Note: Sensor changes are stored in the sensor database (IndexedDB),
+ * not in this event storage. This module only handles cartridge events.
  * 
  * Architecture:
  * - Single scan per CSV upload/page load
@@ -10,15 +13,15 @@
  * - No runtime detection overhead
  * 
  * @module eventStorage
- * @version 3.6.0
+ * @version 3.7.0
  */
 
 const EVENTS_KEY = 'agp-device-events';
 
 /**
- * Store device events in localStorage
+ * Store cartridge events in localStorage
  * 
- * @param {Object} events - { sensorChanges: [], cartridgeChanges: [], lastScanned: ISO timestamp }
+ * @param {Object} events - { cartridgeChanges: [], lastScanned: ISO timestamp }
  */
 export function storeEvents(events) {
   const data = {
@@ -47,31 +50,29 @@ export function getAllEvents() {
  * Get events for a specific date
  * 
  * @param {string} date - Date in YYYY/MM/DD format
- * @returns {Object} { sensorChanges: [], cartridgeChanges: [] }
+ * @returns {Object} { cartridgeChanges: [] }
  */
 export function getEventsForDate(date) {
   const allEvents = getAllEvents();
   
   if (!allEvents) {
-    return { sensorChanges: [], cartridgeChanges: [] };
+    return { cartridgeChanges: [] };
   }
   
-  // Filter events for this specific date
-  const sensorChanges = (allEvents.sensorChanges || []).filter(e => e.date === date);
+  // Filter cartridge events for this specific date
   const cartridgeChanges = (allEvents.cartridgeChanges || []).filter(e => e.date === date);
   
-  return { sensorChanges, cartridgeChanges };
+  return { cartridgeChanges };
 }
 
 /**
- * Check if events exist for current dataset
+ * Check if cartridge events exist for current dataset
  * 
  * @returns {boolean}
  */
 export function hasEvents() {
   const events = getAllEvents();
-  return events !== null && 
-         (events.sensorChanges?.length > 0 || events.cartridgeChanges?.length > 0);
+  return events !== null && events.cartridgeChanges?.length > 0;
 }
 
 /**
@@ -92,40 +93,6 @@ export function getLastScanned() {
 }
 
 /**
- * Store a sensor change event
- * 
- * @param {Date} timestamp - When the sensor change occurred
- * @param {string} alarmText - Optional alarm text from CSV
- * @param {string} sourceFile - Source filename for metadata
- */
-export function storeSensorChange(timestamp, alarmText, sourceFile) {
-  const allEvents = getAllEvents() || { sensorChanges: [], cartridgeChanges: [] };
-  
-  const date = timestamp.toISOString().split('T')[0].replace(/-/g, '/'); // YYYY/MM/DD
-  const time = timestamp.toTimeString().split(' ')[0]; // HH:MM:SS
-  
-  // Check for duplicates
-  const exists = allEvents.sensorChanges.some(e => 
-    e.date === date && e.time === time
-  );
-  
-  if (exists) {
-    throw new Error('Duplicate sensor change event');
-  }
-  
-  allEvents.sensorChanges.push({
-    date,
-    time,
-    timestamp: timestamp.toISOString(),
-    alarmText: alarmText || 'Sensor Change',
-    sourceFile,
-    type: 'start' // Mark as sensor stop/start event
-  });
-  
-  storeEvents(allEvents);
-}
-
-/**
  * Store a cartridge change event
  * 
  * @param {Date} timestamp - When the cartridge change occurred
@@ -133,7 +100,7 @@ export function storeSensorChange(timestamp, alarmText, sourceFile) {
  * @param {string} sourceFile - Source filename for metadata
  */
 export function storeCartridgeChange(timestamp, alarmText, sourceFile) {
-  const allEvents = getAllEvents() || { sensorChanges: [], cartridgeChanges: [] };
+  const allEvents = getAllEvents() || { cartridgeChanges: [] };
   
   const date = timestamp.toISOString().split('T')[0].replace(/-/g, '/'); // YYYY/MM/DD
   const time = timestamp.toTimeString().split(' ')[0]; // HH:MM:SS
@@ -161,17 +128,16 @@ export function storeCartridgeChange(timestamp, alarmText, sourceFile) {
 /**
  * Get event statistics
  * 
- * @returns {Object} { sensorCount: number, cartridgeCount: number }
+ * @returns {Object} { cartridgeCount: number }
  */
 export function getEventStats() {
   const events = getAllEvents();
   
   if (!events) {
-    return { sensorCount: 0, cartridgeCount: 0 };
+    return { cartridgeCount: 0 };
   }
   
   return {
-    sensorCount: events.sensorChanges?.length || 0,
     cartridgeCount: events.cartridgeChanges?.length || 0
   };
 }

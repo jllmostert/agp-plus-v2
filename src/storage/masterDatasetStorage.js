@@ -473,18 +473,7 @@ async function findBatchSuggestionsForSensors(detectedEvents) {
  * @param {Array} detectedEvents.cartridgeEvents - Cartridge change events
  */
 async function storeSensors(detectedEvents) {
-  const { storeSensorChange, storeCartridgeChange } = await import('./eventStorage.js');
-  
-  // Store sensor changes
-  for (const event of detectedEvents.sensorEvents) {
-    try {
-      await storeSensorChange(event.timestamp, event.alert, 'CSV Alert');
-    } catch (err) {
-      if (!err.message.includes('duplicate')) {
-        console.warn('[storeSensors] Failed to store sensor event:', err);
-      }
-    }
-  }
+  const { storeCartridgeChange } = await import('./eventStorage.js');
   
   // Store cartridge changes
   for (const event of detectedEvents.cartridgeEvents) {
@@ -992,26 +981,19 @@ export async function cleanupRecords(options) {
     if (options.type === 'all-in') {
       debug.log('[cleanupRecords] ALL-IN: Deleting readings, cartridges. Keeping patient, sensors, stock');
       
-      // Delete readings and cartridges only
-      // KEEP sensors and stock!
-      const tx = db.transaction([STORES.READING_BUCKETS, STORES.CARTRIDGE_EVENTS], 'readwrite');
-      
-      await Promise.all([
-        tx.objectStore(STORES.READING_BUCKETS).clear(),
-        tx.objectStore(STORES.CARTRIDGE_EVENTS).clear()
-      ]);
-      
+      // Delete glucose readings from IndexedDB
+      const tx = db.transaction([STORES.READING_BUCKETS], 'readwrite');
+      await tx.objectStore(STORES.READING_BUCKETS).clear();
       await tx.done;
+      
+      // Clear cartridge events from localStorage
+      const { clearEvents } = await import('./eventStorage.js');
+      clearEvents();
       
       // ProTime data is in localStorage, handle separately
       await deleteProTimeData();
       
       // DO NOT clear localStorage sensors/stock - we're keeping those!
-      
-      // Clear reading buckets
-      const bucketTx = db.transaction([STORES.READING_BUCKETS], 'readwrite');
-      await bucketTx.objectStore(STORES.READING_BUCKETS).clear();
-      await bucketTx.done;
       
       // Invalidate cache
       await invalidateCache();

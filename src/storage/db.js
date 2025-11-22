@@ -1,31 +1,29 @@
 /**
- * IndexedDB Schema for AGP+ v3.0
- * 
- * CRITICAL MIGRATION NOTE:
- * v3.0 adds new stores but PRESERVES v2.x 'uploads' store for rollback safety.
+ * IndexedDB Schema for AGP+ v4.5
  * 
  * Stores:
  * - uploads (v2.x compat): Individual CSV upload metadata
  * - settings (v2.x compat): Active upload ID, patient info
- * - readingBuckets (NEW v3.0): Month-keyed glucose readings
- * - sensorEvents (NEW v3.0): Persistent sensor change database
- * - cartridgeEvents (NEW v3.0): Persistent cartridge change database
- * - masterDataset (NEW v3.0): Cached merged data + version info
+ * - readingBuckets (v3.0): Month-keyed glucose readings
+ * - masterDataset (v3.0): Cached merged data + version info
+ * - sensorData (v3.6): Sensor database
+ * - seasons (v4.4): Device era tracking
+ * 
+ * Note: sensorEvents and cartridgeEvents stores removed in v4.5
+ * (sensor events in sensorData, cartridge events in localStorage)
  */
 
 const DB_NAME = 'agp-plus-db';
-const DB_VERSION = 6;  // v6: Add SEASONS store
+const DB_VERSION = 7;  // v7: Remove unused sensorEvents/cartridgeEvents stores
 
 // Store names
 export const STORES = {
   UPLOADS: 'uploads',              // v2.x compat
   SETTINGS: 'settings',            // v2.x compat
-  READING_BUCKETS: 'readingBuckets',     // NEW v3.0
-  SENSOR_EVENTS: 'sensorEvents',         // NEW v3.0
-  CARTRIDGE_EVENTS: 'cartridgeEvents',   // NEW v3.0
-  MASTER_DATASET: 'masterDataset',       // NEW v3.0
-  SENSOR_DATA: 'sensorData',             // NEW v3.6
-  SEASONS: 'seasons'                     // NEW v4.4 - Device era tracking
+  READING_BUCKETS: 'readingBuckets',     // v3.0
+  MASTER_DATASET: 'masterDataset',       // v3.0
+  SENSOR_DATA: 'sensorData',             // v3.6
+  SEASONS: 'seasons'                     // v4.4 - Device era tracking
 };
 
 /**
@@ -55,7 +53,7 @@ export function openDB() {
         db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
       }
       
-      // === v3.0 NEW STORES ===
+      // === v3.0 STORES ===
       
       if (!db.objectStoreNames.contains(STORES.READING_BUCKETS)) {
         const bucketStore = db.createObjectStore(STORES.READING_BUCKETS, { 
@@ -64,20 +62,13 @@ export function openDB() {
         bucketStore.createIndex('lastUpdated', 'lastUpdated', { unique: false });
       }
       
-      if (!db.objectStoreNames.contains(STORES.SENSOR_EVENTS)) {
-        const sensorStore = db.createObjectStore(STORES.SENSOR_EVENTS, { 
-          keyPath: 'id'  // "sensor_YYYYMMDD_HHMMSS"
-        });
-        sensorStore.createIndex('timestamp', 'timestamp', { unique: false });
-        sensorStore.createIndex('confirmed', 'confirmed', { unique: false });
+      // === v7: Remove unused sensorEvents/cartridgeEvents stores ===
+      // These were created but never actually used - data lives elsewhere
+      if (db.objectStoreNames.contains('sensorEvents')) {
+        db.deleteObjectStore('sensorEvents');
       }
-      
-      if (!db.objectStoreNames.contains(STORES.CARTRIDGE_EVENTS)) {
-        const cartridgeStore = db.createObjectStore(STORES.CARTRIDGE_EVENTS, { 
-          keyPath: 'id'  // "cartridge_YYYYMMDD_HHMMSS"
-        });
-        cartridgeStore.createIndex('timestamp', 'timestamp', { unique: false });
-        cartridgeStore.createIndex('confirmed', 'confirmed', { unique: false });
+      if (db.objectStoreNames.contains('cartridgeEvents')) {
+        db.deleteObjectStore('cartridgeEvents');
       }
       
       if (!db.objectStoreNames.contains(STORES.MASTER_DATASET)) {
