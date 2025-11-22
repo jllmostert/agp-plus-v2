@@ -1,358 +1,75 @@
-# 📊 AGP+ Development Progress
+# AGP+ Development Progress
 
-**Current Version**: v4.4.0  
-**Last Updated**: 2025-11-21  
-**Session**: 48
+## Session 2025-11-22 - Storage Architecture Analysis
 
----
+### Completed
+- [x] Full localStorage audit (13 keys identified)
+- [x] Full IndexedDB audit (8 stores, 2 dead)
+- [x] Data flow analysis (eventStorage.js)
+- [x] Created `docs/STORAGE_ARCHITECTURE_ANALYSIS.md`
+- [x] Created `docs/SESSION_HANDOFF_STORAGE_CLEANUP.md`
 
-## 🎯 CURRENT STATUS
+### Key Findings
+1. **Dead code**: `storeSensorChange` writes to localStorage but is never read
+2. **Dead IndexedDB stores**: `sensorEvents` and `cartridgeEvents` created but unused
+3. **Duplicate data**: patient-info and workday-dates exist in both localStorage and IndexedDB
+4. **SQLite deprecated**: No longer used, files can be removed
+5. **DebugPanel deprecated**: References dead localStorage keys
 
-### ✅ Completed (Session 48)
+### Files Created
+- `docs/STORAGE_ARCHITECTURE_ANALYSIS.md` (315 lines)
+- `docs/handoffs/SESSION_HANDOFF_STORAGE_CLEANUP.md` (234 lines)
+- `docs/handoffs/SESSION_HANDOFF_REFACTORING.md` (327 lines)
+- `docs/handoffs/PROGRESS.md` (this file)
 
-**Bug Fixes & Cleanup**
-- ✅ Fix: Patient info lock state now persists after CSV upload
-- ✅ Fix: Sensors are now hard deleted (removed completely, not just marked as deleted)
-- ✅ Merged feature/device-era-tracking to main
-- ✅ Cleaned up feature branch
-- ✅ Version bump to 4.4.0
+### Next Session Tasks
 
-### ✅ Completed (Session 47)
+**Track A: Storage Cleanup** (do first)  
+See `SESSION_HANDOFF_STORAGE_CLEANUP.md`
+- Fase 1: Dead Code Verwijderen (30 min)
+- Fase 2: eventStorage → cartridgeStorage (1 uur)
+- Fase 3: localStorage Cleanup (2 uur)
 
-**Device History Management** - NEW FEATURE! 🎉
-- ✅ Device history tracking (archive old pumps/transmitters)
-- ✅ Transmitter serial field (manual entry)
-- ✅ Device start dates (when first used)
-- ✅ Archive dialog with notes
-- ✅ Complete import/export support for pump settings
-- ✅ PumpSettingsPanel: Device history section with archive/remove
-- ✅ pumpSettingsStorage: getDeviceHistory, archiveDevice, removeFromHistory
-- ✅ export.js: Include pumpSettings and deviceHistory in backup
-- ✅ import.js: Restore pump settings and device history from backup
-
-### ✅ Completed (Session 44)
-
-**MiniMed 780G Settings UI (Track 4, M1)** - NEW FEATURE! 🎉
-- ✅ Created `PumpSettingsPanel.jsx` (595 lines) - Full UI component
-- ✅ Created `pumpSettingsParser.js` (344 lines) - CSV parsing
-- ✅ Created `pumpSettingsStorage.js` (194 lines) - localStorage persistence
-- ✅ Auto-detection from CareLink CSV uploads
-- ✅ Manual editing capability
-- ✅ 500/1800 rule calculation for CR/ISF recommendations
-- ✅ Brutalist grid design matching app style
-- ✅ Integrated in AGPGenerator
-
-**Documentation Sync & Cleanup**
-- ✅ Updated CHANGELOG.md with v4.3.2, v4.3.3, v4.3.4 entries
-- ✅ Updated TIER2_SYNTHESIS.md to v4.3.3 (architecture overview)
-- ✅ Rewrote HANDOFF.md (clean, current quick reference)
-- ✅ Rewrote HANDOFF_COMPREHENSIVE.md (full project status)
-- ✅ Archived old session handoffs to `archive-2025-11/sessions/`
-- ✅ Synchronized all tier 1/2 documentation
-
-### ✅ Completed (Session 43)
-
-**UIContext Final Cleanup**
-- ✅ Removed last `useState` from AGPGenerator (`selectedDateRange`)
-- ✅ Using `startDate`/`endDate` from PeriodContext directly
-- ✅ Removed unused `useState` import
-- ✅ AGPGenerator now has **0 local useState calls**
-- ✅ Lines reduced: 1550 → 1544 (-6 lines)
-
-**Version Sync & Maintenance**
-- ✅ Synchronized version numbers (package.json, version.js → 4.3.3)
-- ✅ Created git tag v4.3.3
-- ✅ Pushed to GitHub
-
-### ✅ Recently Completed (Session 42)
-
-**Sprint S3: Layout Consolidation & Visual Cleanup**
-- ✅ Day/Night Analysis → Rewritten to grid-style (matches Work Schedule)
-- ✅ Period Comparison → Rewritten to grid-style + GMI row added
-- ✅ Removed duplicate Work Schedule Analysis (WorkdaySplit from VisualizationContainer)
-- ✅ HypoglycemiaEvents moved into MetricsDisplay (after secondary metrics)
-- ✅ VisualizationContainer simplified (removed unused WorkdaySplit import/render)
-
-**Quick Win: Smart Trend Indicators**
-- ✅ Color-coded delta indicators (green=good, red=bad)
-- ✅ Applied to ComparisonView, WorkScheduleAnalysis, DayNightSplit
-- ✅ TIR: higher=green, lower=red
-- ✅ Mean/CV/GMI: lower=green, higher=red
-
-**New Component Order (VisualizationContainer)**:
-1. AGP Chart
-2. MetricsDisplay (contains: Hero Grid, TIR Bar, Secondary Grid, HypoglycemiaEvents, WorkScheduleAnalysis)
-3. Day/Night Split (grid-style)
-4. Period Comparison (grid-style with GMI)
-
-**Files Modified**:
-- `MetricsDisplay.jsx` - Added events prop, imports HypoglycemiaEvents
-- `VisualizationContainer.jsx` - Removed HypoglycemiaEvents, WorkdaySplit
-- `DayNightSplit.jsx` - Rewritten to grid-style layout
-- `ComparisonView.jsx` - Rewritten to grid-style + GMI row
+**Track B: Code Health & Refactoring** (after Track A)  
+See `SESSION_HANDOFF_REFACTORING.md`
+- Fase 1: Architectural Scan
+- Fase 2: Quick Wins
+- Fase 3-5: Big File Refactors
 
 ---
 
-### ✅ Previously Completed (Session 41)
+## Session [NEXT] - Storage Layer Cleanup
 
-**UIContext Creation**
-- ✅ Created UIContext.jsx (255 lines, 7 state variables)
-- ✅ Created useUI.js hook (20 lines)
-- ✅ Patient info auto-loads from storage
-- ✅ 18 helper methods for clean API
+### Status
+- [ ] Fase 1: Dead Code Verwijderen
+- [ ] Fase 2: eventStorage → cartridgeStorage  
+- [ ] Fase 3: localStorage Cleanup
 
----
+### Fase 1 Progress
+- [ ] storeSensorChange calls verwijderd
+- [ ] sensorChanges uit eventStorage verwijderd
+- [ ] Ongebruikte IndexedDB stores verwijderd
+- [ ] SQLite files verwijderd
+- [ ] DebugPanel files verwijderd
+- [ ] Build succesvol
 
-## 📈 REFACTORING PROGRESS
+### Fase 2 Progress
+- [ ] eventStorage.js renamed naar cartridgeStorage.js
+- [ ] Functies hernoemd
+- [ ] Gemigreerd naar IndexedDB
+- [ ] Consumers updated
+- [ ] Day profiles werken nog
 
-### Phase 1: Quick Wins ✅ COMPLETE
-**Goal**: Extract state management into custom hooks  
-**Sessions**: 32-34  
-**Time Spent**: ~4.5 hours
+### Fase 3 Progress
+- [ ] Patient info duplicatie gefixt
+- [ ] Workdays duplicatie gefixt
+- [ ] Dead localStorage keys verwijderd
 
-**Achievements**:
-- ✅ useModalState hook (7 state variables)
-- ✅ usePanelNavigation hook (3 state variables)
-- ✅ useImportExport hook (9 state variables)
-- ✅ 330 lines removed from AGPGenerator
-- ✅ 41% complexity reduction (22 → 13 state variables)
+### Files Deleted
+(te vullen)
 
-### Phase 2: Context API Layers ✅ COMPLETE
-**Goal**: Extract data, period, and metrics into contexts  
-**Sessions**: Prior to 32  
-**Time Spent**: ~8 hours
+### Files Modified
+(te vullen)
 
-**Achievements**:
-- ✅ DataContext (master dataset management)
-- ✅ PeriodContext (date range selection)
-- ✅ MetricsContext (all calculations)
-- ✅ Clean separation of concerns
-
-### Phase 3: Safety & Accessibility ⏳ IN PROGRESS
-**Goal**: Accessibility improvements + backup/restore  
-**Sprints**: S1 (Charts), S2 (Backup) ✅, S3 (Workdays) ✅
-
-**Completed**:
-- ✅ Sprint S1: Chart accessibility (ARIA labels, AZERTY keyboard)
-- ✅ Sprint S2: Backup & restore (export history, symmetric import/export)
-- ✅ Sprint S3: Layout consolidation + grid-style comparison views
-
-**Next**:
-- ⏭️ Sprint S4: Advanced comparison features
-
-### Phase 4: Legacy Cleanup ✅ COMPLETE  
-**Goal**: Remove old collapsible UI, finalize panel migration  
-**Session**: 39  
-**Time Spent**: ~2 hours
-
-**Achievements**:
-- ✅ Removed dataImportExpanded/dataExportExpanded state
-- ✅ Removed dayProfilesOpen modal state
-- ✅ Deleted DataLoadingContainer component
-- ✅ Deleted DayProfilesModal component
-- ✅ Added 7d/14d toggle to DayProfilesPanel
-- ✅ 524 lines of dead code removed
-
----
-
-## 🗺️ ROADMAP
-
-### Short Term (Next 2-4 Sessions)
-
-**Track 3: Context API Phase 4 (OPTIONAL)**
-- UIContext extraction for remaining UI state
-- Target: AGPGenerator < 1200 lines (0 useState)
-- Estimated: 4-6 hours (Sessions 43-46)
-
-**Track 2: Safety & Accessibility (Sprint S4)**
-- Sprint S4: Advanced comparison features
-- Estimated: 2-4 hours
-
-### Medium Term (Next Month)
-
-**UI Polish**
-- Panel transitions (smooth animations)
-- Loading states (skeleton screens)
-- Error boundaries (graceful failures)
-- Estimated: 6-8 hours
-
-### Long Term (Q1 2026)
-
-**V4.0: Full V3 Migration**
-- Remove all V2 localStorage code
-- IndexedDB-only architecture
-- Estimated code reduction: 500+ lines
-- Breaking change: Requires user data migration
-
-**Advanced Features (TBD)**
-- Multi-sensor correlation analysis
-- Pattern detection and insights
-- Export improvements
-- Custom report templates
-
----
-
-## 📊 METRICS
-
-### Code Quality
-- **AGPGenerator Lines**: 1544 (down from 1819)
-- **Total Reduction**: -275 lines (-15.1%)
-- **State Variables**: 0 local useState (all in contexts/hooks)
-- **Custom Hooks**: 6 active
-- **Context Layers**: 4 active (Data, Period, Metrics, UI)
-
-### Performance  
-- **Metrics Calculation**: 3-64ms (target <1000ms) ✅
-- **CSV Parse**: <2s for 10k rows ✅
-- **Panel Transition**: <200ms ✅
-- **App Load**: <3s ✅
-
-### Test Coverage
-- **Unit Tests**: 25 (metrics engine)
-- **Pass Rate**: 100% ✅
-- **Integration Tests**: Manual QA checklist
-- **E2E Tests**: None (planned for v4.0)
-
-### Documentation
-- **Architecture Docs**: 3 files (1182 lines)
-- **Reference Docs**: 2 files (metric_definitions, minimed_780g_ref)
-- **Handoff Docs**: Archived (organized by date)
-- **Code Comments**: Comprehensive JSDoc
-
----
-
-## 🎓 LESSONS LEARNED
-
-### What Worked Well
-1. **Small, Focused Sessions**: Breaking work into 2-hour chunks prevented context overflow
-2. **Systematic Approach**: Following the refactoring plan prevented scope creep
-3. **Test-Driven Cleanup**: Testing after each change caught issues early
-4. **Documentation First**: Writing docs before coding clarified design decisions
-
-### What to Improve
-1. **Earlier Architecture Review**: Should have caught dual-storage issues sooner
-2. **More Granular Commits**: Some commits bundled too many changes
-3. **Performance Benchmarking**: Should track metrics across all changes
-
-### Key Insights
-1. **Context Overflow is Real**: Always chunk large files into <30 line edits
-2. **Dead Code Accumulates Fast**: Regular cleanup sessions are essential
-3. **Documentation Pays Off**: ARCHITECTURE_OVERVIEW.md will save hours in future
-4. **Panel > Modal**: Simpler UX, easier state management, better mobile support
-
----
-
-## 📅 SESSION HISTORY
-
-### Recent Sessions
-
-**Session 47** (2025-11-21): Enhanced Pump Settings ✅
-- Added "Laatste meting" timestamp to analysis header
-- New SMARTGUARD & LIMIETEN section with 2x3 grid
-- Added: Autocorrectie, Max Basaal, Max Bolus fields
-- Added: Software version (manual entry)
-- Editable pump/transmitter start dates with date pickers
-- Dynamic version in start.sh from package.json
-- Version 4.3.7
-
-**Session 46** (2025-11-21): SD Readability Enhancement ✅
-- Increased SD font-size: 0.9rem → 1.4rem
-- Fixed color contrast for dark/light backgrounds
-- Applied consistently across all comparison components
-- Version 4.3.6
-
-**Session 45** (2025-11-21): Device History Management ✅
-- Added device history tracking for pumps/transmitters
-- Added transmitter serial field and device start dates
-- Archive dialog with notes for retiring devices
-- Complete import/export support for pump settings
-- Version 4.3.5
-
-**Session 44** (2025-11-21): Documentation Sync ✅
-- Updated CHANGELOG with v4.3.2 and v4.3.3
-- Updated TIER2_SYNTHESIS.md to v4.3.3
-- Rewrote HANDOFF.md and HANDOFF_COMPREHENSIVE.md
-- Archived old session handoffs
-- All documentation synchronized
-
-**Session 43** (2025-11-20): UIContext Cleanup Complete ✅
-- Removed last useState from AGPGenerator (selectedDateRange)
-- Using startDate/endDate from PeriodContext directly
-- Removed unused useState import
-- AGPGenerator now has 0 local useState calls
-- Synchronized version numbers to v4.3.3
-- Created git tag v4.3.3
-
-**Session 42** (2025-11-20): Sprint S3 Layout Consolidation + Trend Indicators ✅
-- Day/Night Analysis rewritten to grid-style
-- Period Comparison rewritten to grid-style + GMI row
-- Removed duplicate Work Schedule Analysis block
-- Moved HypoglycemiaEvents into MetricsDisplay
-- Simplified VisualizationContainer (4 sections now)
-- Added smart trend indicators with color coding (green=good, red=bad)
-- Consistent brutalist grid layout across all comparison sections
-
-**Session 41** (2025-11-16): Create UIContext + useUI ✅
-- Created UIContext.jsx (255 lines, 7 state variables)
-- Created useUI.js hook (20 lines)
-- Patient info auto-loads from storage
-- 18 helper methods for clean API
-- NOT YET INTEGRATED (safe checkpoint)
-
-**Session 40** (2025-11-16): Planning Track 3 Phase 4 🔄
-- Verified Phase 4 completion
-- Updated PROGRESS.md metrics (1546 lines)
-- Adjusted roadmap (no insulin viz, workdays metrics only)
-- Created PHASE4_PLAN.md + SESSION_41_QUICKSTART.md
-- Ready for UIContext extraction
-
-**Session 39** (2025-11-16): Phase 4 Legacy Cleanup ✅
-- Removed 524 lines of dead code
-- Added 7d/14d toggle to day profiles
-- Created ARCHITECTURE_OVERVIEW.md
-- Organized documentation
-
-**Session 38** (2025-11-15): Sprint S2 Wrap-up ✅
-- Completed export history tracking
-- Validated symmetric import/export
-- Updated handoff docs
-
-**Session 34** (2025-11-15): Phase 1 Complete ✅
-- useImportExport hook created
-- 136 lines removed
-- All import/export functionality working
-
-**Session 32-33** (2025-11-14-15): Phase 1 Progress ✅
-- useModalState hook
-- usePanelNavigation hook
-- 194 lines removed combined
-
----
-
-## 🚀 NEXT STEPS
-
-### Immediate (Session 48+)
-**Option A: MiniMed 780G Settings - Final Polish** (Track 4, M1 - ~4h remaining)
-- ✅ Core UI complete (device info, CR, ISF, target, AIT, basal)
-- ✅ SmartGuard & Limieten section complete
-- 🔄 Optional: Alarm settings display (Hoog/Laag-alarmen)
-- 🔄 Optional: CSV auto-detection of max basaal/bolus
-
-**Option B: Table Virtualization** (Track 3, Q3 - ~3h)
-- react-window for large sensor lists
-- Quick performance win
-
-**Option C: WCAG AAA Compliance** (Track 3, Q4 - ~9h)
-- Accessibility audit
-- Screen reader improvements
-
-### This Month
-1. Complete one major feature track
-2. Performance testing across changes
-3. User feedback collection
-
----
-
-**Maintainer**: Jo Mostert  
-**Contributors**: Claude (AI pair programmer)  
-**License**: Private (medical data application)
+### Issues Encountered
+(te vullen)

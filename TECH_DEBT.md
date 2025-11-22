@@ -211,7 +211,8 @@ panels/
 ### 7. Storage Layer Simplification 🔄 IN PROGRESS
 
 **Analysis completed**: 2025-11-22  
-**See**: `docs/STORAGE_ARCHITECTURE_ANALYSIS.md`
+**See**: `docs/STORAGE_ARCHITECTURE_ANALYSIS.md`  
+**Handoff**: `docs/handoffs/SESSION_HANDOFF_STORAGE_CLEANUP.md`
 
 **Confirmed issues:**
 1. `eventStorage.js` stores `sensorChanges` in localStorage → **NEVER READ** (dead code)
@@ -228,6 +229,30 @@ panels/
 **Effort estimate:** ~4 hours  
 **Priority:** Medium (dead code accumulating, duplication risk)  
 **Status:** Ready to execute
+
+---
+
+### 8. Code Health & Big File Refactoring 📋 PLANNED
+
+**Handoff**: `docs/handoffs/SESSION_HANDOFF_REFACTORING.md`
+
+**Target files**:
+- `AGPGenerator.jsx` (~1600 lines) → Extract to thin orchestration shell
+- `sensorStorage.js` (~500 lines) → Split into pure functions + façade
+- `metrics-engine.js` (~500 lines) → Optional split into metric families
+
+**Philosophy**: Prefer clean rewrites over incremental patching.
+
+**Phases**:
+1. Architectural scan → Write `docs/handoffs/AGP_REFAC_NOTES.md`
+2. Quick wins (dead code, helper extraction)
+3. AGPGenerator.jsx refactor (target: <400 lines)
+4. sensorStorage.js refactor (façade pattern)
+5. metrics-engine.js split (optional)
+
+**Effort estimate:** ~12-16 hours total  
+**Priority:** Low (after storage cleanup)  
+**Status:** Handoff ready, waiting for storage cleanup completion
 
 ---
 
