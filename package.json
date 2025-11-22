@@ -1,6 +1,6 @@
 {
   "name": "agp-plus",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "AGP+ v4.3.4 - Ambulatory Glucose Profile with MiniMed 780G Settings",
   "type": "module",
   "scripts": {

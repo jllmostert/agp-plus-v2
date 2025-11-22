@@ -1,5 +1,46 @@
 # AGP+ Development Progress
 
+## Session 2025-11-22 (9) - Architecture Improvements: ErrorBoundary
+
+### Plan (Fase 1 from SESSION_HANDOFF_ARCHITECTURE.md)
+1. [x] Create rollback tag
+2. [x] Create ErrorBoundary.jsx component
+3. [x] Wrap main.jsx with ErrorBoundary
+4. [x] Build check
+5. [x] Commit & push
+
+### Progress Log
+- [x] Created rollback tag `v4.4.0-pre-error-boundary`
+- [x] Created ErrorBoundary.jsx (137 lines) with:
+  - Class component (required for error boundaries)
+  - Brutalist styling matching AGP+ design
+  - "Try Again" + "Reload App" recovery buttons
+  - Dev mode technical details (component stack)
+  - Error logging with timestamp for medical audit trail
+  - `name` prop for identifying which boundary caught error
+- [x] Updated main.jsx with two ErrorBoundary layers:
+  - Outer: `name="root"` - catches provider errors
+  - Inner: `name="AGPGenerator"` - catches component errors
+- [x] Build: ✅ PASSING
+- [x] Committed: `2fce2ef`
+
+### Results
+| File | Lines | Notes |
+|------|-------|-------|
+| ErrorBoundary.jsx | 137 | New component |
+| main.jsx | +14 | Two boundary wrappers |
+
+### Why This Matters (Medical Device)
+- JS errors no longer crash entire app to blank screen
+- Users see clear "Your data is safe" message
+- Recovery options prevent panic
+- Error logging provides audit trail
+
+### Next: Fase 2 (csvUploadEngine.js extraction)
+See SESSION_HANDOFF_ARCHITECTURE.md
+
+---
+
 ## Session 2025-11-22 (7) - Storage Extraction + BG Readings Feature
 
 ### Plan

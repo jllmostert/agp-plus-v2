@@ -3,9 +3,9 @@
  * Single source of truth for application version
  */
 
-export const VERSION = '4.4.0';
-export const VERSION_DATE = '2025-11-21';
-export const VERSION_NAME = 'Device Seasons';
+export const VERSION = '4.5.0';
+export const VERSION_DATE = '2025-11-22';
+export const VERSION_NAME = 'Error Recovery';
 
 export default {
   VERSION,
