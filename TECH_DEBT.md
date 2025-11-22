@@ -156,31 +156,14 @@ Search for these comments to find cleanup locations:
 
 ## 🧹 CODE HYGIENE (Added 2025-11-22)
 
-### 4. Console Statement Cleanup
+### ~~4. Console Statement Cleanup~~ (2025-11-22) ✓
 
-**Problem:**
-502 `console.log/warn/error` statements across the codebase. Too many for production.
+Removed 15 debug console.log statements from production code.
 
-**Files with most console statements:**
-- `src/storage/masterDatasetStorage.js`
-- `src/core/parsers.js`
-- `src/storage/sensorStorage.js`
-- `src/components/AGPGenerator.jsx`
-
-**Fix options:**
-```
-Option A: Remove all non-error console statements
-Option B: Convert to debug.js utility (already exists)
-Option C: Add DEBUG flag: if (import.meta.env.DEV) console.log(...)
-```
-
-**Command to find them:**
-```bash
-grep -rn "console.log\|console.warn" src --include="*.js" --include="*.jsx"
-```
-
-**Effort estimate:** ~2 hours  
-**Priority:** Low (cosmetic, but professional)
+**Kept (intentionally):**
+- `migrateSensors.js` - migration logs (useful for debugging)
+- `parsers.js:476` - console.info for optional columns
+- `__tests__/` and `__benchmarks__/` - test output
 
 ---
 
