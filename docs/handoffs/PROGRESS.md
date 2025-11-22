@@ -1,5 +1,56 @@
 # AGP+ Development Progress
 
+## Session 2025-11-22 (9c) - Fase 3: SensorHistoryPanel Split (IN PROGRESS)
+
+### Plan (from SESSION_HANDOFF_ARCHITECTURE.md)
+1. [ ] Create rollback tag
+2. [ ] Extract SeasonManager.jsx (~300 lines)
+3. [ ] Create index.jsx orchestrator (~250 lines)
+4. [ ] Replace original SensorHistoryPanel.jsx
+5. [ ] Build & test all functionality
+6. [ ] Commit & push
+
+### Current State (UNCOMMITTED FILES)
+- ⚠️ useSensorHistory.js (401 lines) ✅ CREATED
+- ⚠️ SensorStatsPanel.jsx (184 lines) ✅ CREATED
+- ⚠️ SensorTable.jsx (192 lines) ✅ CREATED
+- ⚠️ SeasonManager.jsx (354 lines) ✅ CREATED
+- ⚠️ index.jsx (243 lines) ✅ CREATED
+- 📄 SensorHistoryPanel.jsx (1163 lines) - needs replacement with re-export
+
+### Progress Log
+- [x] Step 1: Rollback tag (already exists from previous attempt)
+- [x] Step 2: Create SeasonManager.jsx (354 lines) ✅
+- [x] Step 3: Create index.jsx orchestrator (243 lines) ✅
+- [x] Step 4: Replace SensorHistoryPanel.jsx with re-export (25 lines) ✅
+- [x] Step 5: Build check ✅ PASSING
+- [ ] Step 6: Commit & push
+
+### Results
+| File | Before | After | Status |
+|------|--------|-------|--------|
+| SensorHistoryPanel.jsx | 1163 | 25 (re-export) | ✅ Refactored |
+| useSensorHistory.js | - | 401 | ✅ New |
+| SensorStatsPanel.jsx | - | 184 | ✅ New |
+| SensorTable.jsx | - | 192 | ✅ New |
+| SeasonManager.jsx | - | 354 | ✅ New |
+| index.jsx | - | 243 | ✅ New |
+| **Total Lines** | **1163** | **1399 (modular)** | +236 lines |
+
+**Architecture Improvement:**
+- ✅ No file >401 lines (was 1163)
+- ✅ Single responsibility per component
+- ✅ Testable, maintainable
+- ✅ Backwards compatible (re-export)
+
+### Next Action
+Commit & push
+
+### Next Action
+Creating SeasonManager.jsx by extracting lines 800-970 from original SensorHistoryPanel.jsx
+
+---
+
 ## Session 2025-11-22 (9) - Architecture Improvements: ErrorBoundary
 
 ### Plan (Fase 1 from SESSION_HANDOFF_ARCHITECTURE.md)
