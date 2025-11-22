@@ -7,8 +7,8 @@
 - [x] Fase 2: Quick Wins ✅ DONE
 - [x] Fase 2b: Handler Extraction ✅ DONE
 - [x] Fase 3: Further AGPGenerator cleanup ✅ DONE
-- [ ] Fase 4: sensorStorage Refactor (optional)
-- [ ] Fase 5: metrics-engine Refactor (optional)
+- [ ] Fase 4: sensorStorage Refactor → See `SESSION_HANDOFF_SENSORSTORAGE.md`
+- [x] Fase 5: metrics-engine Refactor ⛔ SKIPPED (code is clean, no need)
 
 ---
 
