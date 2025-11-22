@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import AGPGenerator from './components/AGPGenerator.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 // import { MigrationBanner } from './components/MigrationBanner.jsx'; // Disabled: v3.0 migration not ready yet
 import './styles/globals.css';
 import { APP_VERSION, APP_FULL_NAME } from './utils/version.js';
@@ -53,16 +54,20 @@ const root = createRoot(rootElement);
 // Render application
 // Note: StrictMode temporarily disabled for debugging
 root.render(
-  <DataProvider>
-    <PeriodProvider>
-      <MetricsProvider>
-        <UIProvider>
-          {/* <MigrationBanner /> */}
-          <AGPGenerator />
-        </UIProvider>
-      </MetricsProvider>
-    </PeriodProvider>
-  </DataProvider>
+  <ErrorBoundary name="root">
+    <DataProvider>
+      <PeriodProvider>
+        <MetricsProvider>
+          <UIProvider>
+            {/* <MigrationBanner /> */}
+            <ErrorBoundary name="AGPGenerator">
+              <AGPGenerator />
+            </ErrorBoundary>
+          </UIProvider>
+        </MetricsProvider>
+      </PeriodProvider>
+    </DataProvider>
+  </ErrorBoundary>
 );
 
 /**
