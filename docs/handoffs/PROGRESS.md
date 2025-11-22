@@ -52,9 +52,21 @@
 
 ### Fase 3: localStorage Cleanup (after Fase 2)
 
-- [ ] Patient info duplicatie gefixt
-- [ ] Workdays duplicatie gefixt
-- [ ] Dead localStorage keys verwijderd
+**Handoff:** `docs/handoffs/SESSION_HANDOFF_LOCALSTORAGE_CLEANUP.md`
+
+**Stappen:**
+- [ ] Stap 0: Rollback tag created (v4.5.0-pre-localstorage-cleanup)
+- [ ] Stap 1: import.js patient info → IndexedDB
+- [ ] Stap 2: export.js patient info → IndexedDB
+- [ ] Stap 3: import.js workdays localStorage removed
+- [ ] Stap 4: export.js workdays localStorage fallback removed
+- [ ] Stap 5: Migration helpers added
+- [ ] Stap 6: Build passing
+- [ ] Stap 7: No remaining localStorage references
+- [ ] Stap 8: Committed & pushed
+
+**Issues:**
+(none yet)
 
 ---
 
