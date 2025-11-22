@@ -283,3 +283,81 @@ Removed 15 debug console.log statements from production code.
 ---
 
 **Last updated**: 2025-11-22 (storage analysis complete)
+
+---
+
+## 🟡 DEFERRED ITEMS (Low Priority)
+
+### 3. Console.log Cleanup (116 remaining)
+
+**Added**: 2025-11-22  
+**Priority**: Low  
+**Effort**: 1 hour
+
+**Problem:**
+116 console.log statements remain in production code (excluding .error/.warn and tests).
+
+**Impact:** Low - cosmetic, slight performance overhead
+
+**Action when ready:**
+```bash
+grep -rn "console.log" src/ --include="*.js" --include="*.jsx" | grep -v test | grep -v ".error\|.warn"
+# Review each, convert to debug.log() or remove
+```
+
+---
+
+### 4. Inline Styles Consolidation (563 occurrences)
+
+**Added**: 2025-11-22  
+**Priority**: Very Low  
+**Effort**: 8+ hours
+
+**Problem:**
+563 `style=` attributes in component files.
+
+**Why deferred:**
+- Brutalist design uses many one-off styles
+- Print compatibility requires inline styles
+- CSS-in-JS migration would be large effort for minimal gain
+
+**Recommendation:** Leave as-is unless specific styling bugs arise.
+
+---
+
+### 5. Settings Store Consolidation
+
+**Added**: 2025-11-22  
+**Priority**: Low  
+**Effort**: 4 hours
+
+**Problem:**
+`STORES.SETTINGS` in IndexedDB is a catch-all storing:
+- Patient info
+- TDD data
+- Cartridge changes
+- Workdays (ProTime)
+- Active upload ID
+
+**Risk:** Key collisions (theoretical, not observed)
+
+**Future fix:** Split into dedicated stores or use namespaced keys.
+Consider for v5.0 database schema redesign.
+
+---
+
+### 6. PumpSettingsPanel Size (1,292 lines)
+
+**Added**: 2025-11-22  
+**Priority**: Low  
+**Effort**: 4 hours
+
+**Problem:**
+Second-largest component after SensorHistoryPanel.
+
+**Why deferred:**
+- SensorHistoryPanel is worse (15 useState vs ~8)
+- PumpSettingsPanel is more stable/less edited
+- Works correctly
+
+**Action:** Split after SensorHistoryPanel refactor (Fase 3) if still needed.
