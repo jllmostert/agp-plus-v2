@@ -15,6 +15,7 @@ import StockBatchForm from '../StockBatchForm.jsx';
 
 export default function StockPanel({ isOpen, onClose }) {
   const [batches, setBatches] = useState([]);
+  const [summaryStats, setSummaryStats] = useState(null); // âœ… NEW: async state
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('received_date');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -27,6 +28,16 @@ export default function StockPanel({ isOpen, onClose }) {
       loadBatches();
     }
   }, [isOpen]);
+  
+  // âœ… NEW: Load summary stats async
+  useEffect(() => {
+    if (isOpen) {
+      (async () => {
+        const stats = await calculateSummaryStats();
+        setSummaryStats(stats);
+      })();
+    }
+  }, [isOpen, batches]); // Re-calculate when batches change
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -49,9 +60,9 @@ export default function StockPanel({ isOpen, onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, showForm, onClose]);
 
-  const loadBatches = () => {
-    const data = getAllBatchesWithStats();
-    setBatches(data);
+  const loadBatches = async () => {
+    const data = await getAllBatchesWithStats();
+    setBatches(data || []); // âœ… Defensive: ensure array
   };
 
   // Filtered and sorted batches
@@ -59,8 +70,6 @@ export default function StockPanel({ isOpen, onClose }) {
     let filtered = filterBatches(batches, searchQuery);
     return sortBatches(filtered, sortBy, sortDirection);
   }, [batches, searchQuery, sortBy, sortDirection]);
-
-  const summaryStats = useMemo(() => calculateSummaryStats(), [batches]);
 
   const handleDeleteBatch = (batchId, assignedCount) => {
     if (assignedCount > 0) {

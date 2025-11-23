@@ -3,10 +3,11 @@
 ## Session 2025-11-23 (Phase 4) - Critical Bug Fixes
 
 ### Plan
-Fix 3 critical bugs preventing app from functioning:
+Fix 4 critical bugs preventing app from functioning:
 1. [x] Fix patientStorage.set error in UIContext
 2. [x] Fix profiles.map error in useDayProfiles
 3. [x] Fix batches.map error in SensorTable/SensorRow
+4. [x] Fix StockPanel spread operator error
 
 ### Progress Log
 
@@ -41,25 +42,50 @@ Fix 3 critical bugs preventing app from functioning:
   3. **SensorRow.jsx**: Added optional chaining `batches?.map` and `batches?.find`
 - **Status**: ✅ FIXED
 
+**Bug 4: StockPanel spread operator on undefined**
+- **Error**: `TypeError: Spread syntax requires ...iterable[Symbol.iterator] to be a function`
+- **Location**: `src/components/panels/StockPanel.jsx` + `src/core/stock-engine.js`
+- **Root Cause**: Multiple async functions called synchronously + spread operators on undefined arrays
+- **Fixes Applied**:
+  1. **StockPanel.jsx**:
+     - Made `loadBatches()` async with await
+     - Added defensive default `setBatches(data || [])`
+     - Converted `summaryStats` from useMemo to useState + useEffect pattern
+     - Now properly awaits `calculateSummaryStats()`
+  2. **stock-engine.js**:
+     - Added defensive guard in `sortBatches()`: `if (!batches || !Array.isArray(batches)) return []`
+     - Added defensive guard in `filterBatches()`: `if (!batches || !Array.isArray(batches)) return []`
+- **Status**: ✅ FIXED
+
 ### Results
 | Issue | Severity | Before | After | Status |
 |-------|----------|--------|-------|--------|
 | Patient info save | Critical | App crash on patient update | Works | ✅ |
 | Day profiles load | Critical | Infinite error loop | Loads correctly | ✅ |
 | Sensor/Stock panel | Critical | Cannot open panels | Opens normally | ✅ |
+| Stock panel crash | Critical | Spread operator error | Defensive guards work | ✅ |
 
-### Files Modified (6)
+### Files Modified (9)
 1. `src/contexts/UIContext.jsx` - Fixed method call
 2. `src/hooks/useDayProfiles.js` - Async refactor (useMemo → useEffect + state)
 3. `src/components/panels/SensorHistoryPanel/useSensorHistory.js` - Defensive defaults
 4. `src/components/panels/SensorHistoryPanel/SensorTable.jsx` - Optional chaining
 5. `src/components/SensorRow.jsx` - Optional chaining (2 places)
+6. `src/components/panels/StockPanel.jsx` - Async fixes + defensive defaults
+7. `src/core/stock-engine.js` - Defensive guards in sortBatches/filterBatches
 
 ### Build Status
-✅ All errors resolved - app functional again
+✅ All errors resolved - app fully functional
+
+### Pattern Learned
+**Async/Sync Mismatch Pattern**: When a function changes from sync to async:
+1. All callers must use `await`
+2. useMemo cannot await → use useEffect + useState instead
+3. Always add defensive defaults (`|| []`) when setting state from async calls
+4. Add array guards before spread operators: `if (!arr || !Array.isArray(arr)) return []`
 
 ### Next Action
-- [ ] Test all 3 panels (Day Profiles, Sensor History, Stock Management)
+- [x] Test all panels (Day Profiles ✅, Sensor History ✅, Stock Management ✅)
 - [ ] Commit changes with descriptive message
 - [ ] Test full workflow (upload CSV, check panels, export data)
 

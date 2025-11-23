@@ -37,8 +37,8 @@ export function calculateBatchStats(batch) {
  * Get all batches with calculated statistics
  * @returns {Array} Batches with stats
  */
-export function getAllBatchesWithStats() {
-  const batches = getAllBatches();
+export async function getAllBatchesWithStats() {
+  const batches = await getAllBatches();
   return batches.map(batch => ({
     ...batch,
     stats: calculateBatchStats(batch)
@@ -86,6 +86,7 @@ export function findMatchingBatches(sensorId) {
  * @returns {Array} Sorted batches
  */
 export function sortBatches(batches, sortBy = 'received_date', direction = 'desc') {
+  if (!batches || !Array.isArray(batches)) return []; // âœ… Defensive guard
   const sorted = [...batches];
   
   sorted.sort((a, b) => {
@@ -127,6 +128,7 @@ export function sortBatches(batches, sortBy = 'received_date', direction = 'desc
  * @returns {Array} Filtered batches
  */
 export function filterBatches(batches, query) {
+  if (!batches || !Array.isArray(batches)) return []; // âœ… Defensive guard
   if (!query || query.trim() === '') return batches;
   
   const lowerQuery = query.toLowerCase();
@@ -144,9 +146,9 @@ export function filterBatches(batches, query) {
  * Calculate overall summary statistics
  * @returns {Object} Summary statistics
  */
-export function calculateSummaryStats() {
-  const batches = getAllBatches();
-  const assignments = getAllAssignments();
+export async function calculateSummaryStats() {
+  const batches = await getAllBatches();
+  const assignments = await getAllAssignments();
   
   const totalQuantity = batches.reduce((sum, b) => sum + (b.total_quantity || 0), 0);
   const assignedCount = assignments.length;
