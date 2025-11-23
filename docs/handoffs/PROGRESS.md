@@ -42,16 +42,18 @@ Fix 4 critical bugs preventing app from functioning:
   3. **SensorRow.jsx**: Added optional chaining `batches?.map` and `batches?.find`
 - **Status**: ✅ FIXED
 
-**Bug 4: StockPanel spread operator on undefined**
-- **Error**: `TypeError: Spread syntax requires ...iterable[Symbol.iterator] to be a function`
+**Bug 4: StockPanel spread operator on undefined + null stats**
+- **Error 1**: `TypeError: Spread syntax requires ...iterable[Symbol.iterator] to be a function`
+- **Error 2**: `TypeError: null is not an object (evaluating 'summaryStats.totalBatches')`
 - **Location**: `src/components/panels/StockPanel.jsx` + `src/core/stock-engine.js`
-- **Root Cause**: Multiple async functions called synchronously + spread operators on undefined arrays
+- **Root Cause**: Multiple async functions called synchronously + spread operators on undefined arrays + null state during initial render
 - **Fixes Applied**:
   1. **StockPanel.jsx**:
      - Made `loadBatches()` async with await
      - Added defensive default `setBatches(data || [])`
      - Converted `summaryStats` from useMemo to useState + useEffect pattern
      - Now properly awaits `calculateSummaryStats()`
+     - **NEW**: Added nullish coalescing for all summaryStats displays: `summaryStats?.totalBatches ?? 0`
   2. **stock-engine.js**:
      - Added defensive guard in `sortBatches()`: `if (!batches || !Array.isArray(batches)) return []`
      - Added defensive guard in `filterBatches()`: `if (!batches || !Array.isArray(batches)) return []`

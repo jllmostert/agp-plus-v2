@@ -227,23 +227,33 @@ export default function StockPanel({ isOpen, onClose }) {
         gap: '16px'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.totalBatches}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>
+            {summaryStats?.totalBatches ?? 0}
+          </div>
           <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>BATCHES</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.totalQuantity}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>
+            {summaryStats?.totalQuantity ?? 0}
+          </div>
           <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>TOTAAL</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.assignedCount}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>
+            {summaryStats?.assignedCount ?? 0}
+          </div>
           <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>TOEGEWEZEN</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.remainingCount}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>
+            {summaryStats?.remainingCount ?? 0}
+          </div>
           <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>RESTEREND</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>{summaryStats.usagePercentage}%</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--ink)' }}>
+            {summaryStats?.usagePercentage ?? 0}%
+          </div>
           <div style={{ fontSize: '12px', textTransform: 'uppercase', marginTop: '4px', color: 'var(--text-secondary)' }}>GEBRUIK</div>
         </div>
       </div>
