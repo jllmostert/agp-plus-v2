@@ -18,7 +18,7 @@ const SensorRow = React.memo(function SensorRow({
   setRefreshKey
 }) {
   const assignment = getAssignmentForSensor(sensor.sensor_id);
-  const batch = assignment ? batches.find(b => b.batch_id === assignment.batch_id) : null;
+  const batch = assignment ? batches?.find(b => b.batch_id === assignment.batch_id) : null;
 
   // Calculate duration from timestamps
   const getDuration = () => {
@@ -180,7 +180,7 @@ const SensorRow = React.memo(function SensorRow({
           }}
         >
           <option value="">-</option>
-          {batches.map((b, index) => (
+          {batches?.map((b, index) => (
             <option key={`${b.batch_id}-${index}`} value={b.batch_id}>
               {b.lot_number}
             </option>

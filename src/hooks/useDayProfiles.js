@@ -48,6 +48,9 @@ export function useDayProfiles(csvData, dateRange, currentMetrics, numDays = 7) 
   // State for sensors (loaded async from IndexedDB)
   const [sensors, setSensors] = useState([]);
   
+  // State for day profiles (computed async)
+  const [dayProfiles, setDayProfiles] = useState(null);
+  
   // Load TDD data on mount and when dependencies change
   useEffect(() => {
     async function loadTDD() {
@@ -99,70 +102,82 @@ export function useDayProfiles(csvData, dateRange, currentMetrics, numDays = 7) 
     loadWorkdays();
   }, [csvData, dateRange]); // Reload when data changes
   
-  return useMemo(() => {
-    // Guard: require all dependencies with proper structure
-    if (!csvData || csvData.length === 0) {
-      return null;
-    }
+  // Generate day profiles (async operation)
+  useEffect(() => {
+    async function generateProfiles() {
+      // Guard: require all dependencies with proper structure
+      if (!csvData || csvData.length === 0) {
+        setDayProfiles(null);
+        return;
+      }
 
-    if (!dateRange || !dateRange.max) {
-      return null;
+      if (!dateRange || !dateRange.max) {
+        setDayProfiles(null);
+        return;
+      }
+      
+      // Wait for sensors to load before generating profiles
+      if (!sensors) {
+        setDayProfiles(null);
+        return;
+      }
+
+      try {
+        // Format CSV creation date (last available date = cutoff for "complete" days)
+        // V3: dateRange.max is already a Date object
+        // V2: dateRange.max might be a string
+        const maxDate = dateRange.max instanceof Date ? dateRange.max : new Date(dateRange.max);
+        
+        // Additional guard: validate maxDate is valid
+        if (isNaN(maxDate.getTime())) {
+          setDayProfiles(null);
+          return;
+        }
+        
+        const csvCreatedDate = formatDateString(maxDate);
+        
+        // âœ¨ ASYNC CALL - now properly awaited
+        const profiles = await getLastSevenDays(csvData, csvCreatedDate, sensors, numDays);
+        
+        if (!profiles || profiles.length === 0) {
+          setDayProfiles(null);
+          return;
+        }
+        
+        // Enrich profiles with current analysis period data for comparison
+        const overallMean = currentMetrics?.metrics?.mean || null;
+        const agpCurve = currentMetrics?.agp || null;
+        
+        // Add AGP overlay data, TDD data, AND workday info to each profile
+        const enrichedProfiles = profiles.map(profile => {
+          // Get TDD for this specific day
+          const dayTDD = tddData && tddData[profile.date] ? tddData[profile.date] : null;
+          
+          // Check if this day is a workday (ProTime data)
+          // workdaySet is a Set of "YYYY/MM/DD" strings
+          const isWorkday = workdaySet ? workdaySet.has(profile.date) : null;
+          
+          return {
+            ...profile,
+            overallMean,
+            agpCurve,
+            tdd: dayTDD, // âœ¨ Per-day TDD data
+            isWorkday // âœ¨ NEW: Workday indicator (null if no ProTime data)
+          };
+        });
+        
+        setDayProfiles(enrichedProfiles);
+        
+      } catch (err) {
+        console.error('[useDayProfiles] Failed to generate day profiles:', err);
+        setDayProfiles(null);
+      }
     }
     
-    // Wait for sensors to load before generating profiles
-    if (!sensors) {
-      return null;
-    }
-
-    try {
-      // Format CSV creation date (last available date = cutoff for "complete" days)
-      // V3: dateRange.max is already a Date object
-      // V2: dateRange.max might be a string
-      const maxDate = dateRange.max instanceof Date ? dateRange.max : new Date(dateRange.max);
-      
-      // Additional guard: validate maxDate is valid
-      if (isNaN(maxDate.getTime())) {
-        return null;
-      }
-      
-      const csvCreatedDate = formatDateString(maxDate);
-      
-      // Generate last N day profiles - pass sensors array and numDays
-      const profiles = getLastSevenDays(csvData, csvCreatedDate, sensors, numDays);
-      
-      if (!profiles || profiles.length === 0) {
-        return null;
-      }
-      
-      // Enrich profiles with current analysis period data for comparison
-      const overallMean = currentMetrics?.metrics?.mean || null;
-      const agpCurve = currentMetrics?.agp || null;
-      
-      // Add AGP overlay data, TDD data, AND workday info to each profile
-      const enrichedProfiles = profiles.map(profile => {
-        // Get TDD for this specific day
-        const dayTDD = tddData && tddData[profile.date] ? tddData[profile.date] : null;
-        
-        // Check if this day is a workday (ProTime data)
-        // workdaySet is a Set of "YYYY/MM/DD" strings
-        const isWorkday = workdaySet ? workdaySet.has(profile.date) : null;
-        
-        return {
-          ...profile,
-          overallMean,
-          agpCurve,
-          tdd: dayTDD, // âœ¨ Per-day TDD data
-          isWorkday // âœ¨ NEW: Workday indicator (null if no ProTime data)
-        };
-      });
-      
-      return enrichedProfiles;
-      
-    } catch (err) {
-      console.error('[useDayProfiles] Failed to generate day profiles:', err);
-      return null;
-    }
-  }, [csvData, dateRange, currentMetrics, tddData, workdaySet, sensors, numDays]); // Added numDays dependency
+    generateProfiles();
+  }, [csvData, dateRange, currentMetrics, tddData, workdaySet, sensors, numDays]); // Re-run when any dependency changes
+  
+  return dayProfiles;
 }
 
 /**

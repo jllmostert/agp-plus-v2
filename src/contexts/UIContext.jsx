@@ -71,7 +71,7 @@ export function UIProvider({ children }) {
     // Save to storage
     try {
       const { patientStorage } = await import('../utils/patientStorage');
-      await patientStorage.set(info);
+      await patientStorage.save(info);
     } catch (err) {
       console.error('[UIContext] Failed to save patient info:', err);
     }

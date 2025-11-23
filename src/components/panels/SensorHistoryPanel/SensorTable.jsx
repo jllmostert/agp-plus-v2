@@ -142,7 +142,7 @@ export default function SensorTable({
                 }}
               >
                 <option value="">-</option>
-                {batches.map(b => (
+                {batches?.map(b => (
                   <option key={b.batch_id} value={b.batch_id}>
                     {b.lot_number}
                   </option>

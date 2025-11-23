@@ -71,10 +71,11 @@ export function useSensorHistory(isOpen) {
     if (isOpen) {
       (async () => {
         const sensorsData = await sensorStorage.getAllSensors();
-        setSensors(sensorsData);
-        setBatches(stockStorage.getAllBatches());
+        setSensors(sensorsData || []); // âœ… Defensive: ensure array
+        const batchesData = await stockStorage.getAllBatches();
+        setBatches(batchesData || []); // âœ… Defensive: ensure array
         const seasonsData = await getAllSeasonsAsync();
-        setSeasons(seasonsData);
+        setSeasons(seasonsData || []); // âœ… Defensive: ensure array
       })();
     }
   }, [isOpen, refreshKey]);

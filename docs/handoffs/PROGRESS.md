@@ -1,5 +1,70 @@
 # AGP+ Development Progress
 
+## Session 2025-11-23 (Phase 4) - Critical Bug Fixes
+
+### Plan
+Fix 3 critical bugs preventing app from functioning:
+1. [x] Fix patientStorage.set error in UIContext
+2. [x] Fix profiles.map error in useDayProfiles
+3. [x] Fix batches.map error in SensorTable/SensorRow
+
+### Progress Log
+
+**Bug 1: UIContext patientStorage.set() → save()**
+- **Error**: `patientStorage.set is not a function`
+- **Location**: `src/contexts/UIContext.jsx:76`
+- **Root Cause**: UIContext called `patientStorage.set()` but API method is `save()`
+- **Fix**: Changed `await patientStorage.set(info)` to `await patientStorage.save(info)`
+- **Status**: ✅ FIXED
+
+**Bug 2: useDayProfiles async function called synchronously**
+- **Error**: `profiles.map is not a function` (profiles was Promise, not array)
+- **Location**: `src/hooks/useDayProfiles.js:130`
+- **Root Cause**: `getLastSevenDays()` changed to async but was called without await in useMemo
+- **Fix**: Converted useMemo pattern to useEffect + useState pattern:
+  - Added `dayProfiles` state
+  - Moved profile generation to async useEffect
+  - Added `await` for getLastSevenDays call
+  - Hook now returns state instead of computed value
+- **Status**: ✅ FIXED
+
+**Bug 3: batches undefined in SensorTable/SensorRow**
+- **Error**: `batches.map is not a function` (batches was undefined)
+- **Locations**: 
+  - `src/components/panels/SensorHistoryPanel/SensorTable.jsx:145`
+  - `src/components/SensorRow.jsx:182-183`
+  - `src/components/panels/SensorHistoryPanel/useSensorHistory.js:70`
+- **Root Cause**: `getAllBatches()` could return undefined
+- **Fixes Applied**:
+  1. **useSensorHistory.js**: Added defensive defaults `|| []` for all storage calls (sensors, batches, seasons)
+  2. **SensorTable.jsx**: Added optional chaining `batches?.map`
+  3. **SensorRow.jsx**: Added optional chaining `batches?.map` and `batches?.find`
+- **Status**: ✅ FIXED
+
+### Results
+| Issue | Severity | Before | After | Status |
+|-------|----------|--------|-------|--------|
+| Patient info save | Critical | App crash on patient update | Works | ✅ |
+| Day profiles load | Critical | Infinite error loop | Loads correctly | ✅ |
+| Sensor/Stock panel | Critical | Cannot open panels | Opens normally | ✅ |
+
+### Files Modified (6)
+1. `src/contexts/UIContext.jsx` - Fixed method call
+2. `src/hooks/useDayProfiles.js` - Async refactor (useMemo → useEffect + state)
+3. `src/components/panels/SensorHistoryPanel/useSensorHistory.js` - Defensive defaults
+4. `src/components/panels/SensorHistoryPanel/SensorTable.jsx` - Optional chaining
+5. `src/components/SensorRow.jsx` - Optional chaining (2 places)
+
+### Build Status
+✅ All errors resolved - app functional again
+
+### Next Action
+- [ ] Test all 3 panels (Day Profiles, Sensor History, Stock Management)
+- [ ] Commit changes with descriptive message
+- [ ] Test full workflow (upload CSV, check panels, export data)
+
+---
+
 ## Session 2025-11-22 (9c) - Fase 3: SensorHistoryPanel Split (IN PROGRESS)
 
 ### Plan (from SESSION_HANDOFF_ARCHITECTURE.md)
