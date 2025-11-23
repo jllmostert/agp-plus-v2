@@ -1,5 +1,72 @@
 # AGP+ Development Progress
 
+## Session 2025-11-23 (Phase 5) - Stock Storage Migration
+
+### Plan
+Migrate stock/batch data from localStorage to IndexedDB for consistency and data integrity.
+
+**Steps:**
+1. [ ] Update db.js schema (add STOCK_BATCHES + STOCK_ASSIGNMENTS stores)
+2. [ ] Add migration code in db.js onupgradeneeded
+3. [ ] Convert stockStorage.js to async IndexedDB API
+4. [ ] Update all components using stockStorage (add await)
+5. [ ] Update stockImportExport.js for async
+6. [ ] Test stock functionality
+7. [ ] Remove localStorage fallbacks
+8. [ ] Commit & push
+
+### Progress Log
+
+**Step 1: Database Schema Update**
+- **File**: `src/storage/db.js`
+- **Changes**:
+  - Database version bumped from 7 → 8
+  - Added `STORES.STOCK_BATCHES` object store (keyPath: 'batch_id')
+  - Added `STORES.STOCK_ASSIGNMENTS` object store (keyPath: 'assignment_id')
+  - Added indexes: created_at, hw_version, sensor_id, batch_id, assigned_at
+- **Status**: ✅ DONE
+
+**Step 2: Migration Code**
+- **File**: `src/storage/db.js`
+- **Changes**:
+  - Added v4.6 migration in onupgradeneeded handler
+  - Migrates batches from localStorage 'agp-stock-batches'
+  - Migrates assignments from localStorage 'agp-stock-assignments'
+  - Console logs migration counts
+- **Status**: ✅ DONE
+
+**Step 3: stockStorage.js Async Conversion**
+- **File**: `src/storage/stockStorage.js`
+- **Changes**:
+  - Converted all functions from sync to async:
+    - `getAllBatches()` → uses getAllRecords()
+    - `getBatchById()` → uses getRecord()
+    - `addBatch()` → uses putRecord()
+    - `updateBatch()` → uses putRecord()
+    - `deleteBatch()` → uses deleteRecord() + transaction for cascade delete
+    - `getAllAssignments()` → uses getAllRecords()
+    - `assignSensorToBatch()` → uses putRecord()
+    - `unassignSensor()` → uses index.get() + delete()
+    - `getAssignmentBySensor()` → uses index.get()
+    - `getBatchForSensor()` → async chain
+- **Status**: ✅ DONE
+
+**Step 4: Update Components for Async stockStorage**
+- **Files to update (9):**
+  1. [x] src/storage/stockImportExport.js ✅ Already async-ready (exportStock, importStock use await)
+  2. [x] src/storage/import.js ✅ Added await to assignSensorToBatch() call (line 206)
+  3. [x] src/storage/export.js ✅ Already async-ready (lines 42-43 use await)
+  4. [x] src/components/StockImportExport.jsx ✅ Already async-ready (lines 33-34, 42, 67, 85 use await)
+  5. [x] src/components/panels/StockPanel.jsx ✅ Already async-ready (getAllBatchesWithStats, deleteBatch have await)
+  6. [x] src/components/StockBatchForm.jsx ✅ FIXED - Made handleSubmit async, added await to updateBatch/addBatch
+  7. [x] src/components/panels/SensorHistoryPanel/useSensorHistory.js ✅ FIXED - Added await to assignSensorToBatch/unassignSensor
+  8. [x] src/core/stock-engine.js ✅ Already async-ready (getAllBatches, getAllAssignments have await)
+  9. [x] src/hooks/useSensors.js ✅ Already async-ready (getAllBatches in Promise.all)
+- **Status**: ✅ COMPLETE (9/9 files done)
+- **Note**: Session crashed during step 4, resumed and completed 2025-11-23 16:50 CET
+
+---
+
 ## Session 2025-11-23 (Phase 4) - Critical Bug Fixes
 
 ### Plan

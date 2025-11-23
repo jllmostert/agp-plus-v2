@@ -30,8 +30,8 @@ export default function StockImportExport() {
     setSuccess(null);
     
     try {
-      const batches = getAllBatches();
-      const assignments = getAllAssignments();
+      const batches = await getAllBatches();
+      const assignments = await getAllAssignments();
       
       if (batches.length === 0) {
         alert('⚠️ Geen stock batches om te exporteren.\nVoeg eerst batches toe in het SENSOREN panel.');

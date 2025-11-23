@@ -34,7 +34,7 @@ export default function StockBatchForm({ batch, onSave, onCancel }) {
     }
   }, [batch]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate
@@ -53,9 +53,9 @@ export default function StockBatchForm({ batch, onSave, onCancel }) {
     
     // Save
     if (batch) {
-      updateBatch(batch.batch_id, cleanData);
+      await updateBatch(batch.batch_id, cleanData);
     } else {
-      addBatch(cleanData);
+      await addBatch(cleanData);
     }
     
     onSave();

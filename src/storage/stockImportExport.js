@@ -15,8 +15,8 @@ import { VERSION } from '../version.js';
  */
 export async function exportStock() {
   try {
-    const batches = getAllBatches();
-    const assignments = getAllAssignments();
+    const batches = await getAllBatches();
+    const assignments = await getAllAssignments();
     const sensors = await getAllSensors();
     
     // Create a map of sensor IDs to sensor details for validation
@@ -121,14 +121,13 @@ export async function importStock(file, options = {}) {
     
     // REPLACE MODE: Clear existing stock before import
     if (!mergeMode) {
-
-      clearAllBatches();
+      await clearAllBatches();
     }
     
     // Load current state (empty if replace mode)
-    const existingBatches = getAllBatches();
+    const existingBatches = await getAllBatches();
     const existingBatchIds = new Set(existingBatches.map(b => b.batch_id));
-    const existingAssignments = getAllAssignments();
+    const existingAssignments = await getAllAssignments();
     const existingAssignmentMap = new Map(
       existingAssignments.map(a => [a.sensor_id, a])
     );
@@ -149,7 +148,7 @@ export async function importStock(file, options = {}) {
         
         // Add batch (without assigned_sensors array)
         const { assigned_sensors, assignment_count, usage_percentage, ...batchData } = batch;
-        addBatch(batchData);
+        await addBatch(batchData);
         stats.batches_imported++;
         
         // Import assignments for this batch
@@ -191,7 +190,7 @@ export async function importStock(file, options = {}) {
               }
               
               // Create assignment
-              assignSensorToBatch(actualSensorId, batch.batch_id, assignment.assigned_by || 'imported');
+              await assignSensorToBatch(actualSensorId, batch.batch_id, assignment.assigned_by || 'imported');
               stats.assignments_imported++;
               
             } catch (err) {

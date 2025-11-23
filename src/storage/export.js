@@ -39,8 +39,8 @@ export async function exportMasterDataset() {
     const patientInfo = await patientStorage.get();
     
     // Fetch stock batches and assignments
-    const stockBatches = getAllBatches();
-    const stockAssignments = getAllAssignments();
+    const stockBatches = await getAllBatches();
+    const stockAssignments = await getAllAssignments();
     
     // Fetch pump settings and device history
     const pumpSettings = getPumpSettings();

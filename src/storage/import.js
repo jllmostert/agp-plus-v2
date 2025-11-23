@@ -203,7 +203,7 @@ export async function importMasterDataset(file, onProgress = null) {
     if (data.stockAssignments && Array.isArray(data.stockAssignments)) {
       for (const assignment of data.stockAssignments) {
         try {
-          assignSensorToBatch(assignment.sensor_id, assignment.batch_id);
+          await assignSensorToBatch(assignment.sensor_id, assignment.batch_id);
           stats.stockAssignmentsImported++;
         } catch (err) {
           errors.push(`Failed to import assignment for sensor ${assignment.sensor_id}: ${err.message}`);

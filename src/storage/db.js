@@ -1,5 +1,5 @@
 /**
- * IndexedDB Schema for AGP+ v4.5
+ * IndexedDB Schema for AGP+ v4.6
  * 
  * Stores:
  * - uploads (v2.x compat): Individual CSV upload metadata
@@ -8,13 +8,15 @@
  * - masterDataset (v3.0): Cached merged data + version info
  * - sensorData (v3.6): Sensor database
  * - seasons (v4.4): Device era tracking
+ * - stockBatches (v4.6): Sensor batches (was localStorage)
+ * - stockAssignments (v4.6): Batch-sensor assignments (was localStorage)
  * 
  * Note: sensorEvents and cartridgeEvents stores removed in v4.5
  * (sensor events in sensorData, cartridge events in localStorage)
  */
 
 const DB_NAME = 'agp-plus-db';
-const DB_VERSION = 7;  // v7: Remove unused sensorEvents/cartridgeEvents stores
+const DB_VERSION = 8;  // v8: Add stockBatches + stockAssignments stores
 
 // Store names
 export const STORES = {
@@ -23,7 +25,9 @@ export const STORES = {
   READING_BUCKETS: 'readingBuckets',     // v3.0
   MASTER_DATASET: 'masterDataset',       // v3.0
   SENSOR_DATA: 'sensorData',             // v3.6
-  SEASONS: 'seasons'                     // v4.4 - Device era tracking
+  SEASONS: 'seasons',                    // v4.4 - Device era tracking
+  STOCK_BATCHES: 'stockBatches',         // v4.6 - Sensor batches
+  STOCK_ASSIGNMENTS: 'stockAssignments'  // v4.6 - Batch assignments
 };
 
 /**
@@ -90,7 +94,53 @@ export function openDB() {
         const seasonStore = db.createObjectStore(STORES.SEASONS, { keyPath: 'id' });
         seasonStore.createIndex('season', 'season', { unique: true });
         seasonStore.createIndex('start', 'start', { unique: false });
-
+      }
+      
+      // === v4.6 STOCK STORES ===
+      if (!db.objectStoreNames.contains(STORES.STOCK_BATCHES)) {
+        const batchStore = db.createObjectStore(STORES.STOCK_BATCHES, { keyPath: 'batch_id' });
+        batchStore.createIndex('created_at', 'created_at', { unique: false });
+        batchStore.createIndex('hw_version', 'hw_version', { unique: false });
+      }
+      
+      if (!db.objectStoreNames.contains(STORES.STOCK_ASSIGNMENTS)) {
+        const assignStore = db.createObjectStore(STORES.STOCK_ASSIGNMENTS, { keyPath: 'assignment_id' });
+        assignStore.createIndex('sensor_id', 'sensor_id', { unique: true }); // One assignment per sensor
+        assignStore.createIndex('batch_id', 'batch_id', { unique: false });
+        assignStore.createIndex('assigned_at', 'assigned_at', { unique: false });
+      }
+      
+      // === v4.6 MIGRATION: localStorage → IndexedDB ===
+      if (oldVersion < 8) {
+        // Migrate batches from localStorage
+        try {
+          const batchesJSON = localStorage.getItem('agp-stock-batches');
+          if (batchesJSON) {
+            const batches = JSON.parse(batchesJSON);
+            const batchStore = event.target.transaction.objectStore(STORES.STOCK_BATCHES);
+            batches.forEach(batch => {
+              batchStore.add(batch);
+            });
+            console.log(`[db.js] Migrated ${batches.length} batches from localStorage`);
+          }
+        } catch (error) {
+          console.error('[db.js] Error migrating batches:', error);
+        }
+        
+        // Migrate assignments from localStorage
+        try {
+          const assignmentsJSON = localStorage.getItem('agp-stock-assignments');
+          if (assignmentsJSON) {
+            const assignments = JSON.parse(assignmentsJSON);
+            const assignStore = event.target.transaction.objectStore(STORES.STOCK_ASSIGNMENTS);
+            assignments.forEach(assignment => {
+              assignStore.add(assignment);
+            });
+            console.log(`[db.js] Migrated ${assignments.length} assignments from localStorage`);
+          }
+        } catch (error) {
+          console.error('[db.js] Error migrating assignments:', error);
+        }
       }
     };
   });

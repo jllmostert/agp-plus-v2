@@ -211,10 +211,10 @@ export function useSensorHistory(isOpen) {
     const sensorResult = await sensorStorage.assignBatch(sensorId, batchId || null);
     if (!sensorResult.success) { alert(`❌ ${sensorResult.error}`); return; }
     if (batchId) {
-      try { stockStorage.assignSensorToBatch(sensorId, batchId, 'manual'); }
+      try { await stockStorage.assignSensorToBatch(sensorId, batchId, 'manual'); }
       catch (error) { console.error('Failed to create stock assignment:', error); }
     } else {
-      try { stockStorage.unassignSensor(sensorId); }
+      try { await stockStorage.unassignSensor(sensorId); }
       catch (error) { console.error('Failed to remove stock assignment:', error); }
     }
     refresh();

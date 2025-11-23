@@ -71,7 +71,7 @@ export default function StockPanel({ isOpen, onClose }) {
     return sortBatches(filtered, sortBy, sortDirection);
   }, [batches, searchQuery, sortBy, sortDirection]);
 
-  const handleDeleteBatch = (batchId, assignedCount) => {
+  const handleDeleteBatch = async (batchId, assignedCount) => {
     if (assignedCount > 0) {
       const confirm = window.confirm(
         `This batch has ${assignedCount} assigned sensor(s). Delete anyway? Assignments will be removed.`
@@ -79,7 +79,7 @@ export default function StockPanel({ isOpen, onClose }) {
       if (!confirm) return;
     }
     
-    deleteBatch(batchId);
+    await deleteBatch(batchId);
     loadBatches();
   };
 

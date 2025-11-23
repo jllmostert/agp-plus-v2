@@ -438,8 +438,10 @@ export default function DataManagementModal({ onClose, onDelete, currentDataStat
                   // Delete stock if selected
                   if (allInStock) {
                     const { getAllBatches, deleteBatch } = await import('../storage/stockStorage');
-                    const batches = getAllBatches();
-                    batches.forEach(batch => deleteBatch(batch.batch_id));
+                    const batches = await getAllBatches();
+                    for (const batch of batches) {
+                      await deleteBatch(batch.batch_id);
+                    }
                     debug.log('[DataManagementModal] Stock cleared:', batches.length, 'batches');
                   }
                   

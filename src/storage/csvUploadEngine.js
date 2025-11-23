@@ -460,7 +460,7 @@ export async function completeCSVUploadWithAssignments(detectedEvents, confirmed
     // Phase 2: Create batch assignments
     const { assignSensorToBatch } = await import('./stockStorage.js');
     for (const { sensorId, batchId } of confirmedAssignments) {
-      const result = assignSensorToBatch(sensorId, batchId, 'auto');
+      const result = await assignSensorToBatch(sensorId, batchId, 'auto');
       createdAssignmentIds.push(result.assignment_id);
     }
     

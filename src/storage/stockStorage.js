@@ -1,23 +1,21 @@
 /**
- * Stock Storage - localStorage CRUD for sensor batches
- * v3.15.0 - Batch registration and assignment tracking
+ * Stock Storage - IndexedDB CRUD for sensor batches
+ * v4.6.0 - Migrated from localStorage to IndexedDB for data integrity
  */
 
-const BATCHES_KEY = 'agp-stock-batches';
-const ASSIGNMENTS_KEY = 'agp-stock-assignments';
+import { STORES, getAllRecords, getRecord, putRecord, deleteRecord, openDB } from './db.js';
 
 // ============================================================================
 // BATCH OPERATIONS
 // ============================================================================
 
 /**
- * Get all batches from localStorage
- * @returns {Array} Array of batch objects
+ * Get all batches from IndexedDB
+ * @returns {Promise<Array>} Array of batch objects
  */
-export function getAllBatches() {
+export async function getAllBatches() {
   try {
-    const data = localStorage.getItem(BATCHES_KEY);
-    return data ? JSON.parse(data) : [];
+    return await getAllRecords(STORES.STOCK_BATCHES);
   } catch (error) {
     console.error('[stockStorage] Error loading batches:', error);
     return [];
@@ -27,20 +25,24 @@ export function getAllBatches() {
 /**
  * Get batch by ID
  * @param {string} batchId - Batch identifier
- * @returns {Object|null} Batch object or null
+ * @returns {Promise<Object|null>} Batch object or null
  */
-export function getBatchById(batchId) {
-  const batches = getAllBatches();
-  return batches.find(b => b.batch_id === batchId) || null;
+export async function getBatchById(batchId) {
+  try {
+    const batch = await getRecord(STORES.STOCK_BATCHES, batchId);
+    return batch || null;
+  } catch (error) {
+    console.error('[stockStorage] Error loading batch:', error);
+    return null;
+  }
 }
 
 /**
  * Add new batch to storage
  * @param {Object} batch - Batch object (without batch_id, will be generated)
- * @returns {Object} Created batch with ID and timestamps
+ * @returns {Promise<Object>} Created batch with ID and timestamps
  */
-export function addBatch(batch) {
-  const batches = getAllBatches();
+export async function addBatch(batch) {
   const now = new Date().toISOString();
   
   const newBatch = {
@@ -51,8 +53,7 @@ export function addBatch(batch) {
     updated_at: now
   };
   
-  batches.push(newBatch);
-  localStorage.setItem(BATCHES_KEY, JSON.stringify(batches));
+  await putRecord(STORES.STOCK_BATCHES, newBatch);
   return newBatch;
 }
 
@@ -60,55 +61,78 @@ export function addBatch(batch) {
  * Update existing batch
  * @param {string} batchId - Batch to update
  * @param {Object} updates - Fields to update
- * @returns {Object|null} Updated batch or null
+ * @returns {Promise<Object|null>} Updated batch or null
  */
-export function updateBatch(batchId, updates) {
-  const batches = getAllBatches();
-  const index = batches.findIndex(b => b.batch_id === batchId);
+export async function updateBatch(batchId, updates) {
+  const batch = await getBatchById(batchId);
   
-  if (index === -1) return null;
+  if (!batch) return null;
   
-  batches[index] = {
-    ...batches[index],
+  const updatedBatch = {
+    ...batch,
     ...updates,
     batch_id: batchId, // Prevent ID change
     updated_at: new Date().toISOString()
   };
   
-  localStorage.setItem(BATCHES_KEY, JSON.stringify(batches));
-  return batches[index];
+  await putRecord(STORES.STOCK_BATCHES, updatedBatch);
+  return updatedBatch;
 }
 
 /**
  * Delete batch from storage
  * @param {string} batchId - Batch to delete
- * @returns {boolean} Success status
+ * @returns {Promise<boolean>} Success status
  */
-export function deleteBatch(batchId) {
-  const batches = getAllBatches();
-  const filtered = batches.filter(b => b.batch_id !== batchId);
-  
-  if (filtered.length === batches.length) return false; // Not found
-  
-  localStorage.setItem(BATCHES_KEY, JSON.stringify(filtered));
-  
-  // Also delete all assignments for this batch
-  const assignments = getAllAssignments();
-  const cleanedAssignments = assignments.filter(a => a.batch_id !== batchId);
-  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(cleanedAssignments));
-  
-  return true;
+export async function deleteBatch(batchId) {
+  try {
+    // Check if batch exists
+    const batch = await getBatchById(batchId);
+    if (!batch) return false;
+    
+    // Delete the batch
+    await deleteRecord(STORES.STOCK_BATCHES, batchId);
+    
+    // Delete all assignments for this batch
+    const db = await openDB();
+    const transaction = db.transaction(STORES.STOCK_ASSIGNMENTS, 'readwrite');
+    const store = transaction.objectStore(STORES.STOCK_ASSIGNMENTS);
+    const index = store.index('batch_id');
+    const assignments = await index.getAll(batchId);
+    
+    for (const assignment of assignments) {
+      await store.delete(assignment.assignment_id);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('[stockStorage] Error deleting batch:', error);
+    return false;
+  }
 }
 
 /**
  * Clear all batches from storage
  * WARNING: This deletes ALL batches and their assignments
- * @returns {boolean} Success status
+ * @returns {Promise<boolean>} Success status
  */
-export function clearAllBatches() {
-  localStorage.setItem(BATCHES_KEY, JSON.stringify([]));
-  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify([]));
-  return true;
+export async function clearAllBatches() {
+  try {
+    const db = await openDB();
+    
+    // Clear batches
+    const batchTx = db.transaction(STORES.STOCK_BATCHES, 'readwrite');
+    await batchTx.objectStore(STORES.STOCK_BATCHES).clear();
+    
+    // Clear assignments
+    const assignTx = db.transaction(STORES.STOCK_ASSIGNMENTS, 'readwrite');
+    await assignTx.objectStore(STORES.STOCK_ASSIGNMENTS).clear();
+    
+    return true;
+  } catch (error) {
+    console.error('[stockStorage] Error clearing batches:', error);
+    return false;
+  }
 }
 
 // ============================================================================
@@ -116,13 +140,12 @@ export function clearAllBatches() {
 // ============================================================================
 
 /**
- * Get all assignments from localStorage
- * @returns {Array} Array of assignment objects
+ * Get all assignments from IndexedDB
+ * @returns {Promise<Array>} Array of assignment objects
  */
-export function getAllAssignments() {
+export async function getAllAssignments() {
   try {
-    const data = localStorage.getItem(ASSIGNMENTS_KEY);
-    return data ? JSON.parse(data) : [];
+    return await getAllRecords(STORES.STOCK_ASSIGNMENTS);
   } catch (error) {
     console.error('[stockStorage] Error loading assignments:', error);
     return [];
@@ -134,18 +157,16 @@ export function getAllAssignments() {
  * @param {string} sensorId - Sensor identifier
  * @param {string} batchId - Batch identifier
  * @param {string} assignedBy - 'manual' or 'auto'
- * @returns {Object} Created assignment
+ * @returns {Promise<Object>} Created assignment
  */
-export function assignSensorToBatch(sensorId, batchId, assignedBy = 'manual') {
-  const assignments = getAllAssignments();
-  
+export async function assignSensorToBatch(sensorId, batchId, assignedBy = 'manual') {
   // Validate batch exists and has capacity
-  const batch = getBatchById(batchId);
+  const batch = await getBatchById(batchId);
   if (!batch) {
     throw new Error(`Batch ${batchId} not found - cannot assign sensor`);
   }
   
-  const currentAssignments = assignments.filter(a => a.batch_id === batchId);
+  const currentAssignments = await getAssignmentsForBatch(batchId);
   if (batch.total_quantity && currentAssignments.length >= batch.total_quantity) {
     throw new Error(
       `Batch ${batch.lot_number} is at capacity ` +
@@ -155,7 +176,10 @@ export function assignSensorToBatch(sensorId, batchId, assignedBy = 'manual') {
   }
   
   // Remove existing assignment for this sensor (if any)
-  const filtered = assignments.filter(a => a.sensor_id !== sensorId);
+  const existingAssignment = await getAssignmentForSensor(sensorId);
+  if (existingAssignment) {
+    await deleteRecord(STORES.STOCK_ASSIGNMENTS, existingAssignment.assignment_id);
+  }
   
   const newAssignment = {
     assignment_id: `ASSIGN-${Date.now()}`,
@@ -165,11 +189,10 @@ export function assignSensorToBatch(sensorId, batchId, assignedBy = 'manual') {
     assigned_by: assignedBy
   };
   
-  filtered.push(newAssignment);
-  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(filtered));
+  await putRecord(STORES.STOCK_ASSIGNMENTS, newAssignment);
   
   // Update batch assigned_count
-  updateBatchAssignedCount(batchId);
+  await updateBatchAssignedCount(batchId);
   
   return newAssignment;
 }
@@ -177,21 +200,24 @@ export function assignSensorToBatch(sensorId, batchId, assignedBy = 'manual') {
 /**
  * Unassign sensor from batch
  * @param {string} sensorId - Sensor identifier
- * @returns {boolean} Success status
+ * @returns {Promise<boolean>} Success status
  */
-export function unassignSensor(sensorId) {
-  const assignments = getAllAssignments();
-  const assignment = assignments.find(a => a.sensor_id === sensorId);
-  
-  if (!assignment) return false;
-  
-  const filtered = assignments.filter(a => a.sensor_id !== sensorId);
-  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(filtered));
-  
-  // Update batch assigned_count
-  updateBatchAssignedCount(assignment.batch_id);
-  
-  return true;
+export async function unassignSensor(sensorId) {
+  try {
+    const assignment = await getAssignmentForSensor(sensorId);
+    
+    if (!assignment) return false;
+    
+    await deleteRecord(STORES.STOCK_ASSIGNMENTS, assignment.assignment_id);
+    
+    // Update batch assigned_count
+    await updateBatchAssignedCount(assignment.batch_id);
+    
+    return true;
+  } catch (error) {
+    console.error('[stockStorage] Error unassigning sensor:', error);
+    return false;
+  }
 }
 
 // ============================================================================
@@ -201,48 +227,71 @@ export function unassignSensor(sensorId) {
 /**
  * Get assignment for a specific sensor
  * @param {string} sensorId - Sensor identifier
- * @returns {Object|null} Assignment or null
+ * @returns {Promise<Object|null>} Assignment or null
  */
-export function getAssignmentForSensor(sensorId) {
-  const assignments = getAllAssignments();
-  return assignments.find(a => a.sensor_id === sensorId) || null;
+export async function getAssignmentForSensor(sensorId) {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(STORES.STOCK_ASSIGNMENTS, 'readonly');
+    const store = transaction.objectStore(STORES.STOCK_ASSIGNMENTS);
+    const index = store.index('sensor_id');
+    const assignment = await index.get(sensorId);
+    return assignment || null;
+  } catch (error) {
+    console.error('[stockStorage] Error getting assignment:', error);
+    return null;
+  }
 }
 
 /**
  * Get all assignments for a batch
  * @param {string} batchId - Batch identifier
- * @returns {Array} Array of assignments
+ * @returns {Promise<Array>} Array of assignments
  */
-export function getAssignmentsForBatch(batchId) {
-  const assignments = getAllAssignments();
-  return assignments.filter(a => a.batch_id === batchId);
+export async function getAssignmentsForBatch(batchId) {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(STORES.STOCK_ASSIGNMENTS, 'readonly');
+    const store = transaction.objectStore(STORES.STOCK_ASSIGNMENTS);
+    const index = store.index('batch_id');
+    const assignments = await index.getAll(batchId);
+    return assignments || [];
+  } catch (error) {
+    console.error('[stockStorage] Error getting batch assignments:', error);
+    return [];
+  }
 }
 
 /**
  * Update assigned_count for a batch
  * @param {string} batchId - Batch identifier
  */
-function updateBatchAssignedCount(batchId) {
-  const batches = getAllBatches();
-  const index = batches.findIndex(b => b.batch_id === batchId);
-  
-  if (index === -1) return;
-  
-  const count = getAssignmentsForBatch(batchId).length;
-  batches[index].assigned_count = count;
-  batches[index].updated_at = new Date().toISOString();
-  
-  localStorage.setItem(BATCHES_KEY, JSON.stringify(batches));
+async function updateBatchAssignedCount(batchId) {
+  try {
+    const batch = await getBatchById(batchId);
+    if (!batch) return;
+    
+    const assignments = await getAssignmentsForBatch(batchId);
+    const updatedBatch = {
+      ...batch,
+      assigned_count: assignments.length,
+      updated_at: new Date().toISOString()
+    };
+    
+    await putRecord(STORES.STOCK_BATCHES, updatedBatch);
+  } catch (error) {
+    console.error('[stockStorage] Error updating batch count:', error);
+  }
 }
 
 /**
  * Find batches by lot number (exact or prefix match)
  * @param {string} lotNumber - Lot number to search
  * @param {boolean} exactMatch - True for exact, false for prefix
- * @returns {Array} Matching batches
+ * @returns {Promise<Array>} Matching batches
  */
-export function findBatchesByLotNumber(lotNumber, exactMatch = false) {
-  const batches = getAllBatches();
+export async function findBatchesByLotNumber(lotNumber, exactMatch = false) {
+  const batches = await getAllBatches();
   
   if (exactMatch) {
     return batches.filter(b => b.lot_number === lotNumber);
