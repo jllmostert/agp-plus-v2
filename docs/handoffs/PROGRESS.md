@@ -3,11 +3,12 @@
 ## Session 2025-11-23 (Phase 4) - Critical Bug Fixes
 
 ### Plan
-Fix 4 critical bugs preventing app from functioning:
+Fix 5 critical bugs preventing app from functioning:
 1. [x] Fix patientStorage.set error in UIContext
 2. [x] Fix profiles.map error in useDayProfiles
 3. [x] Fix batches.map error in SensorTable/SensorRow
-4. [x] Fix StockPanel spread operator error
+4. [x] Fix StockPanel spread operator + null stats errors
+5. [x] Fix StockPanel z-index stacking issue
 
 ### Progress Log
 
@@ -59,6 +60,16 @@ Fix 4 critical bugs preventing app from functioning:
      - Added defensive guard in `filterBatches()`: `if (!batches || !Array.isArray(batches)) return []`
 - **Status**: ✅ FIXED
 
+**Bug 5: StockPanel z-index stacking issue**
+- **Error**: Stock panel opens behind Sensor History panel (UX issue, not crash)
+- **Location**: `src/components/panels/StockPanel.jsx:177` vs `SensorHistoryPanel/index.jsx:66`
+- **Root Cause**: Conflicting z-index values
+  - SensorHistoryPanel: `zIndex: 10000`
+  - StockPanel: `zIndex: 9999` ← LOWER = behind!
+- **Fix**: Increased StockPanel z-index to 10001
+- **Status**: ✅ FIXED
+- **Why This Matters**: When user clicks "VOORRAAD" button in Sensor History, Stock panel must appear on top (not behind)
+
 ### Results
 | Issue | Severity | Before | After | Status |
 |-------|----------|--------|-------|--------|
@@ -66,15 +77,17 @@ Fix 4 critical bugs preventing app from functioning:
 | Day profiles load | Critical | Infinite error loop | Loads correctly | ✅ |
 | Sensor/Stock panel | Critical | Cannot open panels | Opens normally | ✅ |
 | Stock panel crash | Critical | Spread operator error | Defensive guards work | ✅ |
+| Stock panel z-index | High UX | Opens behind Sensor History | Opens on top | ✅ |
 
-### Files Modified (9)
+### Files Modified (10)
 1. `src/contexts/UIContext.jsx` - Fixed method call
 2. `src/hooks/useDayProfiles.js` - Async refactor (useMemo → useEffect + state)
 3. `src/components/panels/SensorHistoryPanel/useSensorHistory.js` - Defensive defaults
 4. `src/components/panels/SensorHistoryPanel/SensorTable.jsx` - Optional chaining
 5. `src/components/SensorRow.jsx` - Optional chaining (2 places)
-6. `src/components/panels/StockPanel.jsx` - Async fixes + defensive defaults
+6. `src/components/panels/StockPanel.jsx` - Async fixes + defensive defaults + z-index fix
 7. `src/core/stock-engine.js` - Defensive guards in sortBatches/filterBatches
+8. `docs/handoffs/PROGRESS.md` - Updated documentation
 
 ### Build Status
 ✅ All errors resolved - app fully functional

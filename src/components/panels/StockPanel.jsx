@@ -178,7 +178,7 @@ export default function StockPanel({ isOpen, onClose }) {
       position: 'fixed',
       inset: 0,
       backgroundColor: 'var(--paper)',
-      zIndex: 9999,
+      zIndex: 10001, // âœ… Higher than SensorHistoryPanel (10000)
       display: 'flex',
       flexDirection: 'column',
       fontFamily: '"SF Mono", "Monaco", "Courier New", monospace'
